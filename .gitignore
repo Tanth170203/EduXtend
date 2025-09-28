@@ -1,0 +1,22 @@
+﻿bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.pubxml
+*.pubxml.user
+*.FileListAbsolute.txt
+TestResult*/
+*.log
+*.coverage
+*.coveragexml
+_ReSharper*/
+*.resharper
+*.ncrunch*
+*.DotSettings.user
+*.sln.iml
+# Secrets/local configs - đừng commit
+appsettings.*.local.json
+secrets.json
