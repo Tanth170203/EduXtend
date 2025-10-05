@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Repositories.AcademicYears;
 using Repositories.Users;
+using Services.AcademicYears;
 using Services.GGLogin;
 using System.Text;
 
@@ -28,10 +30,14 @@ namespace WebAPI
             builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
             builder.Services.Configure<GoogleAuthOptions>(builder.Configuration.GetSection("GoogleAuth"));
 
-            // Password hasher (PBKDF2)
+            // Repositories
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IAcademicYearRepository, AcademicYearRepository>();
+            
+            // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IAuthService, GoogleAuthService>();
+            builder.Services.AddScoped<IAcademicYearService, AcademicYearService>();
 
 
 

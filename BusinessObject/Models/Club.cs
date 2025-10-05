@@ -27,9 +27,6 @@ namespace BusinessObject.Models
         public DateTime FoundingDate { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; } = DateTime.Now;
 
-        public int? ManagerUserId { get; set; }
-        public User? ManagerUser { get; set; }
-
         public ICollection<ClubMembership> Members { get; set; } = new List<ClubMembership>();
         public ICollection<Activity> Activities { get; set; } = new List<Activity>();
     }

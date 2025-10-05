@@ -19,38 +19,77 @@ namespace WebAPI.Controllers
         [HttpPost("google")]
         public async Task<ActionResult<TokenResponseDto>> GoogleLogin([FromBody] GoogleLoginRequest req)
         {
-            var deviceInfo = Request.Headers.UserAgent.ToString();
-            var token = await _auth.GoogleLoginAsync(req.IdToken, deviceInfo);
-            if (token == null) return Unauthorized("Invalid Google token or domain is not allowed.");
-            return Ok(new
+            try
             {
-                Message = "Login successful",
-                AccessToken = token.AccessToken,
-                ExpiresAt = token.ExpiresAt,
-                RefreshToken = token.RefreshToken
-            });
+                if (string.IsNullOrEmpty(req.IdToken))
+                    return BadRequest("ID Token is required.");
+
+                var deviceInfo = Request.Headers.UserAgent.ToString();
+                var token = await _auth.GoogleLoginAsync(req.IdToken, deviceInfo);
+                
+                if (token == null) 
+                    return Unauthorized("Invalid Google token or domain is not allowed.");
+                
+                return Ok(new
+                {
+                    Message = "Login successful",
+                    AccessToken = token.AccessToken,
+                    ExpiresAt = token.ExpiresAt,
+                    RefreshToken = token.RefreshToken
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Google login error: {ex.Message}");
+                return StatusCode(500, "Internal server error during login.");
+            }
         }
 
         [HttpPost("refresh")]
         public async Task<ActionResult<TokenResponseDto>> Refresh([FromBody] RefreshRequest req)
         {
-            var deviceInfo = Request.Headers.UserAgent.ToString();
-            var token = await _auth.RefreshAsync(req.RefreshToken, deviceInfo);
-            if (token == null) return Unauthorized("Invalid refresh token.");
-            return Ok(new
+            try
             {
-                Message = "Refresh successful",
-                AccessToken = token.AccessToken,
-                ExpiresAt = token.ExpiresAt,
-                RefreshToken = token.RefreshToken
-            });
+                if (string.IsNullOrEmpty(req.RefreshToken))
+                    return BadRequest("Refresh token is required.");
+
+                var deviceInfo = Request.Headers.UserAgent.ToString();
+                var token = await _auth.RefreshAsync(req.RefreshToken, deviceInfo);
+                
+                if (token == null) 
+                    return Unauthorized("Invalid refresh token.");
+                
+                return Ok(new
+                {
+                    Message = "Refresh successful",
+                    AccessToken = token.AccessToken,
+                    ExpiresAt = token.ExpiresAt,
+                    RefreshToken = token.RefreshToken
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Token refresh error: {ex.Message}");
+                return StatusCode(500, "Internal server error during token refresh.");
+            }
         }
 
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromBody] RefreshRequest req)
         {
-            await _auth.LogoutAsync(req.RefreshToken);
-            return Ok(new { Message = "Logout successful" }); ;
+            try
+            {
+                if (string.IsNullOrEmpty(req.RefreshToken))
+                    return BadRequest("Refresh token is required.");
+
+                await _auth.LogoutAsync(req.RefreshToken);
+                return Ok(new { Message = "Logout successful" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Logout error: {ex.Message}");
+                return StatusCode(500, "Internal server error during logout.");
+            }
         }
     }
 

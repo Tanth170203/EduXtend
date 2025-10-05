@@ -1,0 +1,45 @@
+### Academic Year API Tests
+
+### Variables
+@baseUrl = https://localhost:7000
+@token = your_jwt_token_here
+
+### 1. Get all academic years
+GET {{baseUrl}}/api/academic-years
+Authorization: Bearer {{token}}
+
+### 2. Get active academic year
+GET {{baseUrl}}/api/academic-years/active
+Authorization: Bearer {{token}}
+
+### 3. Get academic year by ID
+GET {{baseUrl}}/api/academic-years/1
+Authorization: Bearer {{token}}
+
+### 4. Create new academic year
+POST {{baseUrl}}/api/academic-years
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Academic Year 2024-2025",
+  "startDate": "2024-09-01T00:00:00Z",
+  "endDate": "2025-08-31T23:59:59Z",
+  "isActive": true
+}
+
+### 5. Update academic year
+PUT {{baseUrl}}/api/academic-years/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Academic Year 2024-2025 (Updated)",
+  "startDate": "2024-09-01T00:00:00Z",
+  "endDate": "2025-08-31T23:59:59Z",
+  "isActive": true
+}
+
+### 6. Delete academic year
+DELETE {{baseUrl}}/api/academic-years/1
+Authorization: Bearer {{token}}

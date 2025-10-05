@@ -19,7 +19,5 @@ namespace BusinessObject.Models
 
         public int? EvaluationLineId { get; set; }
         public TrainingEvaluationLine? EvaluationLine { get; set; }
-        public int? ActivityRegistrationId { get; set; }
-        public ActivityRegistration? ActivityRegistration { get; set; }
     }
 }

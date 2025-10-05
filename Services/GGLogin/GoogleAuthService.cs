@@ -39,8 +39,10 @@ namespace Repositories.Users
             {
                 payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
             }
-            catch
+            catch (Exception ex)
             {
+                // Log the error for debugging
+                Console.WriteLine($"Google token validation failed: {ex.Message}");
                 return null;
             }
 

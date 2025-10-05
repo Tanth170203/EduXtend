@@ -25,7 +25,5 @@ namespace BusinessObject.Models
         public bool RequiresAttendance { get; set; } = true;
         public bool RequiresEvidenceApproval { get; set; } = false;
 
-        public int? MaxPointsPerStudent { get; set; }
-        public int? MaxTimesPerStudent { get; set; }
     }
 }
