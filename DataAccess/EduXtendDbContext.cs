@@ -40,7 +40,6 @@ public class EduXtendContext : DbContext
 
     public DbSet<News> News { get; set; }
     public DbSet<Notification> Notifications { get; set; }
-    public DbSet<ClassMeeting> ClassMeetings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -118,12 +117,6 @@ public class EduXtendContext : DbContext
             .WithMany()
             .HasForeignKey(n => n.UserId);
 
-        // ==== CLASS MEETING ====
-        modelBuilder.Entity<ClassMeeting>()
-            .HasOne(cm => cm.OrganizedBy)
-            .WithMany()
-            .HasForeignKey(cm => cm.OrganizedById)
-            .OnDelete(DeleteBehavior.Restrict);
 
         // ==== NEWS ====
         modelBuilder.Entity<News>()
@@ -199,13 +192,6 @@ public class EduXtendContext : DbContext
             .HasOne(ed => ed.EvaluationLine)
             .WithMany(el => el.EvidenceDocuments)
             .HasForeignKey(ed => ed.EvaluationLineId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // EvidenceDocument → ActivityRegistration
-        modelBuilder.Entity<EvidenceDocument>()
-            .HasOne(ed => ed.ActivityRegistration)
-            .WithMany()
-            .HasForeignKey(ed => ed.ActivityRegistrationId)
             .OnDelete(DeleteBehavior.Restrict);
 
 

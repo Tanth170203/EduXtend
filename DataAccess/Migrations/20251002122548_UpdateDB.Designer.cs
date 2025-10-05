@@ -4,6 +4,7 @@ using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(EduXtendContext))]
-    partial class EduXtendContextModelSnapshot : ModelSnapshot
+    [Migration("20251002122548_UpdateDB")]
+    partial class UpdateDB
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -530,6 +533,9 @@ namespace DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("ActivityRegistrationId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ContentType")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -554,6 +560,8 @@ namespace DataAccess.Migrations
                         .HasColumnType("nvarchar(1000)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActivityRegistrationId");
 
                     b.HasIndex("EvaluationLineId");
 
@@ -1278,6 +1286,11 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Models.EvidenceDocument", b =>
                 {
+                    b.HasOne("BusinessObject.Models.ActivityRegistration", "ActivityRegistration")
+                        .WithMany()
+                        .HasForeignKey("ActivityRegistrationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BusinessObject.Models.TrainingEvaluationLine", "EvaluationLine")
                         .WithMany("EvidenceDocuments")
                         .HasForeignKey("EvaluationLineId")
@@ -1288,6 +1301,8 @@ namespace DataAccess.Migrations
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ActivityRegistration");
 
                     b.Navigation("EvaluationLine");
 
