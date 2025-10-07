@@ -1,0 +1,392 @@
+@page
+@using BusinessObject.DTOs.Semester
+@using WebFE.Extensions
+@model SystemConfigModel
+@{
+    ViewData["Title"] = "Quản lý danh mục";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/systemconfig.css" asp-append-version="true" />
+}
+
+@* Add antiforgery token for AJAX requests *@
+<form id="antiforgeryForm" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="min-h-screen" style="background-color: var(--background); padding: 2rem 0;">
+    <div class="container-custom">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 style="font-size: 2.5rem; color: var(--foreground); margin-bottom: 0.5rem;">Quản lý danh mục</h1>
+            <p style="font-size: 1.125rem; color: var(--muted-foreground);">
+                Quản lý học kỳ, khoa, lớp và các thiết lập cơ bản
+            </p>
+        </div>
+
+        <!-- Alert Messages -->
+        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i data-lucide="check-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                @Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                @Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- Stats -->
+        <div class="row mb-4 g-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted mb-1">Học kỳ</p>
+                                <h3 style="font-size: 2rem; color: var(--foreground); margin: 0;">@Model.Semesters.Count</h3>
+                            </div>
+                            <div style="width: 3rem; height: 3rem; background-color: rgba(0, 51, 102, 0.1); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="calendar" style="width: 1.5rem; height: 1.5rem; color: var(--primary);"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted mb-1">Khoa</p>
+                                <h3 style="font-size: 2rem; color: var(--foreground); margin: 0;">4</h3>
+                            </div>
+                            <div style="width: 3rem; height: 3rem; background-color: rgba(0, 122, 204, 0.1); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="building" style="width: 1.5rem; height: 1.5rem; color: var(--secondary);"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="text-muted mb-1">Lớp</p>
+                                <h3 style="font-size: 2rem; color: var(--foreground); margin: 0;">3</h3>
+                            </div>
+                            <div style="width: 3rem; height: 3rem; background-color: rgba(16, 185, 129, 0.1); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="users" style="width: 1.5rem; height: 1.5rem; color: #10b981;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="card mb-4">
+            <div class="card-body p-0">
+                <ul class="nav nav-tabs" style="border-bottom: 1px solid #e5e7eb; padding: 0 1.5rem;">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="tab-hoc-ky" href="#" onclick="switchTab('hoc-ky'); return false;" style="padding: 1rem 1.5rem; border: none; color: var(--foreground); position: relative; border-bottom: 2px solid var(--primary);">
+                            <i data-lucide="calendar" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+                            Học kỳ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tab-khoa" href="#" onclick="switchTab('khoa'); return false;" style="padding: 1rem 1.5rem; border: none; color: var(--muted-foreground); cursor: pointer;">
+                            <i data-lucide="building" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+                            Khoa
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tab-lop" href="#" onclick="switchTab('lop'); return false;" style="padding: 1rem 1.5rem; border: none; color: var(--muted-foreground); cursor: pointer;">
+                            <i data-lucide="users" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+                            Lớp
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab Content: Học kỳ -->
+        <div id="content-hoc-ky" class="tab-content-panel">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background-color: white; padding: 1.5rem;">
+                    <div>
+                        <h5 class="card-title mb-1" style="font-size: 1.25rem; font-weight: 600;">Danh sách học kỳ</h5>
+                        <p class="card-text text-muted mb-0">Quản lý các học kỳ trong hệ thống</p>
+                    </div>
+                    <button type="button" class="btn btn-primary d-flex align-items-center gap-2" data-action="add-semester">
+                        <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                        Thêm học kỳ
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 semester-table">
+                            <thead class="semester-table-header">
+                                <tr>
+                                    <th class="semester-th">Tên học kỳ</th>
+                                    <th class="semester-th">Ngày bắt đầu</th>
+                                    <th class="semester-th">Ngày kết thúc</th>
+                                    <th class="semester-th">Trạng thái</th>
+                                    <th class="semester-th text-end">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Semesters.Any())
+                                {
+                                    foreach (var semester in Model.Semesters)
+                                    {
+                                        <tr class="semester-row" data-id="@semester.Id">
+                                            <td class="semester-td">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="semester-icon me-3">
+                                                        <i data-lucide="calendar" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="semester-name">@semester.Name</div>
+                                                        <div class="semester-id text-muted small">ID: @semester.Id</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="semester-td">
+                                                <div class="date-info">
+                                                    <div class="date-value">@semester.StartDate.ToString("dd/MM/yyyy")</div>
+                                                    <div class="date-day text-muted small">@semester.StartDate.ToString("dddd", new System.Globalization.CultureInfo("vi-VN"))</div>
+                                                </div>
+                                            </td>
+                                            <td class="semester-td">
+                                                <div class="date-info">
+                                                    <div class="date-value">@semester.EndDate.ToString("dd/MM/yyyy")</div>
+                                                    <div class="date-day text-muted small">@semester.EndDate.ToString("dddd", new System.Globalization.CultureInfo("vi-VN"))</div>
+                                                </div>
+                                            </td>
+                                            <td class="semester-td">
+                                                <span class="semester-status-badge @semester.GetStatusBadgeClass()">
+                                                    <i data-lucide="@(semester.GetStatusLabel() == "Đang hoạt động" ? "play-circle" : semester.GetStatusLabel() == "Sắp diễn ra" ? "clock" : "pause-circle")" style="width: 12px; height: 12px;"></i>
+                                                    @semester.GetStatusLabel()
+                                                </span>
+                                            </td>
+                                            <td class="semester-td text-end">
+                                                <div class="semester-actions">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary semester-btn-edit me-2" 
+                                                            data-action="edit-semester"
+                                                            title="Chỉnh sửa">
+                                                        <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+                                                </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger semester-btn-delete" 
+                                                            data-action="delete-semester"
+                                                            data-id="@semester.Id"
+                                                            title="Xóa">
+                                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                                </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="semester-empty-state">
+                                            <div class="empty-state-content">
+                                                <div class="empty-state-icon">
+                                                    <i data-lucide="calendar-x" style="width: 64px; height: 64px;"></i>
+                                                </div>
+                                                <h4 class="empty-state-title">Chưa có học kỳ nào</h4>
+                                                <p class="empty-state-description">Bắt đầu bằng cách thêm học kỳ đầu tiên vào hệ thống</p>
+                                                <button type="button" class="btn btn-primary" data-action="add-semester">
+                                                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                                                    Thêm học kỳ đầu tiên
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Khoa -->
+        <div id="content-khoa" class="tab-content-panel" style="display: none;">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background-color: white; padding: 1.5rem;">
+                    <div>
+                        <h5 class="card-title mb-1" style="font-size: 1.25rem; font-weight: 600;">Danh sách khoa</h5>
+                        <p class="card-text text-muted mb-0">Quản lý các khoa trong trường</p>
+                    </div>
+                    <button type="button" class="btn btn-primary d-flex align-items-center gap-2">
+                        <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                        Thêm khoa
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead style="background-color: var(--muted);">
+                                <tr>
+                                    <th style="padding: 1rem;">Mã khoa</th>
+                                    <th style="padding: 1rem;">Tên khoa</th>
+                                    <th style="padding: 1rem;">Số lớp</th>
+                                    <th style="padding: 1rem; text-align: right;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" style="padding: 3rem; text-align: center; color: var(--muted-foreground);">
+                                        <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem; color: var(--muted-foreground);"></i>
+                                        <p>Chưa có dữ liệu khoa</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Lớp -->
+        <div id="content-lop" class="tab-content-panel" style="display: none;">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background-color: white; padding: 1.5rem;">
+                    <div>
+                        <h5 class="card-title mb-1" style="font-size: 1.25rem; font-weight: 600;">Danh sách lớp</h5>
+                        <p class="card-text text-muted mb-0">Quản lý các lớp học</p>
+                    </div>
+                    <button type="button" class="btn btn-primary d-flex align-items-center gap-2">
+                        <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                        Thêm lớp
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead style="background-color: var(--muted);">
+                                <tr>
+                                    <th style="padding: 1rem;">Mã lớp</th>
+                                    <th style="padding: 1rem;">Tên lớp</th>
+                                    <th style="padding: 1rem;">Khoa</th>
+                                    <th style="padding: 1rem;">Sĩ số</th>
+                                    <th style="padding: 1rem; text-align: right;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" style="padding: 3rem; text-align: center; color: var(--muted-foreground);">
+                                        <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem; color: var(--muted-foreground);"></i>
+                                        <p>Chưa có dữ liệu lớp</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Semester Modal -->
+<div class="modal fade" id="semesterModal" tabindex="-1" aria-labelledby="semesterModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content semester-modal-content">
+            <div class="modal-header semester-modal-header">
+                <div class="modal-title-container">
+                    <div class="modal-icon">
+                        <i data-lucide="calendar-plus" style="width: 24px; height: 24px;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title" id="semesterModalLabel">Thêm học kỳ</h5>
+                        <p class="modal-subtitle">Tạo học kỳ mới trong hệ thống</p>
+                    </div>
+                    </div>
+                <button type="button" class="btn-close semester-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+            <div class="modal-body semester-modal-body">
+                <form id="semesterForm" class="semester-form">
+                    <input type="hidden" id="semesterId" value="0">
+                    
+                    <!-- Semester Name -->
+                    <div class="form-group semester-form-group">
+                        <label for="semesterName" class="semester-form-label">
+                            <i data-lucide="tag" style="width: 16px; height: 16px;"></i>
+                            Tên học kỳ
+                        </label>
+                        <input type="text" class="form-control semester-form-control" id="semesterName" 
+                               placeholder="Ví dụ: Fall2025, Spring2026, Summer2025" required>
+                        <div class="form-text">Tên học kỳ sẽ hiển thị trong hệ thống</div>
+                    </div>
+                    
+                    <!-- Date Range -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group semester-form-group">
+                                <label for="semesterStartDate" class="semester-form-label">
+                                    <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                    Ngày bắt đầu
+                                </label>
+                                <input type="date" class="form-control semester-form-control" id="semesterStartDate" required>
+                                <div class="form-text">Ngày bắt đầu học kỳ</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group semester-form-group">
+                                <label for="semesterEndDate" class="semester-form-label">
+                                    <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                    Ngày kết thúc
+                                </label>
+                                <input type="date" class="form-control semester-form-control" id="semesterEndDate" required>
+                                <div class="form-text">Ngày kết thúc học kỳ</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Info Card -->
+                    <div class="semester-info-card">
+                        <div class="info-card-header">
+                            <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                            <span>Thông tin quan trọng</span>
+                        </div>
+                        <div class="info-card-content">
+                            <ul class="info-list">
+                                <li>Trạng thái "Đang hoạt động" sẽ tự động được cập nhật dựa trên ngày bắt đầu và kết thúc</li>
+                                <li>Học kỳ đang hoạt động sẽ được sử dụng làm học kỳ mặc định cho các hoạt động mới</li>
+                                <li>Không thể xóa học kỳ đang hoạt động hoặc có dữ liệu liên quan</li>
+                            </ul>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer semester-modal-footer">
+                <button type="button" class="btn btn-outline-secondary semester-btn-cancel" data-bs-dismiss="modal">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                    Hủy
+                </button>
+                <button type="button" class="btn btn-primary semester-btn-save" data-action="save-semester">
+                    <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                    <span class="btn-text">Lưu học kỳ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/systemconfig.js" asp-append-version="true"></script>
+}

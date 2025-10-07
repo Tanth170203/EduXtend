@@ -22,33 +22,6 @@ namespace DataAccess.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("BusinessObject.Models.AcademicYear", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AcademicYears");
-                });
-
             modelBuilder.Entity("BusinessObject.Models.Activity", b =>
                 {
                     b.Property<int>("Id")
@@ -57,89 +30,66 @@ namespace DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ActivityType")
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ApprovedById")
                         .HasColumnType("int");
 
                     b.Property<int?>("ClubId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CriteriaReference")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
 
                     b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
-                    b.Property<DateTime>("EndDate")
+                    b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsActive")
+                    b.Property<bool>("IsPublic")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<int?>("MaxParticipants")
                         .HasColumnType("int");
 
-                    b.Property<int?>("MaxScoreImpact")
-                        .HasColumnType("int");
+                    b.Property<double>("MovementPoint")
+                        .HasColumnType("float");
 
-                    b.Property<int>("SemesterId")
-                        .HasColumnType("int");
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("bit");
 
-                    b.Property<DateTime>("StartDate")
+                    b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
 
                     b.HasIndex("ClubId");
 
-                    b.HasIndex("SemesterId");
+                    b.HasIndex("CreatedById");
 
                     b.ToTable("Activities");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.ActivityApproval", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Action")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ActivityId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ApprovedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int>("StaffId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityId");
-
-                    b.HasIndex("StaffId");
-
-                    b.ToTable("ActivityApprovals");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ActivityAttendance", b =>
@@ -153,69 +103,26 @@ namespace DataAccess.Migrations
                     b.Property<int>("ActivityId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("CheckInAt")
+                    b.Property<DateTime>("CheckedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CheckInMethod")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("CheckOutAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("Present")
+                    b.Property<bool>("IsPresent")
                         .HasColumnType("bit");
 
-                    b.Property<int>("StudentId")
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StudentId");
+                    b.HasIndex("UserId");
 
-                    b.HasIndex("ActivityId", "StudentId")
+                    b.HasIndex("ActivityId", "UserId")
                         .IsUnique();
 
                     b.ToTable("ActivityAttendances");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.ActivityPointRule", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("ActivityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ActivityTypeKey")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("CriterionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("RequiresAttendance")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("RequiresEvidenceApproval")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityId");
-
-                    b.HasIndex("CriterionId");
-
-                    b.ToTable("ActivityPointRules");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.ActivityPointTransaction", b =>
+            modelBuilder.Entity("BusinessObject.Models.ActivityFeedback", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -226,43 +133,26 @@ namespace DataAccess.Migrations
                     b.Property<int>("ActivityId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ApprovedByStaffId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CriterionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EvaluationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Reason")
+                    b.Property<string>("Comment")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<int>("StudentId")
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ActivityId");
 
-                    b.HasIndex("ApprovedByStaffId");
+                    b.HasIndex("UserId");
 
-                    b.HasIndex("CriterionId");
-
-                    b.HasIndex("EvaluationId");
-
-                    b.HasIndex("StudentId", "ActivityId", "CriterionId");
-
-                    b.ToTable("ActivityPointTransactions");
+                    b.ToTable("ActivityFeedbacks");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ActivityRegistration", b =>
@@ -276,108 +166,25 @@ namespace DataAccess.Migrations
                     b.Property<int>("ActivityId")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsAttended")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsValid")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("RegisteredAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ScoreImpact")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StudentId");
-
-                    b.HasIndex("ActivityId", "StudentId")
-                        .IsUnique();
-
-                    b.ToTable("ActivityRegistrations");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.Appeal", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("EvaluationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ResolutionNote")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime?>("ResolvedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SubmittedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EvaluationId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("Appeals");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.Class", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ClassCode")
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("FacultyId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("MonitorStudentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("StaffId")
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FacultyId");
+                    b.HasIndex("UserId");
 
-                    b.HasIndex("MonitorStudentId");
+                    b.HasIndex("ActivityId", "UserId")
+                        .IsUnique();
 
-                    b.HasIndex("StaffId");
-
-                    b.ToTable("Classes");
+                    b.ToTable("ActivityRegistrations");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Club", b =>
@@ -388,67 +195,100 @@ namespace DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Achievements")
+                    b.Property<string>("BannerUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ContactEmail")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
-
-                    b.Property<string>("ContactFacebook")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("ContactOther")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("CoverImageUrl")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("FoundingDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("LogoUrl")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int?>("ManagerUserId")
+                    b.Property<int>("CategoryId")
                         .HasColumnType("int");
 
-                    b.Property<string>("Mission")
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("FoundedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LogoUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
-                    b.Property<string>("ShortName")
+                    b.Property<string>("SubName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ManagerUserId");
+                    b.HasIndex("CategoryId");
 
                     b.ToTable("Clubs");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.ClubMembership", b =>
+            modelBuilder.Entity("BusinessObject.Models.ClubAward", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AwardedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ClubId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int?>("SemesterId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClubId");
+
+                    b.HasIndex("SemesterId");
+
+                    b.ToTable("ClubAwards");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ClubCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ClubCategories");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ClubDepartment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -459,120 +299,9 @@ namespace DataAccess.Migrations
                     b.Property<int>("ClubId")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("JoinDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("RoleInClub")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StudentId");
-
-                    b.HasIndex("ClubId", "StudentId")
-                        .IsUnique();
-
-                    b.ToTable("ClubMemberships");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.EvaluationAuditLog", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ChangedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ChangedById")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EvaluationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("NewValue")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OldValue")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedById");
-
-                    b.HasIndex("EvaluationId");
-
-                    b.ToTable("EvaluationAuditLogs");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.EvidenceDocument", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ContentType")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("EvaluationLineId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
-
-                    b.Property<long>("SizeBytes")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EvaluationLineId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("EvidenceDocuments");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.Faculty", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -581,10 +310,12 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Faculties");
+                    b.HasIndex("ClubId");
+
+                    b.ToTable("ClubDepartments");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.News", b =>
+            modelBuilder.Entity("BusinessObject.Models.ClubMember", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -592,14 +323,60 @@ namespace DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AuthorUserId")
+                    b.Property<int>("ClubId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RoleInClub")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ClubId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ClubMembers");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ClubNews", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClubId")
                         .HasColumnType("int");
 
                     b.Property<string>("Content")
-                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("FacebookUrl")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsVisible")
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsApproved")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("PublishedAt")
@@ -612,12 +389,12 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AuthorUserId");
+                    b.HasIndex("ClubId");
 
-                    b.ToTable("News");
+                    b.ToTable("ClubNews");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.Notification", b =>
+            modelBuilder.Entity("BusinessObject.Models.Evidence", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -628,27 +405,454 @@ namespace DataAccess.Migrations
                     b.Property<int?>("ActivityId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<int?>("CriterionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("FilePath")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<double>("Points")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime?>("ReviewedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
+                    b.Property<int?>("ReviewedById")
+                        .HasColumnType("int");
 
-                    b.Property<string>("Message")
+                    b.Property<string>("ReviewerComment")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId");
+
+                    b.HasIndex("CriterionId");
+
+                    b.HasIndex("ReviewedById");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("Evidences");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.JoinRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClubId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Motivation")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ActivityId");
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ClubId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("JoinRequests");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Major", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Majors");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.MovementCriterion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DataSource")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxScore")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
+
+                    b.ToTable("MovementCriteria");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.MovementCriterionGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("MaxScore")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MovementCriterionGroups");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.MovementRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SemesterId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("TotalScore")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SemesterId");
+
+                    b.HasIndex("StudentId", "SemesterId")
+                        .IsUnique();
+
+                    b.ToTable("MovementRecords");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.MovementRecordDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CriterionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MovementRecordId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Score")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CriterionId");
+
+                    b.HasIndex("MovementRecordId", "CriterionId")
+                        .IsUnique();
+
+                    b.ToTable("MovementRecordDetails");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TargetClubId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TargetRole")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("TargetClubId");
 
                     b.HasIndex("UserId");
 
                     b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.PaymentTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ClubId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClubId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("PaymentTransactions");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Plan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ApprovedById")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClubId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("ClubId");
+
+                    b.ToTable("Plans");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Proposal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClubId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClubId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("Proposals");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ProposalVote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsAgree")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProposalId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ProposalId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ProposalVotes");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Role", b =>
@@ -681,9 +885,6 @@ namespace DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AcademicYearId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
@@ -700,55 +901,7 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AcademicYearId");
-
                     b.ToTable("Semesters");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.Staff", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DateOfBirth")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("FacultyId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("Gender")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Phone")
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FacultyId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL");
-
-                    b.ToTable("Staffs");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Student", b =>
@@ -759,9 +912,6 @@ namespace DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ClassId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime2");
 
@@ -771,15 +921,15 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("EnrollmentDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("FacultyId")
-                        .HasColumnType("int");
-
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("Gender")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MajorId")
                         .HasColumnType("int");
 
                     b.Property<string>("Phone")
@@ -799,9 +949,7 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClassId");
-
-                    b.HasIndex("FacultyId");
+                    b.HasIndex("MajorId");
 
                     b.HasIndex("UserId")
                         .IsUnique();
@@ -809,7 +957,7 @@ namespace DataAccess.Migrations
                     b.ToTable("Students");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.TrainingCriterion", b =>
+            modelBuilder.Entity("BusinessObject.Models.SystemNews", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -817,155 +965,35 @@ namespace DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("MaxPoints")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ParentId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ParentId");
-
-                    b.ToTable("TrainingCriteria");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.TrainingEvaluation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("PeriodId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TotalAdvisorScore")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TotalClassScore")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TotalFinalScore")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TotalSelfScore")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PeriodId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("TrainingEvaluations");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.TrainingEvaluationLine", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int?>("AdvisorScore")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ClassScore")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CriterionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EvaluationId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("FinalScore")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Note")
+                    b.Property<string>("Content")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<int?>("SelfScore")
+                    b.Property<int>("CreatedById")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.Property<string>("FacebookUrl")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasIndex("CriterionId");
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasIndex("EvaluationId", "CriterionId")
-                        .IsUnique();
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
-                    b.ToTable("TrainingEvaluationLines");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.TrainingEvaluationPeriod", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AdvisorReviewEnd")
+                    b.Property<DateTime>("PublishedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("AdvisorReviewStart")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ClassReviewEnd")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ClassReviewStart")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("FinalizationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("MaxActivityPointsPerStudent")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("SelfEvalEnd")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("SelfEvalStart")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("SemesterId")
-                        .HasColumnType("int");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SemesterId");
+                    b.HasIndex("CreatedById");
 
-                    b.ToTable("TrainingEvaluationPeriods");
+                    b.ToTable("SystemNews");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.User", b =>
@@ -976,27 +1004,36 @@ namespace DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("FullName")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("GoogleSubject")
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
 
@@ -1058,38 +1095,26 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Models.Activity", b =>
                 {
+                    b.HasOne("BusinessObject.Models.User", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BusinessObject.Models.Club", "Club")
                         .WithMany("Activities")
                         .HasForeignKey("ClubId");
 
-                    b.HasOne("BusinessObject.Models.Semester", "Semester")
+                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
                         .WithMany()
-                        .HasForeignKey("SemesterId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ApprovedBy");
 
                     b.Navigation("Club");
 
-                    b.Navigation("Semester");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.ActivityApproval", b =>
-                {
-                    b.HasOne("BusinessObject.Models.Activity", "Activity")
-                        .WithMany("Approvals")
-                        .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.Staff", "Staff")
-                        .WithMany()
-                        .HasForeignKey("StaffId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Activity");
-
-                    b.Navigation("Staff");
+                    b.Navigation("CreatedBy");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ActivityAttendance", b =>
@@ -1100,73 +1125,34 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BusinessObject.Models.Student", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("BusinessObject.Models.User", "User")
+                        .WithMany("Attendances")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Activity");
 
-                    b.Navigation("Student");
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.ActivityPointRule", b =>
+            modelBuilder.Entity("BusinessObject.Models.ActivityFeedback", b =>
                 {
                     b.HasOne("BusinessObject.Models.Activity", "Activity")
-                        .WithMany()
-                        .HasForeignKey("ActivityId");
-
-                    b.HasOne("BusinessObject.Models.TrainingCriterion", "Criterion")
-                        .WithMany()
-                        .HasForeignKey("CriterionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Activity");
-
-                    b.Navigation("Criterion");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.ActivityPointTransaction", b =>
-                {
-                    b.HasOne("BusinessObject.Models.Activity", "Activity")
-                        .WithMany()
+                        .WithMany("Feedbacks")
                         .HasForeignKey("ActivityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BusinessObject.Models.Staff", "ApprovedByStaff")
+                    b.HasOne("BusinessObject.Models.User", "User")
                         .WithMany()
-                        .HasForeignKey("ApprovedByStaffId");
-
-                    b.HasOne("BusinessObject.Models.TrainingCriterion", "Criterion")
-                        .WithMany()
-                        .HasForeignKey("CriterionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.TrainingEvaluation", "Evaluation")
-                        .WithMany("ActivityPointTransactions")
-                        .HasForeignKey("EvaluationId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.Student", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Activity");
 
-                    b.Navigation("ApprovedByStaff");
-
-                    b.Navigation("Criterion");
-
-                    b.Navigation("Evaluation");
-
-                    b.Navigation("Student");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ActivityRegistration", b =>
@@ -1177,68 +1163,57 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BusinessObject.Models.Student", "Student")
+                    b.HasOne("BusinessObject.Models.User", "User")
                         .WithMany("ActivityRegistrations")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Activity");
 
-                    b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.Appeal", b =>
-                {
-                    b.HasOne("BusinessObject.Models.TrainingEvaluation", "Evaluation")
-                        .WithMany("Appeals")
-                        .HasForeignKey("EvaluationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.Student", "Student")
-                        .WithMany("Appeals")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Evaluation");
-
-                    b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.Class", b =>
-                {
-                    b.HasOne("BusinessObject.Models.Faculty", "Faculty")
-                        .WithMany("Classes")
-                        .HasForeignKey("FacultyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.Student", "MonitorStudent")
-                        .WithMany()
-                        .HasForeignKey("MonitorStudentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("BusinessObject.Models.Staff", null)
-                        .WithMany("AdvisorOfClasses")
-                        .HasForeignKey("StaffId");
-
-                    b.Navigation("Faculty");
-
-                    b.Navigation("MonitorStudent");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Club", b =>
                 {
-                    b.HasOne("BusinessObject.Models.User", "ManagerUser")
-                        .WithMany()
-                        .HasForeignKey("ManagerUserId");
+                    b.HasOne("BusinessObject.Models.ClubCategory", "Category")
+                        .WithMany("Clubs")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("ManagerUser");
+                    b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.ClubMembership", b =>
+            modelBuilder.Entity("BusinessObject.Models.ClubAward", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Club", "Club")
+                        .WithMany()
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.Semester", "Semester")
+                        .WithMany()
+                        .HasForeignKey("SemesterId");
+
+                    b.Navigation("Club");
+
+                    b.Navigation("Semester");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ClubDepartment", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Club", "Club")
+                        .WithMany("Departments")
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Club");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ClubMember", b =>
                 {
                     b.HasOne("BusinessObject.Models.Club", "Club")
                         .WithMany("Members")
@@ -1246,181 +1221,95 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BusinessObject.Models.Student", "Student")
+                    b.HasOne("BusinessObject.Models.ClubDepartment", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.HasOne("BusinessObject.Models.User", "User")
                         .WithMany("ClubMemberships")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Club");
 
-                    b.Navigation("Student");
+                    b.Navigation("Department");
+
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.EvaluationAuditLog", b =>
+            modelBuilder.Entity("BusinessObject.Models.ClubNews", b =>
                 {
-                    b.HasOne("BusinessObject.Models.User", "ChangedBy")
-                        .WithMany()
-                        .HasForeignKey("ChangedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.TrainingEvaluation", "Evaluation")
-                        .WithMany("AuditLogs")
-                        .HasForeignKey("EvaluationId")
+                    b.HasOne("BusinessObject.Models.Club", "Club")
+                        .WithMany("NewsPosts")
+                        .HasForeignKey("ClubId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("ChangedBy");
-
-                    b.Navigation("Evaluation");
+                    b.Navigation("Club");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.EvidenceDocument", b =>
-                {
-                    b.HasOne("BusinessObject.Models.TrainingEvaluationLine", "EvaluationLine")
-                        .WithMany("EvidenceDocuments")
-                        .HasForeignKey("EvaluationLineId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("BusinessObject.Models.Student", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("EvaluationLine");
-
-                    b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.News", b =>
-                {
-                    b.HasOne("BusinessObject.Models.User", "AuthorUser")
-                        .WithMany()
-                        .HasForeignKey("AuthorUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("AuthorUser");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.Notification", b =>
+            modelBuilder.Entity("BusinessObject.Models.Evidence", b =>
                 {
                     b.HasOne("BusinessObject.Models.Activity", "Activity")
                         .WithMany()
                         .HasForeignKey("ActivityId");
 
-                    b.HasOne("BusinessObject.Models.User", "User")
+                    b.HasOne("BusinessObject.Models.MovementCriterion", "Criterion")
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("CriterionId");
+
+                    b.HasOne("BusinessObject.Models.User", "ReviewedBy")
+                        .WithMany()
+                        .HasForeignKey("ReviewedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BusinessObject.Models.Student", "Student")
+                        .WithMany("Evidences")
+                        .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Activity");
 
-                    b.Navigation("User");
-                });
+                    b.Navigation("Criterion");
 
-            modelBuilder.Entity("BusinessObject.Models.Semester", b =>
-                {
-                    b.HasOne("BusinessObject.Models.AcademicYear", "AcademicYear")
-                        .WithMany("Semesters")
-                        .HasForeignKey("AcademicYearId");
-
-                    b.Navigation("AcademicYear");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.Staff", b =>
-                {
-                    b.HasOne("BusinessObject.Models.Faculty", "Faculty")
-                        .WithMany()
-                        .HasForeignKey("FacultyId");
-
-                    b.HasOne("BusinessObject.Models.User", "User")
-                        .WithOne("Staff")
-                        .HasForeignKey("BusinessObject.Models.Staff", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("Faculty");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.Student", b =>
-                {
-                    b.HasOne("BusinessObject.Models.Class", "Class")
-                        .WithMany("Students")
-                        .HasForeignKey("ClassId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.Faculty", "Faculty")
-                        .WithMany()
-                        .HasForeignKey("FacultyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.User", "User")
-                        .WithOne("Student")
-                        .HasForeignKey("BusinessObject.Models.Student", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Class");
-
-                    b.Navigation("Faculty");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.TrainingCriterion", b =>
-                {
-                    b.HasOne("BusinessObject.Models.TrainingCriterion", "Parent")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentId");
-
-                    b.Navigation("Parent");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.TrainingEvaluation", b =>
-                {
-                    b.HasOne("BusinessObject.Models.TrainingEvaluationPeriod", "Period")
-                        .WithMany("Evaluations")
-                        .HasForeignKey("PeriodId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.Student", "Student")
-                        .WithMany("TrainingEvaluations")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Period");
+                    b.Navigation("ReviewedBy");
 
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.TrainingEvaluationLine", b =>
+            modelBuilder.Entity("BusinessObject.Models.JoinRequest", b =>
                 {
-                    b.HasOne("BusinessObject.Models.TrainingCriterion", "Criterion")
+                    b.HasOne("BusinessObject.Models.Club", "Club")
                         .WithMany()
-                        .HasForeignKey("CriterionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.TrainingEvaluation", "Evaluation")
-                        .WithMany("Lines")
-                        .HasForeignKey("EvaluationId")
+                        .HasForeignKey("ClubId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Criterion");
+                    b.HasOne("BusinessObject.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.Navigation("Evaluation");
+                    b.Navigation("Club");
+
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.TrainingEvaluationPeriod", b =>
+            modelBuilder.Entity("BusinessObject.Models.MovementCriterion", b =>
+                {
+                    b.HasOne("BusinessObject.Models.MovementCriterionGroup", "Group")
+                        .WithMany("Criteria")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.MovementRecord", b =>
                 {
                     b.HasOne("BusinessObject.Models.Semester", "Semester")
                         .WithMany()
@@ -1428,7 +1317,159 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BusinessObject.Models.Student", "Student")
+                        .WithMany("MovementRecords")
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Semester");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.MovementRecordDetail", b =>
+                {
+                    b.HasOne("BusinessObject.Models.MovementCriterion", "Criterion")
+                        .WithMany()
+                        .HasForeignKey("CriterionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.MovementRecord", "MovementRecord")
+                        .WithMany("Details")
+                        .HasForeignKey("MovementRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Criterion");
+
+                    b.Navigation("MovementRecord");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Notification", b =>
+                {
+                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.Club", "TargetClub")
+                        .WithMany()
+                        .HasForeignKey("TargetClubId");
+
+                    b.HasOne("BusinessObject.Models.User", null)
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("TargetClub");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.PaymentTransaction", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Club", "Club")
+                        .WithMany("Transactions")
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Club");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Plan", b =>
+                {
+                    b.HasOne("BusinessObject.Models.User", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BusinessObject.Models.Club", "Club")
+                        .WithMany("Plans")
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("Club");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Proposal", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Club", "Club")
+                        .WithMany()
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Club");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ProposalVote", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Proposal", "Proposal")
+                        .WithMany("Votes")
+                        .HasForeignKey("ProposalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Proposal");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Student", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Major", "Major")
+                        .WithMany("Students")
+                        .HasForeignKey("MajorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "User")
+                        .WithOne()
+                        .HasForeignKey("BusinessObject.Models.Student", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Major");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.SystemNews", b =>
+                {
+                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.UserRole", b =>
@@ -1461,35 +1502,53 @@ namespace DataAccess.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.AcademicYear", b =>
-                {
-                    b.Navigation("Semesters");
-                });
-
             modelBuilder.Entity("BusinessObject.Models.Activity", b =>
                 {
-                    b.Navigation("Approvals");
-
                     b.Navigation("Attendances");
 
-                    b.Navigation("Registrations");
-                });
+                    b.Navigation("Feedbacks");
 
-            modelBuilder.Entity("BusinessObject.Models.Class", b =>
-                {
-                    b.Navigation("Students");
+                    b.Navigation("Registrations");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Club", b =>
                 {
                     b.Navigation("Activities");
 
+                    b.Navigation("Departments");
+
                     b.Navigation("Members");
+
+                    b.Navigation("NewsPosts");
+
+                    b.Navigation("Plans");
+
+                    b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.Faculty", b =>
+            modelBuilder.Entity("BusinessObject.Models.ClubCategory", b =>
                 {
-                    b.Navigation("Classes");
+                    b.Navigation("Clubs");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Major", b =>
+                {
+                    b.Navigation("Students");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.MovementCriterionGroup", b =>
+                {
+                    b.Navigation("Criteria");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.MovementRecord", b =>
+                {
+                    b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.Proposal", b =>
+                {
+                    b.Navigation("Votes");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Role", b =>
@@ -1497,53 +1556,22 @@ namespace DataAccess.Migrations
                     b.Navigation("UserRoles");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.Staff", b =>
-                {
-                    b.Navigation("AdvisorOfClasses");
-                });
-
             modelBuilder.Entity("BusinessObject.Models.Student", b =>
                 {
-                    b.Navigation("ActivityRegistrations");
+                    b.Navigation("Evidences");
 
-                    b.Navigation("Appeals");
-
-                    b.Navigation("ClubMemberships");
-
-                    b.Navigation("TrainingEvaluations");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.TrainingCriterion", b =>
-                {
-                    b.Navigation("Children");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.TrainingEvaluation", b =>
-                {
-                    b.Navigation("ActivityPointTransactions");
-
-                    b.Navigation("Appeals");
-
-                    b.Navigation("AuditLogs");
-
-                    b.Navigation("Lines");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.TrainingEvaluationLine", b =>
-                {
-                    b.Navigation("EvidenceDocuments");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.TrainingEvaluationPeriod", b =>
-                {
-                    b.Navigation("Evaluations");
+                    b.Navigation("MovementRecords");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.User", b =>
                 {
-                    b.Navigation("Staff");
+                    b.Navigation("ActivityRegistrations");
 
-                    b.Navigation("Student");
+                    b.Navigation("Attendances");
+
+                    b.Navigation("ClubMemberships");
+
+                    b.Navigation("Notifications");
 
                     b.Navigation("Tokens");
 

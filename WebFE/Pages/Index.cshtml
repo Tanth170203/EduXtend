@@ -1,0 +1,258 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Trang chủ";
+}
+
+<div class="min-h-screen">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-background">
+            <img src="https://images.unsplash.com/photo-1632834380561-d1e05839a33a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwc3R1ZGVudHMlMjBjYW1wdXN8ZW58MXx8fHwxNzU5NTI3NTkxfDA&ixlib=rb-4.1.0&q=80&w=1080"
+                 alt="University Campus"
+                 class="hero-image"
+                 onerror="this.onerror=null; this.src='https://via.placeholder.com/1920x1080/003366/FFFFFF?text=EduXtend'" />
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-content">
+            <div class="container-custom">
+                <div class="text-white" style="max-width: 42rem;">
+                    <h1 style="font-size: 3rem; margin-bottom: 1.5rem; color: white;">EduXtend</h1>
+                    <p style="font-size: 1.5rem; margin-bottom: 2rem; color: white;">
+                        Quản lý Điểm Rèn Luyện & Câu Lạc Bộ
+                    </p>
+                    <p style="font-size: 1.125rem; margin-bottom: 2rem; color: #f3f4f6;">
+                        Nền tảng quản lý hoạt động sinh viên và điểm rèn luyện minh bạch, tiện lợi,
+                        giúp bạn phát triển toàn diện cả về học tập và kỹ năng mềm.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="/Clubs" class="btn-lg" style="background-color: white; color: var(--primary); padding: 1rem 2rem; border-radius: var(--radius); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                            Khám phá CLB
+                            <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
+                        </a>
+                        <a href="/Activities" class="btn-outline btn-lg" style="border-color: white; color: white; padding: 1rem 2rem; border-radius: var(--radius); text-decoration: none; display: inline-flex; align-items: center;">
+                            Xem Hoạt động
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container-custom">
+            <div class="grid grid-cols-4">
+                @foreach (var stat in Model.Stats)
+                {
+                    <div class="stat-item">
+                        <div class="stat-icon">
+                            <i data-lucide="@stat.Icon" style="width: 2rem; height: 2rem; color: var(--primary);"></i>
+                        </div>
+                        <div class="stat-value">@stat.Value</div>
+                        <div class="stat-label">@stat.Label</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Clubs Section -->
+    <section class="section">
+        <div class="container-custom">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="section-title">Câu lạc bộ nổi bật</h2>
+                    <p class="section-description">
+                        Khám phá và tham gia các câu lạc bộ phù hợp với đam mê của bạn
+                    </p>
+                </div>
+                <a href="/Clubs" class="btn-outline">
+                    Xem tất cả
+                    <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                </a>
+            </div>
+            <div class="grid grid-cols-3">
+                @foreach (var club in Model.FeaturedClubs)
+                {
+                    <div class="card" style="cursor: pointer;">
+                        <div class="aspect-video">
+                            <img src="@club.Image"
+                                 alt="@club.Name"
+                                 style="width: 100%; height: 100%; object-fit: cover;"
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x225/003366/FFFFFF?text=@club.Name'" />
+                            <span class="badge image-badge" style="background-color: white; color: var(--primary);">
+                                @club.Category
+                            </span>
+                        </div>
+                        <div class="card-header">
+                            <h3 class="card-title">@club.Name</h3>
+                            <p class="card-description">@club.Description</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="flex items-center gap-2" style="font-size: 0.875rem; color: var(--muted-foreground);">
+                                <i data-lucide="users" style="width: 16px; height: 16px;"></i>
+                                <span>@club.Members thành viên</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- Training Points Evaluation System -->
+    <section class="section gradient-accent">
+        <div class="container-custom">
+            <div class="text-center mb-12">
+                <span class="badge mb-4">Hệ thống điểm rèn luyện</span>
+                <h2 class="section-title" style="margin-bottom: 1rem;">Đánh giá điểm rèn luyện minh bạch</h2>
+                <p class="section-description max-w-2xl mx-auto">
+                    Quy trình đánh giá 4 cấp độ: Sinh viên tự đánh giá, Lớp trưởng xác nhận,
+                    Cố vấn phê duyệt, và CTSV phê duyệt cuối cùng
+                </p>
+            </div>
+
+            <div class="grid grid-cols-4 mb-8">
+                <div class="card text-center">
+                    <div class="card-header">
+                        <div class="mx-auto bg-blue-100" style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                            <i data-lucide="file-check" class="icon-blue" style="width: 2rem; height: 2rem;"></i>
+                        </div>
+                        <h4 class="card-title" style="font-size: 1.125rem;">Sinh viên</h4>
+                    </div>
+                    <div class="card-content">
+                        <p style="font-size: 0.875rem; color: var(--muted-foreground);">
+                            Tự đánh giá và nộp minh chứng cho từng tiêu chí
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card text-center">
+                    <div class="card-header">
+                        <div class="mx-auto bg-green-100" style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                            <i data-lucide="users" class="icon-green" style="width: 2rem; height: 2rem;"></i>
+                        </div>
+                        <h4 class="card-title" style="font-size: 1.125rem;">Lớp trưởng</h4>
+                    </div>
+                    <div class="card-content">
+                        <p style="font-size: 0.875rem; color: var(--muted-foreground);">
+                            Đánh giá và xác nhận điểm dựa trên sự tham gia thực tế
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card text-center">
+                    <div class="card-header">
+                        <div class="mx-auto bg-purple-100" style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                            <i data-lucide="graduation-cap" class="icon-purple" style="width: 2rem; height: 2rem;"></i>
+                        </div>
+                        <h4 class="card-title" style="font-size: 1.125rem;">Cố vấn</h4>
+                    </div>
+                    <div class="card-content">
+                        <p style="font-size: 0.875rem; color: var(--muted-foreground);">
+                            Xem xét, phê duyệt hoặc yêu cầu chỉnh sửa
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card text-center">
+                    <div class="card-header">
+                        <div class="mx-auto bg-orange-100" style="width: 4rem; height: 4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                            <i data-lucide="shield" class="icon-orange" style="width: 2rem; height: 2rem;"></i>
+                        </div>
+                        <h4 class="card-title" style="font-size: 1.125rem;">Phòng CTSV</h4>
+                    </div>
+                    <div class="card-content">
+                        <p style="font-size: 0.875rem; color: var(--muted-foreground);">
+                            Phê duyệt cuối cùng và ghi nhận chính thức
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+<div class="text-center">
+                <a href="/Evaluation" class="btn-primary btn-lg">
+                    <i data-lucide="award" style="width: 20px; height: 20px;"></i>
+                    Khám phá hệ thống đánh giá
+                    <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upcoming Activities Section -->
+    <section class="section" style="background-color: white;">
+        <div class="container-custom">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 class="section-title">Hoạt động sắp diễn ra</h2>
+                    <p class="section-description">
+                        Đăng ký tham gia để tích lũy điểm rèn luyện
+                    </p>
+                </div>
+                <a href="/Activities" class="btn-outline">
+                    Xem tất cả
+                    <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                </a>
+            </div>
+            <div class="grid grid-cols-3">
+                @foreach (var activity in Model.UpcomingActivities)
+                {
+                    <div class="card" style="cursor: pointer;">
+                        <div class="aspect-video">
+                            <img src="@activity.Image"
+                                 alt="@activity.Title"
+                                 style="width: 100%; height: 100%; object-fit: cover;"
+                                 onerror="this.onerror=null; this.src='https://via.placeholder.com/400x225/007ACC/FFFFFF?text=@activity.Title'" />
+                            <span class="badge badge-secondary image-badge">
+                                +@activity.Points điểm
+                            </span>
+                        </div>
+                        <div class="card-header">
+                            <div class="mb-2">
+                                <span class="badge badge-outline">@activity.Type</span>
+                            </div>
+                            <h3 class="card-title">@activity.Title</h3>
+                        </div>
+                        <div class="card-content space-y-2">
+                            <div class="flex items-center gap-2" style="font-size: 0.875rem; color: var(--muted-foreground);">
+                                <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                <span>@activity.Date</span>
+                            </div>
+                            <div class="flex items-center gap-2" style="font-size: 0.875rem; color: var(--muted-foreground);">
+                                <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i>
+                                <span>@activity.Location</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section gradient-primary">
+        <div class="cta-content">
+            <h2 style="font-size: 2.25rem; color: white; margin-bottom: 1rem;">
+                Bắt đầu hành trình của bạn ngay hôm nay
+            </h2>
+            <p style="font-size: 1.25rem; color: #f3f4f6; margin-bottom: 2rem;">
+                Tham gia cùng hàng ngàn sinh viên đang phát triển kỹ năng và tích lũy kinh nghiệm
+            </p>
+            <a href="/Login" class="btn-lg" style="background-color: white; color: var(--primary); padding: 1rem 2rem; border-radius: var(--radius); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                Đăng ký ngay
+                <i data-lucide="arrow-right" style="width: 20px; height: 20px;"></i>
+            </a>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        // Reinitialize Lucide icons after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+        });
+    </script>
+}
