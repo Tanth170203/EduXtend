@@ -1,0 +1,210 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EduXtend</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WebFE.styles.css" asp-append-version="true" />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <header style="position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: linear-gradient(135deg, #004080 0%, #003366 100%); color: var(--primary-foreground); box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+        <nav class="navbar navbar-expand-lg navbar-dark" style="padding: 0.75rem 0;">
+            <div class="container-fluid container-custom">
+                <a class="navbar-brand d-flex align-items-center gap-2" asp-area="" asp-page="/Index" style="font-size: 1.25rem; font-weight: 600;">
+                    <div style="width: 40px; height: 40px; background-color: #002952; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; color: white;">
+                        E
+                    </div>
+                    <span>EduXtend</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-lg-flex justify-content-between" style="flex-grow: 1;">
+                    <ul class="navbar-nav mx-auto gap-1" style="align-items: center;">
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/Index" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
+                                <i data-lucide="home" style="width: 18px; height: 18px;"></i>
+                                <span>Home</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/Clubs" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
+                                <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                                <span>Câu lạc bộ</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/Activities" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
+                                <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
+                                <span>Hoạt động</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/Evaluation" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
+                                <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
+                                <span>Điểm rèn luyện</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/News" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
+                                <i data-lucide="newspaper" style="width: 18px; height: 18px;"></i>
+                                <span>Tin tức</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/SystemConfig" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
+                                <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
+                                <span>Danh mục</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="d-flex align-items-center">
+                        <!-- Notification Bell -->
+                        <div class="notification-bell me-3" onclick="toggleNotificationCenter()">
+                            <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+                            <div class="notification-badge"></div>
+                        </div>
+
+                        <!-- User info when logged in -->
+                        <div id="userInfo" style="display: none;">
+                            <div class="dropdown">
+                                <button class="btn dropdown-toggle d-flex align-items-center gap-2" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: rgba(255, 255, 255, 0.1); color: white; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 500; border: none;">
+                                    <img id="userAvatar" src="" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                                    <span id="userName">User</span>
+                                    <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="border-radius: var(--radius); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid var(--border);">
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="/Profile">
+                                            <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                                            <span>Hồ sơ</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="/MyClubs">
+                                            <i data-lucide="users" style="width: 16px; height: 16px;"></i>
+                                            <span>CLB của tôi</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="/MyActivities">
+                                            <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                            <span>Hoạt động của tôi</span>
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="logout(); return false;" style="color: var(--destructive);">
+                                            <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+                                            <span>Đăng xuất</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Login button when not logged in -->
+                        <a id="loginBtn" class="btn" asp-area="" asp-page="/Login" style="background-color: #002952; color: white; padding: 0.5rem 1.5rem; border-radius: 6px; font-weight: 500; border: none; transition: background-color 0.2s;">
+                            Đăng nhập
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <main role="main" style="padding-top: 70px;">
+        @RenderBody()
+    </main>
+
+    <footer style="background-color: var(--primary); color: var(--primary-foreground); padding: 2rem 0; margin-top: 4rem;">
+        <div class="container-custom">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h4 style="color: white;">EduXtend</h4>
+                    <p style="color: rgba(255,255,255,0.8);">
+                        Hệ thống quản lý điểm rèn luyện và câu lạc bộ sinh viên
+                    </p>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5 style="color: white;">Liên kết</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Về chúng tôi</a></li>
+                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Liên hệ</a></li>
+                        <li><a asp-area="" asp-page="/Privacy" style="color: rgba(255,255,255,0.8); text-decoration: none;">Chính sách</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5 style="color: white;">Hỗ trợ</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Hướng dẫn</a></li>
+                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">FAQ</a></li>
+                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Liên hệ hỗ trợ</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 1.5rem; margin-top: 1.5rem; text-align: center; color: rgba(255,255,255,0.8);">
+                &copy; 2025 - EduXtend. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Check authentication status and update UI
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAuthUI();
+            
+            // Check for stored notifications from redirects
+            checkStoredNotifications();
+        });
+
+        function checkStoredNotifications() {
+            // Check for login success message
+            const loginSuccess = sessionStorage.getItem('loginSuccess');
+            if (loginSuccess) {
+                try {
+                    const notification = JSON.parse(loginSuccess);
+                    if (typeof success === 'function') {
+                        success(notification.title, notification.message, 5000);
+                    }
+                    sessionStorage.removeItem('loginSuccess');
+                } catch (e) {
+                    console.error('Error parsing login success notification:', e);
+                }
+            }
+
+            // Check for logout success message
+            const logoutSuccess = sessionStorage.getItem('logoutSuccess');
+            if (logoutSuccess) {
+                try {
+                    const notification = JSON.parse(logoutSuccess);
+                    if (typeof info === 'function') {
+                        info(notification.title, notification.message, 5000);
+                    }
+                    sessionStorage.removeItem('logoutSuccess');
+                } catch (e) {
+                    console.error('Error parsing logout success notification:', e);
+                }
+            }
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

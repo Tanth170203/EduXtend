@@ -11,13 +11,24 @@ namespace BusinessObject.Models
     public class Notification
     {
         public int Id { get; set; }
-        public int UserId { get; set; }
-        public User User { get; set; } = null!;
-        [Required, MaxLength(200)] public string Message { get; set; } = null!;
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public bool IsRead { get; set; } = false;
 
-        public int? ActivityId { get; set; }
-        public Activity? Activity { get; set; }
+        [Required, MaxLength(200)]
+        public string Title { get; set; } = null!;
+
+        [MaxLength(500)]
+        public string? Message { get; set; }
+
+        public string Scope { get; set; } = "Club"; // Club / System
+
+        public int? TargetClubId { get; set; }
+        public Club? TargetClub { get; set; }
+
+        [MaxLength(50)]
+        public string? TargetRole { get; set; } // Member / Manager / All
+
+        public int CreatedById { get; set; }
+        public User CreatedBy { get; set; } = null!;
+
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

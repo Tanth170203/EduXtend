@@ -5,11 +5,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Repositories.AcademicYears;
+using Repositories.Semesters;
 using Repositories.Users;
-using Services.AcademicYears;
+using Services.Semesters;
 using Services.GGLogin;
 using System.Text;
+using Microsoft.Extensions.Hosting;
 
 
 namespace WebAPI
@@ -32,12 +33,15 @@ namespace WebAPI
 
             // Repositories
             builder.Services.AddScoped<IUserRepository, UserRepository>();
-            builder.Services.AddScoped<IAcademicYearRepository, AcademicYearRepository>();
+            builder.Services.AddScoped<ISemesterRepository, SemesterRepository>();
             
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IAuthService, GoogleAuthService>();
-            builder.Services.AddScoped<IAcademicYearService, AcademicYearService>();
+            builder.Services.AddScoped<ISemesterService, SemesterService>();
+
+            // Background Services
+            builder.Services.AddHostedService<SemesterAutoUpdateService>();
 
 
 
@@ -69,7 +73,13 @@ namespace WebAPI
             builder.Services.AddCors(opt =>
             {
                 opt.AddPolicy("react", p =>
-                    p.WithOrigins("http://localhost:5173", "http://localhost:3000")
+                    p.WithOrigins(
+                        "http://localhost:3000",    // WebFE HTTP
+                        "https://localhost:3001",  // WebFE HTTPS
+                        "http://localhost:5000",   // Backend HTTP
+                        "https://localhost:5001",  // Backend HTTPS
+                        "http://localhost:5173"    // React dev server
+                    )
                      .AllowAnyHeader().AllowAnyMethod().AllowCredentials());
             });
 

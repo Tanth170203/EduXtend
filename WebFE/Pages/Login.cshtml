@@ -1,0 +1,276 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        /* Login page specific styles */
+        .login-page-container {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Remove footer margin */
+        .login-page-container footer {
+            margin-top: 0 !important;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+        
+        /* Full height container */
+        .login-page-container .min-h-screen {
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            padding-top: 80px !important;
+        }
+        
+        /* Remove main padding */
+        .login-page-container main {
+            padding-top: 0 !important;
+            margin: 0 !important;
+        }
+        
+        /* Keep header visible */
+        .login-page-container header {
+            position: fixed !important;
+            display: block !important;
+        }
+    </style>
+}
+
+<script>
+    // Add login-page-container class to body
+    document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.add('login-page-container');
+    });
+</script>
+
+<div class="min-h-screen d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #003366 0%, #007ACC 100%); padding: 3rem 1rem;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6 col-xl-5">
+                <!-- Login Card -->
+                <div class="card shadow-lg border-0 login-card" style="border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);">
+                    <!-- Header -->
+                    <div class="card-header text-center bg-white border-0" style="padding: 3rem 2.5rem 2rem; border-radius: 20px 20px 0 0;">
+                        <div class="mb-4">
+                            <div class="mx-auto" style="width: 90px; height: 90px; background: linear-gradient(135deg, #003366 0%, #007ACC 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.75rem; font-weight: 700; color: white; box-shadow: 0 12px 24px rgba(0, 51, 102, 0.3), 0 0 0 4px rgba(255, 255, 255, 0.1);">
+                                E
+                            </div>
+                        </div>
+                        <h1 class="mb-3" style="font-size: 2rem; font-weight: 700; color: #1a202c; letter-spacing: -0.025em;">Chào mừng đến EduXtend</h1>
+                        <p class="text-muted mb-0" style="font-size: 1.125rem; font-weight: 400;">Đăng nhập để tiếp tục sử dụng hệ thống</p>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="card-body" style="padding: 0 2.5rem 3rem; background-color: white;">
+                        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                        {
+                            <div class="alert alert-danger d-flex align-items-center gap-3 mb-4" style="border-radius: 12px; border-left: 4px solid #ef4444; padding: 1rem 1.25rem; background-color: #fef2f2; border: 1px solid #fecaca;">
+                                <i data-lucide="alert-circle" style="width: 24px; height: 24px; color: #ef4444;"></i>
+                                <span style="font-weight: 500; color: #dc2626;">@Model.ErrorMessage</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                        {
+                            <div class="alert alert-success d-flex align-items-center gap-3 mb-4" style="border-radius: 12px; border-left: 4px solid #10b981; padding: 1rem 1.25rem; background-color: #f0fdf4; border: 1px solid #bbf7d0;">
+                                <i data-lucide="check-circle" style="width: 24px; height: 24px; color: #10b981;"></i>
+                                <span style="font-weight: 500; color: #059669;">@Model.SuccessMessage</span>
+                            </div>
+                        }
+
+                        <!-- Google Sign In -->
+                        <div id="g_id_onload"
+                             data-client_id="742204870045-sd7gtmbhc6vpip3jn6ac41gf9ufgogmn.apps.googleusercontent.com"
+                             data-callback="handleCredentialResponse"
+                             data-auto_prompt="false">
+                        </div>
+
+                        <button id="googleSignInBtn" class="btn w-100 d-flex align-items-center justify-content-center gap-3" 
+                                style="background: linear-gradient(135deg, #003366 0%, #007ACC 100%); color: white; padding: 1.25rem 2rem; border-radius: 12px; font-weight: 600; border: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 8px 25px rgba(0, 51, 102, 0.2), 0 4px 12px rgba(0, 51, 102, 0.1); font-size: 1.125rem; letter-spacing: 0.025em;">
+                            <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;">
+                                <path d="M47.532 24.5528C47.532 22.9214 47.3997 21.2811 47.1175 19.6761H24.48V28.9181H37.4434C36.9055 31.8988 35.177 34.5356 32.6461 36.2111V42.2078H40.3801C44.9217 38.0278 47.532 31.8547 47.532 24.5528Z" fill="#4285F4"/>
+                                <path d="M24.48 48.0016C30.9529 48.0016 36.4116 45.8764 40.3888 42.2078L32.6549 36.2111C30.5031 37.675 27.7252 38.5039 24.4888 38.5039C18.2275 38.5039 12.9187 34.2798 11.0139 28.6006H3.03296V34.7825C7.10718 42.8868 15.4056 48.0016 24.48 48.0016Z" fill="#34A853"/>
+                                <path d="M11.0051 28.6006C9.99973 25.6199 9.99973 22.3922 11.0051 19.4115V13.2296H3.03298C-0.371021 20.0112 -0.371021 28.0009 3.03298 34.7825L11.0051 28.6006Z" fill="#FBBC04"/>
+                                <path d="M24.48 9.49932C27.9016 9.44641 31.2086 10.7339 33.6866 13.0973L40.5387 6.24523C36.2 2.17101 30.4414 -0.068932 24.48 0.00161733C15.4055 0.00161733 7.10718 5.11644 3.03296 13.2296L11.005 19.4115C12.901 13.7235 18.2187 9.49932 24.48 9.49932Z" fill="#EA4335"/>
+                            </svg>
+                            <span>Đăng nhập với Google</span>
+                        </button>
+
+                        <!-- Info -->
+                        <div class="mt-4 pt-4" style="border-top: 1px solid #e2e8f0;">
+                            <div class="text-center" style="background-color: #f8fafc; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                                <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                                    <i data-lucide="shield-check" style="width: 20px; height: 20px; color: #10b981;"></i>
+                                    <span style="font-size: 1rem; font-weight: 600; color: #374151;">Bảo mật cao</span>
+                                </div>
+                                <p style="font-size: 0.95rem; margin-bottom: 0; color: #6b7280; line-height: 1.5;">
+                                    Chỉ chấp nhận email <strong style="color: #003366;">@@fpt.edu.vn</strong>
+                                </p>
+                            </div>
+                            <p class="text-center mb-0" style="font-size: 0.875rem; color: #9ca3af; line-height: 1.6;">
+                                Bằng cách đăng nhập, bạn đồng ý với 
+                                <a asp-page="/Privacy" class="privacy-link" style="color: #003366; text-decoration: none; font-weight: 500; border-bottom: 1px solid transparent; transition: border-color 0.2s;">
+                                    điều khoản sử dụng
+                                </a>
+                                và 
+                                <a asp-page="/Privacy" class="privacy-link" style="color: #003366; text-decoration: none; font-weight: 500; border-bottom: 1px solid transparent; transition: border-color 0.2s;">
+                                    chính sách bảo mật
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div class="mt-5">
+                    <h3 class="text-center text-white mb-4" style="font-size: 1.5rem; font-weight: 600; opacity: 0.9;">
+                        Tại sao chọn EduXtend?
+                    </h3>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="text-white text-center feature-card">
+                                <div class="mx-auto mb-3" style="width: 70px; height: 70px; background: rgba(255, 255, 255, 0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); transition: transform 0.3s ease;">
+                                    <i data-lucide="shield-check" style="width: 32px; height: 32px;"></i>
+                                </div>
+                                <h4 style="font-size: 1.125rem; margin-bottom: 0.5rem; font-weight: 600;">Bảo mật cao</h4>
+                                <p style="font-size: 0.9rem; margin: 0; opacity: 0.8; line-height: 1.4;">Xác thực Google SSO an toàn</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-white text-center feature-card">
+                                <div class="mx-auto mb-3" style="width: 70px; height: 70px; background: rgba(255, 255, 255, 0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); transition: transform 0.3s ease;">
+                                    <i data-lucide="zap" style="width: 32px; height: 32px;"></i>
+                                </div>
+                                <h4 style="font-size: 1.125rem; margin-bottom: 0.5rem; font-weight: 600;">Nhanh chóng</h4>
+                                <p style="font-size: 0.9rem; margin: 0; opacity: 0.8; line-height: 1.4;">Đăng nhập chỉ với 1 click</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-white text-center feature-card">
+                                <div class="mx-auto mb-3" style="width: 70px; height: 70px; background: rgba(255, 255, 255, 0.15); border-radius: 16px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); transition: transform 0.3s ease;">
+                                    <i data-lucide="users" style="width: 32px; height: 32px;"></i>
+                                </div>
+                                <h4 style="font-size: 1.125rem; margin-bottom: 0.5rem; font-weight: 600;">Tiện lợi</h4>
+                                <p style="font-size: 0.9rem; margin: 0; opacity: 0.8; line-height: 1.4;">Quản lý CLB dễ dàng</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        function handleCredentialResponse(response) {
+            console.log('Received credential:', response.credential);
+
+            const btn = document.getElementById('googleSignInBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader-2" class="spin-animation" style="width: 18px; height: 18px;"></i> <span>Đang đăng nhập...</span>';
+
+            fetch('https://localhost:5001/api/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken: response.credential })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Try to get error message from response
+                    return response.text().then(text => {
+                        let errorMessage = `HTTP error! status: ${response.status}`;
+                        try {
+                            const errorData = JSON.parse(text);
+                            errorMessage = errorData.message || errorMessage;
+                        } catch (e) {
+                            // If not JSON, use the text as is
+                            errorMessage = text || errorMessage;
+                        }
+                        throw new Error(errorMessage);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.accessToken) {
+                    localStorage.setItem('accessToken', data.accessToken);
+                    localStorage.setItem('refreshToken', data.refreshToken);
+                    localStorage.setItem('expiresAt', data.expiresAt);
+                    
+                    // Store success message in sessionStorage for homepage
+                    sessionStorage.setItem('loginSuccess', JSON.stringify({
+                        title: 'Đăng nhập thành công!',
+                        message: 'Chào mừng bạn đến với EduXtend',
+                        type: 'success'
+                    }));
+                    
+                    // Show success notification
+                    notificationManager.success('Đăng nhập thành công!', 'Chào mừng bạn đến với EduXtend', 3000);
+                    
+                    // Redirect after short delay
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                } else {
+                    throw new Error(data.message || 'Login failed');
+                }
+            })
+            .catch(err => {
+                console.error('Login error:', err);
+                
+                // Show error notification based on error type
+                console.log('Error message:', err.message);
+                
+                if (err.message.includes('email') || err.message.includes('domain') || 
+                    err.message.includes('Invalid Google token') || err.message.includes('domain is not allowed')) {
+                    notificationManager.error('Email không hợp lệ', 'Chỉ chấp nhận email @@fpt.edu.vn. Vui lòng đăng nhập bằng tài khoản FPT của bạn.', 8000);
+                } else if (err.message.includes('unauthorized') || err.message.includes('401') || 
+                           err.message.includes('Unauthorized')) {
+                    notificationManager.error('Email không được phép', 'Chỉ chấp nhận email @@fpt.edu.vn. Vui lòng đăng nhập bằng tài khoản FPT của bạn.', 8000);
+                } else if (err.message.includes('network') || err.message.includes('fetch') || 
+                           err.message.includes('Failed to fetch')) {
+                    notificationManager.error('Lỗi kết nối', 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng và thử lại.', 7000);
+                } else {
+                    notificationManager.error('Đăng nhập thất bại', err.message || 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.', 6000);
+                }
+                
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                lucide.createIcons();
+                
+                // Reset Google Sign-In state to allow retry
+                if (typeof google !== 'undefined' && google.accounts) {
+                    google.accounts.id.cancel();
+                }
+            });
+        }
+
+        document.getElementById('googleSignInBtn').addEventListener('click', function() {
+            google.accounts.id.initialize({
+                client_id: '742204870045-sd7gtmbhc6vpip3jn6ac41gf9ufgogmn.apps.googleusercontent.com',
+                callback: handleCredentialResponse,
+                auto_select: false,
+                cancel_on_tap_outside: true
+            });
+
+            google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    console.log('Google Sign In prompt was not displayed or skipped');
+                }
+            });
+        });
+    </script>
+}

@@ -10,13 +10,14 @@ namespace BusinessObject.Models
     public class ActivityAttendance
     {
         public int Id { get; set; }
+
         public int ActivityId { get; set; }
-        public Activity Activity { get; set; } = default!;
-        public int StudentId { get; set; }
-        public Student Student { get; set; } = default!;
-        public bool Present { get; set; }
-        public DateTime? CheckInAt { get; set; }
-        public DateTime? CheckOutAt { get; set; }
-        [MaxLength(200)] public string? CheckInMethod { get; set; }
+        public Activity Activity { get; set; } = null!;
+
+        public int UserId { get; set; }
+        public User User { get; set; } = null!;
+
+        public bool IsPresent { get; set; }
+        public DateTime CheckedAt { get; set; } = DateTime.Now;
     }
 }

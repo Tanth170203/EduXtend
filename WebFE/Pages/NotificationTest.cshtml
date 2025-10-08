@@ -1,0 +1,146 @@
+@page
+@model WebFE.Pages.NotificationTestModel
+@{
+    ViewData["Title"] = "Test Notifications";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Notification System Test</h1>
+            <p class="text-muted mb-4">Test các loại thông báo khác nhau trong hệ thống EduXtend</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Toast Notifications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" onclick="success('Thành công!', 'Đăng nhập thành công vào hệ thống EduXtend', 5000)">
+                            Success Toast
+                        </button>
+                        <button class="btn btn-danger" onclick="error('Lỗi đăng nhập', 'Chỉ chấp nhận email @@fpt.edu.vn. Vui lòng đăng nhập bằng tài khoản FPT của bạn.', 8000)">
+                            Error Toast
+                        </button>
+                        <button class="btn btn-warning" onclick="warning('Cảnh báo', 'Phiên đăng nhập sắp hết hạn. Vui lòng đăng nhập lại.', 6000)">
+                            Warning Toast
+                        </button>
+                        <button class="btn btn-info" onclick="info('Thông tin', 'Hệ thống sẽ bảo trì từ 2:00 - 4:00 sáng ngày mai.', 5000)">
+                            Info Toast
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Modal Alerts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" onclick="alert('Đăng nhập thành công!', 'Chào mừng bạn đến với EduXtend. Bạn có thể bắt đầu sử dụng các tính năng của hệ thống.', 'success')">
+                            Success Modal
+                        </button>
+                        <button class="btn btn-danger" onclick="alert('Lỗi nghiêm trọng', 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng và thử lại sau.', 'error')">
+                            Error Modal
+                        </button>
+                        <button class="btn btn-warning" onclick="alert('Cảnh báo bảo mật', 'Tài khoản của bạn đã được đăng nhập từ thiết bị khác. Vui lòng kiểm tra và đổi mật khẩu nếu cần.', 'warning')">
+                            Warning Modal
+                        </button>
+                        <button class="btn btn-info" onclick="alert('Thông báo hệ thống', 'Phiên bản mới của EduXtend đã được phát hành với nhiều tính năng cải tiến.', 'info')">
+                            Info Modal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Confirmation Dialogs</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-danger" onclick="confirm('Xóa học kỳ', 'Bạn có chắc chắn muốn xóa học kỳ này? Hành động này không thể hoàn tác.', () => success('Đã xóa', 'Học kỳ đã được xóa thành công.'), () => info('Đã hủy', 'Hành động đã được hủy.'))">
+                            Delete Confirmation
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="confirm('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?', () => success('Đã đăng xuất', 'Bạn đã đăng xuất thành công.'), () => info('Đã hủy', 'Bạn vẫn đang đăng nhập.'))">
+                            Logout Confirmation
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="confirm('Lưu thay đổi', 'Bạn có muốn lưu các thay đổi trước khi rời khỏi trang này?', () => success('Đã lưu', 'Các thay đổi đã được lưu thành công.'), () => warning('Chưa lưu', 'Các thay đổi chưa được lưu.'))">
+                            Save Confirmation
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Persistent Notifications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="testNotifications()">
+                            Add Sample Notifications
+                        </button>
+                        <button class="btn btn-info" onclick="showNotificationCenter()">
+                            Show Notification Center
+                        </button>
+                        <button class="btn btn-warning" onclick="markAllNotificationsAsRead()">
+                            Mark All as Read
+                        </button>
+                        <button class="btn btn-danger" onclick="clearAllNotifications()">
+                            Clear All Notifications
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Real-time Notifications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" onclick="addNotification({title: 'Hoạt động mới', message: 'CLB Tin học đã tạo hoạt động mới', type: 'info', scope: 'Club'})">
+                            Add Club Notification
+                        </button>
+                        <button class="btn btn-warning" onclick="addNotification({title: 'Cảnh báo hệ thống', message: 'Hệ thống sẽ bảo trì vào 2:00 sáng', type: 'warning', scope: 'System'})">
+                            Add System Notification
+                        </button>
+                        <button class="btn btn-danger" onclick="addNotification({title: 'Lỗi nghiêm trọng', message: 'Không thể kết nối đến database', type: 'error', scope: 'System'})">
+                            Add Error Notification
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showMultipleNotifications() {
+        // Show multiple notifications with different delays
+        setTimeout(() => success('Thông báo 1', 'Đây là thông báo thành công đầu tiên'), 100);
+        setTimeout(() => info('Thông báo 2', 'Đây là thông báo thông tin thứ hai'), 500);
+        setTimeout(() => warning('Thông báo 3', 'Đây là thông báo cảnh báo thứ ba'), 1000);
+        setTimeout(() => error('Thông báo 4', 'Đây là thông báo lỗi cuối cùng'), 1500);
+    }
+</script>
