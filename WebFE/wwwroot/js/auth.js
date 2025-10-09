@@ -1,220 +1,206 @@
-// EduXtend Authentication Utilities - Clean & Optimized
+// ==========================
+// EduXtend Auth Utility (v2.2)
+// ==========================
 
-const API_BASE_URL = window.location.hostname === 'localhost' 
-    ? 'https://localhost:5001/api'     // Backend HTTPS
-    : '/api'; // Production
+const API_BASE_URL = "https://localhost:5001";
 
-/**
- * Get access token from localStorage
- */
-function getAccessToken() {
-    return localStorage.getItem('accessToken');
-}
-
-/**
- * Get refresh token from localStorage
- */
-function getRefreshToken() {
-    return localStorage.getItem('refreshToken');
-}
-
-/**
- * Get token expiration time from localStorage
- */
-function getExpiresAt() {
-    const expiresAt = localStorage.getItem('expiresAt');
-    return expiresAt ? new Date(expiresAt) : null;
-}
-
-/**
- * Check if user is authenticated
- */
-function isAuthenticated() {
-    const accessToken = getAccessToken();
-    const expiresAt = getExpiresAt();
-    return accessToken && expiresAt && expiresAt > new Date();
-}
-
-/**
- * Get current user info from access token (decode JWT)
- */
-function getCurrentUser() {
-    const token = getAccessToken();
-    if (!token) return null;
-
+// --------------------------
+// Lấy thông tin user (tự refresh nếu token hết hạn)
+// --------------------------
+// Enhanced getUser function with better error handling
+async function getUser() {
     try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
+        const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
 
-        const payload = JSON.parse(jsonPayload);
-        return {
-            id: payload.sub,
-            email: payload.email,
-            name: payload.name,
-            avatar: payload.picture,
-            roles: payload.role ? (Array.isArray(payload.role) ? payload.role : [payload.role]) : []
-        };
-    } catch (e) {
-        console.error("Error decoding token:", e);
+        // ✅ Handle 401 - try refresh
+        if (res.status === 401) {
+            console.warn("[Auth] Access token expired → attempting refresh...");
+
+            const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (refreshRes.ok) {
+                console.info("[Auth] ✅ Token refreshed successfully.");
+
+                // Wait for browser to save the new cookies
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // Retry after refresh
+                const retry = await fetch(`${API_BASE_URL}/api/auth/me`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (retry.ok) {
+                    return await retry.json();
+                } else {
+                    console.error(`[Auth] ❌ Retry failed with status: ${retry.status}`);
+                    const errorText = await retry.text();
+                    console.error(`[Auth] Error details: ${errorText}`);
+                    return null;
+                }
+            } else {
+                console.error(`[Auth] ❌ Refresh failed with status: ${refreshRes.status}`);
+                const errorText = await refreshRes.text();
+                console.error(`[Auth] Error details: ${errorText}`);
+                return null;
+            }
+        }
+
+        if (!res.ok) {
+            console.error(`[Auth] ❌ Request failed with status: ${res.status}`);
+            const errorText = await res.text();
+            console.error(`[Auth] Error details: ${errorText}`);
+            return null;
+        }
+
+        return await res.json();
+
+    } catch (err) {
+        console.error("[Auth] ⚠️ Error fetching user:", err);
+        console.error("[Auth] Error stack:", err.stack);
         return null;
     }
 }
 
-/**
- * Refresh access token
- */
-async function refreshAccessToken() {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) {
-        console.log('No refresh token available.');
-        logout();
+// Add this function to manually check cookies (for debugging)
+function debugCheckCookies() {
+    const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+    }, {});
+
+    console.log("[Auth Debug] All cookies:", cookies);
+
+    if (cookies.AccessToken) {
+        const dotCount = cookies.AccessToken.split('.').length - 1;
+        console.log(`[Auth Debug] AccessToken dots: ${dotCount}`);
+        console.log(`[Auth Debug] AccessToken length: ${cookies.AccessToken.length}`);
+    } else {
+        console.log("[Auth Debug] No AccessToken cookie found");
+    }
+}
+
+// Call this on page load for debugging
+document.addEventListener("DOMContentLoaded", () => {
+    // Debug cookies
+    debugCheckCookies();
+
+    if (document.getElementById('loginBtn') || document.getElementById('userInfo')) {
+        updateAuthUI();
+    }
+});
+
+// --------------------------
+// Cập nhật giao diện người dùng FE
+// --------------------------
+async function updateAuthUI() {
+    const user = await getUser();
+    const loginBtn = document.getElementById('loginBtn');
+    const userInfo = document.getElementById('userInfo');
+
+    if (user && user.name) {
+        // ✅ Hiển thị thông tin người dùng
+        loginBtn.style.display = 'none';
+        userInfo.style.display = 'block';
+
+        document.getElementById('userName').textContent = user.name;
+
+        if (user.avatar) {
+            document.getElementById('userAvatar').src = user.avatar;
+        } else {
+            // Avatar fallback
+            document.getElementById('userAvatar').src = '/images/default-avatar.png';
+        }
+
+        console.log(`[Auth] Logged in as ${user.name} (${user.roles.join(", ")})`);
+    } else {
+        // ❌ Chưa đăng nhập
+        loginBtn.style.display = 'inline-block';
+        userInfo.style.display = 'none';
+        console.log("[Auth] Not logged in.");
+    }
+}
+
+// --------------------------
+// Cập nhật giao diện Admin Dashboard
+// --------------------------
+async function updateAdminAuthUI() {
+    const user = await getUser();
+
+    if (user) {
+        const nameEl = document.getElementById('adminUserName');
+        const avatarEl = document.getElementById('adminUserAvatar');
+
+        if (nameEl) nameEl.textContent = user.name;
+        if (avatarEl) {
+            avatarEl.src = user.avatar || '/images/default-avatar.png';
+        }
+    }
+}
+
+// --------------------------
+// Kiểm tra quyền Admin (tự refresh nếu token hết hạn)
+// --------------------------
+async function requireAdmin() {
+    const user = await getUser();
+
+    if (!user || !user.roles || !user.roles.includes("Admin")) {
+        console.warn("[Auth] ❌ Access denied - Admin only.");
+        sessionStorage.setItem("adminRequired", JSON.stringify({
+            title: "Truy cập bị từ chối",
+            message: "Bạn cần quyền Quản trị viên để xem trang này."
+        }));
+        window.location.href = "/";
         return false;
     }
 
+    console.log("[Auth] ✅ Admin verified.");
+    return true;
+}
+
+// --------------------------
+// Đăng xuất
+// --------------------------
+async function logout() {
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken: refreshToken })
+            credentials: 'include'
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to refresh token');
-        }
+        sessionStorage.setItem('logoutSuccess', JSON.stringify({
+            title: 'Đăng xuất thành công',
+            message: 'Hẹn gặp lại bạn!'
+        }));
 
-        const data = await response.json();
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
-        localStorage.setItem('expiresAt', data.expiresAt);
-        console.log('Token refreshed successfully.');
-        return true;
-    } catch (error) {
-        console.error('Error refreshing token:', error);
-        logout();
-        return false;
+        console.info("[Auth] ✅ Logged out.");
+        window.location.href = '/';
+    } catch (err) {
+        console.error("[Auth] ⚠️ Logout failed:", err);
     }
 }
 
-/**
- * Logout user
- */
-async function logout() {
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-        try {
-            await fetch(`${API_BASE_URL}/auth/logout`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken: refreshToken })
-            });
-            console.log('Logged out from server.');
-        } catch (error) {
-            console.error('Error during server logout:', error);
-        }
+// --------------------------
+// Auto run on page load (nếu có UI)
+// --------------------------
+document.addEventListener("DOMContentLoaded", () => {
+    if (document.getElementById('loginBtn') || document.getElementById('userInfo')) {
+        updateAuthUI();
     }
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('expiresAt');
-    console.log('Logged out from client.');
-    
-    // Store logout message in sessionStorage for login page
-    sessionStorage.setItem('logoutSuccess', JSON.stringify({
-        title: 'Đã đăng xuất',
-        message: 'Bạn đã đăng xuất thành công khỏi hệ thống',
-        type: 'info'
-    }));
-    
-    // Show logout notification
-    if (typeof info === 'function') {
-        info('Đã đăng xuất', 'Bạn đã đăng xuất thành công khỏi hệ thống.', 3000);
-    }
-    
-    updateAuthUI();
-    window.location.href = '/Login';
-}
-
-/**
- * Update UI based on authentication status
- */
-function updateAuthUI() {
-    const userInfo = document.getElementById('userInfo');
-    const loginBtn = document.getElementById('loginBtn');
-
-    if (isAuthenticated()) {
-        const user = getCurrentUser();
-
-        if (user) {
-            // Show user info
-            if (userInfo) {
-                const userName = document.getElementById('userName');
-                const userAvatar = document.getElementById('userAvatar');
-
-                if (userName) userName.textContent = user.name || user.email;
-                if (userAvatar) {
-                    userAvatar.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.email)}&background=003366&color=fff&size=128`;
-                }
-
-                userInfo.style.display = 'block';
-            }
-
-            // Hide login button
-            if (loginBtn) loginBtn.style.display = 'none';
-
-            // Reinitialize Lucide icons
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-        } else {
-            // No user data, show login button
-            if (loginBtn) loginBtn.style.display = 'inline-block';
-            if (userInfo) userInfo.style.display = 'none';
-        }
-    } else {
-        // Not authenticated, show login button
-        if (loginBtn) loginBtn.style.display = 'inline-block';
-
-        // Hide user info
-        if (userInfo) userInfo.style.display = 'none';
-    }
-}
-
-/**
- * Make authenticated API request
- */
-async function authenticatedFetch(url, options = {}) {
-    let accessToken = getAccessToken();
-    const expiresAt = getExpiresAt();
-
-    // If token is expired or about to expire, try to refresh
-    if (expiresAt && expiresAt < new Date(Date.now() + 60 * 1000)) { // Refresh if less than 1 minute left
-        const refreshed = await refreshAccessToken();
-        if (refreshed) {
-            accessToken = getAccessToken();
-        } else {
-            throw new Error('Failed to refresh token, please log in again.');
-        }
-    }
-
-    if (!accessToken) {
-        logout();
-        throw new Error('No access token available. Please log in.');
-    }
-
-    const headers = {
-        ...options.headers,
-        'Authorization': `Bearer ${accessToken}`
-    };
-
-    const response = await fetch(url, { ...options, headers });
-
-    if (response.status === 401) { // Unauthorized, token might be invalid even after refresh
-        logout();
-        throw new Error('Unauthorized. Please log in again.');
-    }
-
-    return response;
-}
+});

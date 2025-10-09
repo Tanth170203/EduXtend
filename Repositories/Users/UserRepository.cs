@@ -12,15 +12,26 @@ namespace Repositories.Users
     public class UserRepository : IUserRepository
     {
         private readonly EduXtendContext _db;
-        public UserRepository(EduXtendContext db) => _db = db;
 
-        public Task<User?> FindByEmailAsync(string email)
-            => _db.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+        public UserRepository(EduXtendContext db)
+        {
+            _db = db;
+        }
+
+        public async Task<User?> FindByEmailAsync(string email)
+            => await _db.Users.Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(u => u.Email == email);
 
-        public Task<User?> FindByGoogleSubAsync(string googleSub)
-            => _db.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
+        public async Task<User?> FindByGoogleSubAsync(string googleSub)
+            => await _db.Users.Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(u => u.GoogleSubject == googleSub);
+
+        public async Task<User?> GetByIdAsync(int id)
+            => await _db.Users.Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Id == id);
 
         public async Task AddAsync(User user)
         {
@@ -34,11 +45,11 @@ namespace Repositories.Users
             await _db.SaveChangesAsync();
         }
 
-        public Task<UserToken?> GetValidRefreshTokenAsync(string refreshToken)
-            => _db.UserTokens.Include(t => t.User).ThenInclude(u => u.UserRoles).ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(t => t.RefreshToken == refreshToken && !t.Revoked);
+        public async Task<UserToken?> GetValidTokenAsync(string refreshToken)
+            => await _db.UserTokens
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.RefreshToken == refreshToken && !t.Revoked && t.ExpiryDate > DateTime.UtcNow);
 
-        public Task SaveChangesAsync() => _db.SaveChangesAsync();
+        public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
     }
-
 }

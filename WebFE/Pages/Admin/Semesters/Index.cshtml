@@ -1,0 +1,478 @@
+@page
+@using BusinessObject.DTOs.Semester
+@using WebFE.Extensions
+@model WebFE.Pages.Admin.Semesters.IndexModel
+@{
+    ViewData["Title"] = "Quản lý học kỳ";
+    ViewData["Breadcrumb"] = "Học kỳ";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/systemconfig.css" asp-append-version="true" />
+}
+
+@* Add antiforgery token for AJAX requests *@
+<form id="antiforgeryForm" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">Quản lý học kỳ</h1>
+            <p class="page-description">Quản lý các học kỳ trong hệ thống</p>
+        </div>
+        <button type="button" class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addSemesterModal">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            Thêm học kỳ mới
+        </button>
+    </div>
+</div>
+
+<!-- Alert Messages -->
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i data-lucide="check-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Tổng số học kỳ</p>
+            </div>
+            <div class="stat-card-icon blue">
+                <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Semesters.Count</div>
+        <p class="text-muted small mb-0">Tất cả học kỳ trong hệ thống</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Đang hoạt động</p>
+            </div>
+            <div class="stat-card-icon green">
+                <i data-lucide="play-circle" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Semesters.Count(s => s.GetStatusLabel() == "Đang hoạt động")</div>
+        <p class="text-muted small mb-0">Học kỳ hiện tại</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Sắp diễn ra</p>
+            </div>
+            <div class="stat-card-icon purple">
+                <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Semesters.Count(s => s.GetStatusLabel() == "Sắp diễn ra")</div>
+        <p class="text-muted small mb-0">Học kỳ sắp tới</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Đã kết thúc</p>
+            </div>
+            <div class="stat-card-icon orange">
+                <i data-lucide="pause-circle" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Semesters.Count(s => s.GetStatusLabel() == "Đã kết thúc")</div>
+        <p class="text-muted small mb-0">Học kỳ đã qua</p>
+    </div>
+</div>
+
+<!-- Semesters Table -->
+<div class="content-card">
+    <div class="content-card-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <h5 class="content-card-title mb-1">Danh sách học kỳ</h5>
+                <p class="text-muted mb-0">Quản lý tất cả học kỳ trong hệ thống</p>
+            </div>
+            <div class="d-flex gap-2">
+                <div class="input-group" style="width: 300px;">
+                    <span class="input-group-text bg-white">
+                        <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                    </span>
+                    <input type="text" class="form-control" placeholder="Tìm kiếm học kỳ..." id="searchInput">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="content-card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 semester-table">
+                <thead class="semester-table-header">
+                    <tr>
+                        <th class="semester-th">Tên học kỳ</th>
+                        <th class="semester-th">Ngày bắt đầu</th>
+                        <th class="semester-th">Ngày kết thúc</th>
+                        <th class="semester-th">Thời lượng</th>
+                        <th class="semester-th">Trạng thái</th>
+                        <th class="semester-th text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Semesters.Any())
+                    {
+                        foreach (var semester in Model.Semesters.OrderByDescending(s => s.StartDate))
+                        {
+                            var duration = (semester.EndDate - semester.StartDate).Days;
+                            <tr class="semester-row" data-id="@semester.Id">
+                                <td class="semester-td">
+                                    <div class="d-flex align-items-center">
+                                        <div class="semester-icon me-3">
+                                            <i data-lucide="calendar" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                                        </div>
+                                        <div>
+                                            <div class="semester-name">@semester.Name</div>
+                                            <div class="semester-id text-muted small">ID: @semester.Id</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="semester-td">
+                                    <div class="date-info">
+                                        <div class="date-value">@semester.StartDate.ToString("dd/MM/yyyy")</div>
+                                        <div class="date-day text-muted small">@semester.StartDate.ToString("dddd", new System.Globalization.CultureInfo("vi-VN"))</div>
+                                    </div>
+                                </td>
+                                <td class="semester-td">
+                                    <div class="date-info">
+                                        <div class="date-value">@semester.EndDate.ToString("dd/MM/yyyy")</div>
+                                        <div class="date-day text-muted small">@semester.EndDate.ToString("dddd", new System.Globalization.CultureInfo("vi-VN"))</div>
+                                    </div>
+                                </td>
+                                <td class="semester-td">
+                                    <span class="text-muted">@duration ngày</span>
+                                </td>
+                                <td class="semester-td">
+                                    <span class="semester-status-badge @semester.GetStatusBadgeClass()">
+                                        <i data-lucide="@(semester.GetStatusLabel() == "Đang hoạt động" ? "play-circle" : semester.GetStatusLabel() == "Sắp diễn ra" ? "clock" : "pause-circle")" style="width: 12px; height: 12px;"></i>
+                                        @semester.GetStatusLabel()
+                                    </span>
+                                </td>
+                                <td class="semester-td text-end">
+                                    <div class="semester-actions">
+                                        <button type="button" class="btn btn-sm btn-outline-primary semester-btn-edit me-2" 
+                                                data-bs-toggle="modal" data-bs-target="#editSemesterModal"
+                                                data-semester-id="@semester.Id"
+                                                data-semester-name="@semester.Name"
+                                                data-semester-start="@semester.StartDate.ToString("yyyy-MM-dd")"
+                                                data-semester-end="@semester.EndDate.ToString("yyyy-MM-dd")"
+                                                title="Chỉnh sửa">
+                                            <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger semester-btn-delete" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteSemesterModal"
+                                                data-semester-id="@semester.Id"
+                                                data-semester-name="@semester.Name"
+                                                title="Xóa">
+                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="semester-empty-state">
+                                <div class="empty-state-content">
+                                    <div class="empty-state-icon">
+                                        <i data-lucide="calendar-x" style="width: 64px; height: 64px;"></i>
+                                    </div>
+                                    <h4 class="empty-state-title">Chưa có học kỳ nào</h4>
+                                    <p class="empty-state-description">Bắt đầu bằng cách thêm học kỳ đầu tiên vào hệ thống</p>
+                                    <button type="button" class="btn btn-primary" data-action="add-semester">
+                                        <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                                        Thêm học kỳ đầu tiên
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Semester Modal -->
+<div class="modal fade" id="semesterModal" tabindex="-1" aria-labelledby="semesterModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content semester-modal-content">
+            <div class="modal-header semester-modal-header">
+                <div class="modal-title-container">
+                    <div class="modal-icon">
+                        <i data-lucide="calendar-plus" style="width: 24px; height: 24px;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title" id="semesterModalLabel">Thêm học kỳ</h5>
+                        <p class="modal-subtitle">Tạo học kỳ mới trong hệ thống</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close semester-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                </button>
+            </div>
+            <div class="modal-body semester-modal-body">
+                <form id="semesterForm" class="semester-form">
+                    <input type="hidden" id="semesterId" value="0">
+                    
+                    <!-- Semester Name -->
+                    <div class="form-group semester-form-group">
+                        <label for="semesterName" class="semester-form-label">
+                            <i data-lucide="tag" style="width: 16px; height: 16px;"></i>
+                            Tên học kỳ
+                        </label>
+                        <input type="text" class="form-control semester-form-control" id="semesterName" 
+                               placeholder="Ví dụ: Fall2025, Spring2026, Summer2025" required>
+                        <div class="form-text">Tên học kỳ sẽ hiển thị trong hệ thống</div>
+                    </div>
+                    
+                    <!-- Date Range -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group semester-form-group">
+                                <label for="semesterStartDate" class="semester-form-label">
+                                    <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                    Ngày bắt đầu
+                                </label>
+                                <input type="date" class="form-control semester-form-control" id="semesterStartDate" required>
+                                <div class="form-text">Ngày bắt đầu học kỳ</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group semester-form-group">
+                                <label for="semesterEndDate" class="semester-form-label">
+                                    <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                    Ngày kết thúc
+                                </label>
+                                <input type="date" class="form-control semester-form-control" id="semesterEndDate" required>
+                                <div class="form-text">Ngày kết thúc học kỳ</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Info Card -->
+                    <div class="semester-info-card">
+                        <div class="info-card-header">
+                            <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                            <span>Thông tin quan trọng</span>
+                        </div>
+                        <div class="info-card-content">
+                            <ul class="info-list">
+                                <li>Trạng thái "Đang hoạt động" sẽ tự động được cập nhật dựa trên ngày bắt đầu và kết thúc</li>
+                                <li>Học kỳ đang hoạt động sẽ được sử dụng làm học kỳ mặc định cho các hoạt động mới</li>
+                                <li>Không thể xóa học kỳ đang hoạt động hoặc có dữ liệu liên quan</li>
+                            </ul>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer semester-modal-footer">
+                <button type="button" class="btn btn-outline-secondary semester-btn-cancel" data-bs-dismiss="modal">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                    Hủy
+                </button>
+                <button type="button" class="btn btn-primary semester-btn-save" data-action="save-semester">
+                    <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                    <span class="btn-text">Lưu học kỳ</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Semester Modal -->
+<div class="modal fade" id="addSemesterModal" tabindex="-1" aria-labelledby="addSemesterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSemesterModalLabel">Thêm học kỳ mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="CreateSemester">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="addName" class="form-label">Tên học kỳ <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="addName" name="Name" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addStartDate" class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="addStartDate" name="StartDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addEndDate" class="form-label">Ngày kết thúc <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="addEndDate" name="EndDate" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                        <small>Trạng thái "Đang hoạt động" sẽ được tự động tính toán dựa trên ngày hiện tại và khoảng thời gian của học kỳ.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Thêm học kỳ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Semester Modal -->
+<div class="modal fade" id="editSemesterModal" tabindex="-1" aria-labelledby="editSemesterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editSemesterModalLabel">Chỉnh sửa học kỳ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="UpdateSemester">
+                <input type="hidden" name="Id" id="editId">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editName" class="form-label">Tên học kỳ <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editName" name="Name" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editStartDate" class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="editStartDate" name="StartDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editEndDate" class="form-label">Ngày kết thúc <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="editEndDate" name="EndDate" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                        <small>Trạng thái "Đang hoạt động" sẽ được tự động tính toán dựa trên ngày hiện tại và khoảng thời gian của học kỳ.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Cập nhật học kỳ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal fade" id="deleteSemesterModal" tabindex="-1" aria-labelledby="deleteSemesterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSemesterModalLabel">Xác nhận xóa học kỳ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: #ef4444; margin-bottom: 1rem;"></i>
+                    <p>Bạn có chắc chắn muốn xóa học kỳ <strong class="semester-name-to-delete"></strong>?</p>
+                    <p class="text-muted small">Hành động này không thể hoàn tác.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form method="post" asp-page-handler="DeleteSemester" style="display: inline;">
+                    <input type="hidden" name="Id" id="deleteId">
+                    <button type="submit" class="btn btn-danger">Xóa học kỳ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Minimal JavaScript - chỉ để populate edit modal
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const rows = document.querySelectorAll('.semester-row');
+                    
+                    rows.forEach(row => {
+                        const name = row.querySelector('.semester-name')?.textContent.toLowerCase() || '';
+                        const shouldShow = name.includes(searchTerm);
+                        row.style.display = shouldShow ? '' : 'none';
+                    });
+                });
+            }
+            
+            // Edit button click - populate modal
+            document.querySelectorAll('[data-semester-id]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.semesterId;
+                    const name = this.dataset.semesterName;
+                    const start = this.dataset.semesterStart;
+                    const end = this.dataset.semesterEnd;
+                    
+                    // Populate edit form
+                    document.getElementById('editId').value = id;
+                    document.getElementById('editName').value = name;
+                    document.getElementById('editStartDate').value = start;
+                    document.getElementById('editEndDate').value = end;
+                });
+            });
+            
+            // Delete button click - populate modal
+            document.querySelectorAll('[data-semester-name]').forEach(btn => {
+                if (btn.dataset.semesterId) { // Only delete buttons have this
+                    btn.addEventListener('click', function() {
+                        const name = this.dataset.semesterName;
+                        const id = this.dataset.semesterId;
+                        
+                        // Update delete modal
+                        document.querySelector('.semester-name-to-delete').textContent = name;
+                        document.getElementById('deleteId').value = id;
+                    });
+                }
+            });
+        });
+    </script>
+}
+

@@ -11,9 +11,10 @@ namespace Repositories.Users
     {
         Task<User?> FindByEmailAsync(string email);
         Task<User?> FindByGoogleSubAsync(string googleSub);
+        Task<User?> GetByIdAsync(int id);
         Task AddAsync(User user);
         Task AddUserTokenAsync(UserToken token);
-        Task<UserToken?> GetValidRefreshTokenAsync(string refreshToken);
+        Task<UserToken?> GetValidTokenAsync(string refreshToken);
         Task SaveChangesAsync();
     }
 }

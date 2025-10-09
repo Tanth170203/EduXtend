@@ -12,128 +12,54 @@ using System.Threading.Tasks;
 
 namespace Repositories.Users
 {
-    public class GoogleAuthService : IAuthService
+    public class GoogleAuthService : IGoogleAuthService
     {
-        private readonly IUserRepository _users;
-        private readonly ITokenService _tokens;
-        private readonly GoogleAuthOptions _opt;
+        private readonly IUserRepository _userRepo;
 
-        public GoogleAuthService(IUserRepository users, ITokenService tokens, IOptions<GoogleAuthOptions> opt)
+        public GoogleAuthService(IUserRepository userRepo)
         {
-            _users = users;
-            _tokens = tokens;
-            _opt = opt.Value;
+            _userRepo = userRepo;
         }
 
-        public async Task<TokenResponseDto?> GoogleLoginAsync(string idToken, string deviceInfo)
+        public async Task<User> LoginWithGoogleAsync(string idToken, string deviceInfo)
         {
-            // Validate Google ID Token
-            var settings = new GoogleJsonWebSignature.ValidationSettings
-            {
-                Audience = _opt.ClientIds, // must match client id(s)
-                HostedDomain = _opt.HostedDomain // restrict to @fpt.edu.vn
-            };
+            var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings());
 
-            GoogleJsonWebSignature.Payload payload;
-            try
-            {
-                payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
-            }
-            catch (Exception ex)
-            {
-                // Log the error for debugging
-                Console.WriteLine($"Google token validation failed: {ex.Message}");
-                return null;
-            }
+            if (!payload.Email.EndsWith("@fpt.edu.vn", StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Chỉ chấp nhận tài khoản @fpt.edu.vn");
 
-            var email = payload.Email?.Trim().ToLower();
-            var sub = payload.Subject;             // Google unique user id
-            var name = payload.Name ?? email ?? sub;
+            var existingUser = await _userRepo.FindByGoogleSubAsync(payload.Subject)
+                ?? await _userRepo.FindByEmailAsync(payload.Email);
 
-            if (string.IsNullOrEmpty(email) || !email.EndsWith("@" + _opt.HostedDomain, StringComparison.OrdinalIgnoreCase))
-                return null;
-
-            // Upsert user (by GoogleSub first, then by Email)
-            var user = await _users.FindByGoogleSubAsync(sub) ?? await _users.FindByEmailAsync(email);
-            if (user == null)
+            if (existingUser == null)
             {
-                user = new User
+                existingUser = new User
                 {
-                    Email = email!,
-                    FullName = name,
-                    GoogleSubject = sub,
+                    FullName = payload.Name ?? "No Name",
+                    Email = payload.Email,
+                    GoogleSubject = payload.Subject,
+                    AvatarUrl = payload.Picture,
                     IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
                 };
-                await _users.AddAsync(user);
+
+                await _userRepo.AddAsync(existingUser);
+
+                // Gán role mặc định: Student
+                existingUser.UserRoles.Add(new UserRole
+                {
+                    UserId = existingUser.Id,
+                    RoleId = 2, // Student
+                    AssignedAt = DateTime.UtcNow
+                });
+
+                await _userRepo.SaveChangesAsync();
             }
-            else
-            {
-                user.FullName ??= name;
-                user.GoogleSubject ??= sub;
-                if (!user.IsActive) return null;
-                user.LastLoginAt = DateTime.UtcNow;
-                await _users.SaveChangesAsync();
-            }
 
-            var (access, expires) = _tokens.CreateAccessToken(user);
-            var refresh = _tokens.CreateRefreshToken();
+            existingUser.LastLoginAt = DateTime.UtcNow;
+            await _userRepo.SaveChangesAsync();
 
-            await _users.AddUserTokenAsync(new UserToken
-            {
-                UserId = user.Id,
-                RefreshToken = refresh,
-                ExpiryDate = DateTime.UtcNow.AddDays(30),
-                CreatedAt = DateTime.UtcNow,
-                DeviceInfo = deviceInfo
-            });
-
-            return new TokenResponseDto
-            {
-                AccessToken = access,
-                ExpiresAt = expires,
-                RefreshToken = refresh
-            };
-
-        }
-
-        public async Task<TokenResponseDto?> RefreshAsync(string refreshToken, string deviceInfo)
-        {
-            var old = await _users.GetValidRefreshTokenAsync(refreshToken);
-            if (old == null || old.ExpiryDate < DateTime.UtcNow || old.User == null || !old.User.IsActive)
-                return null;
-
-            old.Revoked = true; old.RevokedAt = DateTime.UtcNow;
-
-            var (access, expires) = _tokens.CreateAccessToken(old.User);
-            var newRefresh = _tokens.CreateRefreshToken();
-
-            await _users.AddUserTokenAsync(new UserToken
-            {
-                UserId = old.UserId,
-                RefreshToken = newRefresh,
-                ExpiryDate = DateTime.UtcNow.AddDays(30),
-                CreatedAt = DateTime.UtcNow,
-                DeviceInfo = deviceInfo
-            });
-
-            return new TokenResponseDto
-            {
-                AccessToken = access,
-                ExpiresAt = expires,
-                RefreshToken = newRefresh
-            };
-
-        }
-
-        public async Task LogoutAsync(string refreshToken)
-        {
-            var token = await _users.GetValidRefreshTokenAsync(refreshToken);
-            if (token != null)
-            {
-                token.Revoked = true;
-                token.RevokedAt = DateTime.UtcNow;
-                await _users.SaveChangesAsync();
-            }
+            return existingUser;
         }
     }
 }

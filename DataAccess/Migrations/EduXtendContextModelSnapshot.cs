@@ -39,6 +39,9 @@ namespace DataAccess.Migrations
                     b.Property<int?>("ClubId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("CreatedById")
                         .HasColumnType("int");
 
@@ -106,6 +109,9 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("CheckedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("CheckedById")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsPresent")
                         .HasColumnType("bit");
 
@@ -113,6 +119,8 @@ namespace DataAccess.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CheckedById");
 
                     b.HasIndex("UserId");
 
@@ -340,16 +348,16 @@ namespace DataAccess.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("UserId")
+                    b.Property<int>("StudentId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DepartmentId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("StudentId");
 
-                    b.HasIndex("ClubId", "UserId")
+                    b.HasIndex("ClubId", "StudentId")
                         .IsUnique();
 
                     b.ToTable("ClubMembers");
@@ -369,6 +377,9 @@ namespace DataAccess.Migrations
                     b.Property<string>("Content")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
 
                     b.Property<string>("FacebookUrl")
                         .HasColumnType("nvarchar(max)");
@@ -390,6 +401,8 @@ namespace DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClubId");
+
+                    b.HasIndex("CreatedById");
 
                     b.ToTable("ClubNews");
                 });
@@ -476,6 +489,12 @@ namespace DataAccess.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ProcessedById")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -486,12 +505,49 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClubId");
+
+                    b.HasIndex("ProcessedById");
+
                     b.HasIndex("UserId");
 
-                    b.HasIndex("ClubId", "UserId")
+                    b.ToTable("JoinRequests");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.LoggedOutToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LoggedOutAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
                         .IsUnique();
 
-                    b.ToTable("JoinRequests");
+                    b.HasIndex("UserId");
+
+                    b.ToTable("LoggedOutTokens");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Major", b =>
@@ -607,6 +663,9 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("LastUpdated")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("SemesterId")
                         .HasColumnType("int");
 
@@ -633,6 +692,9 @@ namespace DataAccess.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AwardedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("CriterionId")
                         .HasColumnType("int");
@@ -667,6 +729,9 @@ namespace DataAccess.Migrations
                     b.Property<int>("CreatedById")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Message")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -682,13 +747,13 @@ namespace DataAccess.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int?>("TargetUserId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
-
-                    b.Property<int?>("UserId")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -696,7 +761,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("TargetClubId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("TargetUserId");
 
                     b.ToTable("Notifications");
                 });
@@ -752,6 +817,9 @@ namespace DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("ApprovedById")
                         .HasColumnType("int");
 
@@ -793,6 +861,9 @@ namespace DataAccess.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("ClubId")
                         .HasColumnType("int");
@@ -916,7 +987,8 @@ namespace DataAccess.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("EnrollmentDate")
                         .HasColumnType("datetime2");
@@ -1042,15 +1114,27 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Models.UserRole", b =>
                 {
-                    b.Property<int>("UserId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("RoleId")
                         .HasColumnType("int");
 
-                    b.HasKey("UserId", "RoleId");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId", "RoleId")
+                        .IsUnique();
 
                     b.ToTable("UserRoles");
                 });
@@ -1075,7 +1159,8 @@ namespace DataAccess.Migrations
 
                     b.Property<string>("RefreshToken")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("Revoked")
                         .HasColumnType("bit");
@@ -1125,6 +1210,11 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BusinessObject.Models.User", "CheckedBy")
+                        .WithMany()
+                        .HasForeignKey("CheckedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BusinessObject.Models.User", "User")
                         .WithMany("Attendances")
                         .HasForeignKey("UserId")
@@ -1132,6 +1222,8 @@ namespace DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Activity");
+
+                    b.Navigation("CheckedBy");
 
                     b.Navigation("User");
                 });
@@ -1188,13 +1280,13 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("BusinessObject.Models.ClubAward", b =>
                 {
                     b.HasOne("BusinessObject.Models.Club", "Club")
-                        .WithMany()
+                        .WithMany("Awards")
                         .HasForeignKey("ClubId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("BusinessObject.Models.Semester", "Semester")
-                        .WithMany()
+                        .WithMany("ClubAwards")
                         .HasForeignKey("SemesterId");
 
                     b.Navigation("Club");
@@ -1222,12 +1314,12 @@ namespace DataAccess.Migrations
                         .IsRequired();
 
                     b.HasOne("BusinessObject.Models.ClubDepartment", "Department")
-                        .WithMany()
+                        .WithMany("Members")
                         .HasForeignKey("DepartmentId");
 
-                    b.HasOne("BusinessObject.Models.User", "User")
-                        .WithMany("ClubMemberships")
-                        .HasForeignKey("UserId")
+                    b.HasOne("BusinessObject.Models.Student", "Student")
+                        .WithMany("ClubMembers")
+                        .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1235,7 +1327,7 @@ namespace DataAccess.Migrations
 
                     b.Navigation("Department");
 
-                    b.Navigation("User");
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ClubNews", b =>
@@ -1246,17 +1338,25 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Club");
+
+                    b.Navigation("CreatedBy");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Evidence", b =>
                 {
                     b.HasOne("BusinessObject.Models.Activity", "Activity")
-                        .WithMany()
+                        .WithMany("Evidences")
                         .HasForeignKey("ActivityId");
 
                     b.HasOne("BusinessObject.Models.MovementCriterion", "Criterion")
-                        .WithMany()
+                        .WithMany("Evidences")
                         .HasForeignKey("CriterionId");
 
                     b.HasOne("BusinessObject.Models.User", "ReviewedBy")
@@ -1267,7 +1367,7 @@ namespace DataAccess.Migrations
                     b.HasOne("BusinessObject.Models.Student", "Student")
                         .WithMany("Evidences")
                         .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Activity");
@@ -1282,10 +1382,15 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("BusinessObject.Models.JoinRequest", b =>
                 {
                     b.HasOne("BusinessObject.Models.Club", "Club")
-                        .WithMany()
+                        .WithMany("JoinRequests")
                         .HasForeignKey("ClubId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "ProcessedBy")
+                        .WithMany()
+                        .HasForeignKey("ProcessedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("BusinessObject.Models.User", "User")
                         .WithMany()
@@ -1294,6 +1399,18 @@ namespace DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Club");
+
+                    b.Navigation("ProcessedBy");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.LoggedOutToken", b =>
+                {
+                    b.HasOne("BusinessObject.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("User");
                 });
@@ -1312,15 +1429,15 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("BusinessObject.Models.MovementRecord", b =>
                 {
                     b.HasOne("BusinessObject.Models.Semester", "Semester")
-                        .WithMany()
+                        .WithMany("MovementRecords")
                         .HasForeignKey("SemesterId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("BusinessObject.Models.Student", "Student")
                         .WithMany("MovementRecords")
                         .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Semester");
@@ -1331,7 +1448,7 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("BusinessObject.Models.MovementRecordDetail", b =>
                 {
                     b.HasOne("BusinessObject.Models.MovementCriterion", "Criterion")
-                        .WithMany()
+                        .WithMany("RecordDetails")
                         .HasForeignKey("CriterionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1359,13 +1476,16 @@ namespace DataAccess.Migrations
                         .WithMany()
                         .HasForeignKey("TargetClubId");
 
-                    b.HasOne("BusinessObject.Models.User", null)
+                    b.HasOne("BusinessObject.Models.User", "TargetUser")
                         .WithMany("Notifications")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("TargetUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CreatedBy");
 
                     b.Navigation("TargetClub");
+
+                    b.Navigation("TargetUser");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.PaymentTransaction", b =>
@@ -1407,7 +1527,7 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("BusinessObject.Models.Proposal", b =>
                 {
                     b.HasOne("BusinessObject.Models.Club", "Club")
-                        .WithMany()
+                        .WithMany("Proposals")
                         .HasForeignKey("ClubId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1494,7 +1614,7 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("BusinessObject.Models.UserToken", b =>
                 {
                     b.HasOne("BusinessObject.Models.User", "User")
-                        .WithMany("Tokens")
+                        .WithMany("UserTokens")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1506,6 +1626,8 @@ namespace DataAccess.Migrations
                 {
                     b.Navigation("Attendances");
 
+                    b.Navigation("Evidences");
+
                     b.Navigation("Feedbacks");
 
                     b.Navigation("Registrations");
@@ -1515,13 +1637,19 @@ namespace DataAccess.Migrations
                 {
                     b.Navigation("Activities");
 
+                    b.Navigation("Awards");
+
                     b.Navigation("Departments");
+
+                    b.Navigation("JoinRequests");
 
                     b.Navigation("Members");
 
                     b.Navigation("NewsPosts");
 
                     b.Navigation("Plans");
+
+                    b.Navigation("Proposals");
 
                     b.Navigation("Transactions");
                 });
@@ -1531,9 +1659,21 @@ namespace DataAccess.Migrations
                     b.Navigation("Clubs");
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.ClubDepartment", b =>
+                {
+                    b.Navigation("Members");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Major", b =>
                 {
                     b.Navigation("Students");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.MovementCriterion", b =>
+                {
+                    b.Navigation("Evidences");
+
+                    b.Navigation("RecordDetails");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.MovementCriterionGroup", b =>
@@ -1556,8 +1696,17 @@ namespace DataAccess.Migrations
                     b.Navigation("UserRoles");
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.Semester", b =>
+                {
+                    b.Navigation("ClubAwards");
+
+                    b.Navigation("MovementRecords");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Student", b =>
                 {
+                    b.Navigation("ClubMembers");
+
                     b.Navigation("Evidences");
 
                     b.Navigation("MovementRecords");
@@ -1569,13 +1718,11 @@ namespace DataAccess.Migrations
 
                     b.Navigation("Attendances");
 
-                    b.Navigation("ClubMemberships");
-
                     b.Navigation("Notifications");
 
-                    b.Navigation("Tokens");
-
                     b.Navigation("UserRoles");
+
+                    b.Navigation("UserTokens");
                 });
 #pragma warning restore 612, 618
         }

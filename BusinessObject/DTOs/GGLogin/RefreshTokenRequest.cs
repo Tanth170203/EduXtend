@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace BusinessObject.DTOs.GGLogin
 {
-    public sealed class RefreshRequest
+    public class RefreshTokenRequest
     {
         public string RefreshToken { get; set; } = null!;
+        public string? DeviceInfo { get; set; }
     }
 }

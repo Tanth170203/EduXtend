@@ -1,16 +1,27 @@
-using BusinessObject.DTOs.GGLogin;
+﻿using BusinessObject.DTOs.GGLogin;
 using BusinessObject.Models;
 using DataAccess;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Repositories.LoggedOutTokens;
 using Repositories.Semesters;
 using Repositories.Users;
-using Services.Semesters;
 using Services.GGLogin;
+using Services.Semesters;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
-using Microsoft.Extensions.Hosting;
+using System.Text.Encodings.Web;
+using WebAPI.Authentication;
+using WebAPI.Middleware;
 
 
 namespace WebAPI
@@ -34,10 +45,11 @@ namespace WebAPI
             // Repositories
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<ISemesterRepository, SemesterRepository>();
+            builder.Services.AddScoped<ILoggedOutTokenRepository, LoggedOutTokenRepository>();
             
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
-            builder.Services.AddScoped<IAuthService, GoogleAuthService>();
+            builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             builder.Services.AddScoped<ISemesterService, SemesterService>();
 
             // Background Services
@@ -45,30 +57,60 @@ namespace WebAPI
 
 
 
-            // JWT
-            var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()!;
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(opt =>
-                {
-                    opt.RequireHttpsMetadata = false;
-                    opt.SaveToken = true;
-                    opt.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = jwt.Issuer,
-                        ValidAudience = jwt.Audience,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
-                        ClockSkew = TimeSpan.Zero
-                    };
-                });
+            // Custom JWT Authentication (bypass library issues)
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-            builder.Services.AddAuthorization();
+            builder.Services.AddAuthentication("CustomJWT")
+                .AddScheme<AuthenticationSchemeOptions, CustomJwtAuthenticationHandler>("CustomJWT", options => { });
+
+
+            builder.Services.AddAuthorization(options =>
+            {
+                // Role-based policies
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+                options.AddPolicy("StudentOnly", policy => policy.RequireRole("Student"));
+                options.AddPolicy("ClubManagerOnly", policy => policy.RequireRole("ClubManager"));
+                options.AddPolicy("ClubMemberOnly", policy => policy.RequireRole("ClubMember"));
+                
+                // Combined policies
+                options.AddPolicy("ClubManagement", policy => 
+                    policy.RequireRole("Admin", "ClubManager"));
+                options.AddPolicy("ClubAccess", policy => 
+                    policy.RequireRole("Admin", "ClubManager", "ClubMember"));
+                options.AddPolicy("AllUsers", policy => 
+                    policy.RequireRole("Admin", "Student", "ClubManager", "ClubMember"));
+            });
+            
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Description = "JWT Authorization header using the Bearer scheme. Enter your token in the text input below."
+                });
+
+                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                {
+                    {
+                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                        {
+                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            {
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
 
             builder.Services.AddCors(opt =>
             {
@@ -95,10 +137,14 @@ namespace WebAPI
 
             app.UseHttpsRedirection();
 
-            app.UseAuthentication();
-
-
-            app.UseAuthorization();
+            // Custom middleware (order matters!)
+            // app.UseAutoRefreshToken();  // DISABLED: Let frontend handle token refresh
+            
+            app.UseAuthentication();     // Validate JWT and set User principal
+            
+            app.UseTokenBlacklist();    // Check if token is blacklisted
+            
+            app.UseAuthorization();      // Check policies and roles
 
 
             app.MapControllers();

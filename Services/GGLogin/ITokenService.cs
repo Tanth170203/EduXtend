@@ -9,7 +9,9 @@ namespace Services.GGLogin
 {
     public interface ITokenService
     {
-        (string token, DateTime expires) CreateAccessToken(User user);
-        string CreateRefreshToken();
+        string GenerateAccessToken(User user);
+        Task<string> GenerateAndSaveRefreshTokenAsync(User user, string deviceInfo);
+        Task<User?> ValidateRefreshTokenAsync(string refreshToken);
+        Task RevokeTokenAsync(string refreshToken);
     }
 }

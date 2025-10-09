@@ -49,13 +49,13 @@ namespace Services.Semesters
         {
             try
             {
-                _logger.LogInformation("Starting Semester status update at {Time}", DateTime.Now);
+                _logger.LogInformation("Starting Semester status update at {Time}", DateTime.UtcNow);
 
                 using var scope = _serviceProvider.CreateScope();
                 var repository = scope.ServiceProvider.GetRequiredService<ISemesterRepository>();
 
                 var semesters = await repository.GetAllAsync();
-                var now = DateTime.Now.Date;
+                var now = DateTime.UtcNow.Date;
                 bool hasChanges = false;
 
                 foreach (var semester in semesters)

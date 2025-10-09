@@ -61,7 +61,7 @@ namespace Services.Semesters
             }
 
             // Tự động tính toán IsActive dựa trên ngày hiện tại
-            var now = DateTime.Now.Date;
+            var now = DateTime.UtcNow.Date;
             var isActive = now >= dto.StartDate.Date && now <= dto.EndDate.Date;
 
             var semester = new Semester
@@ -112,7 +112,7 @@ namespace Services.Semesters
             }
 
             // Tự động tính toán IsActive dựa trên ngày hiện tại
-            var now = DateTime.Now.Date;
+            var now = DateTime.UtcNow.Date;
             var isActive = now >= dto.StartDate.Date && now <= dto.EndDate.Date;
 
             semester.Name = dto.Name;
@@ -148,7 +148,7 @@ namespace Services.Semesters
         public async Task UpdateAllActiveStatusAsync()
         {
             var semesters = await _repository.GetAllAsync();
-            var now = DateTime.Now.Date;
+            var now = DateTime.UtcNow.Date;
 
             foreach (var semester in semesters)
             {

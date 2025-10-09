@@ -1,43 +1,34 @@
-﻿using BusinessObject.Enum;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace BusinessObject.Models
+namespace BusinessObject.Models;
+
+public class User
 {
-    public class User
-    {
-        public int Id { get; set; }
+    public int Id { get; set; }
+    
+    [Required, MaxLength(100)]
+    public string FullName { get; set; } = null!;
+    
+    [Required, MaxLength(100)]
+    public string Email { get; set; } = null!;
+    
+    [MaxLength(100)]
+    public string? GoogleSubject { get; set; } // for SSO
+    
+    [MaxLength(255)]
+    public string? AvatarUrl { get; set; }
+    
+    [MaxLength(20)]
+    public string? PhoneNumber { get; set; }
+    
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? LastLoginAt { get; set; }
 
-        [Required, MaxLength(100)]
-        public string FullName { get; set; } = null!;
-
-        [Required, MaxLength(100)]
-        public string Email { get; set; } = null!;
-
-        [MaxLength(100)]
-        public string? GoogleSubject { get; set; } // for SSO
-
-        [MaxLength(255)]
-        public string? AvatarUrl { get; set; }
-
-        [MaxLength(20)]
-        public string? PhoneNumber { get; set; }
-
-        public bool IsActive { get; set; } = true;
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime? LastLoginAt { get; set; }
-
-        // Navigation properties
-        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-        public ICollection<ClubMember> ClubMemberships { get; set; } = new List<ClubMember>();
-        public ICollection<ActivityRegistration> ActivityRegistrations { get; set; } = new List<ActivityRegistration>();
-        public ICollection<ActivityAttendance> Attendances { get; set; } = new List<ActivityAttendance>();
-        public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
-        public ICollection<UserToken> Tokens { get; set; } = new List<UserToken>();
-    }
+    // Navigation properties
+    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public ICollection<ActivityRegistration> ActivityRegistrations { get; set; } = new List<ActivityRegistration>();
+    public ICollection<ActivityAttendance> Attendances { get; set; } = new List<ActivityAttendance>();
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+    public ICollection<UserToken> UserTokens { get; set; } = new List<UserToken>();
 }

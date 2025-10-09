@@ -1,0 +1,238 @@
+@page
+@model WebFE.Pages.Admin.Dashboard.IndexModel
+@{
+    ViewData["Title"] = "Tổng quan";
+    ViewData["Breadcrumb"] = "Tổng quan";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">Tổng quan hệ thống</h1>
+    <p class="page-description">Xem tổng quan và thống kê về hoạt động của hệ thống</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Tổng sinh viên</p>
+            </div>
+            <div class="stat-card-icon blue">
+                <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.TotalStudents</div>
+        <div class="stat-card-change positive">
+            <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i>
+            <span>+12% so với tháng trước</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Câu lạc bộ hoạt động</p>
+            </div>
+            <div class="stat-card-icon green">
+                <i data-lucide="users-2" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.ActiveClubs</div>
+        <div class="stat-card-change positive">
+            <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i>
+            <span>+5% so với tháng trước</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Hoạt động tháng này</p>
+            </div>
+            <div class="stat-card-icon purple">
+                <i data-lucide="calendar-check" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.MonthlyActivities</div>
+        <div class="stat-card-change positive">
+            <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i>
+            <span>+8% so với tháng trước</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Đề xuất chờ duyệt</p>
+            </div>
+            <div class="stat-card-icon orange">
+                <i data-lucide="file-text" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.PendingProposals</div>
+        <div class="stat-card-change negative">
+            <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+            <span>Cần xem xét</span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h2 class="content-card-title">Thao tác nhanh</h2>
+    </div>
+    <div class="content-card-body">
+        <div class="quick-actions">
+            <a href="/Admin/Semesters" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Quản lý học kỳ</div>
+                    <p class="quick-action-desc">Thêm, sửa, xóa học kỳ</p>
+                </div>
+            </a>
+            
+            <a href="/Admin/Students" class="quick-action-btn">
+                <div class="quick-action-icon" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #059669;">
+                    <i data-lucide="user-plus" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Quản lý sinh viên</div>
+                    <p class="quick-action-desc">Thêm, import sinh viên</p>
+                </div>
+            </a>
+            
+            <a href="/Admin/Clubs" class="quick-action-btn">
+                <div class="quick-action-icon" style="background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%); color: #7c3aed;">
+                    <i data-lucide="users-2" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Quản lý CLB</div>
+                    <p class="quick-action-desc">Phê duyệt, quản lý CLB</p>
+                </div>
+            </a>
+            
+            <a href="/Admin/Criteria" class="quick-action-btn">
+                <div class="quick-action-icon" style="background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%); color: #ea580c;">
+                    <i data-lucide="list-checks" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Tiêu chí đánh giá</div>
+                    <p class="quick-action-desc">Cài đặt tiêu chí ĐRL</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h2 class="content-card-title">Hoạt động gần đây</h2>
+                <a href="/Admin/Activities" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+            </div>
+            <div class="content-card-body">
+                @if (Model.RecentActivities != null && Model.RecentActivities.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tên hoạt động</th>
+                                    <th>CLB</th>
+                                    <th>Ngày diễn ra</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var activity in Model.RecentActivities.Take(5))
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i data-lucide="calendar-check" style="width: 18px; height: 18px; color: #6b7280;"></i>
+                                                <span>@activity.Name</span>
+                                            </div>
+                                        </td>
+                                        <td>@activity.ClubName</td>
+                                        <td>@activity.StartDate.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                        <p>Chưa có hoạt động nào</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h2 class="content-card-title">Thông báo mới</h2>
+            </div>
+            <div class="content-card-body">
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex gap-3">
+                        <div class="flex-shrink-0">
+                            <div class="stat-card-icon blue" style="width: 40px; height: 40px;">
+                                <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Đề xuất mới từ CLB ABC</div>
+                            <p class="text-muted small mb-0">5 phút trước</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-3">
+                        <div class="flex-shrink-0">
+                            <div class="stat-card-icon green" style="width: 40px; height: 40px;">
+                                <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Hoạt động đã được phê duyệt</div>
+                            <p class="text-muted small mb-0">1 giờ trước</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-3">
+                        <div class="flex-shrink-0">
+                            <div class="stat-card-icon orange" style="width: 40px; height: 40px;">
+                                <i data-lucide="alert-circle" style="width: 20px; height: 20px;"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Cần cập nhật tiêu chí ĐRL</div>
+                            <p class="text-muted small mb-0">2 giờ trước</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}
+

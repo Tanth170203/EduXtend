@@ -1,0 +1,234 @@
+@page
+@model WebFE.Pages.LoginModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .login-page-container {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+            .login-page-container footer {
+                margin-top: 0 !important;
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
+
+            .login-page-container .min-h-screen {
+                height: 100vh !important;
+                padding-top: 80px !important;
+            }
+
+            .login-page-container main {
+                padding-top: 0 !important;
+                margin: 0 !important;
+            }
+
+            .login-page-container header {
+                position: fixed !important;
+                display: block !important;
+            }
+
+        #googleSignInDiv iframe {
+            border-radius: 12px !important;
+            overflow: hidden !important;
+        }
+    </style>
+}
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('login-page-container');
+    });
+</script>
+
+<!-- ✅ UI giữ nguyên, không thay đổi -->
+<div class="min-h-screen d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #003366 0%, #007ACC 100%); padding: 3rem 1rem;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6 col-xl-5">
+                <div class="card shadow-lg border-0 login-card" style="border-radius: 20px;">
+                    <div class="card-header text-center bg-white border-0" style="padding: 3rem 2.5rem 2rem;">
+                        <div class="mb-4">
+                            <div class="mx-auto" style="width: 90px; height: 90px; background: linear-gradient(135deg, #003366 0%, #007ACC 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.75rem; font-weight: 700; color: white;">
+                                E
+                            </div>
+                        </div>
+                        <h1 class="mb-3" style="font-size: 2rem; font-weight: 700; color: #1a202c;">Chào mừng đến EduXtend</h1>
+                        <p class="text-muted mb-0">Đăng nhập để tiếp tục sử dụng hệ thống</p>
+                    </div>
+
+                    <div class="card-body" style="padding: 0 2.5rem 3rem; background-color: white;">
+                        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                        {
+                            <div class="alert alert-danger">@Model.ErrorMessage</div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                        {
+                            <div class="alert alert-success">@Model.SuccessMessage</div>
+                        }
+
+                        <!-- Google Sign In -->
+                        <div id="googleSignInDiv" class="w-100 d-flex justify-content-center"></div>
+
+                        <div class="mt-4 pt-4" style="border-top: 1px solid #e2e8f0;">
+                            <div class="text-center" style="background-color: #f8fafc; border-radius: 12px; padding: 1.5rem;">
+                                <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                                    <i data-lucide="shield-check" style="width: 20px; height: 20px; color: #10b981;"></i>
+                                    <span style="font-size: 1rem; font-weight: 600;">Bảo mật cao</span>
+                                </div>
+                                <p>Chỉ chấp nhận email <strong style="color: #003366;">@@fpt.edu.vn</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        let isLoggingIn = false; // Prevent double-click
+
+        function showError(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            const container = document.querySelector('.card-body');
+            const existingAlert = container.querySelector('.alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            container.insertBefore(alertDiv, container.firstChild);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            const btnDiv = document.getElementById('googleSignInDiv');
+            if (show) {
+                btnDiv.style.opacity = '0.5';
+                btnDiv.style.pointerEvents = 'none';
+            } else {
+                btnDiv.style.opacity = '1';
+                btnDiv.style.pointerEvents = 'auto';
+            }
+        }
+
+        async function handleCredentialResponse(response) {
+            if (isLoggingIn) {
+                console.log('[Auth] Login already in progress');
+                return;
+            }
+
+            isLoggingIn = true;
+            showLoading(true);
+
+            try {
+                console.log('[Auth] Calling API directly with Google credential...');
+                
+                // Call API directly (simpler & more reliable)
+                const apiResponse = await fetch('https://localhost:5001/api/auth/google', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include', // IMPORTANT: Browser will save cookies automatically
+                    body: JSON.stringify({ 
+                        idToken: response.credential,
+                        deviceInfo: 'Web Browser'
+                    })
+                });
+
+                console.log('[Auth] API response status:', apiResponse.status);
+
+                if (!apiResponse.ok) {
+                    const error = await apiResponse.json().catch(() => ({ 
+                        message: 'Login failed. Please use @@fpt.edu.vn email.' 
+                    }));
+                    throw new Error(error.message);
+                }
+
+                const data = await apiResponse.json();
+                console.log('[Auth] Login successful, user:', data.user?.email, 'roles:', data.user?.roles);
+                console.log('[Auth] Redirecting to:', data.redirectUrl);
+
+                // Show success message
+                const successDiv = document.createElement('div');
+                successDiv.className = 'alert alert-success text-center';
+                successDiv.innerHTML = '<i class="bi bi-check-circle me-2"></i>✓ Đăng nhập thành công! Đang chuyển hướng...';
+                document.querySelector('.card-body').insertBefore(
+                    successDiv, 
+                    document.querySelector('.card-body').firstChild
+                );
+
+                // Wait for cookies to be saved by browser, then redirect
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                console.log('[Auth] Redirecting now...');
+                window.location.href = data.redirectUrl || '/';
+            } catch (err) {
+                console.error('[Auth] Login error:', err);
+                showError(err.message || 'Đăng nhập thất bại. Vui lòng dùng email @@fpt.edu.vn');
+                isLoggingIn = false;
+                showLoading(false);
+            }
+        }
+
+        // Initialize Google Sign-In
+        document.addEventListener('DOMContentLoaded', () => {
+            const init = () => {
+                google.accounts.id.initialize({
+                    client_id: '742204870045-sd7gtmbhc6vpip3jn6ac41gf9ufgogmn.apps.googleusercontent.com',
+                    callback: handleCredentialResponse,
+                    ux_mode: 'popup',
+                    auto_select: false
+                });
+                
+                google.accounts.id.renderButton(
+                    document.getElementById('googleSignInDiv'),
+                    { 
+                        theme: 'filled_blue', 
+                        size: 'large', 
+                        width: '100%',
+                        text: 'continue_with',
+                        shape: 'rectangular'
+                    }
+                );
+
+                console.log('[Auth] Google Sign-In initialized');
+            };
+
+            // Wait for Google library to load
+            let attempts = 0;
+            const maxAttempts = 50;
+            const checkLib = setInterval(() => {
+                attempts++;
+                if (window.google?.accounts?.id) {
+                    clearInterval(checkLib);
+                    init();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(checkLib);
+                    showError('Không thể tải Google Sign-In. Vui lòng kiểm tra kết nối internet.');
+                }
+            }, 100);
+        });
+    </script>
+}
