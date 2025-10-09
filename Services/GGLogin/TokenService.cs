@@ -22,11 +22,10 @@ namespace Services.GGLogin
         private readonly EduXtendContext _context;
         private readonly JwtOptions _jwtOptions;
 
-        // ✅ Inject IOptions<JwtOptions> in constructor
         public TokenService(EduXtendContext context, IOptions<JwtOptions> jwtOptions)
         {
             _context = context;
-            _jwtOptions = jwtOptions.Value; // ✅ Extract the value
+            _jwtOptions = jwtOptions.Value;
         }
 
         public string GenerateAccessToken(User user)
@@ -49,7 +48,6 @@ namespace Services.GGLogin
 
             var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-            // Validation check
             if (string.IsNullOrWhiteSpace(tokenString) || tokenString.Count(c => c == '.') != 2)
             {
                 throw new InvalidOperationException("Generated token is malformed");

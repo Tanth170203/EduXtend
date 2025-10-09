@@ -48,16 +48,8 @@ namespace Services.Semesters
                 {
                     var overlappingNames = string.Join(", ", overlappingSemesters.Select(s => s.Name));
                     var warningMessage = $"⚠️ Học kỳ này trùng thời gian với: {overlappingNames}";
-                    
-                    Console.WriteLine($"Warning: {warningMessage}");
-                    
-                    // Throw warning exception để frontend hiển thị confirm dialog
                     throw new InvalidOperationException($"WARNING:{warningMessage}");
                 }
-            }
-            else
-            {
-                Console.WriteLine($"Creating semester '{dto.Name}' with Force=true (overlap check bypassed)");
             }
 
             // Tự động tính toán IsActive dựa trên ngày hiện tại
@@ -99,16 +91,8 @@ namespace Services.Semesters
                 {
                     var overlappingNames = string.Join(", ", overlappingSemesters.Select(s => s.Name));
                     var warningMessage = $"⚠️ Học kỳ này trùng thời gian với: {overlappingNames}";
-                    
-                    Console.WriteLine($"Warning: {warningMessage}");
-                    
-                    // Throw warning exception để frontend hiển thị confirm dialog
                     throw new InvalidOperationException($"WARNING:{warningMessage}");
                 }
-            }
-            else
-            {
-                Console.WriteLine($"Updating semester '{dto.Name}' with Force=true (overlap check bypassed)");
             }
 
             // Tự động tính toán IsActive dựa trên ngày hiện tại

@@ -98,25 +98,19 @@ document.addEventListener('DOMContentLoaded', updateActiveNavLink);
 function createLineChart(canvasId, data, labels, label) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
-    
-    // Placeholder for chart implementation
-    console.log('Chart would be created here:', { canvasId, data, labels, label });
+    // TODO: Implement chart
 }
 
 function createBarChart(canvasId, data, labels, label) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
-    
-    // Placeholder for chart implementation
-    console.log('Chart would be created here:', { canvasId, data, labels, label });
+    // TODO: Implement chart
 }
 
 function createPieChart(canvasId, data, labels) {
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
-    
-    // Placeholder for chart implementation
-    console.log('Chart would be created here:', { canvasId, data, labels });
+    // TODO: Implement chart
 }
 
 // Format number with thousand separators
@@ -216,8 +210,7 @@ function debounce(func, wait) {
 
 // Search handler
 const handleSearch = debounce(function(query) {
-    console.log('Searching for:', query);
-    // Implement search logic here
+    // TODO: Implement search logic
 }, 300);
 
 // ===== API HELPERS WITH AUTHENTICATION (Cookie-based) =====
@@ -304,12 +297,7 @@ async function refreshAccessToken() {
             credentials: 'include' // Include cookies for refresh token
         });
         
-        if (!response.ok) {
-            return false;
-        }
-        
-        console.log('Token refreshed successfully via cookies');
-        return true;
+        return response.ok;
     } catch (error) {
         console.error('Error refreshing token:', error);
         return false;

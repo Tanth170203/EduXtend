@@ -77,7 +77,7 @@ namespace WebAPI.Middleware
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Lax, // Fixed: Changed from None to Lax
+                SameSite = SameSiteMode.None,
                 Path = "/",
                 Expires = DateTime.UtcNow.AddMinutes(jwtOptions.AccessTokenLifetimeMinutes),
                 IsEssential = true
@@ -87,7 +87,7 @@ namespace WebAPI.Middleware
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Lax, // Fixed: Changed from None to Lax
+                SameSite = SameSiteMode.None,
                 Path = "/",
                 Expires = DateTime.UtcNow.AddDays(jwtOptions.RefreshTokenLifetimeDays),
                 IsEssential = true

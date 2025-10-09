@@ -82,7 +82,6 @@ namespace WebFE.Pages
                 }
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("API response: {Content}", responseContent);
 
                 if (string.IsNullOrWhiteSpace(responseContent))
                 {
@@ -119,11 +118,8 @@ namespace WebFE.Pages
                     };
                 }
 
-                // Set cookies from response body (more reliable than extracting from headers)
-                SetCookie("AccessToken", loginResult.AccessToken, 30); // 30 minutes
-                SetCookie("RefreshToken", loginResult.RefreshToken, 7 * 24 * 60); // 7 days
-
-                _logger.LogInformation("Login successful for user, redirecting to: {RedirectUrl}", loginResult.RedirectUrl);
+                SetCookie("AccessToken", loginResult.AccessToken, 30);
+                SetCookie("RefreshToken", loginResult.RefreshToken, 7 * 24 * 60);
 
                 return new JsonResult(new { 
                     message = "Login successful", 
@@ -176,8 +172,6 @@ namespace WebFE.Pages
                 Expires = DateTimeOffset.UtcNow.AddMinutes(lifetimeMinutes),
                 IsEssential = true
             });
-
-            _logger.LogInformation("Set cookie: {Name}, expires in {Minutes} minutes", name, lifetimeMinutes);
         }
 
         private void ClearAuthCookies()

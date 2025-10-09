@@ -33,11 +33,10 @@ namespace WebAPI.Controllers
                 var semesters = await _semesterService.GetAllAsync();
                 return Ok(semesters);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error getting semesters: {ex.Message}");
-                return StatusCode(500, "Internal server error.");
-            }
+        catch (Exception)
+        {
+            return StatusCode(500, "Internal server error.");
+        }
         }
 
         /// <summary>
@@ -54,11 +53,10 @@ namespace WebAPI.Controllers
 
                 return Ok(semester);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error getting semester {id}: {ex.Message}");
-                return StatusCode(500, "Internal server error.");
-            }
+        catch (Exception)
+        {
+            return StatusCode(500, "Internal server error.");
+        }
         }
 
         /// <summary>
@@ -75,11 +73,10 @@ namespace WebAPI.Controllers
 
                 return Ok(semester);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error getting active semester: {ex.Message}");
-                return StatusCode(500, "Internal server error.");
-            }
+        catch (Exception)
+        {
+            return StatusCode(500, "Internal server error.");
+        }
         }
 
         /// <summary>
@@ -107,11 +104,10 @@ namespace WebAPI.Controllers
             {
                 return BadRequest(new { isWarning = false, message = ex.Message });
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error creating semester: {ex.Message}");
-                return StatusCode(500, "Internal server error.");
-            }
+        catch (Exception)
+        {
+            return StatusCode(500, "Internal server error.");
+        }
         }
 
         /// <summary>
@@ -139,11 +135,10 @@ namespace WebAPI.Controllers
             {
                 return BadRequest(new { isWarning = false, message = ex.Message });
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating semester {id}: {ex.Message}");
-                return StatusCode(500, "Internal server error.");
-            }
+        catch (Exception)
+        {
+            return StatusCode(500, "Internal server error.");
+        }
         }
 
         /// <summary>
@@ -158,11 +153,10 @@ namespace WebAPI.Controllers
                 await _semesterService.UpdateAllActiveStatusAsync();
                 return Ok(new { message = "Semester active status updated successfully." });
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating semester active status: {ex.Message}");
-                return StatusCode(500, "Internal server error.");
-            }
+        catch (Exception)
+        {
+            return StatusCode(500, "Internal server error.");
+        }
         }
 
         /// <summary>
@@ -184,11 +178,10 @@ namespace WebAPI.Controllers
                         : "Không có học kỳ nào trùng thời gian."
                 });
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error checking overlap: {ex.Message}");
-                return StatusCode(500, "Internal server error.");
-            }
+        catch (Exception)
+        {
+            return StatusCode(500, "Internal server error.");
+        }
         }
 
         /// <summary>
@@ -214,11 +207,10 @@ namespace WebAPI.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error deleting semester {id}: {ex.Message}");
-                return StatusCode(500, "Internal server error.");
-            }
+        catch (Exception)
+        {
+            return StatusCode(500, "Internal server error.");
+        }
         }
     }
 }

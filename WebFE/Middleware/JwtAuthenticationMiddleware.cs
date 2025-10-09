@@ -38,18 +38,11 @@ namespace WebFE.Middleware
                     {
                         var jwt = handler.ReadJwtToken(token);
                         
-                        // Check if token is expired
                         if (jwt.ValidTo < DateTime.UtcNow)
                         {
-                            _logger.LogWarning("Token expired, redirecting to login");
                             context.Response.Redirect("/Auth/Login");
                             return;
                         }
-
-                        // Extract roles from token
-                        var allClaims = jwt.Claims.ToList();
-                        _logger.LogInformation("JWT Claims for user: {@Claims}", 
-                            allClaims.Select(c => new { c.Type, c.Value }));
 
                         var roles = jwt.Claims
                             .Where(c => c.Type == ClaimTypes.Role || 
@@ -58,23 +51,17 @@ namespace WebFE.Middleware
                             .Select(c => c.Value)
                             .ToList();
 
-                        _logger.LogInformation("Extracted roles: [{Roles}] for path: {Path}", 
-                            string.Join(", ", roles), path);
-
-                        // Check role-based access
                         if (!HasAccess(path, roles))
                         {
-                            _logger.LogWarning("User with roles [{Roles}] attempted to access {Path}", string.Join(", ", roles), path);
+                            _logger.LogWarning("Access denied for user with roles [{Roles}] to {Path}", string.Join(", ", roles), path);
                             context.Response.Redirect("/Error?code=403");
                             return;
                         }
 
-                        // Set user context (optional - for server-side rendering)
                         SetUserContext(context, jwt);
                     }
                     else
                     {
-                        _logger.LogWarning("Invalid token format, redirecting to login");
                         context.Response.Redirect("/Auth/Login");
                         return;
                     }
@@ -86,15 +73,10 @@ namespace WebFE.Middleware
                     return;
                 }
             }
-            else
+            else if (IsProtectedPage(path))
             {
-                // No token found for protected page
-                if (IsProtectedPage(path))
-                {
-                    _logger.LogInformation("No token found for protected page {Path}, redirecting to login", path);
-                    context.Response.Redirect("/Auth/Login");
-                    return;
-                }
+                context.Response.Redirect("/Auth/Login");
+                return;
             }
 
             await _next(context);
@@ -155,11 +137,9 @@ namespace WebFE.Middleware
 
         private void SetUserContext(HttpContext context, JwtSecurityToken jwt)
         {
-            // Create claims identity from JWT
             var claims = jwt.Claims.ToList();
             var identity = new ClaimsIdentity(claims, "jwt");
             var principal = new ClaimsPrincipal(identity);
-            
             context.User = principal;
         }
     }

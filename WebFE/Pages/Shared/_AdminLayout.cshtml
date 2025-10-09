@@ -99,7 +99,7 @@
                 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">ĐIỂM RÈN LUYỆN</div>
-                    <a class="sidebar-link" href="/Admin/Criteria">
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Criteria") == true ? "active" : "")" href="/Admin/Criteria">
                         <i data-lucide="list-checks" style="width: 20px; height: 20px;"></i>
                         <span>Tiêu chí</span>
                     </a>
