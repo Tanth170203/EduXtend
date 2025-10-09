@@ -12,9 +12,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Repositories.LoggedOutTokens;
+using Repositories.MovementCriteria;
 using Repositories.Semesters;
 using Repositories.Users;
 using Services.GGLogin;
+using Services.MovementCriteria;
 using Services.Semesters;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -46,11 +48,15 @@ namespace WebAPI
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<ISemesterRepository, SemesterRepository>();
             builder.Services.AddScoped<ILoggedOutTokenRepository, LoggedOutTokenRepository>();
+            builder.Services.AddScoped<IMovementCriterionGroupRepository, MovementCriterionGroupRepository>();
+            builder.Services.AddScoped<IMovementCriterionRepository, MovementCriterionRepository>();
             
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             builder.Services.AddScoped<ISemesterService, SemesterService>();
+            builder.Services.AddScoped<IMovementCriterionGroupService, MovementCriterionGroupService>();
+            builder.Services.AddScoped<IMovementCriterionService, MovementCriterionService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();

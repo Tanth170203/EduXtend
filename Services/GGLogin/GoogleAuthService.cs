@@ -55,6 +55,24 @@ namespace Repositories.Users
 
                 await _userRepo.SaveChangesAsync();
             }
+            else
+            {
+                // ✅ Update FullName and Avatar if they are null/empty or changed
+                if (string.IsNullOrWhiteSpace(existingUser.FullName) && !string.IsNullOrEmpty(payload.Name))
+                {
+                    existingUser.FullName = payload.Name;
+                }
+                
+                if (string.IsNullOrWhiteSpace(existingUser.AvatarUrl) && !string.IsNullOrEmpty(payload.Picture))
+                {
+                    existingUser.AvatarUrl = payload.Picture;
+                }
+
+                if (string.IsNullOrWhiteSpace(existingUser.GoogleSubject))
+                {
+                    existingUser.GoogleSubject = payload.Subject;
+                }
+            }
 
             existingUser.LastLoginAt = DateTime.UtcNow;
             await _userRepo.SaveChangesAsync();

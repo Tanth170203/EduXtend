@@ -76,3 +76,6 @@ namespace WebAPI.Auth
         public AllUsersAttribute() : base("Admin", "Student", "ClubManager", "ClubMember") { }
     }
 }
+
+
+

@@ -1,0 +1,91 @@
+@model List<BusinessObject.DTOs.MovementCriteria.MovementCriterionGroupDto>
+
+<div class="content-card">
+    <div class="content-card-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <h5 class="content-card-title mb-1">Danh sách nhóm tiêu chí</h5>
+                <p class="text-muted mb-0">Quản lý tất cả nhóm tiêu chí trong hệ thống</p>
+            </div>
+        </div>
+    </div>
+    <div class="content-card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="list-group list-group-flush">
+                @foreach (var group in Model.OrderBy(g => g.Id))
+                {
+                    <div class="list-group-item list-group-item-action criteria-group-item">
+                        <div class="d-flex align-items-start justify-content-between">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-3 mb-2">
+                                    <div class="criteria-group-icon">
+                                        <i data-lucide="folder" style="width: 24px; height: 24px; color: var(--primary);"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1 criteria-group-name">@group.Name</h6>
+                                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                                            <span class="badge @(group.TargetType == "Student" ? "bg-success" : "bg-primary")">
+                                                <i data-lucide="@(group.TargetType == "Student" ? "user-check" : "users-2")" style="width: 12px; height: 12px;"></i>
+                                                @(group.TargetType == "Student" ? "Sinh viên" : "CLB")
+                                            </span>
+                                            <span class="text-muted small">
+                                                <i data-lucide="list-checks" style="width: 14px; height: 14px;"></i>
+                                                @group.CriteriaCount tiêu chí
+                                            </span>
+                                            <span class="text-muted small">
+                                                <i data-lucide="award" style="width: 14px; height: 14px;"></i>
+                                                Tối đa: @group.MaxScore điểm
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(group.Description))
+                                {
+                                    <p class="text-muted mb-0 ms-5 criteria-group-description">@group.Description</p>
+                                }
+                            </div>
+                            <div class="criteria-group-actions">
+                                <a href="/Admin/Criteria/Detail?groupId=@group.Id" class="btn btn-sm btn-outline-info me-2" title="Xem chi tiết">
+                                    <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-primary btn-edit me-2" 
+                                        data-bs-toggle="modal" data-bs-target="#editGroupModal"
+                                        data-group-id="@group.Id"
+                                        data-group-name="@group.Name"
+                                        data-group-description="@group.Description"
+                                        data-group-max-score="@group.MaxScore"
+                                        data-group-target-type="@group.TargetType"
+                                        title="Chỉnh sửa">
+                                    <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-delete" 
+                                        data-bs-toggle="modal" data-bs-target="#deleteGroupModal"
+                                        data-group-id="@group.Id"
+                                        data-group-name="@group.Name"
+                                        title="Xóa">
+                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-content text-center p-5">
+                <div class="empty-state-icon mb-3">
+                    <i data-lucide="folder-x" style="width: 64px; height: 64px; color: #9ca3af;"></i>
+                </div>
+                <h4 class="empty-state-title">Chưa có nhóm tiêu chí nào</h4>
+                <p class="empty-state-description">Bắt đầu bằng cách thêm nhóm tiêu chí đầu tiên vào hệ thống</p>
+                <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                    Thêm nhóm tiêu chí đầu tiên
+                </button>
+            </div>
+        }
+    </div>
+</div>
+

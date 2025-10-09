@@ -59,13 +59,12 @@ namespace WebAPI.Controllers
 
                 _logger.LogInformation("User {Email} logged in successfully with roles: {Roles}", user.Email, string.Join(", ", roles));
 
-                // Return tokens in response body for WebFE to set cookies
                 return Ok(new
                 {
                     message = "Login successful",
                     redirectUrl,
-                    accessToken,  // Include for WebFE
-                    refreshToken, // Include for WebFE
+                    accessToken,
+                    refreshToken,
                     user = new
                     {
                         user.Id,
@@ -106,10 +105,6 @@ namespace WebAPI.Controllers
                 {
                     return Unauthorized(new { message = "Invalid or expired refresh token" });
                 }
-
-                // ✅ No need to blacklist old token during refresh
-                // Token will expire naturally after 30 minutes
-                // Blacklist only needed on explicit logout
 
                 var newAccessToken = _tokenService.GenerateAccessToken(user);
                 var newRefreshToken = await _tokenService.GenerateAndSaveRefreshTokenAsync(user, "Web");
@@ -277,17 +272,11 @@ namespace WebAPI.Controllers
 
         private void SetAuthCookies(string accessToken, string refreshToken)
         {
-            // Log token info for debugging
-            _logger.LogInformation("Setting cookies - AccessToken length: {Length}, RefreshToken length: {RefreshLength}", 
-                accessToken.Length, refreshToken.Length);
-            _logger.LogInformation("AccessToken preview: {Preview}...", accessToken.Substring(0, Math.Min(50, accessToken.Length)));
-
-            // Use Lax for same-site requests (WebFE and WebAPI on same domain)
             Response.Cookies.Append("AccessToken", accessToken, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Lax, // Changed from None to Lax
+                SameSite = SameSiteMode.None,
                 Path = "/",
                 Expires = DateTime.UtcNow.AddMinutes(_jwt.AccessTokenLifetimeMinutes),
                 IsEssential = true
@@ -297,13 +286,11 @@ namespace WebAPI.Controllers
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Lax, // Changed from None to Lax
+                SameSite = SameSiteMode.None,
                 Path = "/",
                 Expires = DateTime.UtcNow.AddDays(_jwt.RefreshTokenLifetimeDays),
                 IsEssential = true
             });
-
-            _logger.LogInformation("Cookies set successfully");
         }
 
         private void ClearAuthCookies()
@@ -312,14 +299,14 @@ namespace WebAPI.Controllers
             {
                 Path = "/",
                 Secure = true,
-                SameSite = SameSiteMode.Lax // Changed from None to Lax
+                SameSite = SameSiteMode.None
             });
 
             Response.Cookies.Delete("RefreshToken", new CookieOptions
             {
                 Path = "/",
                 Secure = true,
-                SameSite = SameSiteMode.Lax // Changed from None to Lax
+                SameSite = SameSiteMode.None
             });
         }
 
