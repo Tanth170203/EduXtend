@@ -46,11 +46,16 @@ namespace WebAPI
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<ISemesterRepository, SemesterRepository>();
             builder.Services.AddScoped<ILoggedOutTokenRepository, LoggedOutTokenRepository>();
+            builder.Services.AddScoped<Repositories.Students.IStudentRepository, Repositories.Students.StudentRepository>();
+            builder.Services.AddScoped<Repositories.Majors.IMajorRepository, Repositories.Majors.MajorRepository>();
+            builder.Services.AddScoped<Repositories.Roles.IRoleRepository, Repositories.Roles.RoleRepository>();
             
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
             builder.Services.AddScoped<ISemesterService, SemesterService>();
+            builder.Services.AddScoped<Services.Students.IStudentService, Services.Students.StudentService>();
+            builder.Services.AddScoped<Services.Users.IUserService, Services.Users.UserService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();

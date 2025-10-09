@@ -1,0 +1,278 @@
+@page
+@model WebFE.Pages.Admin.Users.IndexModel
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    ViewData["Breadcrumb"] = "Quản lý người dùng";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Danh sách người dùng</h1>
+        <p class="page-description">Quản lý tài khoản và phân quyền người dùng</p>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h2 class="content-card-title">Danh sách người dùng</h2>
+        <div class="d-flex gap-2">
+            <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm..." style="max-width: 300px;">
+        </div>
+    </div>
+    <div class="content-card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Họ tên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <!-- Users will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Update Role Modal -->
+<div class="modal fade" id="updateRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cập nhật vai trò</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateRoleForm">
+                    <input type="hidden" id="updateUserId">
+                    <div class="mb-3">
+                        <label class="form-label">Người dùng</label>
+                        <input type="text" class="form-control" id="updateUserName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Vai trò mới <span class="text-danger">*</span></label>
+                        <select class="form-select" id="updateRoleId" required>
+                            <option value="">-- Chọn vai trò --</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="submitUpdateRole()">Cập nhật</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let usersData = [];
+        let rolesData = [];
+
+        async function loadData() {
+            try {
+                // Load users
+                const usersResponse = await apiGet('https://localhost:5001/api/users');
+                if (usersResponse.success) {
+                    usersData = usersResponse.data;
+                    renderUsersTable(usersData);
+                }
+
+                // Load roles
+                const rolesResponse = await apiGet('https://localhost:5001/api/roles');
+                if (rolesResponse.success) {
+                    rolesData = rolesResponse.data;
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Lỗi', 'Không thể tải dữ liệu');
+            }
+        }
+
+        function renderUsersTable(users) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            if (!users || users.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i data-lucide="inbox" style="width: 48px; height: 48px;"></i>
+                            <p class="mt-2">Chưa có người dùng nào</p>
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                const roles = user.userRoles?.map(ur => ur.role?.roleName).join(', ') || 'Chưa có';
+                
+                tr.innerHTML = `
+                    <td><strong>${user.id}</strong></td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            ${user.avatarUrl ? `<img src="${user.avatarUrl}" alt="Avatar" class="rounded-circle" style="width: 32px; height: 32px;">` : ''}
+                            <span>${user.fullName}</span>
+                        </div>
+                    </td>
+                    <td>${user.email}</td>
+                    <td>${user.phoneNumber || '-'}</td>
+                    <td><span class="badge bg-info">${roles}</span></td>
+                    <td>${getActiveStatusBadge(user.isActive)}</td>
+                    <td>${formatDate(user.createdAt)}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-${user.isActive ? 'warning' : 'success'}" 
+                                    onclick="toggleUserStatus(${user.id}, ${user.isActive})"
+                                    title="${user.isActive ? 'Ban tài khoản' : 'Kích hoạt tài khoản'}">
+                                <i data-lucide="${user.isActive ? 'user-x' : 'user-check'}" style="width: 14px; height: 14px;"></i>
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="openUpdateRoleModal(${user.id})" title="Cập nhật vai trò">
+                                <i data-lucide="shield" style="width: 14px; height: 14px;"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+        }
+
+        function getActiveStatusBadge(isActive) {
+            return isActive 
+                ? '<span class="badge bg-success">Hoạt động</span>' 
+                : '<span class="badge bg-danger">Bị khóa</span>';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        async function toggleUserStatus(userId, currentStatus) {
+            const action = currentStatus ? 'khóa' : 'kích hoạt';
+            const confirmed = confirm(`Bạn có chắc chắn muốn ${action} tài khoản này?`);
+            
+            if (!confirmed) return;
+
+            try {
+                const response = await apiPut(`https://localhost:5001/api/users/${userId}/toggle-status`, {});
+                if (response.success) {
+                    showSuccess('Thành công', `Đã ${action} tài khoản thành công`);
+                    await loadData();
+                } else {
+                    showError('Lỗi', response.message || `Không thể ${action} tài khoản`);
+                }
+            } catch (error) {
+                console.error('Error toggling user status:', error);
+                showError('Lỗi', `Không thể ${action} tài khoản`);
+            }
+        }
+
+        function openUpdateRoleModal(userId) {
+            const user = usersData.find(u => u.id === userId);
+            if (!user) return;
+
+            document.getElementById('updateUserId').value = userId;
+            document.getElementById('updateUserName').value = `${user.fullName} (${user.email})`;
+
+            // Populate roles dropdown
+            const roleSelect = document.getElementById('updateRoleId');
+            roleSelect.innerHTML = '<option value="">-- Chọn vai trò --</option>';
+            rolesData.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.id;
+                option.textContent = `${role.roleName} - ${role.description || ''}`;
+                
+                // Select current role if exists
+                if (user.userRoles && user.userRoles.length > 0) {
+                    if (user.userRoles[0].roleId === role.id) {
+                        option.selected = true;
+                    }
+                }
+                
+                roleSelect.appendChild(option);
+            });
+
+            const modal = new bootstrap.Modal(document.getElementById('updateRoleModal'));
+            modal.show();
+        }
+
+        async function submitUpdateRole() {
+            const userId = parseInt(document.getElementById('updateUserId').value);
+            const roleId = parseInt(document.getElementById('updateRoleId').value);
+
+            if (!roleId) {
+                showError('Lỗi', 'Vui lòng chọn vai trò');
+                return;
+            }
+
+            try {
+                const response = await apiPut(`https://localhost:5001/api/users/${userId}/role`, { roleId });
+                if (response.success) {
+                    showSuccess('Thành công', 'Đã cập nhật vai trò thành công');
+                    bootstrap.Modal.getInstance(document.getElementById('updateRoleModal')).hide();
+                    await loadData();
+                } else {
+                    showError('Lỗi', response.message || 'Không thể cập nhật vai trò');
+                }
+            } catch (error) {
+                console.error('Error updating role:', error);
+                showError('Lỗi', 'Không thể cập nhật vai trò');
+            }
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = usersData.filter(user => 
+                user.fullName.toLowerCase().includes(searchTerm) ||
+                user.email.toLowerCase().includes(searchTerm) ||
+                (user.phoneNumber && user.phoneNumber.toLowerCase().includes(searchTerm))
+            );
+            renderUsersTable(filtered);
+        });
+
+        // Helper functions for notifications
+        function showSuccess(title, message) {
+            if (typeof success === 'function') {
+                success(title, message);
+            }
+        }
+
+        function showError(title, message) {
+            if (typeof error === 'function') {
+                error(title, message);
+            }
+        }
+
+        function showInfo(title, message) {
+            if (typeof info === 'function') {
+                info(title, message);
+            }
+        }
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadData();
+            lucide.createIcons();
+        });
+    </script>
+}
+

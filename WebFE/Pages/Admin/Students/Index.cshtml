@@ -1,0 +1,330 @@
+@page
+@model WebFE.Pages.Admin.Students.IndexModel
+@{
+    ViewData["Title"] = "Quản lý sinh viên";
+    ViewData["Breadcrumb"] = "Quản lý sinh viên";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Quản lý sinh viên</h1>
+        <p class="page-description">Danh sách sinh viên và thông tin chi tiết</p>
+    </div>
+    <button class="btn btn-primary" onclick="openAddStudentModal()">
+        <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i>
+        Thêm sinh viên
+    </button>
+</div>
+
+<!-- Students Table -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h2 class="content-card-title">Danh sách sinh viên</h2>
+        <div class="d-flex gap-2">
+            <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm..." style="max-width: 300px;">
+        </div>
+    </div>
+    <div class="content-card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="studentsTable">
+                <thead>
+                    <tr>
+                        <th>Mã SV</th>
+                        <th>Họ tên</th>
+                        <th>Email</th>
+                        <th>Giới tính</th>
+                        <th>Ngày sinh</th>
+                        <th>Ngành</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsTableBody">
+                    <!-- Students will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal fade" id="addStudentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm sinh viên</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addStudentForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Chọn người dùng <span class="text-danger">*</span></label>
+                            <select class="form-select" id="userId" name="userId" required>
+                                <option value="">-- Chọn người dùng --</option>
+                            </select>
+                            <small class="text-muted">Chỉ hiển thị người dùng có vai trò Student và chưa có hồ sơ</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Mã sinh viên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="studentCode" name="studentCode" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Họ tên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="fullName" name="fullName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ngày sinh <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="dateOfBirth" name="dateOfBirth" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Giới tính <span class="text-danger">*</span></label>
+                            <select class="form-select" id="gender" name="gender" required>
+                                <option value="0">Không xác định</option>
+                                <option value="1">Nam</option>
+                                <option value="2">Nữ</option>
+                                <option value="3">Khác</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="phone" name="phone">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ngành <span class="text-danger">*</span></label>
+                            <select class="form-select" id="majorId" name="majorId" required>
+                                <option value="">-- Chọn ngành --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ngày nhập học <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="enrollmentDate" name="enrollmentDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Trạng thái <span class="text-danger">*</span></label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="0">Đang học</option>
+                                <option value="1">Nghỉ học</option>
+                                <option value="2">Đã tốt nghiệp</option>
+                                <option value="3">Đình chỉ</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="submitAddStudent()">Thêm sinh viên</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let studentsData = [];
+        let usersWithoutProfile = [];
+        let majors = [];
+
+        async function loadData() {
+            try {
+                // Load students
+                const studentsResponse = await apiGet('https://localhost:5001/api/students');
+                if (studentsResponse.success) {
+                    studentsData = studentsResponse.data;
+                    renderStudentsTable(studentsData);
+                }
+
+                // Load users without student profile
+                const usersResponse = await apiGet('https://localhost:5001/api/students/available-users');
+                if (usersResponse.success) {
+                    usersWithoutProfile = usersResponse.data;
+                }
+
+                // Load majors
+                const majorsResponse = await apiGet('https://localhost:5001/api/majors/active');
+                if (majorsResponse.success) {
+                    majors = majorsResponse.data;
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Lỗi', 'Không thể tải dữ liệu');
+            }
+        }
+
+        function renderStudentsTable(students) {
+            const tbody = document.getElementById('studentsTableBody');
+            tbody.innerHTML = '';
+
+            if (!students || students.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i data-lucide="inbox" style="width: 48px; height: 48px;"></i>
+                            <p class="mt-2">Chưa có sinh viên nào</p>
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            students.forEach(student => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${student.studentCode}</strong></td>
+                    <td>${student.fullName}</td>
+                    <td>${student.email || '-'}</td>
+                    <td>${getGenderText(student.gender)}</td>
+                    <td>${formatDate(student.dateOfBirth)}</td>
+                    <td>${student.major?.name || '-'}</td>
+                    <td>${getStatusBadge(student.status)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewStudent(${student.id})">
+                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+        }
+
+        function getGenderText(gender) {
+            switch (gender) {
+                case 1: return 'Nam';
+                case 2: return 'Nữ';
+                case 3: return 'Khác';
+                default: return 'Không xác định';
+            }
+        }
+
+        function getStatusBadge(status) {
+            switch (status) {
+                case 0: return '<span class="badge bg-success">Đang học</span>';
+                case 1: return '<span class="badge bg-warning">Nghỉ học</span>';
+                case 2: return '<span class="badge bg-info">Đã tốt nghiệp</span>';
+                case 3: return '<span class="badge bg-danger">Đình chỉ</span>';
+                default: return '<span class="badge bg-secondary">Không xác định</span>';
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        function openAddStudentModal() {
+            // Populate users dropdown
+            const userSelect = document.getElementById('userId');
+            userSelect.innerHTML = '<option value="">-- Chọn người dùng --</option>';
+            usersWithoutProfile.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.fullName} (${user.email})`;
+                userSelect.appendChild(option);
+            });
+
+            // Populate majors dropdown
+            const majorSelect = document.getElementById('majorId');
+            majorSelect.innerHTML = '<option value="">-- Chọn ngành --</option>';
+            majors.forEach(major => {
+                const option = document.createElement('option');
+                option.value = major.id;
+                option.textContent = `${major.name} (${major.code})`;
+                majorSelect.appendChild(option);
+            });
+
+            // Set default enrollment date to today
+            document.getElementById('enrollmentDate').valueAsDate = new Date();
+
+            const modal = new bootstrap.Modal(document.getElementById('addStudentModal'));
+            modal.show();
+        }
+
+        async function submitAddStudent() {
+            const form = document.getElementById('addStudentForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const formData = {
+                userId: parseInt(document.getElementById('userId').value),
+                studentCode: document.getElementById('studentCode').value,
+                fullName: document.getElementById('fullName').value,
+                dateOfBirth: document.getElementById('dateOfBirth').value,
+                gender: parseInt(document.getElementById('gender').value),
+                email: document.getElementById('email').value || null,
+                phone: document.getElementById('phone').value || null,
+                majorId: parseInt(document.getElementById('majorId').value),
+                enrollmentDate: document.getElementById('enrollmentDate').value,
+                status: parseInt(document.getElementById('status').value)
+            };
+
+            try {
+                const response = await apiPost('https://localhost:5001/api/students', formData);
+                if (response.success) {
+                    showSuccess('Thành công', 'Đã thêm sinh viên thành công');
+                    bootstrap.Modal.getInstance(document.getElementById('addStudentModal')).hide();
+                    form.reset();
+                    await loadData();
+                } else {
+                    showError('Lỗi', response.message || 'Không thể thêm sinh viên');
+                }
+            } catch (error) {
+                console.error('Error adding student:', error);
+                showError('Lỗi', 'Không thể thêm sinh viên');
+            }
+        }
+
+        function viewStudent(id) {
+            // TODO: Implement view student details
+            showInfo('Thông báo', 'Chức năng xem chi tiết đang được phát triển');
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = studentsData.filter(student => 
+                student.studentCode.toLowerCase().includes(searchTerm) ||
+                student.fullName.toLowerCase().includes(searchTerm) ||
+                (student.email && student.email.toLowerCase().includes(searchTerm))
+            );
+            renderStudentsTable(filtered);
+        });
+
+        // Helper functions for notifications
+        function showSuccess(title, message) {
+            if (typeof success === 'function') {
+                success(title, message);
+            }
+        }
+
+        function showError(title, message) {
+            if (typeof error === 'function') {
+                error(title, message);
+            }
+        }
+
+        function showInfo(title, message) {
+            if (typeof info === 'function') {
+                info(title, message);
+            }
+        }
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadData();
+            lucide.createIcons();
+        });
+    </script>
+}
+

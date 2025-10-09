@@ -67,15 +67,15 @@
                 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">QUẢN LÝ NGƯỜI DÙNG</div>
-                    <a class="sidebar-link" href="/Admin/Students">
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Students/Index" ? "active" : "")" href="/Admin/Students">
                         <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
                         <span>Sinh viên</span>
                     </a>
-                    <a class="sidebar-link" href="/Admin/Staff">
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Users/Index" ? "active" : "")" href="/Admin/Users">
                         <i data-lucide="briefcase" style="width: 20px; height: 20px;"></i>
-                        <span>Nhân viên</span>
+                        <span>Danh sách người dùng</span>
                     </a>
-                    <a class="sidebar-link" href="/Admin/Roles">
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Roles/Index" ? "active" : "")" href="/Admin/Roles">
                         <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
                         <span>Phân quyền</span>
                     </a>
@@ -222,6 +222,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/auth-helper.js" asp-append-version="true"></script>
     <script src="~/js/auth.js" asp-append-version="true"></script>
     <script src="~/js/notifications.js" asp-append-version="true"></script>
     <script src="~/js/admin-dashboard.js" asp-append-version="true"></script>
