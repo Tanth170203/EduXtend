@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin Dashboard - EduXtend</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WebFE.styles.css" asp-append-version="true" />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="admin-body">
+    <!-- Sidebar -->
+    <div class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <div class="d-flex align-items-center gap-2">
+                <div class="sidebar-logo">
+                    E
+                </div>
+                <div class="sidebar-title">
+                    <div class="sidebar-brand">EduXtend</div>
+                    <div class="sidebar-subtitle">Admin Dashboard</div>
+                </div>
+            </div>
+            <button class="sidebar-toggle d-lg-none" onclick="toggleSidebar()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-content">
+            <nav class="sidebar-nav">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">TỔNG QUAN</div>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Dashboard/Index" ? "active" : "")" href="/Admin/Dashboard">
+                        <i data-lucide="layout-dashboard" style="width: 20px; height: 20px;"></i>
+                        <span>Tổng quan</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">QUẢN LÝ HỆ THỐNG</div>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Semesters/Index" ? "active" : "")" href="/Admin/Semesters">
+                        <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+                        <span>Học kỳ</span>
+                    </a>
+                    <a class="sidebar-link" href="/Admin/AcademicYears">
+                        <i data-lucide="calendar-range" style="width: 20px; height: 20px;"></i>
+                        <span>Năm học</span>
+                    </a>
+                    <a class="sidebar-link" href="/Admin/Departments">
+                        <i data-lucide="building" style="width: 20px; height: 20px;"></i>
+                        <span>Khoa</span>
+                    </a>
+                    <a class="sidebar-link" href="/Admin/Majors">
+                        <i data-lucide="book-open" style="width: 20px; height: 20px;"></i>
+                        <span>Ngành</span>
+                    </a>
+                    <a class="sidebar-link" href="/Admin/Classes">
+                        <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                        <span>Lớp học</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">QUẢN LÝ NGƯỜI DÙNG</div>
+                    <a class="sidebar-link" href="/Admin/Students">
+                        <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
+                        <span>Sinh viên</span>
+                    </a>
+                    <a class="sidebar-link" href="/Admin/Staff">
+                        <i data-lucide="briefcase" style="width: 20px; height: 20px;"></i>
+                        <span>Nhân viên</span>
+                    </a>
+                    <a class="sidebar-link" href="/Admin/Roles">
+                        <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
+                        <span>Phân quyền</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">CÂU LẠC BỘ</div>
+                    <a class="sidebar-link" href="/Admin/Clubs">
+                        <i data-lucide="users-2" style="width: 20px; height: 20px;"></i>
+                        <span>Danh sách CLB</span>
+                    </a>
+                    <a class="sidebar-link" href="/Admin/ClubCategories">
+                        <i data-lucide="folder" style="width: 20px; height: 20px;"></i>
+                        <span>Danh mục CLB</span>
+                    </a>
+                    <a class="sidebar-link" href="/Admin/Activities">
+                        <i data-lucide="calendar-check" style="width: 20px; height: 20px;"></i>
+                        <span>Hoạt động</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">ĐIỂM RÈN LUYỆN</div>
+                    <a class="sidebar-link" href="/Admin/Criteria">
+                        <i data-lucide="list-checks" style="width: 20px; height: 20px;"></i>
+                        <span>Tiêu chí</span>
+                    </a>
+                    <a class="sidebar-link" href="/Admin/Evaluations">
+                        <i data-lucide="star" style="width: 20px; height: 20px;"></i>
+                        <span>Đánh giá</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">CÀI ĐẶT</div>
+                    <a class="sidebar-link" href="/Admin/SystemNews">
+                        <i data-lucide="newspaper" style="width: 20px; height: 20px;"></i>
+                        <span>Tin tức hệ thống</span>
+                    </a>
+                    <a class="sidebar-link" href="/Admin/Settings">
+                        <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
+                        <span>Cấu hình</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+        
+        <div class="sidebar-footer">
+            <a class="sidebar-link" href="/">
+                <i data-lucide="home" style="width: 20px; height: 20px;"></i>
+                <span>Về trang chủ</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="admin-main">
+        <!-- Top Header -->
+        <header class="admin-header">
+            <div class="admin-header-left">
+                <button class="sidebar-toggle-btn d-lg-none" onclick="toggleSidebar()">
+                    <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+                </button>
+                <button class="sidebar-toggle-btn d-none d-lg-flex" onclick="toggleSidebarCollapse()">
+                    <i data-lucide="panel-left" style="width: 20px; height: 20px;"></i>
+                </button>
+                <div class="admin-breadcrumb">
+                    <span class="breadcrumb-item">Admin</span>
+                    @if (ViewData["Breadcrumb"] != null)
+                    {
+                        <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+                        <span class="breadcrumb-item active">@ViewData["Breadcrumb"]</span>
+                    }
+                </div>
+            </div>
+            
+            <div class="admin-header-right">
+                <!-- Notification Bell -->
+                <div class="header-icon-btn" onclick="toggleNotificationCenter()">
+                    <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+                    <div class="notification-badge"></div>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="dropdown">
+                    <button class="user-menu-btn" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img id="adminUserAvatar" src="" alt="Avatar" class="user-avatar" />
+                        <div class="user-info d-none d-md-block">
+                            <div class="user-name" id="adminUserName">Admin</div>
+                            <div class="user-role">Quản trị viên</div>
+                        </div>
+                        <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end admin-dropdown-menu" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" href="/Profile">
+                                <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                                <span>Hồ sơ</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/Admin/Settings">
+                                <i data-lucide="settings" style="width: 16px; height: 16px;"></i>
+                                <span>Cài đặt</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="#" onclick="logout(); return false;">
+                                <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+                                <span>Đăng xuất</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Page Content -->
+        <main class="admin-content">
+            @RenderBody()
+        </main>
+        
+        <!-- Footer -->
+        <footer class="admin-footer">
+            <div class="footer-content">
+                <div class="footer-text">
+                    &copy; 2025 EduXtend. All rights reserved.
+                </div>
+                <div class="footer-links">
+                    <a href="/Privacy">Chính sách</a>
+                    <span>•</span>
+                    <a href="/Terms">Điều khoản</a>
+                    <span>•</span>
+                    <a href="/Contact">Liên hệ</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
+    <script src="~/js/admin-dashboard.js" asp-append-version="true"></script>
+    <script>
+        // Check admin authentication BEFORE page loads (async)
+        (async function() {
+            const hasAdminAccess = await requireAdmin();
+            if (!hasAdminAccess) {
+                // requireAdmin will handle redirect
+                throw new Error('Unauthorized access');
+            }
+        })();
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Check authentication status and update UI
+        document.addEventListener('DOMContentLoaded', async function() {
+            await updateAdminAuthUI();
+            
+            // Check for stored notifications from redirects
+            checkStoredNotifications();
+            
+            // Check for admin required message
+            const adminRequired = sessionStorage.getItem('adminRequired');
+            if (adminRequired) {
+                try {
+                    const notification = JSON.parse(adminRequired);
+                    if (typeof error === 'function') {
+                        error(notification.title, notification.message, 5000);
+                    }
+                    sessionStorage.removeItem('adminRequired');
+                } catch (e) {
+                    console.error('Error parsing admin required notification:', e);
+                }
+            }
+        });
+
+        async function updateAdminAuthUI() {
+            const user = await getUser();
+            if (user && user.avatar) {
+                document.getElementById('adminUserAvatar').src = user.avatar;
+            }
+            if (user && user.name) {
+                document.getElementById('adminUserName').textContent = user.name;
+            }
+        }
+
+        function checkStoredNotifications() {
+            // Check for login success message
+            const loginSuccess = sessionStorage.getItem('loginSuccess');
+            if (loginSuccess) {
+                try {
+                    const notification = JSON.parse(loginSuccess);
+                    if (typeof success === 'function') {
+                        success(notification.title, notification.message, 5000);
+                    }
+                    sessionStorage.removeItem('loginSuccess');
+                } catch (e) {
+                    console.error('Error parsing login success notification:', e);
+                }
+            }
+
+            // Check for logout success message
+            const logoutSuccess = sessionStorage.getItem('logoutSuccess');
+            if (logoutSuccess) {
+                try {
+                    const notification = JSON.parse(logoutSuccess);
+                    if (typeof info === 'function') {
+                        info(notification.title, notification.message, 5000);
+                    }
+                    sessionStorage.removeItem('logoutSuccess');
+                } catch (e) {
+                    console.error('Error parsing logout success notification:', e);
+                }
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('show');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        function toggleSidebarCollapse() {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+        }
+
+        // Restore sidebar state
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

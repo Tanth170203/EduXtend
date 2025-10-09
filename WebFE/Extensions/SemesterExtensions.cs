@@ -12,7 +12,7 @@ namespace WebFE.Extensions
         /// </summary>
         public static string GetStatus(this SemesterDto semester)
         {
-            var now = DateTime.Now.Date;
+            var now = DateTime.UtcNow.Date;
             var start = semester.StartDate.Date;
             var end = semester.EndDate.Date;
 
@@ -31,8 +31,8 @@ namespace WebFE.Extensions
         {
             return semester.GetStatus() switch
             {
-                "active" => "Đang diễn ra",
-                "upcoming" => "Sắp tới",
+                "active" => "Đang hoạt động",
+                "upcoming" => "Sắp diễn ra",
                 "completed" => "Đã kết thúc",
                 _ => "Không xác định"
             };
@@ -45,10 +45,10 @@ namespace WebFE.Extensions
         {
             return semester.GetStatus() switch
             {
-                "active" => "bg-success",
-                "upcoming" => "bg-info",
-                "completed" => "bg-secondary",
-                _ => "bg-secondary"
+                "active" => "status-badge active",
+                "upcoming" => "status-badge upcoming",
+                "completed" => "status-badge ended",
+                _ => "status-badge inactive"
             };
         }
     }

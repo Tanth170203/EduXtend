@@ -59,12 +59,6 @@
                                 <span>Tin tức</span>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/SystemConfig" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
-                                <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
-                                <span>Danh mục</span>
-                            </a>
-                        </li>
                     </ul>
                     <div class="d-flex align-items-center">
                         <!-- Notification Bell -->
@@ -112,7 +106,7 @@
                         </div>
 
                         <!-- Login button when not logged in -->
-                        <a id="loginBtn" class="btn" asp-area="" asp-page="/Login" style="background-color: #002952; color: white; padding: 0.5rem 1.5rem; border-radius: 6px; font-weight: 500; border: none; transition: background-color 0.2s;">
+                        <a id="loginBtn" class="btn" asp-area="" asp-page="/Auth/Login" style="background-color: #002952; color: white; padding: 0.5rem 1.5rem; border-radius: 6px; font-weight: 500; border: none; transition: background-color 0.2s;">
                             Đăng nhập
                         </a>
                     </div>
@@ -170,8 +164,30 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateAuthUI();
             
+            // Show/hide admin nav item based on user role
+            if (typeof isAdmin === 'function' && isAdmin()) {
+                const adminNavItem = document.getElementById('adminNavItem');
+                if (adminNavItem) {
+                    adminNavItem.style.display = 'block';
+                }
+            }
+            
             // Check for stored notifications from redirects
             checkStoredNotifications();
+            
+            // Check for admin required message
+            const adminRequired = sessionStorage.getItem('adminRequired');
+            if (adminRequired) {
+                try {
+                    const notification = JSON.parse(adminRequired);
+                    if (typeof error === 'function') {
+                        error(notification.title, notification.message, 5000);
+                    }
+                    sessionStorage.removeItem('adminRequired');
+                } catch (e) {
+                    console.error('Error parsing admin required notification:', e);
+                }
+            }
         });
 
         function checkStoredNotifications() {

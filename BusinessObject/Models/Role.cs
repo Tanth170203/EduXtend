@@ -1,17 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace BusinessObject.Models
+namespace BusinessObject.Models;
+
+public class Role
 {
-    public class Role
-    {
-        public int Id { get; set; }
-        [Required, MaxLength(50)] public string RoleName { get; set; } = null!;
-        [MaxLength(200)] public string? Description { get; set; }
-        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-    }
+    public int Id { get; set; }
+    
+    [Required, MaxLength(50)]
+    public string RoleName { get; set; } = null!; // Admin, ClubManager, ClubMember, Student
+    
+    [MaxLength(200)]
+    public string? Description { get; set; }
+
+    // Navigation properties
+    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }

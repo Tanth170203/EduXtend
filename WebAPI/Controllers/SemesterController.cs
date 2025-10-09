@@ -4,14 +4,15 @@ using Microsoft.AspNetCore.Mvc;
 using Services.Semesters;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace WebAPI.Controllers
 {
     [ApiController]
     [Route("api/semesters")]
-    //[Authorize]
     public class SemesterController : ControllerBase
     {
         private readonly ISemesterService _semesterService;
@@ -82,9 +83,10 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// Create new semester
+        /// Create new semester (Admin only)
         /// </summary>
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<SemesterDto>> Create([FromBody] CreateSemesterDto dto)
         {
             try
@@ -113,9 +115,10 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// Update semester
+        /// Update semester (Admin only)
         /// </summary>
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<SemesterDto>> Update(int id, [FromBody] UpdateSemesterDto dto)
         {
             try
@@ -144,9 +147,10 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// Update all semesters' IsActive status based on current date
+        /// Update all semesters' IsActive status based on current date (Admin only)
         /// </summary>
         [HttpPost("update-active-status")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateActiveStatus()
         {
             try
@@ -188,9 +192,10 @@ namespace WebAPI.Controllers
         }
 
         /// <summary>
-        /// Delete semester
+        /// Delete semester (Admin only)
         /// </summary>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             try

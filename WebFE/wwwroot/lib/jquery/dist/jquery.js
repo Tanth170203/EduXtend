@@ -4463,7 +4463,7 @@ jQuery.extend( {
 		dataUser.remove( elem, name );
 	},
 
-	// TODO: Now that all calls to _data and _removeData have been replaced
+	// TODO: UtcNow that all calls to _data and _removeData have been replaced
 	// with direct calls to dataPriv methods, these can be deprecated.
 	_data: function( elem, name, data ) {
 		return dataPriv.access( elem, name, data );
@@ -7267,7 +7267,7 @@ jQuery.fx.step = {};
 
 
 var
-	fxNow, inProgress,
+	fxUtcNow, inProgress,
 	rfxtypes = /^(?:toggle|show|hide)$/,
 	rrun = /queueHooks$/;
 
@@ -7284,11 +7284,11 @@ function schedule() {
 }
 
 // Animations created synchronously will run synchronously
-function createFxNow() {
+function createFxUtcNow() {
 	window.setTimeout( function() {
-		fxNow = undefined;
+		fxUtcNow = undefined;
 	} );
-	return ( fxNow = Date.now() );
+	return ( fxUtcNow = Date.now() );
 }
 
 // Generate parameters to create a standard animation
@@ -7549,7 +7549,7 @@ function Animation( elem, properties, options ) {
 			if ( stopped ) {
 				return false;
 			}
-			var currentTime = fxNow || createFxNow(),
+			var currentTime = fxUtcNow || createFxUtcNow(),
 				remaining = Math.max( 0, animation.startTime + animation.duration - currentTime ),
 
 				// Support: Android 2.3 only
@@ -7588,7 +7588,7 @@ function Animation( elem, properties, options ) {
 			}, options ),
 			originalProperties: properties,
 			originalOptions: options,
-			startTime: fxNow || createFxNow(),
+			startTime: fxUtcNow || createFxUtcNow(),
 			duration: options.duration,
 			tweens: [],
 			createTween: function( prop, end ) {
@@ -7897,7 +7897,7 @@ jQuery.fx.tick = function() {
 		i = 0,
 		timers = jQuery.timers;
 
-	fxNow = Date.now();
+	fxUtcNow = Date.now();
 
 	for ( ; i < timers.length; i++ ) {
 		timer = timers[ i ];
@@ -7911,7 +7911,7 @@ jQuery.fx.tick = function() {
 	if ( !timers.length ) {
 		jQuery.fx.stop();
 	}
-	fxNow = undefined;
+	fxUtcNow = undefined;
 };
 
 jQuery.fx.timer = function( timer ) {

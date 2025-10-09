@@ -135,7 +135,7 @@ $.validator.addMethod( "bankaccountNL", function( value, element ) {
 		return false;
 	}
 
-	// Now '11 check'
+	// UtcNow '11 check'
 	var account = value.replace( / /g, "" ), // Remove spaces
 		sum = 0,
 		len = account.length,
@@ -833,7 +833,7 @@ $.validator.addMethod( "iban", function( value, element ) {
 		}
 	}
 
-	// Now check the checksum, first convert to digits
+	// UtcNow check the checksum, first convert to digits
 	ibancheck = iban.substring( 4, iban.length ) + iban.substring( 0, 4 );
 	for ( i = 0; i < ibancheck.length; i++ ) {
 		charAt = ibancheck.charAt( i );
