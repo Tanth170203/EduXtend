@@ -1,0 +1,437 @@
+@page
+@model WebFE.Pages.Admin.Criteria.DetailModel
+@{
+    ViewData["Title"] = $"Tiêu chí - {Model.GroupDetail?.Name}";
+    ViewData["Breadcrumb"] = "Chi tiết nhóm tiêu chí";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/criteria.css" asp-append-version="true" />
+}
+
+@if (Model.GroupDetail != null)
+{
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-2">
+                        <li class="breadcrumb-item"><a href="/Admin/Criteria">Tiêu chí</a></li>
+                        <li class="breadcrumb-item active">@Model.GroupDetail.Name</li>
+                    </ol>
+                </nav>
+                <h1 class="page-title">@Model.GroupDetail.Name</h1>
+                @if (!string.IsNullOrEmpty(Model.GroupDetail.Description))
+                {
+                    <p class="page-description">@Model.GroupDetail.Description</p>
+                }
+            </div>
+            <div class="d-flex gap-2">
+                <a href="/Admin/Criteria" class="btn btn-outline-secondary">
+                    <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                    Quay lại
+                </a>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCriterionModal">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                    Thêm tiêu chí
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i data-lucide="check-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+            @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Group Info Card -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Thông tin nhóm</h5>
+                </div>
+                <div class="content-card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">Tên nhóm</label>
+                                <div class="info-value">@Model.GroupDetail.Name</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">Đối tượng áp dụng</label>
+                                <div class="info-value">
+                                    <span class="badge @(Model.GroupDetail.TargetType == "Student" ? "bg-success" : "bg-primary")">
+                                        @(Model.GroupDetail.TargetType == "Student" ? "Sinh viên" : "CLB")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">Điểm tối đa</label>
+                                <div class="info-value">@Model.GroupDetail.MaxScore điểm</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">Số lượng tiêu chí</label>
+                                <div class="info-value">@Model.GroupDetail.Criteria.Count tiêu chí</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Tổng quan</h5>
+                </div>
+                <div class="content-card-body">
+                    <div class="stats-list">
+                        <div class="stats-list-item">
+                            <div class="stats-list-icon green">
+                                <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                            </div>
+                            <div class="stats-list-content">
+                                <div class="stats-list-value">@Model.GroupDetail.Criteria.Count(c => c.IsActive)</div>
+                                <div class="stats-list-label">Đang hoạt động</div>
+                            </div>
+                        </div>
+                        <div class="stats-list-item">
+                            <div class="stats-list-icon orange">
+                                <i data-lucide="pause-circle" style="width: 20px; height: 20px;"></i>
+                            </div>
+                            <div class="stats-list-content">
+                                <div class="stats-list-value">@Model.GroupDetail.Criteria.Count(c => !c.IsActive)</div>
+                                <div class="stats-list-label">Vô hiệu hóa</div>
+                            </div>
+                        </div>
+                        <div class="stats-list-item">
+                            <div class="stats-list-icon blue">
+                                <i data-lucide="award" style="width: 20px; height: 20px;"></i>
+                            </div>
+                            <div class="stats-list-content">
+                                <div class="stats-list-value">@Model.GroupDetail.Criteria.Sum(c => c.MaxScore)</div>
+                                <div class="stats-list-label">Tổng điểm tiêu chí</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Criteria List -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div>
+                    <h5 class="content-card-title mb-1">Danh sách tiêu chí</h5>
+                    <p class="text-muted mb-0">Quản lý các tiêu chí cụ thể trong nhóm này</p>
+                </div>
+            </div>
+        </div>
+        <div class="content-card-body p-0">
+            @if (Model.GroupDetail.Criteria.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%;">ID</th>
+                                <th style="width: 30%;">Tiêu đề</th>
+                                <th style="width: 20%;">Nguồn dữ liệu</th>
+                                <th style="width: 10%;">Điểm tối đa</th>
+                                <th style="width: 10%;">Trạng thái</th>
+                                <th style="width: 15%;" class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var criterion in Model.GroupDetail.Criteria.OrderBy(c => c.Id))
+                            {
+                                <tr>
+                                    <td>@criterion.Id</td>
+                                    <td>
+                                        <div>
+                                            <div class="fw-medium">@criterion.Title</div>
+                                            @if (!string.IsNullOrEmpty(criterion.Description))
+                                            {
+                                                <div class="text-muted small">@criterion.Description</div>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(criterion.DataSource))
+                                        {
+                                            <span class="badge bg-info">@criterion.DataSource</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">@criterion.MaxScore điểm</span>
+                                    </td>
+                                    <td>
+                                        @if (criterion.IsActive)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
+                                                Hoạt động
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                <i data-lucide="pause-circle" style="width: 12px; height: 12px;"></i>
+                                                Vô hiệu
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <form method="post" asp-page-handler="ToggleActive" style="display: inline;">
+                                            <input type="hidden" name="GroupId" value="@Model.GroupDetail.Id">
+                                            <input type="hidden" name="Id" value="@criterion.Id">
+                                            <button type="submit" class="btn btn-sm @(criterion.IsActive ? "btn-outline-warning" : "btn-outline-success")" title="@(criterion.IsActive ? "Vô hiệu hóa" : "Kích hoạt")">
+                                                <i data-lucide="@(criterion.IsActive ? "pause" : "play")" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-criterion" 
+                                                data-bs-toggle="modal" data-bs-target="#editCriterionModal"
+                                                data-criterion-id="@criterion.Id"
+                                                data-criterion-title="@criterion.Title"
+                                                data-criterion-description="@criterion.Description"
+                                                data-criterion-max-score="@criterion.MaxScore"
+                                                data-criterion-target-type="@criterion.TargetType"
+                                                data-criterion-data-source="@criterion.DataSource"
+                                                data-criterion-is-active="@criterion.IsActive.ToString().ToLower()"
+                                                title="Chỉnh sửa">
+                                            <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete-criterion" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteCriterionModal"
+                                                data-criterion-id="@criterion.Id"
+                                                data-criterion-title="@criterion.Title"
+                                                title="Xóa">
+                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-content text-center p-5">
+                    <div class="empty-state-icon mb-3">
+                        <i data-lucide="list-x" style="width: 64px; height: 64px; color: #9ca3af;"></i>
+                    </div>
+                    <h4 class="empty-state-title">Chưa có tiêu chí nào</h4>
+                    <p class="empty-state-description">Bắt đầu bằng cách thêm tiêu chí đầu tiên vào nhóm này</p>
+                    <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addCriterionModal">
+                        <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                        Thêm tiêu chí đầu tiên
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Add Criterion Modal -->
+    <div class="modal fade" id="addCriterionModal" tabindex="-1" aria-labelledby="addCriterionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCriterionModalLabel">
+                        <i data-lucide="plus-circle" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                        Thêm tiêu chí mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" asp-page-handler="CreateCriterion">
+                    <input type="hidden" name="GroupId" value="@Model.GroupDetail.Id">
+                    <input type="hidden" name="TargetType" value="@Model.GroupDetail.TargetType">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="addTitle" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="addTitle" name="Title" required placeholder="Ví dụ: Sinh hoạt CLB định kỳ">
+                        </div>
+                        <div class="mb-3">
+                            <label for="addDescription" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="addDescription" name="Description" rows="3" placeholder="Mô tả chi tiết về tiêu chí này"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="addMaxScore" class="form-label">Điểm tối đa <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="addMaxScore" name="MaxScore" required min="0" max="1000" value="10">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="addDataSource" class="form-label">Nguồn dữ liệu</label>
+                                    <input type="text" class="form-control" id="addDataSource" name="DataSource" placeholder="ActivityAttendance, ClubMembership...">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="IsActive" value="true" checked id="addIsActive">
+                            <label class="form-check-label" for="addIsActive">
+                                Kích hoạt ngay sau khi tạo
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                            Thêm tiêu chí
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Criterion Modal -->
+    <div class="modal fade" id="editCriterionModal" tabindex="-1" aria-labelledby="editCriterionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editCriterionModalLabel">
+                        <i data-lucide="edit-3" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                        Chỉnh sửa tiêu chí
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" asp-page-handler="UpdateCriterion">
+                    <input type="hidden" name="GroupId" value="@Model.GroupDetail.Id">
+                    <input type="hidden" name="Id" id="editCriterionId">
+                    <input type="hidden" name="TargetType" id="editTargetType">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editTitle" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="editTitle" name="Title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="editDescription" name="Description" rows="3"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editMaxScore" class="form-label">Điểm tối đa <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="editMaxScore" name="MaxScore" required min="0" max="1000">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editDataSource" class="form-label">Nguồn dữ liệu</label>
+                                    <input type="text" class="form-control" id="editDataSource" name="DataSource">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="editIsActive">
+                            <label class="form-check-label" for="editIsActive">
+                                Tiêu chí đang hoạt động
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                            Cập nhật
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Criterion Modal -->
+    <div class="modal fade" id="deleteCriterionModal" tabindex="-1" aria-labelledby="deleteCriterionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteCriterionModalLabel">Xác nhận xóa tiêu chí</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: #ef4444; margin-bottom: 1rem;"></i>
+                        <p>Bạn có chắc chắn muốn xóa tiêu chí <strong class="criterion-title-to-delete"></strong>?</p>
+                        <p class="text-muted small">Hành động này không thể hoàn tác.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <form method="post" asp-page-handler="DeleteCriterion" style="display: inline;">
+                        <input type="hidden" name="GroupId" value="@Model.GroupDetail.Id">
+                        <input type="hidden" name="Id" id="deleteCriterionId">
+                        <button type="submit" class="btn btn-danger">Xóa tiêu chí</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Initialize Lucide icons
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+                
+                // Edit criterion
+                document.querySelectorAll('.btn-edit-criterion').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.getElementById('editCriterionId').value = this.dataset.criterionId;
+                        document.getElementById('editTitle').value = this.dataset.criterionTitle;
+                        document.getElementById('editDescription').value = this.dataset.criterionDescription || '';
+                        document.getElementById('editMaxScore').value = this.dataset.criterionMaxScore;
+                        document.getElementById('editTargetType').value = this.dataset.criterionTargetType;
+                        document.getElementById('editDataSource').value = this.dataset.criterionDataSource || '';
+                        document.getElementById('editIsActive').checked = this.dataset.criterionIsActive === 'true';
+                    });
+                });
+                
+                // Delete criterion
+                document.querySelectorAll('.btn-delete-criterion').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.querySelector('.criterion-title-to-delete').textContent = this.dataset.criterionTitle;
+                        document.getElementById('deleteCriterionId').value = this.dataset.criterionId;
+                    });
+                });
+            });
+        </script>
+    }
+}
+else
+{
+    <div class="alert alert-danger">Không tìm thấy nhóm tiêu chí.</div>
+}

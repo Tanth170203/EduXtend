@@ -1,0 +1,333 @@
+@page
+@using BusinessObject.DTOs.MovementCriteria
+@model WebFE.Pages.Admin.Criteria.IndexModel
+@{
+    ViewData["Title"] = "Quản lý tiêu chí đánh giá";
+    ViewData["Breadcrumb"] = "Tiêu chí";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/criteria.css" asp-append-version="true" />
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">Quản lý tiêu chí đánh giá</h1>
+            <p class="page-description">Quản lý các tiêu chí và nhóm tiêu chí đánh giá sinh hoạt</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                Thêm nhóm tiêu chí
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Messages -->
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i data-lucide="check-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Tổng nhóm tiêu chí</p>
+            </div>
+            <div class="stat-card-icon blue">
+                <i data-lucide="folder" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.CriterionGroups.Count</div>
+        <p class="text-muted small mb-0">Tất cả nhóm tiêu chí</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Dành cho Sinh viên</p>
+            </div>
+            <div class="stat-card-icon green">
+                <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.CriterionGroups.Count(g => g.TargetType == "Student")</div>
+        <p class="text-muted small mb-0">Nhóm tiêu chí sinh viên</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Dành cho CLB</p>
+            </div>
+            <div class="stat-card-icon purple">
+                <i data-lucide="users-2" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.CriterionGroups.Count(g => g.TargetType == "Club")</div>
+        <p class="text-muted small mb-0">Nhóm tiêu chí CLB</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Tổng tiêu chí</p>
+            </div>
+            <div class="stat-card-icon orange">
+                <i data-lucide="list-checks" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.CriterionGroups.Sum(g => g.CriteriaCount)</div>
+        <p class="text-muted small mb-0">Tất cả tiêu chí</p>
+    </div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="content-card mb-4">
+    <div class="content-card-body p-3">
+        <ul class="nav nav-pills" id="criteriaFilterTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="all-tab" data-bs-toggle="pill" data-bs-target="#all" type="button" role="tab">
+                    <i data-lucide="list" style="width: 16px; height: 16px;"></i>
+                    Tất cả
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="student-tab" data-bs-toggle="pill" data-bs-target="#student" type="button" role="tab">
+                    <i data-lucide="user-check" style="width: 16px; height: 16px;"></i>
+                    Sinh viên
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="club-tab" data-bs-toggle="pill" data-bs-target="#club" type="button" role="tab">
+                    <i data-lucide="users-2" style="width: 16px; height: 16px;"></i>
+                    CLB
+                </button>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Criterion Groups List -->
+<div class="tab-content" id="criteriaFilterTabsContent">
+    <!-- All Tab -->
+    <div class="tab-pane fade show active" id="all" role="tabpanel">
+        @await Html.PartialAsync("_CriterionGroupsList", Model.CriterionGroups)
+    </div>
+
+    <!-- Student Tab -->
+    <div class="tab-pane fade" id="student" role="tabpanel">
+        @await Html.PartialAsync("_CriterionGroupsList", Model.CriterionGroups.Where(g => g.TargetType == "Student").ToList())
+    </div>
+
+    <!-- Club Tab -->
+    <div class="tab-pane fade" id="club" role="tabpanel">
+        @await Html.PartialAsync("_CriterionGroupsList", Model.CriterionGroups.Where(g => g.TargetType == "Club").ToList())
+    </div>
+</div>
+
+<!-- Add Group Modal -->
+<div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addGroupModalLabel">
+                    <i data-lucide="plus-circle" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                    Thêm nhóm tiêu chí mới
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="CreateGroup">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="addName" class="form-label">Tên nhóm tiêu chí <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="addName" name="Name" required placeholder="Ví dụ: I. HOẠT ĐỘNG CÂU LẠC BỘ">
+                        <div class="form-text">Tên nhóm sẽ hiển thị trong hệ thống đánh giá</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="addDescription" class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="addDescription" name="Description" rows="3" placeholder="Mô tả chi tiết về nhóm tiêu chí này"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addMaxScore" class="form-label">Điểm tối đa <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="addMaxScore" name="MaxScore" required min="0" max="1000" value="100">
+                                <div class="form-text">Điểm tối đa: 0-1000</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="addTargetType" class="form-label">Đối tượng áp dụng <span class="text-danger">*</span></label>
+                                <select class="form-select" id="addTargetType" name="TargetType" required>
+                                    <option value="Student">Sinh viên</option>
+                                    <option value="Club">CLB</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                        <small>Sau khi tạo nhóm, bạn có thể thêm các tiêu chí cụ thể vào nhóm này.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                        Thêm nhóm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Group Modal -->
+<div class="modal fade" id="editGroupModal" tabindex="-1" aria-labelledby="editGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editGroupModalLabel">
+                    <i data-lucide="edit-3" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                    Chỉnh sửa nhóm tiêu chí
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="UpdateGroup">
+                <input type="hidden" name="Id" id="editId">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editName" class="form-label">Tên nhóm tiêu chí <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editName" name="Name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="editDescription" name="Description" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editMaxScore" class="form-label">Điểm tối đa <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="editMaxScore" name="MaxScore" required min="0" max="1000">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editTargetType" class="form-label">Đối tượng áp dụng <span class="text-danger">*</span></label>
+                                <select class="form-select" id="editTargetType" name="TargetType" required>
+                                    <option value="Student">Sinh viên</option>
+                                    <option value="Club">CLB</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                        Cập nhật
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-labelledby="deleteGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteGroupModalLabel">Xác nhận xóa nhóm tiêu chí</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: #ef4444; margin-bottom: 1rem;"></i>
+                    <p>Bạn có chắc chắn muốn xóa nhóm <strong class="group-name-to-delete"></strong>?</p>
+                    <p class="text-muted small">Hành động này không thể hoàn tác. Tất cả tiêu chí trong nhóm cũng sẽ bị xóa.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form method="post" asp-page-handler="DeleteGroup" style="display: inline;">
+                    <input type="hidden" name="Id" id="deleteId">
+                    <button type="submit" class="btn btn-danger">Xóa nhóm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Edit button click
+            document.querySelectorAll('[data-group-id]').forEach(btn => {
+                if (btn.classList.contains('btn-edit')) {
+                    btn.addEventListener('click', function() {
+                        const id = this.dataset.groupId;
+                        const name = this.dataset.groupName;
+                        const description = this.dataset.groupDescription || '';
+                        const maxScore = this.dataset.groupMaxScore;
+                        const targetType = this.dataset.groupTargetType;
+                        
+                        document.getElementById('editId').value = id;
+                        document.getElementById('editName').value = name;
+                        document.getElementById('editDescription').value = description;
+                        document.getElementById('editMaxScore').value = maxScore;
+                        document.getElementById('editTargetType').value = targetType;
+                    });
+                }
+            });
+            
+            // Delete button click
+            document.querySelectorAll('[data-group-id]').forEach(btn => {
+                if (btn.classList.contains('btn-delete')) {
+                    btn.addEventListener('click', function() {
+                        const name = this.dataset.groupName;
+                        const id = this.dataset.groupId;
+                        
+                        document.querySelector('.group-name-to-delete').textContent = name;
+                        document.getElementById('deleteId').value = id;
+                    });
+                }
+            });
+
+            // Reinitialize icons after tab change
+            document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function() {
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                });
+            });
+        });
+    </script>
+}
+
