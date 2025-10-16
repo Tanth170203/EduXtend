@@ -3,8 +3,8 @@
 @using WebFE.Extensions
 @model WebFE.Pages.Admin.Semesters.IndexModel
 @{
-    ViewData["Title"] = "Quản lý học kỳ";
-    ViewData["Breadcrumb"] = "Học kỳ";
+    ViewData["Title"] = "Semester Management";
+    ViewData["Breadcrumb"] = "Semesters";
     Layout = "~/Pages/Shared/_AdminLayout.cshtml";
 }
 
@@ -73,8 +73,8 @@
                 <i data-lucide="play-circle" style="width: 24px; height: 24px;"></i>
             </div>
         </div>
-        <div class="stat-card-value">@Model.Semesters.Count(s => s.GetStatusLabel() == "Đang hoạt động")</div>
-        <p class="text-muted small mb-0">Học kỳ hiện tại</p>
+        <div class="stat-card-value">@Model.Semesters.Count(s => s.GetStatusLabel() == "Active")</div>
+        <p class="text-muted small mb-0">Current semester</p>
     </div>
 
     <div class="stat-card">
@@ -86,8 +86,8 @@
                 <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
             </div>
         </div>
-        <div class="stat-card-value">@Model.Semesters.Count(s => s.GetStatusLabel() == "Sắp diễn ra")</div>
-        <p class="text-muted small mb-0">Học kỳ sắp tới</p>
+        <div class="stat-card-value">@Model.Semesters.Count(s => s.GetStatusLabel() == "Upcoming")</div>
+        <p class="text-muted small mb-0">Upcoming semester</p>
     </div>
 
     <div class="stat-card">
@@ -99,8 +99,8 @@
                 <i data-lucide="pause-circle" style="width: 24px; height: 24px;"></i>
             </div>
         </div>
-        <div class="stat-card-value">@Model.Semesters.Count(s => s.GetStatusLabel() == "Đã kết thúc")</div>
-        <p class="text-muted small mb-0">Học kỳ đã qua</p>
+        <div class="stat-card-value">@Model.Semesters.Count(s => s.GetStatusLabel() == "Completed")</div>
+        <p class="text-muted small mb-0">Past semester</p>
     </div>
 </div>
 
@@ -117,7 +117,7 @@
                     <span class="input-group-text bg-white">
                         <i data-lucide="search" style="width: 16px; height: 16px;"></i>
                     </span>
-                    <input type="text" class="form-control" placeholder="Tìm kiếm học kỳ..." id="searchInput">
+                    <input type="text" class="form-control" placeholder="Search semesters..." id="searchInput">
                 </div>
             </div>
         </div>
@@ -170,7 +170,7 @@
                                 </td>
                                 <td class="semester-td">
                                     <span class="semester-status-badge @semester.GetStatusBadgeClass()">
-                                        <i data-lucide="@(semester.GetStatusLabel() == "Đang hoạt động" ? "play-circle" : semester.GetStatusLabel() == "Sắp diễn ra" ? "clock" : "pause-circle")" style="width: 12px; height: 12px;"></i>
+                                        <i data-lucide="@(semester.GetStatusLabel() == "Active" ? "play-circle" : semester.GetStatusLabel() == "Upcoming" ? "clock" : "pause-circle")" style="width: 12px; height: 12px;"></i>
                                         @semester.GetStatusLabel()
                                     </span>
                                 </td>
@@ -182,14 +182,14 @@
                                                 data-semester-name="@semester.Name"
                                                 data-semester-start="@semester.StartDate.ToString("yyyy-MM-dd")"
                                                 data-semester-end="@semester.EndDate.ToString("yyyy-MM-dd")"
-                                                title="Chỉnh sửa">
+                                                title="Edit">
                                             <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
                                         </button>
                                         <button type="button" class="btn btn-sm btn-outline-danger semester-btn-delete" 
                                                 data-bs-toggle="modal" data-bs-target="#deleteSemesterModal"
                                                 data-semester-id="@semester.Id"
                                                 data-semester-name="@semester.Name"
-                                                title="Xóa">
+                                                title="Delete">
                                             <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
                                         </button>
                                     </div>
@@ -250,8 +250,8 @@
                             Tên học kỳ
                         </label>
                         <input type="text" class="form-control semester-form-control" id="semesterName" 
-                               placeholder="Ví dụ: Fall2025, Spring2026, Summer2025" required>
-                        <div class="form-text">Tên học kỳ sẽ hiển thị trong hệ thống</div>
+                               placeholder="Example: Fall2025, Spring2026, Summer2025" required>
+                        <div class="form-text">Semester name will be displayed in the system</div>
                     </div>
                     
                     <!-- Date Range -->
@@ -286,9 +286,9 @@
                         </div>
                         <div class="info-card-content">
                             <ul class="info-list">
-                                <li>Trạng thái "Đang hoạt động" sẽ tự động được cập nhật dựa trên ngày bắt đầu và kết thúc</li>
-                                <li>Học kỳ đang hoạt động sẽ được sử dụng làm học kỳ mặc định cho các hoạt động mới</li>
-                                <li>Không thể xóa học kỳ đang hoạt động hoặc có dữ liệu liên quan</li>
+                                <li>"Active" status will be automatically updated based on start and end dates</li>
+                                <li>Active semester will be used as default for new activities</li>
+                                <li>Cannot delete active semester or semester with related data</li>
                             </ul>
                         </div>
                     </div>
@@ -319,26 +319,26 @@
             <form method="post" asp-page-handler="CreateSemester">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="addName" class="form-label">Tên học kỳ <span class="text-danger">*</span></label>
+                        <label for="addName" class="form-label">Semester Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="addName" name="Name" required>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="addStartDate" class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label>
+                                <label for="addStartDate" class="form-label">Start Date <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="addStartDate" name="StartDate" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="addEndDate" class="form-label">Ngày kết thúc <span class="text-danger">*</span></label>
+                                <label for="addEndDate" class="form-label">End Date <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="addEndDate" name="EndDate" required>
                             </div>
                         </div>
                     </div>
                     <div class="alert alert-info">
                         <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                        <small>Trạng thái "Đang hoạt động" sẽ được tự động tính toán dựa trên ngày hiện tại và khoảng thời gian của học kỳ.</small>
+                        <small>"Active" status will be automatically calculated based on current date and semester duration.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -362,26 +362,26 @@
                 <input type="hidden" name="Id" id="editId">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="editName" class="form-label">Tên học kỳ <span class="text-danger">*</span></label>
+                        <label for="editName" class="form-label">Semester Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="editName" name="Name" required>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="editStartDate" class="form-label">Ngày bắt đầu <span class="text-danger">*</span></label>
+                                <label for="editStartDate" class="form-label">Start Date <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="editStartDate" name="StartDate" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="editEndDate" class="form-label">Ngày kết thúc <span class="text-danger">*</span></label>
+                                <label for="editEndDate" class="form-label">End Date <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="editEndDate" name="EndDate" required>
                             </div>
                         </div>
                     </div>
                     <div class="alert alert-info">
                         <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                        <small>Trạng thái "Đang hoạt động" sẽ được tự động tính toán dựa trên ngày hiện tại và khoảng thời gian của học kỳ.</small>
+                        <small>"Active" status will be automatically calculated based on current date and semester duration.</small>
                     </div>
                 </div>
                 <div class="modal-footer">

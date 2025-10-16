@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -34,90 +34,90 @@
         <div class="sidebar-content">
             <nav class="sidebar-nav">
                 <div class="sidebar-section">
-                    <div class="sidebar-section-title">TỔNG QUAN</div>
+                    <div class="sidebar-section-title">OVERVIEW</div>
                     <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Dashboard/Index" ? "active" : "")" href="/Admin/Dashboard">
                         <i data-lucide="layout-dashboard" style="width: 20px; height: 20px;"></i>
-                        <span>Tổng quan</span>
+                        <span>Dashboard</span>
                     </a>
                 </div>
                 
                 <div class="sidebar-section">
-                    <div class="sidebar-section-title">QUẢN LÝ HỆ THỐNG</div>
+                    <div class="sidebar-section-title">SYSTEM MANAGEMENT</div>
                     <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Semesters/Index" ? "active" : "")" href="/Admin/Semesters">
                         <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
-                        <span>Học kỳ</span>
+                        <span>Semesters</span>
                     </a>
                     <a class="sidebar-link" href="/Admin/AcademicYears">
                         <i data-lucide="calendar-range" style="width: 20px; height: 20px;"></i>
-                        <span>Năm học</span>
+                        <span>Academic Years</span>
                     </a>
                     <a class="sidebar-link" href="/Admin/Departments">
                         <i data-lucide="building" style="width: 20px; height: 20px;"></i>
-                        <span>Khoa</span>
+                        <span>Departments</span>
                     </a>
                     <a class="sidebar-link" href="/Admin/Majors">
                         <i data-lucide="book-open" style="width: 20px; height: 20px;"></i>
-                        <span>Ngành</span>
+                        <span>Majors</span>
                     </a>
                     <a class="sidebar-link" href="/Admin/Classes">
                         <i data-lucide="users" style="width: 20px; height: 20px;"></i>
-                        <span>Lớp học</span>
+                        <span>Classes</span>
                     </a>
                 </div>
                 
                 <div class="sidebar-section">
-                    <div class="sidebar-section-title">QUẢN LÝ NGƯỜI DÙNG</div>
+                    <div class="sidebar-section-title">USER MANAGEMENT</div>
                     <a class="sidebar-link" href="/Admin/Students">
                         <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
-                        <span>Sinh viên</span>
+                        <span>Students</span>
                     </a>
                     <a class="sidebar-link" href="/Admin/Staff">
                         <i data-lucide="briefcase" style="width: 20px; height: 20px;"></i>
-                        <span>Nhân viên</span>
+                        <span>Staff</span>
                     </a>
                     <a class="sidebar-link" href="/Admin/Roles">
                         <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
-                        <span>Phân quyền</span>
+                        <span>Roles</span>
                     </a>
                 </div>
                 
                 <div class="sidebar-section">
-                    <div class="sidebar-section-title">CÂU LẠC BỘ</div>
+                    <div class="sidebar-section-title">CLUBS</div>
                     <a class="sidebar-link" href="/Admin/Clubs">
                         <i data-lucide="users-2" style="width: 20px; height: 20px;"></i>
-                        <span>Danh sách CLB</span>
+                        <span>Club List</span>
                     </a>
                     <a class="sidebar-link" href="/Admin/ClubCategories">
                         <i data-lucide="folder" style="width: 20px; height: 20px;"></i>
-                        <span>Danh mục CLB</span>
+                        <span>Club Categories</span>
                     </a>
                     <a class="sidebar-link" href="/Admin/Activities">
                         <i data-lucide="calendar-check" style="width: 20px; height: 20px;"></i>
-                        <span>Hoạt động</span>
+                        <span>Activities</span>
                     </a>
                 </div>
                 
                 <div class="sidebar-section">
-                    <div class="sidebar-section-title">ĐIỂM RÈN LUYỆN</div>
+                    <div class="sidebar-section-title">EVALUATION</div>
                     <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Criteria") == true ? "active" : "")" href="/Admin/Criteria">
                         <i data-lucide="list-checks" style="width: 20px; height: 20px;"></i>
-                        <span>Tiêu chí</span>
+                        <span>Criteria</span>
                     </a>
                     <a class="sidebar-link" href="/Admin/Evaluations">
                         <i data-lucide="star" style="width: 20px; height: 20px;"></i>
-                        <span>Đánh giá</span>
+                        <span>Evaluations</span>
                     </a>
                 </div>
                 
                 <div class="sidebar-section">
-                    <div class="sidebar-section-title">CÀI ĐẶT</div>
+                    <div class="sidebar-section-title">SETTINGS</div>
                     <a class="sidebar-link" href="/Admin/SystemNews">
                         <i data-lucide="newspaper" style="width: 20px; height: 20px;"></i>
-                        <span>Tin tức hệ thống</span>
+                        <span>System News</span>
                     </a>
                     <a class="sidebar-link" href="/Admin/Settings">
                         <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
-                        <span>Cấu hình</span>
+                        <span>Configuration</span>
                     </a>
                 </div>
             </nav>
@@ -126,7 +126,7 @@
         <div class="sidebar-footer">
             <a class="sidebar-link" href="/">
                 <i data-lucide="home" style="width: 20px; height: 20px;"></i>
-                <span>Về trang chủ</span>
+                <span>Back to Home</span>
             </a>
         </div>
     </div>
@@ -165,7 +165,7 @@
                         <img id="adminUserAvatar" src="" alt="Avatar" class="user-avatar" />
                         <div class="user-info d-none d-md-block">
                             <div class="user-name" id="adminUserName">Admin</div>
-                            <div class="user-role">Quản trị viên</div>
+                            <div class="user-role">Administrator</div>
                         </div>
                         <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
                     </button>
@@ -173,20 +173,20 @@
                         <li>
                             <a class="dropdown-item" href="/Profile">
                                 <i data-lucide="user" style="width: 16px; height: 16px;"></i>
-                                <span>Hồ sơ</span>
+                                <span>Profile</span>
                             </a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="/Admin/Settings">
                                 <i data-lucide="settings" style="width: 16px; height: 16px;"></i>
-                                <span>Cài đặt</span>
+                                <span>Settings</span>
                             </a>
                         </li>
                         <li><hr class="dropdown-divider" /></li>
                         <li>
                             <a class="dropdown-item text-danger" href="#" onclick="logout(); return false;">
                                 <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
-                                <span>Đăng xuất</span>
+                                <span>Logout</span>
                             </a>
                         </li>
                     </ul>
@@ -206,11 +206,11 @@
                     &copy; 2025 EduXtend. All rights reserved.
                 </div>
                 <div class="footer-links">
-                    <a href="/Privacy">Chính sách</a>
+                    <a href="/Privacy">Privacy Policy</a>
                     <span>•</span>
-                    <a href="/Terms">Điều khoản</a>
+                    <a href="/Terms">Terms</a>
                     <span>•</span>
-                    <a href="/Contact">Liên hệ</a>
+                    <a href="/Contact">Contact</a>
                 </div>
             </div>
         </footer>

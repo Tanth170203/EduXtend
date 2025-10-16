@@ -1,8 +1,8 @@
 @page
 @model WebFE.Pages.Admin.Criteria.DetailModel
 @{
-    ViewData["Title"] = $"Tiêu chí - {Model.GroupDetail?.Name}";
-    ViewData["Breadcrumb"] = "Chi tiết nhóm tiêu chí";
+    ViewData["Title"] = $"Criteria - {Model.GroupDetail?.Name}";
+    ViewData["Breadcrumb"] = "Criteria Group Details";
     Layout = "~/Pages/Shared/_AdminLayout.cshtml";
 }
 
@@ -79,7 +79,7 @@
                                 <label class="info-label">Đối tượng áp dụng</label>
                                 <div class="info-value">
                                     <span class="badge @(Model.GroupDetail.TargetType == "Student" ? "bg-success" : "bg-primary")">
-                                        @(Model.GroupDetail.TargetType == "Student" ? "Sinh viên" : "CLB")
+                                        @(Model.GroupDetail.TargetType == "Student" ? "Student" : "Club")
                                     </span>
                                 </div>
                             </div>
@@ -212,7 +212,7 @@
                                         <form method="post" asp-page-handler="ToggleActive" style="display: inline;">
                                             <input type="hidden" name="GroupId" value="@Model.GroupDetail.Id">
                                             <input type="hidden" name="Id" value="@criterion.Id">
-                                            <button type="submit" class="btn btn-sm @(criterion.IsActive ? "btn-outline-warning" : "btn-outline-success")" title="@(criterion.IsActive ? "Vô hiệu hóa" : "Kích hoạt")">
+                                            <button type="submit" class="btn btn-sm @(criterion.IsActive ? "btn-outline-warning" : "btn-outline-success")" title="@(criterion.IsActive ? "Deactivate" : "Activate")">
                                                 <i data-lucide="@(criterion.IsActive ? "pause" : "play")" style="width: 14px; height: 14px;"></i>
                                             </button>
                                         </form>
@@ -225,14 +225,14 @@
                                                 data-criterion-target-type="@criterion.TargetType"
                                                 data-criterion-data-source="@criterion.DataSource"
                                                 data-criterion-is-active="@criterion.IsActive.ToString().ToLower()"
-                                                title="Chỉnh sửa">
+                                                title="Edit">
                                             <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
                                         </button>
                                         <button type="button" class="btn btn-sm btn-outline-danger btn-delete-criterion" 
                                                 data-bs-toggle="modal" data-bs-target="#deleteCriterionModal"
                                                 data-criterion-id="@criterion.Id"
                                                 data-criterion-title="@criterion.Title"
-                                                title="Xóa">
+                                                title="Delete">
                                             <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
                                         </button>
                                     </td>
@@ -275,17 +275,17 @@
                     <input type="hidden" name="TargetType" value="@Model.GroupDetail.TargetType">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="addTitle" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="addTitle" name="Title" required placeholder="Ví dụ: Sinh hoạt CLB định kỳ">
+                            <label for="addTitle" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="addTitle" name="Title" required placeholder="Example: Regular club activities">
                         </div>
                         <div class="mb-3">
-                            <label for="addDescription" class="form-label">Mô tả</label>
-                            <textarea class="form-control" id="addDescription" name="Description" rows="3" placeholder="Mô tả chi tiết về tiêu chí này"></textarea>
+                            <label for="addDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="addDescription" name="Description" rows="3" placeholder="Detailed description of this criterion"></textarea>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="addMaxScore" class="form-label">Điểm tối đa <span class="text-danger">*</span></label>
+                                    <label for="addMaxScore" class="form-label">Maximum Score <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control" id="addMaxScore" name="MaxScore" required min="0" max="1000" value="10">
                                 </div>
                             </div>
@@ -332,7 +332,7 @@
                     <input type="hidden" name="TargetType" id="editTargetType">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="editTitle" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
+                            <label for="editTitle" class="form-label">Title <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="editTitle" name="Title" required>
                         </div>
                         <div class="mb-3">
@@ -342,7 +342,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="editMaxScore" class="form-label">Điểm tối đa <span class="text-danger">*</span></label>
+                                    <label for="editMaxScore" class="form-label">Maximum Score <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control" id="editMaxScore" name="MaxScore" required min="0" max="1000">
                                 </div>
                             </div>

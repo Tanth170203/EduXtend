@@ -66,14 +66,14 @@ namespace WebFE.Pages.Admin.Criteria
                 }
                 else
                 {
-                    ErrorMessage = "Không thể tải dữ liệu nhóm tiêu chí.";
+                    ErrorMessage = "Unable to load criteria group data.";
                     return RedirectToPage("/Admin/Criteria/Index");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading criterion group detail");
-                ErrorMessage = "Không thể tải dữ liệu. Vui lòng thử lại sau.";
+                ErrorMessage = "Unable to load data. Please try again later.";
                 return RedirectToPage("/Admin/Criteria/Index");
             }
 
@@ -105,19 +105,19 @@ namespace WebFE.Pages.Admin.Criteria
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Thêm tiêu chí thành công!";
+                    SuccessMessage = "Criterion added successfully!";
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogWarning("Create criterion failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = "Không thể thêm tiêu chí.";
+                    ErrorMessage = "Unable to add criterion.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating criterion");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage(new { groupId = GroupId });
@@ -148,19 +148,19 @@ namespace WebFE.Pages.Admin.Criteria
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Cập nhật tiêu chí thành công!";
+                    SuccessMessage = "Criterion updated successfully!";
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogWarning("Update criterion failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = "Không thể cập nhật tiêu chí.";
+                    ErrorMessage = "Unable to update criterion.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating criterion");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage(new { groupId = GroupId });
@@ -175,7 +175,7 @@ namespace WebFE.Pages.Admin.Criteria
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Xóa tiêu chí thành công!";
+                    SuccessMessage = "Criterion deleted successfully!";
                 }
                 else
                 {
@@ -191,19 +191,19 @@ namespace WebFE.Pages.Admin.Criteria
                         }
                         else
                         {
-                            ErrorMessage = "Không thể xóa tiêu chí.";
+                            ErrorMessage = "Unable to delete criterion.";
                         }
                     }
                     catch
                     {
-                        ErrorMessage = "Không thể xóa tiêu chí.";
+                        ErrorMessage = "Unable to delete criterion.";
                     }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting criterion");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage(new { groupId = GroupId });
@@ -218,17 +218,17 @@ namespace WebFE.Pages.Admin.Criteria
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Cập nhật trạng thái thành công!";
+                    SuccessMessage = "Status updated successfully!";
                 }
                 else
                 {
-                    ErrorMessage = "Không thể cập nhật trạng thái.";
+                    ErrorMessage = "Unable to update status.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error toggling criterion active status");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage(new { groupId = GroupId });

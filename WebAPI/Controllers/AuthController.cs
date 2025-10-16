@@ -54,7 +54,10 @@ namespace WebAPI.Controllers
 
                 SetAuthCookies(accessToken, refreshToken);
 
-                var roles = user.UserRoles.Select(r => r.Role.RoleName).ToList();
+                var roles = user.UserRoles?.Where(r => r?.Role != null)
+                    .Select(r => r.Role.RoleName)
+                    .Where(roleName => !string.IsNullOrEmpty(roleName))
+                    .ToList() ?? new List<string>();
                 string redirectUrl = DetermineRedirectUrl(roles);
 
                 _logger.LogInformation("User {Email} logged in successfully with roles: {Roles}", user.Email, string.Join(", ", roles));

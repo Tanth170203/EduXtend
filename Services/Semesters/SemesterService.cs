@@ -34,7 +34,7 @@ namespace Services.Semesters
         {
             // Validate business rules
             if (dto.StartDate >= dto.EndDate)
-                throw new ArgumentException("Ngày bắt đầu phải trước ngày kết thúc.");
+                throw new ArgumentException("Start date must be before end date.");
 
             // Kiểm tra overlap với các học kỳ khác (nếu không force)
             if (!dto.Force)
@@ -47,7 +47,7 @@ namespace Services.Semesters
                 if (overlappingSemesters.Any())
                 {
                     var overlappingNames = string.Join(", ", overlappingSemesters.Select(s => s.Name));
-                    var warningMessage = $"⚠️ Học kỳ này trùng thời gian với: {overlappingNames}";
+                    var warningMessage = $"⚠️ This semester overlaps with: {overlappingNames}";
                     throw new InvalidOperationException($"WARNING:{warningMessage}");
                 }
             }
@@ -72,11 +72,11 @@ namespace Services.Semesters
         {
             var semester = await _repository.GetByIdAsync(id);
             if (semester == null)
-                throw new ArgumentException("Học kỳ không tồn tại.");
+                throw new ArgumentException("Semester does not exist.");
 
             // Validate business rules
             if (dto.StartDate >= dto.EndDate)
-                throw new ArgumentException("Ngày bắt đầu phải trước ngày kết thúc.");
+                throw new ArgumentException("Start date must be before end date.");
 
             // Kiểm tra overlap với các học kỳ khác (trừ chính nó, nếu không force)
             if (!dto.Force)
@@ -90,7 +90,7 @@ namespace Services.Semesters
                 if (overlappingSemesters.Any())
                 {
                     var overlappingNames = string.Join(", ", overlappingSemesters.Select(s => s.Name));
-                    var warningMessage = $"⚠️ Học kỳ này trùng thời gian với: {overlappingNames}";
+                    var warningMessage = $"⚠️ This semester overlaps with: {overlappingNames}";
                     throw new InvalidOperationException($"WARNING:{warningMessage}");
                 }
             }
@@ -113,12 +113,12 @@ namespace Services.Semesters
             // Check if the semester exists
             var semester = await _repository.GetByIdAsync(id);
             if (semester == null)
-                throw new ArgumentException("Học kỳ không tồn tại.");
+                throw new ArgumentException("Semester does not exist.");
 
             // Check if there are any related data
             var hasRelatedData = await _repository.HasRelatedDataAsync(id);
             if (hasRelatedData)
-                throw new InvalidOperationException("Không thể xóa học kỳ này vì đang có dữ liệu liên quan. Vui lòng xóa các dữ liệu liên quan trước.");
+                throw new InvalidOperationException("Cannot delete this semester because it has related data. Please delete related data first.");
 
             return await _repository.DeleteAsync(id);
         }

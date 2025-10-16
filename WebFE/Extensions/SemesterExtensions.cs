@@ -31,10 +31,10 @@ namespace WebFE.Extensions
         {
             return semester.GetStatus() switch
             {
-                "active" => "Đang hoạt động",
-                "upcoming" => "Sắp diễn ra",
-                "completed" => "Đã kết thúc",
-                _ => "Không xác định"
+                "active" => "Active",
+                "upcoming" => "Upcoming",
+                "completed" => "Completed",
+                _ => "Unknown"
             };
         }
 

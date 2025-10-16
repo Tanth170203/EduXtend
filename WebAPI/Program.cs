@@ -1,27 +1,20 @@
 ﻿using BusinessObject.DTOs.GGLogin;
-using BusinessObject.Models;
 using DataAccess;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using Repositories.LoggedOutTokens;
 using Repositories.MovementCriteria;
 using Repositories.Semesters;
 using Repositories.Users;
+using Repositories.Students;
+using Repositories.Majors;
 using Services.GGLogin;
 using Services.MovementCriteria;
 using Services.Semesters;
+using Services.UserImport;
+using Services.TokenCleanup;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Text.Encodings.Web;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
 
@@ -50,6 +43,8 @@ namespace WebAPI
             builder.Services.AddScoped<ILoggedOutTokenRepository, LoggedOutTokenRepository>();
             builder.Services.AddScoped<IMovementCriterionGroupRepository, MovementCriterionGroupRepository>();
             builder.Services.AddScoped<IMovementCriterionRepository, MovementCriterionRepository>();
+            builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+            builder.Services.AddScoped<IMajorRepository, MajorRepository>();
             
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -57,9 +52,11 @@ namespace WebAPI
             builder.Services.AddScoped<ISemesterService, SemesterService>();
             builder.Services.AddScoped<IMovementCriterionGroupService, MovementCriterionGroupService>();
             builder.Services.AddScoped<IMovementCriterionService, MovementCriterionService>();
+            builder.Services.AddScoped<IUserImportService, UserImportService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
+            builder.Services.AddHostedService<TokenCleanupService>();
 
 
 

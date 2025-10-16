@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -38,25 +38,25 @@
                         <li class="nav-item">
                             <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/Clubs" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
                                 <i data-lucide="users" style="width: 18px; height: 18px;"></i>
-                                <span>Câu lạc bộ</span>
+                                <span>Clubs</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/Activities" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
                                 <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
-                                <span>Hoạt động</span>
+                                <span>Activities</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/Evaluation" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
                                 <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
-                                <span>Điểm rèn luyện</span>
+                                <span>Evaluation</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/News" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
                                 <i data-lucide="newspaper" style="width: 18px; height: 18px;"></i>
-                                <span>Tin tức</span>
+                                <span>News</span>
                             </a>
                         </li>
                     </ul>
@@ -79,26 +79,26 @@
                                     <li>
                                         <a class="dropdown-item d-flex align-items-center gap-2" href="/Profile">
                                             <i data-lucide="user" style="width: 16px; height: 16px;"></i>
-                                            <span>Hồ sơ</span>
+                                            <span>Profile</span>
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item d-flex align-items-center gap-2" href="/MyClubs">
                                             <i data-lucide="users" style="width: 16px; height: 16px;"></i>
-                                            <span>CLB của tôi</span>
+                                            <span>My Clubs</span>
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item d-flex align-items-center gap-2" href="/MyActivities">
                                             <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
-                                            <span>Hoạt động của tôi</span>
+                                            <span>My Activities</span>
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider" /></li>
                                     <li>
                                         <a class="dropdown-item d-flex align-items-center gap-2" href="#" onclick="logout(); return false;" style="color: var(--destructive);">
                                             <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
-                                            <span>Đăng xuất</span>
+                                            <span>Logout</span>
                                         </a>
                                     </li>
                                 </ul>
@@ -107,7 +107,7 @@
 
                         <!-- Login button when not logged in -->
                         <a id="loginBtn" class="btn" asp-area="" asp-page="/Auth/Login" style="background-color: #002952; color: white; padding: 0.5rem 1.5rem; border-radius: 6px; font-weight: 500; border: none; transition: background-color 0.2s;">
-                            Đăng nhập
+                            Login
                         </a>
                     </div>
                 </div>
@@ -125,23 +125,23 @@
                 <div class="col-md-4 mb-4">
                     <h4 style="color: white;">EduXtend</h4>
                     <p style="color: rgba(255,255,255,0.8);">
-                        Hệ thống quản lý điểm rèn luyện và câu lạc bộ sinh viên
+                        Student club and evaluation management system
                     </p>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <h5 style="color: white;">Liên kết</h5>
+                    <h5 style="color: white;">Links</h5>
                     <ul class="list-unstyled">
-                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Về chúng tôi</a></li>
-                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Liên hệ</a></li>
-                        <li><a asp-area="" asp-page="/Privacy" style="color: rgba(255,255,255,0.8); text-decoration: none;">Chính sách</a></li>
+                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">About Us</a></li>
+                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Contact</a></li>
+                        <li><a asp-area="" asp-page="/Privacy" style="color: rgba(255,255,255,0.8); text-decoration: none;">Privacy Policy</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4 mb-4">
-                    <h5 style="color: white;">Hỗ trợ</h5>
+                    <h5 style="color: white;">Support</h5>
                     <ul class="list-unstyled">
-                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Hướng dẫn</a></li>
+                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Guide</a></li>
                         <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">FAQ</a></li>
-                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Liên hệ hỗ trợ</a></li>
+                        <li><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Support Contact</a></li>
                     </ul>
                 </div>
             </div>

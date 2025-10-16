@@ -16,7 +16,7 @@ public class MovementCriterionGroup
 
     // Loại đối tượng áp dụng: Student / Club
     [Required, MaxLength(20)]
-    public string TargetType { get; set; } = "Student"; // hoặc "Club"
+    public string TargetType { get; set; } = "Student"; // or "Club"
 
     public ICollection<MovementCriterion> Criteria { get; set; } = new List<MovementCriterion>();
 }

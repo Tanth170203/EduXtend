@@ -25,39 +25,26 @@ namespace Repositories.Users
         {
             var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings());
 
-            if (!payload.Email.EndsWith("@fpt.edu.vn", StringComparison.OrdinalIgnoreCase))
-                throw new UnauthorizedAccessException("Chỉ chấp nhận tài khoản @fpt.edu.vn");
-
+            // Tìm user theo GoogleSubject trước, nếu không có thì tìm theo Email
             var existingUser = await _userRepo.FindByGoogleSubAsync(payload.Subject)
                 ?? await _userRepo.FindByEmailAsync(payload.Email);
 
             if (existingUser == null)
             {
-                existingUser = new User
-                {
-                    FullName = payload.Name ?? "No Name",
-                    Email = payload.Email,
-                    GoogleSubject = payload.Subject,
-                    AvatarUrl = payload.Picture,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                };
-
-                await _userRepo.AddAsync(existingUser);
-
-                // Gán role mặc định: Student
-                existingUser.UserRoles.Add(new UserRole
-                {
-                    UserId = existingUser.Id,
-                    RoleId = 2, // Student
-                    AssignedAt = DateTime.UtcNow
-                });
-
-                await _userRepo.SaveChangesAsync();
+                throw new UnauthorizedAccessException("Your email is not registered in the system. Please contact the administrator for support.");
             }
             else
             {
-                // ✅ Update FullName and Avatar if they are null/empty or changed
+                // User đã tồn tại (có thể từ import hoặc Google login trước đó)
+                
+                // ✅ CẬP NHẬT GOOGLESUBJECT nếu thiếu hoặc sai
+                if (string.IsNullOrWhiteSpace(existingUser.GoogleSubject) || 
+                    existingUser.GoogleSubject != payload.Subject)
+                {
+                    existingUser.GoogleSubject = payload.Subject;
+                }
+                
+                // ✅ CẬP NHẬT THÔNG TIN KHÁC nếu thiếu hoặc cần cập nhật
                 if (string.IsNullOrWhiteSpace(existingUser.FullName) && !string.IsNullOrEmpty(payload.Name))
                 {
                     existingUser.FullName = payload.Name;
@@ -68,9 +55,36 @@ namespace Repositories.Users
                     existingUser.AvatarUrl = payload.Picture;
                 }
 
-                if (string.IsNullOrWhiteSpace(existingUser.GoogleSubject))
+                // ✅ ĐẢM BẢO USER CÓ ROLE (nếu user từ import có thể thiếu role)
+                if (existingUser.UserRoles == null || !existingUser.UserRoles.Any())
                 {
-                    existingUser.GoogleSubject = payload.Subject;
+                    // Reload user với đầy đủ relationships
+                    existingUser = await _userRepo.GetByIdAsync(existingUser.Id);
+                    
+                    // Nếu vẫn không có role, gán role Student mặc định
+                    if (existingUser.UserRoles == null || !existingUser.UserRoles.Any())
+                    {
+                        existingUser.UserRoles.Add(new UserRole
+                        {
+                            UserId = existingUser.Id,
+                            RoleId = 2, // Student
+                            AssignedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+
+                // ✅ ĐẢM BẢO TẤT CẢ USERROLES CÓ ROLE NAVIGATION PROPERTY
+                if (existingUser.UserRoles != null)
+                {
+                    foreach (var userRole in existingUser.UserRoles)
+                    {
+                        if (userRole.Role == null)
+                        {
+                            // Reload user với đầy đủ relationships nếu Role navigation property bị null
+                            existingUser = await _userRepo.GetByIdAsync(existingUser.Id);
+                            break;
+                        }
+                    }
                 }
             }
 

@@ -16,5 +16,10 @@ namespace Repositories.Users
         Task AddUserTokenAsync(UserToken token);
         Task<UserToken?> GetValidTokenAsync(string refreshToken);
         Task SaveChangesAsync();
+        
+        // Bulk operations for import
+        Task<List<User>> GetUsersByEmailsAsync(List<string> emails);
+        Task AddRangeAsync(List<User> users);
+        Task<Dictionary<string, int>> GetRoleIdsByNamesAsync(List<string> roleNames);
     }
 }

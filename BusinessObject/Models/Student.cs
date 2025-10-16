@@ -10,17 +10,20 @@ public class Student
     [Required, MaxLength(20)]
     public string StudentCode { get; set; } = null!;
 
+    [Required, MaxLength(10)]
+    public string Cohort { get; set; } = null!; // K17, K18, K20, etc.
+
     [Required, MaxLength(100)]
     public string FullName { get; set; } = null!;
 
-    public DateTime DateOfBirth { get; set; }
-    public Gender Gender { get; set; }
-
     [EmailAddress, MaxLength(100)]
-    public string? Email { get; set; }
+    public string Email { get; set; } = null!;
 
     [MaxLength(15)]
     public string? Phone { get; set; }
+
+    public DateTime DateOfBirth { get; set; }
+    public Gender Gender { get; set; }
 
     public DateTime EnrollmentDate { get; set; }
     public StudentStatus Status { get; set; }

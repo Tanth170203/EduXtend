@@ -19,7 +19,7 @@ public class MovementCriterion
 
     // Dùng lại cho rõ ràng
     [Required, MaxLength(20)]
-    public string TargetType { get; set; } = "Student"; // hoặc "Club"
+    public string TargetType { get; set; } = "Student"; // or "Club"
 
     [MaxLength(200)]
     public string? DataSource { get; set; }
