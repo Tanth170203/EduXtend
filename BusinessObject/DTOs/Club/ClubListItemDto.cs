@@ -16,5 +16,7 @@ namespace BusinessObject.DTOs.Club
         public bool IsActive { get; set; }
         public DateTime FoundedDate { get; set; }
         public string? Description { get; set; }
+        public int MemberCount { get; set; }
+        public int ActivityCount { get; set; }
     }
 }

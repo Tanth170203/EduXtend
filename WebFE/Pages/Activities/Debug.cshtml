@@ -1,0 +1,45 @@
+@page
+@{
+    ViewData["Title"] = "DateTime Debug";
+}
+
+<div class="container my-5">
+    <h1>DateTime Debug Info</h1>
+    
+    <div class="card">
+        <div class="card-body">
+            <h5>Server Time Information</h5>
+            <table class="table">
+                <tr>
+                    <td><strong>DateTime.Now</strong></td>
+                    <td>@DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>Local time</td>
+                </tr>
+                <tr>
+                    <td><strong>DateTime.UtcNow</strong></td>
+                    <td>@DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>UTC time</td>
+                </tr>
+                <tr>
+                    <td><strong>TimeZone</strong></td>
+                    <td>@TimeZoneInfo.Local.DisplayName</td>
+                    <td>Server timezone</td>
+                </tr>
+                <tr>
+                    <td><strong>UTC Offset</strong></td>
+                    <td>@TimeZoneInfo.Local.GetUtcOffset(DateTime.Now).ToString()</td>
+                    <td>Hours from UTC</td>
+                </tr>
+            </table>
+            
+            <h5 class="mt-4">Test Activity Times</h5>
+            <p>Nếu bạn tạo activity với StartTime:</p>
+            <ul>
+                <li><code>@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd HH:mm:ss")</code> → Sẽ diễn ra <strong>ngày mai</strong></li>
+                <li><code>@DateTime.Now.AddHours(2).ToString("yyyy-MM-dd HH:mm:ss")</code> → Sẽ diễn ra <strong>sau 2 giờ</strong></li>
+                <li><code>@DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd HH:mm:ss")</code> → Đã diễn ra <strong>hôm qua</strong></li>
+            </ul>
+        </div>
+    </div>
+</div>
+

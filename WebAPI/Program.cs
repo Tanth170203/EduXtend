@@ -3,6 +3,7 @@ using DataAccess;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Repositories.Activities;
 using Repositories.Clubs;
 using Repositories.LoggedOutTokens;
 using Repositories.Majors;
@@ -10,6 +11,7 @@ using Repositories.MovementCriteria;
 using Repositories.Semesters;
 using Repositories.Students;
 using Repositories.Users;
+using Services.Activities;
 using Services.Clubs;
 using Services.GGLogin;
 using Services.MovementCriteria;
@@ -50,6 +52,7 @@ namespace WebAPI
             builder.Services.AddScoped<Repositories.Roles.IRoleRepository, Repositories.Roles.RoleRepository>();
             
             builder.Services.AddScoped<IClubRepository, ClubRepository>();
+            builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
 
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -61,6 +64,7 @@ namespace WebAPI
             builder.Services.AddScoped<Services.Students.IStudentService, Services.Students.StudentService>();
             builder.Services.AddScoped<Services.Users.IUserManagementService, Services.Users.UserManagementService>();
             builder.Services.AddScoped<IClubService, ClubService>();
+            builder.Services.AddScoped<IActivityService, ActivityService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();

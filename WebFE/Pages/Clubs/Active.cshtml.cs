@@ -2,6 +2,8 @@ using BusinessObject.DTOs.Club;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net.Http.Json;
 
+using Microsoft.AspNetCore.Mvc;
+
 namespace WebFE.Pages.Clubs
 {
     public class ActiveModel : PageModel
@@ -11,13 +13,47 @@ namespace WebFE.Pages.Clubs
 
         public List<ClubListItemDto> Clubs { get; private set; } = new();
 
+        [BindProperty(SupportsGet = true)]
+        public string? SearchTerm { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? CategoryName { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? SortBy { get; set; }
+
+        public List<string> Categories { get; set; } = new();
+
         public async Task OnGetAsync()
         {
             var client = _http.CreateClient("ApiClient");
-            var all = await client.GetFromJsonAsync<List<ClubListItemDto>>("api/club") ?? new();
+            
+            // Load categories for dropdown
+            Categories = await client.GetFromJsonAsync<List<string>>("api/club/categories") ?? new();
+            
+            // Use search endpoint if filters are applied
+            var queryParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(SearchTerm))
+                queryParams.Add($"searchTerm={Uri.EscapeDataString(SearchTerm)}");
+            if (!string.IsNullOrWhiteSpace(CategoryName))
+                queryParams.Add($"categoryName={Uri.EscapeDataString(CategoryName)}");
+            
+            // Always filter for active clubs
+            queryParams.Add("isActive=true");
 
-            // ch? l?y IsActive = true
-            Clubs = all.Where(c => c.IsActive).OrderBy(c => c.Name).ToList();
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+            var endpoint = queryParams.Count > 0 ? $"api/club/search{queryString}" : "api/club";
+            
+            var clubs = await client.GetFromJsonAsync<List<ClubListItemDto>>(endpoint) ?? new();
+
+            // Apply sorting
+            Clubs = SortBy switch
+            {
+                "newest" => clubs.OrderByDescending(c => c.FoundedDate).ToList(),
+                "members" => clubs.OrderByDescending(c => c.MemberCount).ToList(),
+                "az" => clubs.OrderBy(c => c.Name).ToList(),
+                _ => clubs.OrderBy(c => c.Name).ToList()
+            };
         }
 
         public string Img(string? url, string fallback) =>

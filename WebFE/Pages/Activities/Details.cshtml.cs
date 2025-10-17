@@ -1,10 +1,9 @@
 using BusinessObject.DTOs.Activity;
-using BusinessObject.DTOs.Club;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net.Http.Json;
 
-namespace WebFE.Pages.Clubs
+namespace WebFE.Pages.Activities
 {
     public class DetailsModel : PageModel
     {
@@ -14,21 +13,17 @@ namespace WebFE.Pages.Clubs
         [BindProperty(SupportsGet = true)]
         public int Id { get; set; }
 
-        public ClubDetailDto? Club { get; private set; }
-        public List<ActivityListItemDto> Activities { get; private set; } = new();
+        public ActivityDetailDto? Activity { get; private set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
             var client = _http.CreateClient("ApiClient");
+            Activity = await client.GetFromJsonAsync<ActivityDetailDto>($"api/activity/{Id}");
             
-            // Get club details
-            Club = await client.GetFromJsonAsync<ClubDetailDto>($"api/club/{Id}");
-            if (Club == null) return NotFound();
-
-            // Get club activities
-            Activities = await client.GetFromJsonAsync<List<ActivityListItemDto>>($"api/activity/club/{Id}") ?? new();
-
+            if (Activity == null) return NotFound();
+            
             return Page();
         }
     }
 }
+
