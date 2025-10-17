@@ -1,0 +1,85 @@
+﻿@page
+@model WebFE.Pages.Clubs.ActiveModel
+@{
+    ViewData["Title"] = "Active Clubs";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+
+<section class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">Student Clubs</h1>
+        <p class="text-muted">Join clubs that match your interests, meet like-minded students, and create lasting memories.</p>
+    </div>
+
+    <!-- Search + Filters -->
+    <form method="get" class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <input type="text" 
+               name="searchTerm" 
+               value="@Model.SearchTerm" 
+               class="form-control flex-grow-1" 
+               placeholder="Search clubs by name or description..." 
+               style="max-width:400px;">
+        
+        <select name="categoryName" class="form-select" style="max-width:180px;">
+            <option value="">All Categories</option>
+            @foreach (var category in Model.Categories)
+            {
+                <option value="@category" selected="@(Model.CategoryName == category)">@category</option>
+            }
+        </select>
+        
+        <select name="sortBy" class="form-select" style="max-width:180px;">
+            <option value="az" selected="@(Model.SortBy == "az" || string.IsNullOrEmpty(Model.SortBy))">A–Z</option>
+            <option value="members" selected="@(Model.SortBy == "members")">Most Members</option>
+            <option value="newest" selected="@(Model.SortBy == "newest")">Newest</option>
+        </select>
+        
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> Search
+        </button>
+        
+        @if (!string.IsNullOrEmpty(Model.SearchTerm) || !string.IsNullOrEmpty(Model.CategoryName))
+        {
+            <a href="/Clubs/Active" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Clear
+            </a>
+        }
+    </form>
+
+    <!-- Club cards -->
+    <div class="row g-4">
+        @foreach (var c in Model.Clubs)
+        {
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card shadow-sm h-100 border-0">
+                    <img src="@(string.IsNullOrEmpty(c.LogoUrl) ? "/img/club-placeholder.png" : c.LogoUrl)"
+                         class="card-img-top" style="height:200px; object-fit:cover;" />
+
+                    <div class="card-body">
+                        <h5 class="fw-bold">@c.Name</h5>
+                        @if (!string.IsNullOrWhiteSpace(c.SubName))
+                        {
+                            <p class="text-muted small">@c.SubName</p>
+                        }
+
+                        <div class="d-flex flex-wrap gap-3 small text-muted mt-2">
+                            <span><i class="bi bi-people"></i> @c.MemberCount members</span>
+                            <span><i class="bi bi-calendar-event"></i> @c.ActivityCount activities</span>
+                            <span><i class="bi bi-calendar"></i> Founded @c.FoundedDate.Year</span>
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-transparent border-0 d-flex justify-content-between align-items-center">
+                        <a asp-page="Details" asp-route-id="@c.Id" class="btn btn-success rounded-pill px-3">Details</a>
+                        @if (!c.IsActive)
+                        {
+                            <span class="badge bg-warning text-dark">Inactive</span>
+                        }
+                        <a class="btn btn-success rounded-pill px-3">Join Club</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    </section>

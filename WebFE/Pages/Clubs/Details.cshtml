@@ -1,0 +1,234 @@
+﻿@page "{id:int}"
+@model WebFE.Pages.Clubs.DetailsModel
+@{
+    var c = Model.Club!;
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+    ViewData["Title"] = c.Name;
+}
+
+<div class="club-detail container my-5">
+    <div class="position-relative mb-4">
+        <img src="@(c.BannerUrl ?? "/img/club-banner.png")"
+             class="img-fluid rounded shadow-sm w-100"
+             style="height:260px; object-fit:cover;">
+        <div class="position-absolute bottom-0 start-0 p-4 text-white"
+             style="background:linear-gradient(to top,rgba(0,0,0,0.6),transparent)">
+            <h1 class="fw-bold">@c.Name</h1>
+            <p class="text-light mb-1">@c.Description</p>
+        </div>
+    </div>
+
+    <!-- Club Stats -->
+    <div class="row text-center mb-5">
+        <div class="col-md-3 col-6">
+            <h4 class="fw-bold text-primary">@c.MemberCount</h4>
+            <p class="text-muted small mb-0"><i class="bi bi-people"></i> Members</p>
+        </div>
+        <div class="col-md-3 col-6">
+            <h4 class="fw-bold text-success">@c.ActivityCount</h4>
+            <p class="text-muted small mb-0"><i class="bi bi-calendar-event"></i> Activities</p>
+        </div>
+        <div class="col-md-3 col-6">
+            <h4 class="fw-bold text-info">@c.DepartmentCount</h4>
+            <p class="text-muted small mb-0"><i class="bi bi-diagram-3"></i> Departments</p>
+        </div>
+        <div class="col-md-3 col-6">
+            <h4 class="fw-bold text-warning">@c.AwardCount</h4>
+            <p class="text-muted small mb-0"><i class="bi bi-trophy"></i> Awards</p>
+        </div>
+    </div>
+
+    <!-- Member Role Distribution -->
+    @if (c.RoleDistribution.Any())
+    {
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3"><i class="bi bi-person-badge"></i> Member Roles</h5>
+                <div class="row g-3">
+                    @foreach (var role in c.RoleDistribution.OrderByDescending(r => r.Value))
+                    {
+                        <div class="col-md-3 col-6">
+                            <div class="p-3 bg-light rounded text-center">
+                                <div class="fw-bold fs-4">@role.Value</div>
+                                <div class="text-muted small">@role.Key</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Additional Info -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-info-circle"></i> Club Information</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2"><strong>Category:</strong> @c.CategoryName</li>
+                        <li class="mb-2"><strong>Founded:</strong> @c.FoundedDate.ToString("MMMM dd, yyyy")</li>
+                        <li class="mb-2"><strong>Status:</strong> 
+                            @if (c.IsActive)
+                            {
+                                <span class="badge bg-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Inactive</span>
+                            }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-2"><i class="bi bi-chat-dots"></i> About</h6>
+                    <p class="mb-0">@(c.Description ?? "No description available.")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Club Activities -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-calendar-event"></i> Club Activities
+                </h5>
+                <span class="badge bg-primary">@Model.Activities.Count Total</span>
+            </div>
+
+            @if (Model.Activities.Any())
+            {
+                <div class="row g-3">
+                    @foreach (var activity in Model.Activities)
+                    {
+                        var statusBadgeClass = activity.Status switch
+                        {
+                            "Approved" => "bg-success",
+                            "PendingApproval" => "bg-warning text-dark",
+                            "Completed" => "bg-secondary",
+                            "Rejected" => "bg-danger",
+                            _ => "bg-secondary"
+                        };
+
+                        // Use local time for comparison (assume DB stores local time)
+                        var now = DateTime.Now;
+                        var isEnded = activity.EndTime < now;  // Activity has fully ended
+                        var isOngoing = activity.StartTime <= now && now <= activity.EndTime;  // Currently happening
+                        var isUpcoming = now < activity.StartTime && activity.Status == "Approved";  // Not started yet
+
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="card h-100 border-0 shadow-sm @(isEnded ? "opacity-75" : "")">
+                                @if (!string.IsNullOrWhiteSpace(activity.ImageUrl))
+                                {
+                                    <img src="@activity.ImageUrl" 
+                                         class="card-img-top" 
+                                         style="height: 150px; object-fit: cover;"
+                                         alt="@activity.Title"
+                                         onerror="this.style.display='none'">
+                                }
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="badge @statusBadgeClass small">@activity.Status</span>
+                                        <span class="badge bg-info small">@activity.Type</span>
+                                    </div>
+
+                                    @if (!activity.IsPublic)
+                                    {
+                                        <span class="badge bg-warning text-dark mb-2">
+                                            <i class="bi bi-lock"></i> Members Only
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary mb-2">
+                                            <i class="bi bi-globe"></i> Public
+                                        </span>
+                                    }
+
+                                    <h6 class="fw-bold mb-2">@activity.Title</h6>
+
+                                    <div class="small text-muted mb-3">
+                                        <div class="mb-1">
+                                            <i class="bi bi-calendar3"></i> 
+                                            @activity.StartTime.ToString("MMM dd, yyyy")
+                                        </div>
+                                        <div class="mb-1">
+                                            <i class="bi bi-clock"></i> 
+                                            @activity.StartTime.ToString("HH:mm") - @activity.EndTime.ToString("HH:mm")
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(activity.Location))
+                                        {
+                                            <div class="mb-1">
+                                                <i class="bi bi-geo-alt"></i> @activity.Location
+                                            </div>
+                                        }
+                                        <div>
+                                            <i class="bi bi-award"></i> 
+                                            <strong>+@activity.MovementPoint pts</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            @activity.CurrentParticipants@(activity.MaxParticipants.HasValue ? $"/{activity.MaxParticipants}" : "") registered
+                                        </small>
+                                        
+                                        @if ((isUpcoming || isOngoing) && activity.CanRegister && !activity.IsFull)
+                                        {
+                                            @if (activity.IsPublic)
+                                            {
+                                                <button class="btn btn-success btn-sm" onclick="alert('Registration coming soon!')">
+                                                    <i class="bi bi-check-circle"></i> Register
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-warning btn-sm" title="Members only">
+                                                    <i class="bi bi-lock"></i> Member Only
+                                                </button>
+                                            }
+                                        }
+                                        else if (isOngoing && activity.IsFull)
+                                        {
+                                            <span class="badge bg-warning">Ongoing - Full</span>
+                                        }
+                                        else if (isOngoing)
+                                        {
+                                            <span class="badge bg-success">Happening Now</span>
+                                        }
+                                        else if (activity.IsFull)
+                                        {
+                                            <span class="badge bg-danger">Full</span>
+                                        }
+                                        else if (isEnded)
+                                        {
+                                            <span class="badge bg-secondary">Ended</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="/Activities?filter=club&clubId=@c.Id" class="btn btn-outline-primary">
+                        View All Activities <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i> No activities scheduled yet. Check back later!
+                </div>
+            }
+        </div>
+    </div>
+</div>

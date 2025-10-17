@@ -1,21 +1,23 @@
-﻿using BusinessObject.DTOs.GGLogin;
+using BusinessObject.DTOs.GGLogin;
 using DataAccess;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Repositories.Activities;
+using Repositories.Clubs;
 using Repositories.LoggedOutTokens;
+using Repositories.Majors;
 using Repositories.MovementCriteria;
 using Repositories.Semesters;
-using Repositories.Users;
 using Repositories.Students;
-using Repositories.Majors;
-using Repositories.Activities;
+using Repositories.Users; 
+using Services.Activities; 
+using Services.Clubs; 
 using Services.GGLogin;
 using Services.MovementCriteria;
 using Services.Semesters;
-using Services.UserImport;
 using Services.TokenCleanup;
-using Services.Activities;
+using Services.UserImport; 
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
@@ -47,9 +49,10 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionRepository, MovementCriterionRepository>();
             builder.Services.AddScoped<IStudentRepository, StudentRepository>();
             builder.Services.AddScoped<IMajorRepository, MajorRepository>();
-            builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+            builder.Services.AddScoped<IActivityRepository, ActivityRepository>(); 
             builder.Services.AddScoped<Repositories.Roles.IRoleRepository, Repositories.Roles.RoleRepository>();
-            
+            builder.Services.AddScoped<IClubRepository, ClubRepository>();
+
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
@@ -59,6 +62,7 @@ namespace WebAPI
             builder.Services.AddScoped<IUserImportService, UserImportService>();
             builder.Services.AddScoped<Services.Students.IStudentService, Services.Students.StudentService>();
             builder.Services.AddScoped<Services.Users.IUserManagementService, Services.Users.UserManagementService>();
+            builder.Services.AddScoped<IClubService, ClubService>(); 
             builder.Services.AddScoped<IActivityService, ActivityService>();
 
             // Background Services
@@ -127,10 +131,10 @@ namespace WebAPI
                 opt.AddPolicy("react", p =>
                     p.WithOrigins(
                         "http://localhost:3000",    // WebFE HTTP
-                        "https://localhost:3001",  // WebFE HTTPS
-                        "http://localhost:5000",   // Backend HTTP
-                        "https://localhost:5001",  // Backend HTTPS
-                        "http://localhost:5173"    // React dev server
+                        "https://localhost:3001",   // WebFE HTTPS
+                        "http://localhost:5000",    // Backend HTTP
+                        "https://localhost:5001",   // Backend HTTPS
+                        "http://localhost:5173"     // React dev server
                     )
                      .AllowAnyHeader().AllowAnyMethod().AllowCredentials());
             });
@@ -150,11 +154,11 @@ namespace WebAPI
             // Custom middleware (order matters!)
             // app.UseAutoRefreshToken();  // DISABLED: Let frontend handle token refresh
             
-            app.UseAuthentication();     // Validate JWT and set User principal
+            app.UseAuthentication();        // Validate JWT and set User principal
             
             app.UseTokenBlacklist();    // Check if token is blacklisted
             
-            app.UseAuthorization();      // Check policies and roles
+            app.UseAuthorization();     // Check policies and roles
 
 
             app.MapControllers();
