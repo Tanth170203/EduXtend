@@ -12,9 +12,16 @@ namespace Repositories.Users
         Task<User?> FindByEmailAsync(string email);
         Task<User?> FindByGoogleSubAsync(string googleSub);
         Task<User?> GetByIdAsync(int id);
+        Task<User?> GetByIdWithRolesAsync(int id);
+        Task<List<User>> GetAllAsync();
+        Task<List<User>> GetAllWithRolesAsync();
         Task AddAsync(User user);
         Task AddUserTokenAsync(UserToken token);
         Task<UserToken?> GetValidTokenAsync(string refreshToken);
+        Task UpdateAsync(User user);
+        Task BanUserAsync(int userId);
+        Task UnbanUserAsync(int userId);
+        Task UpdateUserRolesAsync(int userId, List<int> roleIds);
         Task SaveChangesAsync();
         
         // Bulk operations for import

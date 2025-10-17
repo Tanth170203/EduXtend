@@ -23,7 +23,25 @@ namespace WebAPI.Authentication
         {
             try
             {
-                if (!Request.Cookies.TryGetValue("AccessToken", out var token))
+                string? token = null;
+
+                // 1) Prefer cookie (browser calls)
+                if (Request.Cookies.TryGetValue("AccessToken", out var cookieToken))
+                {
+                    token = cookieToken;
+                }
+
+                // 2) Fallback to Authorization: Bearer <token> (server-to-server / HttpClient)
+                if (string.IsNullOrEmpty(token))
+                {
+                    var authHeader = Request.Headers["Authorization"].ToString();
+                    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        token = authHeader.Substring("Bearer ".Length).Trim();
+                    }
+                }
+
+                if (string.IsNullOrEmpty(token))
                 {
                     return Task.FromResult(AuthenticateResult.NoResult());
                 }

@@ -1,0 +1,82 @@
+@page
+@model WebFE.Pages.Admin.Students.DetailModel
+@{
+    ViewData["Title"] = "Student Detail";
+    ViewData["Breadcrumb"] = "Student Detail";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Student Detail</h1>
+    <p class="page-description">View student information</p>
+    <div>
+        <a href="/Admin/Students" class="btn btn-secondary">Back to list</a>
+        <a href="/Admin/Students/Edit?id=@Model.Student.Id" class="btn btn-primary">Edit</a>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.Student != null)
+{
+    <div class="content-card">
+        <div class="content-card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Student Code</label>
+                    <div class="form-control-plaintext fw-semibold">@Model.Student.StudentCode</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Cohort</label>
+                    <div class="form-control-plaintext"><span class="badge bg-primary">@Model.Student.Cohort</span></div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Full Name</label>
+                    <div class="form-control-plaintext">@Model.Student.FullName</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <div class="form-control-plaintext">@Model.Student.Email</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Major</label>
+                    <div class="form-control-plaintext">@Model.Student.MajorName (@Model.Student.MajorCode)</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Date of Birth</label>
+                    <div class="form-control-plaintext">@Model.Student.DateOfBirth.ToString("dd-MM-yyyy")</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Gender</label>
+                    <div class="form-control-plaintext">@(Model.Student.Gender == 0 ? "Male" : Model.Student.Gender == 1 ? "Female" : "Other")</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Status</label>
+                    <div class="form-control-plaintext">
+                        @if (Model.Student.Status == 0)
+                        {<span class="badge bg-success">Active</span>}
+                        else if (Model.Student.Status == 1)
+                        {<span class="badge bg-secondary">Inactive</span>}
+                        else if (Model.Student.Status == 2)
+                        {<span class="badge bg-info">Graduated</span>}
+                        else
+                        {<span class="badge bg-warning">Suspended</span>}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>lucide.createIcons();</script>
+}
+
+
