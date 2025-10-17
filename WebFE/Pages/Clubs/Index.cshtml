@@ -1,0 +1,95 @@
+﻿@page "{id:int}"
+@model WebFE.Pages.Clubs.IndexModel
+@{
+    ViewData["Title"] = "Club Management";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<section class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="fw-bold mb-1">Club Management</h1>
+            <p class="text-muted mb-0">View, edit, or remove clubs in the system.</p>
+        </div>
+        <a asp-page="/Clubs/Create" class="btn btn-success rounded-pill">
+            <i class="bi bi-plus-circle"></i> Add New Club
+        </a>
+    </div>
+
+    <!-- Filter/Search -->
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <input type="text" class="form-control" placeholder="Search by club name..." style="max-width:300px;">
+        <select class="form-select" style="max-width:180px;">
+            <option>All Status</option>
+            <option>Active</option>
+            <option>Inactive</option>
+        </select>
+    </div>
+
+    <!-- Club list table -->
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:50px;">#</th>
+                    <th>Club Name</th>
+                    <th>Sub Name</th>
+                    <th>Description</th>
+                    <th>Founded</th>
+                    <th>Status</th>
+                    <th style="width:200px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Clubs.Any())
+                {
+                    int i = 1;
+                    foreach (var c in Model.Clubs)
+                    {
+                        <tr>
+                            <td>@(i++)</td>
+                            <td class="fw-semibold">@c.Name</td>
+                            <td>@c.SubName</td>
+                            <td class="text-truncate" style="max-width:300px;">@c.Description</td>
+                            <td>@c.FoundedDate.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                @if (c.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <a asp-page="Details" asp-route-id="@c.Id"
+                                       class="btn btn-sm btn-outline-primary rounded-pill">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                    <a asp-page="Edit" asp-route-id="@c.Id"
+                                       class="btn btn-sm btn-outline-success rounded-pill">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                    <a asp-page="Delete" asp-route-id="@c.Id"
+                                       class="btn btn-sm btn-outline-danger rounded-pill">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            No clubs found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

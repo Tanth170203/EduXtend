@@ -3,17 +3,19 @@ using DataAccess;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Repositories.Clubs;
 using Repositories.LoggedOutTokens;
+using Repositories.Majors;
 using Repositories.MovementCriteria;
 using Repositories.Semesters;
-using Repositories.Users;
 using Repositories.Students;
-using Repositories.Majors;
+using Repositories.Users;
+using Services.Clubs;
 using Services.GGLogin;
 using Services.MovementCriteria;
 using Services.Semesters;
-using Services.UserImport;
 using Services.TokenCleanup;
+using Services.UserImport;
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
@@ -45,7 +47,8 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionRepository, MovementCriterionRepository>();
             builder.Services.AddScoped<IStudentRepository, StudentRepository>();
             builder.Services.AddScoped<IMajorRepository, MajorRepository>();
-            
+            builder.Services.AddScoped<IClubRepository, ClubRepository>();
+
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
@@ -53,6 +56,7 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionGroupService, MovementCriterionGroupService>();
             builder.Services.AddScoped<IMovementCriterionService, MovementCriterionService>();
             builder.Services.AddScoped<IUserImportService, UserImportService>();
+            builder.Services.AddScoped<IClubService, ClubService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
