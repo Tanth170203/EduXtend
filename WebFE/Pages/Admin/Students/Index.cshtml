@@ -1,0 +1,235 @@
+@page
+@model WebFE.Pages.Admin.Students.IndexModel
+@{
+    ViewData["Title"] = "Students Management";
+    ViewData["Breadcrumb"] = "Students";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">Students Management</h1>
+            <p class="page-description">Manage student information</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Admin/Students/Create" class="btn btn-primary d-flex align-items-center gap-2">
+                <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i>
+                Add Student Info
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i data-lucide="check-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-triangle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Total Students</p>
+            </div>
+            <div class="stat-card-icon blue">
+                <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Students.Count</div>
+        <p class="text-muted small mb-0">Students with complete info</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Missing Info</p>
+            </div>
+            <div class="stat-card-icon orange">
+                <i data-lucide="alert-circle" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.UsersWithoutInfo.Count</div>
+        <p class="text-muted small mb-0">Users need student info</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Active Students</p>
+            </div>
+            <div class="stat-card-icon green">
+                <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Students.Count(s => s.Status == 0)</div>
+        <p class="text-muted small mb-0">Currently active</p>
+    </div>
+</div>
+
+<!-- Students Table -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h2 class="content-card-title">Students List</h2>
+        <div class="d-flex gap-2">
+            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search students..." style="max-width: 300px;">
+        </div>
+    </div>
+    <div class="content-card-body">
+        @if (Model.Students.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover" id="studentsTable">
+                    <thead>
+                        <tr>
+                            <th>Student Code</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Cohort</th>
+                            <th>Major</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var student in Model.Students)
+                        {
+                            <tr>
+                                <td><strong>@student.StudentCode</strong></td>
+                                <td>@student.FullName</td>
+                                <td>@student.Email</td>
+                                <td><span class="badge bg-primary">@student.Cohort</span></td>
+                                <td>@student.MajorName (@student.MajorCode)</td>
+                                <td>
+                                    @if (student.Status == 0)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else if (student.Status == 2)
+                                    {
+                                        <span class="badge bg-info">Graduated</span>
+                                    }
+                                    else if (student.Status == 1)
+                                    {
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">Suspended</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="/Admin/Students/Detail?id=@student.Id" class="btn btn-sm btn-outline-info" title="View Detail">
+                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                        <a href="/Admin/Students/Edit?id=@student.Id" class="btn btn-sm btn-outline-primary" title="Edit">
+                                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmDelete(@student.Id, '@student.FullName')" title="Delete">
+                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5 text-muted">
+                <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                <p>No students found</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 560px; margin: 0 auto;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: #ef4444; margin-bottom: 1rem;"></i>
+                    <p>Are you sure you want to delete student <strong id="studentName"></strong>?</p>
+                    <p class="text-muted small">This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" asp-page-handler="Delete" id="deleteForm">
+                    <input type="hidden" name="id" id="deleteId" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#studentsTable tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchValue) ? '' : 'none';
+            });
+        });
+
+        // Delete confirmation
+        function confirmDelete(id, name) {
+            document.getElementById('deleteId').value = id;
+            document.getElementById('studentName').textContent = name;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+            lucide.createIcons();
+        }
+    </script>
+    <style>
+        /* Ensure delete modal stays perfectly centered */
+        #deleteModal .modal-dialog {
+            margin: 0 auto;
+        }
+        #deleteModal.show .modal-dialog {
+            display: flex;
+            align-items: center;
+            min-height: calc(100% - 1rem);
+        }
+    </style>
+}
+

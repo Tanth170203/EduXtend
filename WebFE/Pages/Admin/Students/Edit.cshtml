@@ -1,0 +1,76 @@
+@page
+@model WebFE.Pages.Admin.Students.EditModel
+@{
+    ViewData["Title"] = "Edit Student";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Edit Student Information</h1>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<div class="content-card">
+    <div class="content-card-body">
+        <form method="post">
+            <input type="hidden" asp-for="Student.Id" />
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Student Code</label>
+                    <input asp-for="Student.StudentCode" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Cohort</label>
+                    <input asp-for="Student.Cohort" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Major</label>
+                    <select asp-for="Student.MajorId" class="form-select" required>
+                        @foreach (var major in Model.Majors)
+                        {
+                            <option value="@major.Id">@major.Name (@major.Code)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Date of Birth</label>
+                    <input asp-for="Student.DateOfBirth" type="date" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Gender</label>
+                    <select asp-for="Student.Gender" class="form-select" required>
+                        <option value="0">Male</option>
+                        <option value="1">Female</option>
+                        <option value="2">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Enrollment Date</label>
+                    <input asp-for="Student.EnrollmentDate" type="date" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Status</label>
+                    <select asp-for="Student.Status" class="form-select" required>
+                        <option value="0">Active</option>
+                        <option value="1">Inactive</option>
+                        <option value="2">Graduated</option>
+                        <option value="3">Suspended</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Update</button>
+                <a href="/Admin/Students" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>lucide.createIcons();</script>
+}
+

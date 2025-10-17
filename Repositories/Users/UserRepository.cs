@@ -33,6 +33,24 @@ namespace Repositories.Users
                 .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
+        public async Task<User?> GetByIdWithRolesAsync(int id)
+            => await _db.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+        public async Task<List<User>> GetAllAsync()
+            => await _db.Users
+                .OrderByDescending(u => u.CreatedAt)
+                .ToListAsync();
+
+        public async Task<List<User>> GetAllWithRolesAsync()
+            => await _db.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .OrderByDescending(u => u.CreatedAt)
+                .ToListAsync();
+
         public async Task AddAsync(User user)
         {
             _db.Users.Add(user);
@@ -49,6 +67,51 @@ namespace Repositories.Users
             => await _db.UserTokens
                 .Include(t => t.User)
                 .FirstOrDefaultAsync(t => t.RefreshToken == refreshToken && !t.Revoked && t.ExpiryDate > DateTime.UtcNow);
+
+        public async Task UpdateAsync(User user)
+        {
+            _db.Users.Update(user);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task BanUserAsync(int userId)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            if (user != null)
+            {
+                user.IsActive = false;
+                await _db.SaveChangesAsync();
+            }
+        }
+
+        public async Task UnbanUserAsync(int userId)
+        {
+            var user = await _db.Users.FindAsync(userId);
+            if (user != null)
+            {
+                user.IsActive = true;
+                await _db.SaveChangesAsync();
+            }
+        }
+
+        public async Task UpdateUserRolesAsync(int userId, List<int> roleIds)
+        {
+            // Remove existing roles
+            var existingRoles = await _db.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .ToListAsync();
+            _db.UserRoles.RemoveRange(existingRoles);
+
+            // Add new roles
+            var newRoles = roleIds.Select(roleId => new UserRole
+            {
+                UserId = userId,
+                RoleId = roleId
+            }).ToList();
+
+            await _db.UserRoles.AddRangeAsync(newRoles);
+            await _db.SaveChangesAsync();
+        }
 
         public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 
