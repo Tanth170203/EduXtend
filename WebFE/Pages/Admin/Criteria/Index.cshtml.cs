@@ -75,13 +75,13 @@ namespace WebFE.Pages.Admin.Criteria
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogError("Failed to load criterion groups: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = "Không thể tải dữ liệu. Vui lòng thử lại sau.";
+                    ErrorMessage = "Unable to load data. Please try again later.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading criterion groups");
-                ErrorMessage = "Không thể tải dữ liệu. Vui lòng thử lại sau.";
+                ErrorMessage = "Unable to load data. Please try again later.";
             }
 
             return Page();
@@ -108,7 +108,7 @@ namespace WebFE.Pages.Admin.Criteria
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Thêm nhóm tiêu chí thành công!";
+                    SuccessMessage = "Criteria group added successfully!";
                     return RedirectToPage();
                 }
                 else
@@ -120,18 +120,18 @@ namespace WebFE.Pages.Admin.Criteria
                     try
                     {
                         var errorResponse = JsonSerializer.Deserialize<dynamic>(errorContent);
-                        ErrorMessage = $"Không thể thêm nhóm tiêu chí: {errorResponse}";
+                        ErrorMessage = $"Unable to add criteria group: {errorResponse}";
                     }
                     catch
                     {
-                        ErrorMessage = $"Không thể thêm nhóm tiêu chí: {response.StatusCode}";
+                        ErrorMessage = $"Unable to add criteria group: {response.StatusCode}";
                     }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating criterion group");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage();
@@ -159,7 +159,7 @@ namespace WebFE.Pages.Admin.Criteria
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Cập nhật nhóm tiêu chí thành công!";
+                    SuccessMessage = "Criteria group updated successfully!";
                     return RedirectToPage();
                 }
                 else
@@ -171,18 +171,18 @@ namespace WebFE.Pages.Admin.Criteria
                     try
                     {
                         var errorResponse = JsonSerializer.Deserialize<dynamic>(errorContent);
-                        ErrorMessage = $"Không thể cập nhật nhóm tiêu chí: {errorResponse}";
+                        ErrorMessage = $"Unable to update criteria group: {errorResponse}";
                     }
                     catch
                     {
-                        ErrorMessage = $"Không thể cập nhật nhóm tiêu chí: {response.StatusCode}";
+                        ErrorMessage = $"Unable to update criteria group: {response.StatusCode}";
                     }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating criterion group");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage();
@@ -198,7 +198,7 @@ namespace WebFE.Pages.Admin.Criteria
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Xóa nhóm tiêu chí thành công!";
+                    SuccessMessage = "Criteria group deleted successfully!";
                 }
                 else
                 {
@@ -209,11 +209,11 @@ namespace WebFE.Pages.Admin.Criteria
                     try
                     {
                         var errorResponse = JsonSerializer.Deserialize<dynamic>(errorContent);
-                        ErrorMessage = $"Không thể xóa nhóm tiêu chí: {errorResponse}";
+                        ErrorMessage = $"Unable to delete criteria group: {errorResponse}";
                     }
                     catch
                     {
-                        ErrorMessage = $"Không thể xóa nhóm tiêu chí: {response.StatusCode}";
+                        ErrorMessage = $"Unable to delete criteria group: {response.StatusCode}";
                     }
                 }
                 
@@ -222,7 +222,7 @@ namespace WebFE.Pages.Admin.Criteria
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting criterion group");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage();

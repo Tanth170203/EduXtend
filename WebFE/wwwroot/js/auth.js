@@ -99,8 +99,8 @@ async function requireAdmin() {
 
     if (!user || !user.roles || !user.roles.includes("Admin")) {
         sessionStorage.setItem("adminRequired", JSON.stringify({
-            title: "Truy cập bị từ chối",
-            message: "Bạn cần quyền Quản trị viên để xem trang này."
+            title: "Access Denied",
+            message: "You need Administrator privileges to view this page."
         }));
         window.location.href = "/";
         return false;

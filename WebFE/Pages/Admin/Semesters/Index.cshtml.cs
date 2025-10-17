@@ -82,13 +82,13 @@ namespace WebFE.Pages.Admin.Semesters
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogError("Failed to load semesters: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = "Không thể tải dữ liệu. Vui lòng thử lại sau.";
+                    ErrorMessage = "Unable to load data. Please try again later.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading semesters");
-                ErrorMessage = "Không thể tải dữ liệu. Vui lòng thử lại sau.";
+                ErrorMessage = "Unable to load data. Please try again later.";
             }
 
             return Page();
@@ -114,20 +114,20 @@ namespace WebFE.Pages.Admin.Semesters
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Thêm học kỳ thành công!";
+                    SuccessMessage = "Semester added successfully!";
                     return RedirectToPage();
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogWarning("Create semester failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = $"Không thể thêm học kỳ: {response.StatusCode}";
+                    ErrorMessage = $"Unable to add semester: {response.StatusCode}";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating semester");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage();
@@ -153,20 +153,20 @@ namespace WebFE.Pages.Admin.Semesters
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Cập nhật học kỳ thành công!";
+                    SuccessMessage = "Semester updated successfully!";
                     return RedirectToPage();
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogWarning("Update semester failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = $"Không thể cập nhật học kỳ: {response.StatusCode}";
+                    ErrorMessage = $"Unable to update semester: {response.StatusCode}";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating semester");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage();
@@ -181,13 +181,13 @@ namespace WebFE.Pages.Admin.Semesters
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "Xóa học kỳ thành công!";
+                    SuccessMessage = "Semester deleted successfully!";
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogWarning("Delete semester failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = $"Không thể xóa học kỳ: {response.StatusCode}";
+                    ErrorMessage = $"Unable to delete semester: {response.StatusCode}";
                 }
                 
                 return RedirectToPage();
@@ -195,7 +195,7 @@ namespace WebFE.Pages.Admin.Semesters
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting semester");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage();

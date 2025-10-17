@@ -3,76 +3,76 @@ using System.ComponentModel.DataAnnotations;
 namespace BusinessObject.DTOs.MovementCriteria;
 
 /// <summary>
-/// DTO để trả về thông tin MovementCriterion
+/// DTO for returning MovementCriterion information
 /// </summary>
 public class MovementCriterionDto
 {
     public int Id { get; set; }
     public int GroupId { get; set; }
-    public string? GroupName { get; set; } // Tên nhóm tiêu chí
+    public string? GroupName { get; set; } // Criteria group name
     public string Title { get; set; } = null!;
     public string? Description { get; set; }
     public int MaxScore { get; set; }
-    public string TargetType { get; set; } = "Student"; // "Student" hoặc "Club"
+    public string TargetType { get; set; } = "Student"; // "Student" or "Club"
     public string? DataSource { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
 /// <summary>
-/// DTO để tạo mới MovementCriterion
+/// DTO for creating new MovementCriterion
 /// </summary>
 public class CreateMovementCriterionDto
 {
-    [Required(ErrorMessage = "ID nhóm tiêu chí là bắt buộc")]
-    [Range(1, int.MaxValue, ErrorMessage = "ID nhóm tiêu chí phải lớn hơn 0")]
+    [Required(ErrorMessage = "Criteria group ID is required")]
+    [Range(1, int.MaxValue, ErrorMessage = "Criteria group ID must be greater than 0")]
     public int GroupId { get; set; }
 
-    [Required(ErrorMessage = "Tiêu đề là bắt buộc")]
-    [MaxLength(200, ErrorMessage = "Tiêu đề không được vượt quá 200 ký tự")]
+    [Required(ErrorMessage = "Title is required")]
+    [MaxLength(200, ErrorMessage = "Title cannot exceed 200 characters")]
     public string Title { get; set; } = null!;
 
-    [MaxLength(1000, ErrorMessage = "Mô tả không được vượt quá 1000 ký tự")]
+    [MaxLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
     public string? Description { get; set; }
 
-    [Range(0, 1000, ErrorMessage = "Điểm tối đa phải từ 0 đến 1000")]
+    [Range(0, 1000, ErrorMessage = "Maximum score must be between 0 and 1000")]
     public int MaxScore { get; set; }
 
-    [Required(ErrorMessage = "Loại đối tượng là bắt buộc")]
-    [RegularExpression("^(Student|Club)$", ErrorMessage = "Loại đối tượng phải là 'Student' hoặc 'Club'")]
+    [Required(ErrorMessage = "Target type is required")]
+    [RegularExpression("^(Student|Club)$", ErrorMessage = "Target type must be 'Student' or 'Club'")]
     public string TargetType { get; set; } = "Student";
 
-    [MaxLength(200, ErrorMessage = "Nguồn dữ liệu không được vượt quá 200 ký tự")]
+    [MaxLength(200, ErrorMessage = "Data source cannot exceed 200 characters")]
     public string? DataSource { get; set; }
 
     public bool IsActive { get; set; } = true;
 }
 
 /// <summary>
-/// DTO để cập nhật MovementCriterion
+/// DTO for updating MovementCriterion
 /// </summary>
 public class UpdateMovementCriterionDto
 {
     public int Id { get; set; }
 
-    [Required(ErrorMessage = "ID nhóm tiêu chí là bắt buộc")]
-    [Range(1, int.MaxValue, ErrorMessage = "ID nhóm tiêu chí phải lớn hơn 0")]
+    [Required(ErrorMessage = "Criteria group ID is required")]
+    [Range(1, int.MaxValue, ErrorMessage = "Criteria group ID must be greater than 0")]
     public int GroupId { get; set; }
 
-    [Required(ErrorMessage = "Tiêu đề là bắt buộc")]
-    [MaxLength(200, ErrorMessage = "Tiêu đề không được vượt quá 200 ký tự")]
+    [Required(ErrorMessage = "Title is required")]
+    [MaxLength(200, ErrorMessage = "Title cannot exceed 200 characters")]
     public string Title { get; set; } = null!;
 
-    [MaxLength(1000, ErrorMessage = "Mô tả không được vượt quá 1000 ký tự")]
+    [MaxLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
     public string? Description { get; set; }
 
-    [Range(0, 1000, ErrorMessage = "Điểm tối đa phải từ 0 đến 1000")]
+    [Range(0, 1000, ErrorMessage = "Maximum score must be between 0 and 1000")]
     public int MaxScore { get; set; }
 
-    [Required(ErrorMessage = "Loại đối tượng là bắt buộc")]
-    [RegularExpression("^(Student|Club)$", ErrorMessage = "Loại đối tượng phải là 'Student' hoặc 'Club'")]
+    [Required(ErrorMessage = "Target type is required")]
+    [RegularExpression("^(Student|Club)$", ErrorMessage = "Target type must be 'Student' or 'Club'")]
     public string TargetType { get; set; } = "Student";
 
-    [MaxLength(200, ErrorMessage = "Nguồn dữ liệu không được vượt quá 200 ký tự")]
+    [MaxLength(200, ErrorMessage = "Data source cannot exceed 200 characters")]
     public string? DataSource { get; set; }
 
     public bool IsActive { get; set; } = true;

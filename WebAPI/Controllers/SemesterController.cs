@@ -174,8 +174,8 @@ namespace WebAPI.Controllers
                     hasOverlap = overlappingSemesters.Any(),
                     overlappingSemesters = overlappingSemesters,
                     message = overlappingSemesters.Any() 
-                        ? $"Phát hiện {overlappingSemesters.Count()} học kỳ trùng thời gian." 
-                        : "Không có học kỳ nào trùng thời gian."
+                        ? $"Found {overlappingSemesters.Count()} overlapping semesters." 
+                        : "No overlapping semesters found."
                 });
             }
         catch (Exception)

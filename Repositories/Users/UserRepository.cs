@@ -51,5 +51,26 @@ namespace Repositories.Users
                 .FirstOrDefaultAsync(t => t.RefreshToken == refreshToken && !t.Revoked && t.ExpiryDate > DateTime.UtcNow);
 
         public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
+
+        public async Task<List<User>> GetUsersByEmailsAsync(List<string> emails)
+            => await _db.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .Where(u => emails.Contains(u.Email))
+                .ToListAsync();
+
+        public async Task AddRangeAsync(List<User> users)
+        {
+            await _db.Users.AddRangeAsync(users);
+            await _db.SaveChangesAsync();
+        }
+
+        public async Task<Dictionary<string, int>> GetRoleIdsByNamesAsync(List<string> roleNames)
+        {
+            var roles = await _db.Roles
+                .Where(r => roleNames.Contains(r.RoleName))
+                .ToDictionaryAsync(r => r.RoleName, r => r.Id);
+            return roles;
+        }
     }
 }

@@ -38,20 +38,20 @@ namespace WebFE.Pages.Admin.Dashboard
                 {
                     new RecentActivityDto
                     {
-                        Name = "Hội thảo Công nghệ AI 2025",
-                        ClubName = "CLB Lập trình",
+                        Name = "AI Technology Workshop 2025",
+                        ClubName = "Programming Club",
                         StartDate = DateTime.UtcNow.AddDays(-2)
                     },
                     new RecentActivityDto
                     {
-                        Name = "Giải bóng đá sinh viên",
-                        ClubName = "CLB Thể thao",
+                        Name = "Student Football Tournament",
+                        ClubName = "Sports Club",
                         StartDate = DateTime.UtcNow.AddDays(-5)
                     },
                     new RecentActivityDto
                     {
-                        Name = "Workshop Thiết kế UI/UX",
-                        ClubName = "CLB Thiết kế",
+                        Name = "UI/UX Design Workshop",
+                        ClubName = "Design Club",
                         StartDate = DateTime.UtcNow.AddDays(-7)
                     }
                 };

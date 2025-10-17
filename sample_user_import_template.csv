@@ -1,0 +1,9 @@
+Email,FullName,PhoneNumber,Roles,IsActive,StudentCode,Cohort,DateOfBirth,Gender,EnrollmentDate,MajorCode,StudentStatus
+student1@fpt.edu.vn,John Doe,0123456789,Student,true,SE12345,K20,2000-05-15,Male,2020-09-01,SE,Active
+student2@fpt.edu.vn,Jane Smith,0987654321,Student,true,IA67890,K19,1999-12-03,Female,2019-09-01,IA,Active
+student3@example.com,Bob Johnson,0369852147,Student,true,AI11111,K21,2001-08-20,Male,2021-09-01,AI,Active
+admin@fpt.edu.vn,Admin User,0901234567,Admin,true,,,,,,,
+manager@fpt.edu.vn,Club Manager,0912345678,"ClubManager,Student",true,SE99999,K18,1998-03-10,Male,2018-09-01,SE,Active
+member@fpt.edu.vn,Club Member,0923456789,"ClubMember,Student",true,IA88888,K20,2000-11-25,Female,2020-09-01,IA,Active
+inactive@fpt.edu.vn,Inactive User,0934567890,Student,false,SE77777,K17,1997-07-12,Male,2017-09-01,SE,Inactive
+

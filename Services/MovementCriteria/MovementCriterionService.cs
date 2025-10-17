@@ -32,7 +32,7 @@ public class MovementCriterionService : IMovementCriterionService
     public async Task<IEnumerable<MovementCriterionDto>> GetByTargetTypeAsync(string targetType)
     {
         if (targetType != "Student" && targetType != "Club")
-            throw new ArgumentException("TargetType phải là 'Student' hoặc 'Club'");
+            throw new ArgumentException("TargetType must be 'Student' or 'Club'");
 
         var criteria = await _criterionRepository.GetByTargetTypeAsync(targetType);
         return criteria.Select(MapToDto);
@@ -54,15 +54,15 @@ public class MovementCriterionService : IMovementCriterionService
     {
         // Validate business rules
         if (dto.TargetType != "Student" && dto.TargetType != "Club")
-            throw new ArgumentException("TargetType phải là 'Student' hoặc 'Club'");
+            throw new ArgumentException("TargetType must be 'Student' or 'Club'");
 
         if (dto.MaxScore < 0)
-            throw new ArgumentException("Điểm tối đa không thể âm");
+            throw new ArgumentException("Maximum score cannot be negative");
 
         // Kiểm tra GroupId có tồn tại không
         var groupExists = await _groupRepository.ExistsAsync(dto.GroupId);
         if (!groupExists)
-            throw new KeyNotFoundException($"Không tìm thấy nhóm tiêu chí với ID {dto.GroupId}");
+            throw new KeyNotFoundException($"Criteria group with ID {dto.GroupId} not found");
 
         var criterion = new MovementCriterion
         {
@@ -87,21 +87,21 @@ public class MovementCriterionService : IMovementCriterionService
         // Kiểm tra tồn tại
         var existing = await _criterionRepository.GetByIdAsync(id);
         if (existing == null)
-            throw new KeyNotFoundException($"Không tìm thấy tiêu chí với ID {id}");
+            throw new KeyNotFoundException($"Criteria with ID {id} not found");
 
         // Validate business rules
         if (dto.TargetType != "Student" && dto.TargetType != "Club")
-            throw new ArgumentException("TargetType phải là 'Student' hoặc 'Club'");
+            throw new ArgumentException("TargetType must be 'Student' or 'Club'");
 
         if (dto.MaxScore < 0)
-            throw new ArgumentException("Điểm tối đa không thể âm");
+            throw new ArgumentException("Maximum score cannot be negative");
 
         // Kiểm tra GroupId có tồn tại không (nếu thay đổi)
         if (existing.GroupId != dto.GroupId)
         {
             var groupExists = await _groupRepository.ExistsAsync(dto.GroupId);
             if (!groupExists)
-                throw new KeyNotFoundException($"Không tìm thấy nhóm tiêu chí với ID {dto.GroupId}");
+                throw new KeyNotFoundException($"Criteria group with ID {dto.GroupId} not found");
         }
 
         // Cập nhật thông tin
@@ -125,12 +125,12 @@ public class MovementCriterionService : IMovementCriterionService
         // Kiểm tra tồn tại
         var exists = await _criterionRepository.ExistsAsync(id);
         if (!exists)
-            throw new KeyNotFoundException($"Không tìm thấy tiêu chí với ID {id}");
+            throw new KeyNotFoundException($"Criteria with ID {id} not found");
 
         // Kiểm tra có dữ liệu liên quan hay không
         var hasRelatedData = await _criterionRepository.HasRelatedDataAsync(id);
         if (hasRelatedData)
-            throw new InvalidOperationException("Không thể xóa tiêu chí đã có dữ liệu liên quan (MovementRecordDetail hoặc Evidence). Bạn có thể vô hiệu hóa tiêu chí thay vì xóa.");
+            throw new InvalidOperationException("Cannot delete criteria that has related data (MovementRecordDetail or Evidence). You can deactivate the criteria instead of deleting.");
 
         return await _criterionRepository.DeleteAsync(id);
     }
@@ -139,7 +139,7 @@ public class MovementCriterionService : IMovementCriterionService
     {
         var criterion = await _criterionRepository.GetByIdAsync(id);
         if (criterion == null)
-            throw new KeyNotFoundException($"Không tìm thấy tiêu chí với ID {id}");
+            throw new KeyNotFoundException($"Criteria with ID {id} not found");
 
         criterion.IsActive = !criterion.IsActive;
         await _criterionRepository.UpdateAsync(criterion);

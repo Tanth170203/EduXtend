@@ -19,7 +19,7 @@ public class Evidence
     public MovementCriterion? Criterion { get; set; }
 
     [Required, MaxLength(200)]
-    public string Title { get; set; } = null!; // Tên minh chứng, VD: "Giấy xác nhận hiến máu"
+    public string Title { get; set; } = null!; // Evidence name, e.g.: "Blood donation certificate"
 
     [MaxLength(1000)]
     public string? Description { get; set; } // Mô tả chi tiết nội dung minh chứng

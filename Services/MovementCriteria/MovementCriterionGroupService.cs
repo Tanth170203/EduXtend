@@ -26,7 +26,7 @@ public class MovementCriterionGroupService : IMovementCriterionGroupService
     public async Task<IEnumerable<MovementCriterionGroupDto>> GetByTargetTypeAsync(string targetType)
     {
         if (targetType != "Student" && targetType != "Club")
-            throw new ArgumentException("TargetType phải là 'Student' hoặc 'Club'");
+            throw new ArgumentException("TargetType must be 'Student' or 'Club'");
 
         var groups = await _groupRepository.GetByTargetTypeAsync(targetType);
         return groups.Select(MapToDto);
@@ -48,10 +48,10 @@ public class MovementCriterionGroupService : IMovementCriterionGroupService
     {
         // Validate business rules
         if (dto.TargetType != "Student" && dto.TargetType != "Club")
-            throw new ArgumentException("TargetType phải là 'Student' hoặc 'Club'");
+            throw new ArgumentException("TargetType must be 'Student' or 'Club'");
 
         if (dto.MaxScore < 0)
-            throw new ArgumentException("Điểm tối đa không thể âm");
+            throw new ArgumentException("Maximum score cannot be negative");
 
         var group = new MovementCriterionGroup
         {
@@ -70,14 +70,14 @@ public class MovementCriterionGroupService : IMovementCriterionGroupService
         // Kiểm tra tồn tại
         var existing = await _groupRepository.GetByIdAsync(id);
         if (existing == null)
-            throw new KeyNotFoundException($"Không tìm thấy nhóm tiêu chí với ID {id}");
+            throw new KeyNotFoundException($"Criteria group with ID {id} not found");
 
         // Validate business rules
         if (dto.TargetType != "Student" && dto.TargetType != "Club")
-            throw new ArgumentException("TargetType phải là 'Student' hoặc 'Club'");
+            throw new ArgumentException("TargetType must be 'Student' or 'Club'");
 
         if (dto.MaxScore < 0)
-            throw new ArgumentException("Điểm tối đa không thể âm");
+            throw new ArgumentException("Maximum score cannot be negative");
 
         // Cập nhật thông tin
         existing.Name = dto.Name;
@@ -94,12 +94,12 @@ public class MovementCriterionGroupService : IMovementCriterionGroupService
         // Kiểm tra tồn tại
         var exists = await _groupRepository.ExistsAsync(id);
         if (!exists)
-            throw new KeyNotFoundException($"Không tìm thấy nhóm tiêu chí với ID {id}");
+            throw new KeyNotFoundException($"Criteria group with ID {id} not found");
 
         // Kiểm tra có tiêu chí con hay không
         var hasCriteria = await _groupRepository.HasCriteriaAsync(id);
         if (hasCriteria)
-            throw new InvalidOperationException("Không thể xóa nhóm tiêu chí đã có tiêu chí con. Vui lòng xóa các tiêu chí con trước.");
+            throw new InvalidOperationException("Cannot delete criteria group that has sub-criteria. Please delete sub-criteria first.");
 
         return await _groupRepository.DeleteAsync(id);
     }

@@ -29,7 +29,7 @@ public class MovementCriterionGroupController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi lấy danh sách nhóm tiêu chí." });
+            return StatusCode(500, new { message = "Error retrieving criteria groups list." });
         }
     }
 
@@ -50,7 +50,7 @@ public class MovementCriterionGroupController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi lấy danh sách nhóm tiêu chí." });
+            return StatusCode(500, new { message = "Error retrieving criteria groups list." });
         }
     }
 
@@ -64,13 +64,13 @@ public class MovementCriterionGroupController : ControllerBase
         {
             var group = await _service.GetByIdAsync(id);
             if (group == null)
-                return NotFound(new { message = $"Không tìm thấy nhóm tiêu chí với ID {id}." });
+                return NotFound(new { message = $"Criteria group with ID {id} not found." });
 
             return Ok(group);
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi lấy thông tin nhóm tiêu chí." });
+            return StatusCode(500, new { message = "Error retrieving criteria group information." });
         }
     }
 
@@ -84,13 +84,13 @@ public class MovementCriterionGroupController : ControllerBase
         {
             var group = await _service.GetByIdWithCriteriaAsync(id);
             if (group == null)
-                return NotFound(new { message = $"Không tìm thấy nhóm tiêu chí với ID {id}." });
+                return NotFound(new { message = $"Criteria group with ID {id} not found." });
 
             return Ok(group);
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi lấy thông tin chi tiết nhóm tiêu chí." });
+            return StatusCode(500, new { message = "Error retrieving criteria group details." });
         }
     }
 
@@ -115,7 +115,7 @@ public class MovementCriterionGroupController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi tạo nhóm tiêu chí." });
+            return StatusCode(500, new { message = "Error creating criteria group." });
         }
     }
 
@@ -132,7 +132,7 @@ public class MovementCriterionGroupController : ControllerBase
                 return BadRequest(ModelState);
 
             if (id != dto.Id)
-                return BadRequest(new { message = "ID trong URL và body không khớp." });
+                return BadRequest(new { message = "ID in URL and body do not match." });
 
             var group = await _service.UpdateAsync(id, dto);
             return Ok(group);
@@ -147,7 +147,7 @@ public class MovementCriterionGroupController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi cập nhật nhóm tiêu chí." });
+            return StatusCode(500, new { message = "Error updating criteria group." });
         }
     }
 
@@ -162,7 +162,7 @@ public class MovementCriterionGroupController : ControllerBase
         {
             var deleted = await _service.DeleteAsync(id);
             if (!deleted)
-                return NotFound(new { message = $"Không tìm thấy nhóm tiêu chí với ID {id}." });
+                return NotFound(new { message = $"Criteria group with ID {id} not found." });
 
             return NoContent();
         }
@@ -176,7 +176,7 @@ public class MovementCriterionGroupController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi xóa nhóm tiêu chí." });
+            return StatusCode(500, new { message = "Error deleting criteria group." });
         }
     }
 }

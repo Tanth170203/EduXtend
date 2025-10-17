@@ -29,7 +29,7 @@ public class MovementCriterionController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi lấy danh sách tiêu chí." });
+            return StatusCode(500, new { message = "Error retrieving criteria list." });
         }
     }
 
@@ -46,7 +46,7 @@ public class MovementCriterionController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi lấy danh sách tiêu chí theo nhóm." });
+            return StatusCode(500, new { message = "Error retrieving criteria by group." });
         }
     }
 
@@ -67,7 +67,7 @@ public class MovementCriterionController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi lấy danh sách tiêu chí." });
+            return StatusCode(500, new { message = "Error retrieving criteria list." });
         }
     }
 
@@ -84,7 +84,7 @@ public class MovementCriterionController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi lấy danh sách tiêu chí hoạt động." });
+            return StatusCode(500, new { message = "Error retrieving activity criteria." });
         }
     }
 
@@ -98,13 +98,13 @@ public class MovementCriterionController : ControllerBase
         {
             var criterion = await _service.GetByIdAsync(id);
             if (criterion == null)
-                return NotFound(new { message = $"Không tìm thấy tiêu chí với ID {id}." });
+                return NotFound(new { message = $"Criteria with ID {id} not found." });
 
             return Ok(criterion);
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi lấy thông tin tiêu chí." });
+            return StatusCode(500, new { message = "Error retrieving criteria information." });
         }
     }
 
@@ -133,7 +133,7 @@ public class MovementCriterionController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi tạo tiêu chí." });
+            return StatusCode(500, new { message = "Error creating criteria." });
         }
     }
 
@@ -150,7 +150,7 @@ public class MovementCriterionController : ControllerBase
                 return BadRequest(ModelState);
 
             if (id != dto.Id)
-                return BadRequest(new { message = "ID trong URL và body không khớp." });
+                return BadRequest(new { message = "ID in URL and body do not match." });
 
             var criterion = await _service.UpdateAsync(id, dto);
             return Ok(criterion);
@@ -165,7 +165,7 @@ public class MovementCriterionController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi cập nhật tiêu chí." });
+            return StatusCode(500, new { message = "Error updating criteria." });
         }
     }
 
@@ -180,7 +180,7 @@ public class MovementCriterionController : ControllerBase
         {
             var deleted = await _service.DeleteAsync(id);
             if (!deleted)
-                return NotFound(new { message = $"Không tìm thấy tiêu chí với ID {id}." });
+                return NotFound(new { message = $"Criteria with ID {id} not found." });
 
             return NoContent();
         }
@@ -194,7 +194,7 @@ public class MovementCriterionController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi xóa tiêu chí." });
+            return StatusCode(500, new { message = "Error deleting criteria." });
         }
     }
 
@@ -210,7 +210,7 @@ public class MovementCriterionController : ControllerBase
             var isActive = await _service.ToggleActiveAsync(id);
             return Ok(new 
             { 
-                message = $"Tiêu chí đã được {(isActive ? "kích hoạt" : "vô hiệu hóa")}.",
+                message = $"Criteria has been {(isActive ? "activated" : "deactivated")}.",
                 isActive = isActive
             });
         }
@@ -220,7 +220,7 @@ public class MovementCriterionController : ControllerBase
         }
         catch (Exception)
         {
-            return StatusCode(500, new { message = "Lỗi khi thay đổi trạng thái tiêu chí." });
+            return StatusCode(500, new { message = "Error changing criteria status." });
         }
     }
 }

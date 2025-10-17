@@ -1,15 +1,15 @@
 @page
 @model WebFE.Pages.Admin.Dashboard.IndexModel
 @{
-    ViewData["Title"] = "Tổng quan";
-    ViewData["Breadcrumb"] = "Tổng quan";
+    ViewData["Title"] = "Dashboard";
+    ViewData["Breadcrumb"] = "Dashboard";
     Layout = "~/Pages/Shared/_AdminLayout.cshtml";
 }
 
 <!-- Page Header -->
 <div class="page-header">
-    <h1 class="page-title">Tổng quan hệ thống</h1>
-    <p class="page-description">Xem tổng quan và thống kê về hoạt động của hệ thống</p>
+    <h1 class="page-title">System Overview</h1>
+    <p class="page-description">View overview and statistics about system activities</p>
 </div>
 
 <!-- Stats Grid -->
@@ -17,7 +17,7 @@
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Tổng sinh viên</p>
+                <p class="stat-card-title">Total Students</p>
             </div>
             <div class="stat-card-icon blue">
                 <i data-lucide="users" style="width: 24px; height: 24px;"></i>
@@ -26,14 +26,14 @@
         <div class="stat-card-value">@Model.TotalStudents</div>
         <div class="stat-card-change positive">
             <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i>
-            <span>+12% so với tháng trước</span>
+            <span>+12% from last month</span>
         </div>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Câu lạc bộ hoạt động</p>
+                <p class="stat-card-title">Active Clubs</p>
             </div>
             <div class="stat-card-icon green">
                 <i data-lucide="users-2" style="width: 24px; height: 24px;"></i>
@@ -42,14 +42,14 @@
         <div class="stat-card-value">@Model.ActiveClubs</div>
         <div class="stat-card-change positive">
             <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i>
-            <span>+5% so với tháng trước</span>
+            <span>+5% from last month</span>
         </div>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Hoạt động tháng này</p>
+                <p class="stat-card-title">Monthly Activities</p>
             </div>
             <div class="stat-card-icon purple">
                 <i data-lucide="calendar-check" style="width: 24px; height: 24px;"></i>
@@ -58,14 +58,14 @@
         <div class="stat-card-value">@Model.MonthlyActivities</div>
         <div class="stat-card-change positive">
             <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i>
-            <span>+8% so với tháng trước</span>
+            <span>+8% from last month</span>
         </div>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Đề xuất chờ duyệt</p>
+                <p class="stat-card-title">Pending Proposals</p>
             </div>
             <div class="stat-card-icon orange">
                 <i data-lucide="file-text" style="width: 24px; height: 24px;"></i>
@@ -74,7 +74,7 @@
         <div class="stat-card-value">@Model.PendingProposals</div>
         <div class="stat-card-change negative">
             <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
-            <span>Cần xem xét</span>
+            <span>Needs review</span>
         </div>
     </div>
 </div>
@@ -82,7 +82,7 @@
 <!-- Quick Actions -->
 <div class="content-card">
     <div class="content-card-header">
-        <h2 class="content-card-title">Thao tác nhanh</h2>
+        <h2 class="content-card-title">Quick Actions</h2>
     </div>
     <div class="content-card-body">
         <div class="quick-actions">
@@ -91,8 +91,8 @@
                     <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
                 </div>
                 <div class="quick-action-content">
-                    <div class="quick-action-title">Quản lý học kỳ</div>
-                    <p class="quick-action-desc">Thêm, sửa, xóa học kỳ</p>
+                    <div class="quick-action-title">Manage Semesters</div>
+                    <p class="quick-action-desc">Add, edit, delete semesters</p>
                 </div>
             </a>
             
@@ -101,8 +101,8 @@
                     <i data-lucide="user-plus" style="width: 24px; height: 24px;"></i>
                 </div>
                 <div class="quick-action-content">
-                    <div class="quick-action-title">Quản lý sinh viên</div>
-                    <p class="quick-action-desc">Thêm, import sinh viên</p>
+                    <div class="quick-action-title">Manage Students</div>
+                    <p class="quick-action-desc">Add, import students</p>
                 </div>
             </a>
             
@@ -111,8 +111,8 @@
                     <i data-lucide="users-2" style="width: 24px; height: 24px;"></i>
                 </div>
                 <div class="quick-action-content">
-                    <div class="quick-action-title">Quản lý CLB</div>
-                    <p class="quick-action-desc">Phê duyệt, quản lý CLB</p>
+                    <div class="quick-action-title">Manage Clubs</div>
+                    <p class="quick-action-desc">Approve, manage clubs</p>
                 </div>
             </a>
             
@@ -121,8 +121,8 @@
                     <i data-lucide="list-checks" style="width: 24px; height: 24px;"></i>
                 </div>
                 <div class="quick-action-content">
-                    <div class="quick-action-title">Tiêu chí đánh giá</div>
-                    <p class="quick-action-desc">Cài đặt tiêu chí ĐRL</p>
+                    <div class="quick-action-title">Evaluation Criteria</div>
+                    <p class="quick-action-desc">Configure evaluation criteria</p>
                 </div>
             </a>
         </div>
@@ -134,8 +134,8 @@
     <div class="col-lg-8">
         <div class="content-card">
             <div class="content-card-header">
-                <h2 class="content-card-title">Hoạt động gần đây</h2>
-                <a href="/Admin/Activities" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+                <h2 class="content-card-title">Recent Activities</h2>
+                <a href="/Admin/Activities" class="btn btn-sm btn-outline-primary">View All</a>
             </div>
             <div class="content-card-body">
                 @if (Model.RecentActivities != null && Model.RecentActivities.Any())
@@ -144,10 +144,10 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Tên hoạt động</th>
-                                    <th>CLB</th>
-                                    <th>Ngày diễn ra</th>
-                                    <th>Trạng thái</th>
+                                    <th>Activity Name</th>
+                                    <th>Club</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -163,7 +163,7 @@
                                         <td>@activity.ClubName</td>
                                         <td>@activity.StartDate.ToString("dd/MM/yyyy")</td>
                                         <td>
-                                            <span class="badge bg-success">Hoạt động</span>
+                                            <span class="badge bg-success">Active</span>
                                         </td>
                                     </tr>
                                 }
@@ -175,7 +175,7 @@
                 {
                     <div class="text-center py-5 text-muted">
                         <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
-                        <p>Chưa có hoạt động nào</p>
+                        <p>No activities yet</p>
                     </div>
                 }
             </div>
@@ -185,7 +185,7 @@
     <div class="col-lg-4">
         <div class="content-card">
             <div class="content-card-header">
-                <h2 class="content-card-title">Thông báo mới</h2>
+                <h2 class="content-card-title">Recent Notifications</h2>
             </div>
             <div class="content-card-body">
                 <div class="d-flex flex-column gap-3">
@@ -196,8 +196,8 @@
                             </div>
                         </div>
                         <div class="flex-grow-1">
-                            <div class="fw-semibold">Đề xuất mới từ CLB ABC</div>
-                            <p class="text-muted small mb-0">5 phút trước</p>
+                            <div class="fw-semibold">New proposal from Club ABC</div>
+                            <p class="text-muted small mb-0">5 minutes ago</p>
                         </div>
                     </div>
                     
@@ -208,8 +208,8 @@
                             </div>
                         </div>
                         <div class="flex-grow-1">
-                            <div class="fw-semibold">Hoạt động đã được phê duyệt</div>
-                            <p class="text-muted small mb-0">1 giờ trước</p>
+                            <div class="fw-semibold">Activity has been approved</div>
+                            <p class="text-muted small mb-0">1 hour ago</p>
                         </div>
                     </div>
                     
@@ -220,8 +220,8 @@
                             </div>
                         </div>
                         <div class="flex-grow-1">
-                            <div class="fw-semibold">Cần cập nhật tiêu chí ĐRL</div>
-                            <p class="text-muted small mb-0">2 giờ trước</p>
+                            <div class="fw-semibold">Need to update evaluation criteria</div>
+                            <p class="text-muted small mb-0">2 hours ago</p>
                         </div>
                     </div>
                 </div>

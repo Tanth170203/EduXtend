@@ -121,9 +121,16 @@ namespace Services.GGLogin
                 claims.Add(new Claim("avatar", user.AvatarUrl));
             }
 
-            foreach (var userRole in user.UserRoles)
+            // ✅ THÊM NULL CHECK để tránh NullReferenceException
+            if (user.UserRoles != null)
             {
-                claims.Add(new Claim(ClaimTypes.Role, userRole.Role.RoleName));
+                foreach (var userRole in user.UserRoles)
+                {
+                    if (userRole?.Role != null && !string.IsNullOrEmpty(userRole.Role.RoleName))
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, userRole.Role.RoleName));
+                    }
+                }
             }
 
             return claims;

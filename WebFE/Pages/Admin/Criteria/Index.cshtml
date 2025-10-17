@@ -2,8 +2,8 @@
 @using BusinessObject.DTOs.MovementCriteria
 @model WebFE.Pages.Admin.Criteria.IndexModel
 @{
-    ViewData["Title"] = "Quản lý tiêu chí đánh giá";
-    ViewData["Breadcrumb"] = "Tiêu chí";
+    ViewData["Title"] = "Evaluation Criteria Management";
+    ViewData["Breadcrumb"] = "Criteria";
     Layout = "~/Pages/Shared/_AdminLayout.cshtml";
 }
 
@@ -158,28 +158,28 @@
             <form method="post" asp-page-handler="CreateGroup">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="addName" class="form-label">Tên nhóm tiêu chí <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="addName" name="Name" required placeholder="Ví dụ: I. HOẠT ĐỘNG CÂU LẠC BỘ">
-                        <div class="form-text">Tên nhóm sẽ hiển thị trong hệ thống đánh giá</div>
+                        <label for="addName" class="form-label">Criteria Group Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="addName" name="Name" required placeholder="Example: I. CLUB ACTIVITIES">
+                        <div class="form-text">Group name will be displayed in the evaluation system</div>
                     </div>
                     <div class="mb-3">
-                        <label for="addDescription" class="form-label">Mô tả</label>
-                        <textarea class="form-control" id="addDescription" name="Description" rows="3" placeholder="Mô tả chi tiết về nhóm tiêu chí này"></textarea>
+                        <label for="addDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="addDescription" name="Description" rows="3" placeholder="Detailed description of this criteria group"></textarea>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="addMaxScore" class="form-label">Điểm tối đa <span class="text-danger">*</span></label>
+                                <label for="addMaxScore" class="form-label">Maximum Score <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="addMaxScore" name="MaxScore" required min="0" max="1000" value="100">
-                                <div class="form-text">Điểm tối đa: 0-1000</div>
+                                <div class="form-text">Maximum score: 0-1000</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="addTargetType" class="form-label">Đối tượng áp dụng <span class="text-danger">*</span></label>
+                                <label for="addTargetType" class="form-label">Target Type <span class="text-danger">*</span></label>
                                 <select class="form-select" id="addTargetType" name="TargetType" required>
-                                    <option value="Student">Sinh viên</option>
-                                    <option value="Club">CLB</option>
+                                    <option value="Student">Student</option>
+                                    <option value="Club">Club</option>
                                 </select>
                             </div>
                         </div>
@@ -216,26 +216,26 @@
                 <input type="hidden" name="Id" id="editId">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="editName" class="form-label">Tên nhóm tiêu chí <span class="text-danger">*</span></label>
+                        <label for="editName" class="form-label">Criteria Group Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="editName" name="Name" required>
                     </div>
                     <div class="mb-3">
-                        <label for="editDescription" class="form-label">Mô tả</label>
+                        <label for="editDescription" class="form-label">Description</label>
                         <textarea class="form-control" id="editDescription" name="Description" rows="3"></textarea>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="editMaxScore" class="form-label">Điểm tối đa <span class="text-danger">*</span></label>
+                                <label for="editMaxScore" class="form-label">Maximum Score <span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" id="editMaxScore" name="MaxScore" required min="0" max="1000">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="editTargetType" class="form-label">Đối tượng áp dụng <span class="text-danger">*</span></label>
+                                <label for="editTargetType" class="form-label">Target Type <span class="text-danger">*</span></label>
                                 <select class="form-select" id="editTargetType" name="TargetType" required>
-                                    <option value="Student">Sinh viên</option>
-                                    <option value="Club">CLB</option>
+                                    <option value="Student">Student</option>
+                                    <option value="Club">Club</option>
                                 </select>
                             </div>
                         </div>
