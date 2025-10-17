@@ -1,0 +1,68 @@
+﻿@page
+@model WebFE.Pages.Clubs.ActiveModel
+@{
+    ViewData["Title"] = "Active Clubs";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+
+<section class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">Student Clubs</h1>
+        <p class="text-muted">Join clubs that match your interests, meet like-minded students, and create lasting memories.</p>
+    </div>
+
+    <!-- Search + Filters -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <input type="text" class="form-control flex-grow-1" placeholder="Search clubs..." style="max-width:400px;">
+        <select class="form-select" style="max-width:180px;">
+            <option>All Categories</option>
+            <option>Technology</option>
+            <option>Sports</option>
+            <option>Music</option>
+        </select>
+        <select class="form-select" style="max-width:180px;">
+            <option>Most Members</option>
+            <option>Newest</option>
+            <option>A–Z</option>
+        </select>
+        <button class="btn btn-outline-secondary">
+            <i class="bi bi-funnel"></i> More Filters
+        </button>
+    </div>
+
+    <!-- Club cards -->
+    <div class="row g-4">
+        @foreach (var c in Model.Clubs)
+        {
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card shadow-sm h-100 border-0">
+                    <img src="@(string.IsNullOrEmpty(c.LogoUrl) ? "/img/club-placeholder.png" : c.LogoUrl)"
+                         class="card-img-top" style="height:200px; object-fit:cover;" />
+
+                    <div class="card-body">
+                        <h5 class="fw-bold">@c.Name</h5>
+                        @if (!string.IsNullOrWhiteSpace(c.SubName))
+                        {
+                            <p class="text-muted small">@c.SubName</p>
+                        }
+
+                        <div class="d-flex flex-wrap gap-3 small text-muted mt-2">
+                            <span><i class="bi bi-people"></i> 120 members</span>
+                            <span><i class="bi bi-calendar"></i> Founded in 2020</span>
+                        </div>
+                    </div>
+
+                    <div class="card-footer bg-transparent border-0 d-flex justify-content-between align-items-center">
+                        <a asp-page="Details" asp-route-id="@c.Id" class="btn btn-success rounded-pill px-3">Details</a>
+                        @if (!c.IsActive)
+                        {
+                            <span class="badge bg-warning text-dark">Inactive</span>
+                        }
+                        <a class="btn btn-success rounded-pill px-3">Join Club</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    </section>

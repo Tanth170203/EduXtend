@@ -1,0 +1,83 @@
+﻿@page "{id:int}"
+@model WebFE.Pages.Clubs.DetailsModel
+@{
+    var c = Model.Club!;
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+    ViewData["Title"] = c.Name;
+}
+
+<div class="club-detail container my-5">
+    <div class="position-relative mb-4">
+        <img src="@(c.BannerUrl ?? "/img/club-banner.png")"
+             class="img-fluid rounded shadow-sm w-100"
+             style="height:260px; object-fit:cover;">
+        <div class="position-absolute bottom-0 start-0 p-4 text-white"
+             style="background:linear-gradient(to top,rgba(0,0,0,0.6),transparent)">
+            <h1 class="fw-bold">@c.Name</h1>
+            <p class="text-light mb-1">@c.Description</p>
+        </div>
+    </div>
+
+    <!-- Club Stats -->
+    <div class="row text-center mb-5">
+        <div class="col-md-3 col-6">
+            <h4 class="fw-bold">156</h4>
+            <p class="text-muted small mb-0">Members</p>
+        </div>
+        <div class="col-md-3 col-6">
+            <h4 class="fw-bold">24</h4>
+            <p class="text-muted small mb-0">Activities</p>
+        </div>
+        <div class="col-md-3 col-6">
+            <h4 class="fw-bold">Member</h4>
+            <p class="text-muted small mb-0">Your Role</p>
+        </div>
+        <div class="col-md-3 col-6">
+            <h4 class="fw-bold">@c.FoundedDate.Year</h4>
+            <p class="text-muted small mb-0">Founded</p>
+        </div>
+    </div>
+
+    <!-- Upcoming events -->
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-calendar-event"></i> Upcoming Events</h5>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <b>AI Workshop: Building Chatbots</b><br />
+                                <small class="text-muted">Fri, Feb 18 · 2:00PM · Tech Lab A</small>
+                            </div>
+                            <button class="btn btn-outline-success btn-sm rounded-pill">Register</button>
+                        </div>
+
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <b>Hackathon 2024</b><br />
+                                <small class="text-muted">Mar 2 · Innovation Center</small>
+                            </div>
+                            <button class="btn btn-outline-success btn-sm rounded-pill">Register</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-trophy"></i> Your Achievements</h5>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="p-2 bg-light rounded">🏅 Active Member</div>
+                        <div class="p-2 bg-light rounded">🎯 Workshop Participant</div>
+                        <div class="p-2 bg-light rounded">🤝 Team Player</div>
+                    </div>
+                    <a href="#" class="d-block mt-3 small text-decoration-none">View All Achievements →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
