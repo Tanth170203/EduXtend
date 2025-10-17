@@ -13,23 +13,39 @@
     </div>
 
     <!-- Search + Filters -->
-    <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
-        <input type="text" class="form-control flex-grow-1" placeholder="Search clubs..." style="max-width:400px;">
-        <select class="form-select" style="max-width:180px;">
-            <option>All Categories</option>
-            <option>Technology</option>
-            <option>Sports</option>
-            <option>Music</option>
+    <form method="get" class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <input type="text" 
+               name="searchTerm" 
+               value="@Model.SearchTerm" 
+               class="form-control flex-grow-1" 
+               placeholder="Search clubs by name or description..." 
+               style="max-width:400px;">
+        
+        <select name="categoryName" class="form-select" style="max-width:180px;">
+            <option value="">All Categories</option>
+            @foreach (var category in Model.Categories)
+            {
+                <option value="@category" selected="@(Model.CategoryName == category)">@category</option>
+            }
         </select>
-        <select class="form-select" style="max-width:180px;">
-            <option>Most Members</option>
-            <option>Newest</option>
-            <option>A–Z</option>
+        
+        <select name="sortBy" class="form-select" style="max-width:180px;">
+            <option value="az" selected="@(Model.SortBy == "az" || string.IsNullOrEmpty(Model.SortBy))">A–Z</option>
+            <option value="members" selected="@(Model.SortBy == "members")">Most Members</option>
+            <option value="newest" selected="@(Model.SortBy == "newest")">Newest</option>
         </select>
-        <button class="btn btn-outline-secondary">
-            <i class="bi bi-funnel"></i> More Filters
+        
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> Search
         </button>
-    </div>
+        
+        @if (!string.IsNullOrEmpty(Model.SearchTerm) || !string.IsNullOrEmpty(Model.CategoryName))
+        {
+            <a href="/Clubs/Active" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Clear
+            </a>
+        }
+    </form>
 
     <!-- Club cards -->
     <div class="row g-4">
@@ -48,8 +64,9 @@
                         }
 
                         <div class="d-flex flex-wrap gap-3 small text-muted mt-2">
-                            <span><i class="bi bi-people"></i> 120 members</span>
-                            <span><i class="bi bi-calendar"></i> Founded in 2020</span>
+                            <span><i class="bi bi-people"></i> @c.MemberCount members</span>
+                            <span><i class="bi bi-calendar-event"></i> @c.ActivityCount activities</span>
+                            <span><i class="bi bi-calendar"></i> Founded @c.FoundedDate.Year</span>
                         </div>
                     </div>
 

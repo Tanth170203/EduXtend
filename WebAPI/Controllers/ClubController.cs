@@ -19,6 +19,27 @@ public class ClubController : ControllerBase
         return Ok(data);
     }
 
+    // GET api/club/search?searchTerm=tech&categoryName=Technology&isActive=true
+    [HttpGet("search")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Search(
+        [FromQuery] string? searchTerm, 
+        [FromQuery] string? categoryName, 
+        [FromQuery] bool? isActive)
+    {
+        var data = await _service.SearchClubsAsync(searchTerm, categoryName, isActive);
+        return Ok(data);
+    }
+
+    // GET api/club/categories
+    [HttpGet("categories")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetCategories()
+    {
+        var categories = await _service.GetAllCategoryNamesAsync();
+        return Ok(categories);
+    }
+
     // GET api/club/{id}
     [HttpGet("{id:int}")]
     [AllowAnonymous]

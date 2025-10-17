@@ -17,5 +17,17 @@ namespace BusinessObject.DTOs.Club
         public bool IsActive { get; set; }
         public DateTime FoundedDate { get; set; }
         public string CategoryName { get; set; } = null!;
+        
+        // Statistics
+        public int MemberCount { get; set; }
+        public int ActivityCount { get; set; }
+        public int DepartmentCount { get; set; }
+        public int AwardCount { get; set; }
+        
+        // Member role distribution
+        public Dictionary<string, int> RoleDistribution { get; set; } = new();
+        
+        // Activities (optional - can be loaded separately)
+        public List<Activity.ActivityListItemDto>? Activities { get; set; }
     }
 }
