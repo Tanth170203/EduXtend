@@ -1,0 +1,238 @@
+@page
+@model WebFE.Pages.Admin.Activities.IndexModel
+@{
+    ViewData["Title"] = "Activities Management";
+    ViewData["Breadcrumb"] = "Activities";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">Activities Management</h1>
+            <p class="page-description">Manage activities created by Admin</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Admin/Activities/Create" class="btn btn-primary d-flex align-items-center gap-2">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                New Activity
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Messages -->
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-triangle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Total Activities</p>
+            </div>
+            <div class="stat-card-icon blue">
+                <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Activities.Count</div>
+        <p class="text-muted small mb-0">All activities</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Public Activities</p>
+            </div>
+            <div class="stat-card-icon green">
+                <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Activities.Count(a => a.IsPublic)</div>
+        <p class="text-muted small mb-0">Visible to all</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Upcoming</p>
+            </div>
+            <div class="stat-card-icon purple">
+                <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Activities.Count(a => a.StartTime > DateTime.Now)</div>
+        <p class="text-muted small mb-0">Future events</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Past Events</p>
+            </div>
+            <div class="stat-card-icon orange">
+                <i data-lucide="archive" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Activities.Count(a => a.EndTime < DateTime.Now)</div>
+        <p class="text-muted small mb-0">Completed</p>
+    </div>
+</div>
+
+<!-- Activities Table -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h2 class="content-card-title">Activities List</h2>
+        <div class="d-flex gap-2">
+            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search activities..." style="max-width: 300px;">
+        </div>
+    </div>
+    <div class="content-card-body">
+        @if (Model.Activities.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover" id="activitiesTable">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Time</th>
+                            <th>Type</th>
+                            <th>Public</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var a in Model.Activities)
+                    {
+                        <tr>
+                            <td><strong>@a.Title</strong></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-1">
+                                    <i data-lucide="calendar" style="width: 14px; height: 14px; color: #6b7280;"></i>
+                                    <span>@a.StartTime.ToString("dd-MM-yyyy HH:mm") - @a.EndTime.ToString("dd-MM-yyyy HH:mm")</span>
+                                </div>
+                            </td>
+                            <td>
+                                @{
+                                    var typeInfo = a.Type switch {
+                                        0 => ("Academic Club", "bg-primary"),
+                                        1 => ("Festival", "bg-warning"),
+                                        2 => ("Skill Development", "bg-info"),
+                                        3 => ("Volunteer", "bg-success"),
+                                        4 => ("Health", "bg-danger"),
+                                        _ => ("Other", "bg-secondary")
+                                    };
+                                }
+                                <span class="badge @typeInfo.Item2">@typeInfo.Item1</span>
+                            </td>
+                            <td>
+                                @if (a.IsPublic)
+                                {
+                                    <span class="badge bg-success">Yes</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">No</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="/Admin/Activities/Detail?id=@a.Id" class="btn btn-sm btn-outline-info" title="View Detail">
+                                        <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                    </a>
+                                    <a href="/Admin/Activities/Edit?id=@a.Id" class="btn btn-sm btn-outline-primary" title="Edit">
+                                        <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmDelete(@a.Id, '@a.Title')" title="Delete">
+                                        <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5 text-muted">
+                <i data-lucide="calendar-x" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                <p>No activities found</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 560px; margin: 0 auto;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: #ef4444; margin-bottom: 1rem;"></i>
+                    <p>Are you sure you want to delete activity <strong id="delName"></strong>?</p>
+                    <p class="text-muted small">This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" asp-page-handler="Delete" id="deleteForm">
+                    <input type="hidden" name="id" id="delId" />
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#activitiesTable tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchValue) ? '' : 'none';
+            });
+        });
+
+        // Delete confirmation
+        function confirmDelete(id, name) {
+            document.getElementById('delId').value = id;
+            document.getElementById('delName').textContent = name;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+            lucide.createIcons();
+        }
+    </script>
+    <style>
+        /* Ensure delete modal stays perfectly centered */
+        #deleteModal .modal-dialog {
+            margin: 0 auto;
+        }
+        #deleteModal.show .modal-dialog {
+            display: flex;
+            align-items: center;
+            min-height: calc(100% - 1rem);
+        }
+    </style>
+}
+
+

@@ -9,11 +9,13 @@ using Repositories.Semesters;
 using Repositories.Users;
 using Repositories.Students;
 using Repositories.Majors;
+using Repositories.Activities;
 using Services.GGLogin;
 using Services.MovementCriteria;
 using Services.Semesters;
 using Services.UserImport;
 using Services.TokenCleanup;
+using Services.Activities;
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
@@ -45,6 +47,7 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionRepository, MovementCriterionRepository>();
             builder.Services.AddScoped<IStudentRepository, StudentRepository>();
             builder.Services.AddScoped<IMajorRepository, MajorRepository>();
+            builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
             builder.Services.AddScoped<Repositories.Roles.IRoleRepository, Repositories.Roles.RoleRepository>();
             
             // Services
@@ -56,6 +59,7 @@ namespace WebAPI
             builder.Services.AddScoped<IUserImportService, UserImportService>();
             builder.Services.AddScoped<Services.Students.IStudentService, Services.Students.StudentService>();
             builder.Services.AddScoped<Services.Users.IUserManagementService, Services.Users.UserManagementService>();
+            builder.Services.AddScoped<IActivityService, ActivityService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();

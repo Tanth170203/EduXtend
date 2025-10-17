@@ -1,0 +1,170 @@
+@page
+@model WebFE.Pages.Admin.Activities.EditModel
+@{
+    ViewData["Title"] = "Edit Activity";
+    ViewData["Breadcrumb"] = "Edit Activity";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header"><h1 class="page-title">Edit Activity</h1></div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<div class="content-card"><div class="content-card-body">
+    <form method="post">
+        <input type="hidden" asp-for="Activity.Id" />
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Title</label>
+                <input asp-for="Activity.Title" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Type</label>
+                <select asp-for="Activity.Type" class="form-select" required>
+                    <option value="0">Academic Club</option>
+                    <option value="1">Festival</option>
+                    <option value="2">Skill Development</option>
+                    <option value="3">Volunteer</option>
+                    <option value="4">Health</option>
+                    <option value="5">Other</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea asp-for="Activity.Description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Location</label>
+                <input asp-for="Activity.Location" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Start</label>
+                <input asp-for="Activity.StartTime" type="datetime-local" class="form-control" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">End</label>
+                <input asp-for="Activity.EndTime" type="datetime-local" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Image</label>
+                <div class="input-group">
+                    <input type="text" asp-for="Activity.ImageUrl" class="form-control" id="imageUrlInput" readonly placeholder="No image selected" />
+                    <button type="button" class="btn btn-outline-secondary" onclick="openImagePicker()">
+                        <i data-lucide="folder-open" style="width: 16px; height: 16px;"></i>
+                        Browse
+                    </button>
+                    @if (!string.IsNullOrEmpty(Model.Activity.ImageUrl))
+                    {
+                        <button type="button" class="btn btn-outline-danger" onclick="clearImage()" title="Clear image">
+                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    }
+                </div>
+                <div class="form-text">Select image from /wwwroot/images folder</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Public</label>
+                <select asp-for="Activity.IsPublic" class="form-select">
+                    <option value="true">Public</option>
+                    <option value="false">Restricted</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="/Admin/Activities" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+    </div></div>
+
+<!-- Image Picker Modal -->
+<div class="modal fade" id="imagePickerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i data-lucide="image" style="width: 20px; height: 20px;"></i>
+                    Select Image
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3" id="imageGrid">
+                    @foreach (var img in Model.ImageOptions)
+                    {
+                        <div class="col-md-4">
+                            <div class="image-option border rounded p-2 @(Model.Activity.ImageUrl == img ? "border-primary" : "")" 
+                                 style="cursor: pointer; transition: all 0.2s;"
+                                 onclick="selectImage('@img')">
+                                <img src="@img" class="w-100 rounded mb-2" style="aspect-ratio: 16/9; object-fit: cover;" alt="image" />
+                                <div class="text-truncate small text-muted">@img.Split('/').Last()</div>
+                                @if (Model.Activity.ImageUrl == img)
+                                {
+                                    <div class="text-center mt-1">
+                                        <span class="badge bg-primary">Current</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (!Model.ImageOptions.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i data-lucide="image-off" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                        <p>No images found in /wwwroot/images folder</p>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        function openImagePicker() {
+            const modal = new bootstrap.Modal(document.getElementById('imagePickerModal'));
+            modal.show();
+            setTimeout(() => lucide.createIcons(), 100);
+        }
+
+        function selectImage(imageUrl) {
+            document.getElementById('imageUrlInput').value = imageUrl;
+            bootstrap.Modal.getInstance(document.getElementById('imagePickerModal')).hide();
+        }
+
+        function clearImage() {
+            document.getElementById('imageUrlInput').value = '';
+        }
+
+        // Add hover effect
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.image-option').forEach(option => {
+                option.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.05)';
+                    this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                    if (!this.classList.contains('border-primary')) {
+                        this.style.borderColor = '#3b82f6';
+                    }
+                });
+                option.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                    this.style.boxShadow = 'none';
+                    if (!this.classList.contains('border-primary')) {
+                        this.style.borderColor = '#dee2e6';
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+

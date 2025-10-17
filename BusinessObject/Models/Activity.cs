@@ -18,6 +18,10 @@ public class Activity
     [MaxLength(1000)]
     public string? Description { get; set; }
 
+    // Optional cover image for the activity
+    [MaxLength(255)]
+    public string? ImageUrl { get; set; }
+
     [MaxLength(255)]
     public string? Location { get; set; }
 

@@ -1,0 +1,162 @@
+@page
+@model WebFE.Pages.Admin.Activities.DetailModel
+@{
+    ViewData["Title"] = "Activity Detail";
+    ViewData["Breadcrumb"] = "Activity Detail";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">Activity Detail</h1>
+            <p class="page-description">View activity information</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Admin/Activities/Edit?id=@Model.Activity.Id" class="btn btn-primary d-flex align-items-center gap-2">
+                <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                Edit
+            </a>
+            <a href="/Admin/Activities" class="btn btn-secondary d-flex align-items-center gap-2">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                Back
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Messages -->
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-triangle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Activity Detail Card -->
+<div class="row g-4">
+    <!-- Left Column: Activity Info -->
+    <div class="col-lg-7">
+        <div class="content-card">
+            <div class="content-card-body">
+                <h2 class="mb-4">@Model.Activity.Title</h2>
+                
+                <!-- Type & Visibility -->
+                <div class="mb-4 d-flex gap-2 align-items-center">
+                    @{
+                        var typeInfo = Model.Activity.Type switch {
+                            0 => ("Academic Club", "bg-primary"),
+                            1 => ("Festival", "bg-warning"),
+                            2 => ("Skill Development", "bg-info"),
+                            3 => ("Volunteer", "bg-success"),
+                            4 => ("Health", "bg-danger"),
+                            _ => ("Other", "bg-secondary")
+                        };
+                    }
+                    <span class="badge @typeInfo.Item2">@typeInfo.Item1</span>
+                    @if (Model.Activity.IsPublic)
+                    {
+                        <span class="badge bg-success">
+                            <i data-lucide="globe" style="width: 12px; height: 12px;"></i>
+                            Public
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">
+                            <i data-lucide="lock" style="width: 12px; height: 12px;"></i>
+                            Restricted
+                        </span>
+                    }
+                </div>
+
+                <!-- Time -->
+                <div class="mb-4">
+                    <div class="d-flex align-items-start gap-2 mb-2">
+                        <i data-lucide="calendar" style="width: 20px; height: 20px; color: #3b82f6; margin-top: 2px;"></i>
+                        <div>
+                            <div class="text-muted small">Start Time</div>
+                            <div class="fw-medium">@Model.Activity.StartTime.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start gap-2">
+                        <i data-lucide="calendar-check" style="width: 20px; height: 20px; color: #10b981; margin-top: 2px;"></i>
+                        <div>
+                            <div class="text-muted small">End Time</div>
+                            <div class="fw-medium">@Model.Activity.EndTime.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location -->
+                @if (!string.IsNullOrEmpty(Model.Activity.Location))
+                {
+                    <div class="mb-4">
+                        <div class="d-flex align-items-start gap-2">
+                            <i data-lucide="map-pin" style="width: 20px; height: 20px; color: #ef4444; margin-top: 2px;"></i>
+                            <div>
+                                <div class="text-muted small">Location</div>
+                                <div class="fw-medium">@Model.Activity.Location</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Description -->
+                @if (!string.IsNullOrEmpty(Model.Activity.Description))
+                {
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i data-lucide="file-text" style="width: 18px; height: 18px; color: #6b7280;"></i>
+                            <h5 class="mb-0">Description</h5>
+                        </div>
+                        <p class="text-muted mb-0" style="white-space: pre-wrap;">@Model.Activity.Description</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Activity Image -->
+    <div class="col-lg-5">
+        <div class="content-card">
+            <div class="content-card-body">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i data-lucide="image" style="width: 18px; height: 18px; color: #6b7280;"></i>
+                    <h5 class="mb-0">Cover Image</h5>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Activity.ImageUrl))
+                {
+                    <div class="position-relative" style="aspect-ratio: 16/9; overflow: hidden; border-radius: 8px;">
+                        <img src="@Model.Activity.ImageUrl" 
+                             alt="@Model.Activity.Title" 
+                             class="w-100 h-100" 
+                             style="object-fit: cover;" />
+                    </div>
+                    <div class="text-muted small mt-2">
+                        <i data-lucide="link" style="width: 14px; height: 14px;"></i>
+                        @Model.Activity.ImageUrl
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted border rounded" style="background: #f9fafb;">
+                        <i data-lucide="image-off" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <p class="mb-0">No cover image</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}
+
+
