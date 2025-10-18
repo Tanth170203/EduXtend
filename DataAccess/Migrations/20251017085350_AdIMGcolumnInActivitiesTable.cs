@@ -9,13 +9,7 @@ namespace DataAccess.Migrations
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AddColumn<string>(
-                name: "BannerUrl",
-                table: "Activities",
-                type: "nvarchar(500)",
-                maxLength: 500,
-                nullable: true);
+        {         
 
             migrationBuilder.AddColumn<string>(
                 name: "ImageUrl",
@@ -28,9 +22,6 @@ namespace DataAccess.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "BannerUrl",
-                table: "Activities");
 
             migrationBuilder.DropColumn(
                 name: "ImageUrl",

@@ -24,9 +24,6 @@ public class Activity
     [MaxLength(500)]
     public string? ImageUrl { get; set; }
 
-    [MaxLength(500)]
-    public string? BannerUrl { get; set; }
-
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
 

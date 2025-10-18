@@ -47,7 +47,6 @@ namespace Services.Activities
                 Description = activity.Description,
                 Location = activity.Location,
                 ImageUrl = activity.ImageUrl,
-                BannerUrl = activity.BannerUrl,
                 StartTime = activity.StartTime,
                 EndTime = activity.EndTime,
                 Type = activity.Type.ToString(),
