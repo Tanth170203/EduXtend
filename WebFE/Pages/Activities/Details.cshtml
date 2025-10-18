@@ -32,15 +32,7 @@
 
     <!-- Header with image/banner -->
     <div class="position-relative mb-4">
-        @* Priority: Activity BannerUrl > Activity ImageUrl > Gradient (NO Club Banner fallback) *@
-        @if (!string.IsNullOrWhiteSpace(activity.BannerUrl))
-        {
-            <img src="@activity.BannerUrl" 
-                 class="img-fluid rounded shadow-sm w-100"
-                 style="height:300px; object-fit:cover;"
-                 alt="@activity.Title">
-        }
-        else if (!string.IsNullOrWhiteSpace(activity.ImageUrl))
+        @if (!string.IsNullOrWhiteSpace(activity.ImageUrl))
         {
             <img src="@activity.ImageUrl" 
                  class="img-fluid rounded shadow-sm w-100"
