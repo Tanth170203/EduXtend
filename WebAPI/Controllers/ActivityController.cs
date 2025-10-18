@@ -20,7 +20,7 @@ namespace WebAPI.Controllers
             return Ok(data);
         }
 
-        // GET api/activity/search?searchTerm=workshop&type=Workshop&status=Approved&isPublic=true&clubId=1
+        // GET api/activity/search?searchTerm=workshop&type=Club&status=Approved&isPublic=true&clubId=1
         [HttpGet("search")]
         [AllowAnonymous]
         public async Task<IActionResult> Search(
@@ -54,4 +54,6 @@ namespace WebAPI.Controllers
         }
     }
 }
+
+
 
