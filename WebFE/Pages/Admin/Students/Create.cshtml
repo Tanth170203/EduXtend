@@ -1,0 +1,95 @@
+@page
+@model WebFE.Pages.Admin.Students.CreateModel
+@{
+    ViewData["Title"] = "Create Student";
+    ViewData["Breadcrumb"] = "Create Student";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Add Student Information</h1>
+    <p class="page-description">Add student information for user with Student role</p>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="content-card">
+    <div class="content-card-body">
+        <form method="post">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">User <span class="text-danger">*</span></label>
+                    <select asp-for="Student.UserId" class="form-select" required>
+                        <option value="">Select user...</option>
+                        @foreach (var user in Model.UsersWithoutInfo)
+                        {
+                            <option value="@user.Id">@user.FullName (@user.Email)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Student Code <span class="text-danger">*</span></label>
+                    <input asp-for="Student.StudentCode" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Cohort <span class="text-danger">*</span></label>
+                    <input asp-for="Student.Cohort" class="form-control" placeholder="e.g., K20" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Major <span class="text-danger">*</span></label>
+                    <select asp-for="Student.MajorId" class="form-select" required>
+                        <option value="">Select major...</option>
+                        @foreach (var major in Model.Majors)
+                        {
+                            <option value="@major.Id">@major.Name (@major.Code)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                    <input asp-for="Student.DateOfBirth" type="date" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Gender <span class="text-danger">*</span></label>
+                    <select asp-for="Student.Gender" class="form-select" required>
+                        <option value="0">Male</option>
+                        <option value="1">Female</option>
+                        <option value="2">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Enrollment Date <span class="text-danger">*</span></label>
+                    <input asp-for="Student.EnrollmentDate" type="date" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Status <span class="text-danger">*</span></label>
+                    <select asp-for="Student.Status" class="form-select" required>
+                        <option value="0">Active</option>
+                        <option value="1">Inactive</option>
+                        <option value="2">Graduated</option>
+                        <option value="3">Suspended</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                    Create Student
+                </button>
+                <a href="/Admin/Students" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>lucide.createIcons();</script>
+}
+

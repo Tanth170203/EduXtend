@@ -49,6 +49,8 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionRepository, MovementCriterionRepository>();
             builder.Services.AddScoped<IStudentRepository, StudentRepository>();
             builder.Services.AddScoped<IMajorRepository, MajorRepository>();
+            builder.Services.AddScoped<Repositories.Roles.IRoleRepository, Repositories.Roles.RoleRepository>();
+            
             builder.Services.AddScoped<IClubRepository, ClubRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
 
@@ -59,6 +61,8 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionGroupService, MovementCriterionGroupService>();
             builder.Services.AddScoped<IMovementCriterionService, MovementCriterionService>();
             builder.Services.AddScoped<IUserImportService, UserImportService>();
+            builder.Services.AddScoped<Services.Students.IStudentService, Services.Students.StudentService>();
+            builder.Services.AddScoped<Services.Users.IUserManagementService, Services.Users.UserManagementService>();
             builder.Services.AddScoped<IClubService, ClubService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
 
