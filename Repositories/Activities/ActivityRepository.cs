@@ -102,6 +102,33 @@ namespace Repositories.Activities
             => await _ctx.ActivityFeedbacks
                 .Where(f => f.ActivityId == activityId)
                 .CountAsync();
+
+        public async Task<Activity> CreateAsync(Activity activity)
+        {
+            _ctx.Activities.Add(activity);
+            await _ctx.SaveChangesAsync();
+            return activity;
+        }
+
+        public async Task<Activity?> UpdateAsync(Activity activity)
+        {
+            var existing = await _ctx.Activities.FirstOrDefaultAsync(a => a.Id == activity.Id);
+            if (existing == null) return null;
+
+            _ctx.Entry(existing).CurrentValues.SetValues(activity);
+            await _ctx.SaveChangesAsync();
+            return existing;
+        }
+
+        public async Task<bool> DeleteAsync(int id)
+        {
+            var existing = await _ctx.Activities.FirstOrDefaultAsync(a => a.Id == id);
+            if (existing == null) return false;
+
+            _ctx.Activities.Remove(existing);
+            await _ctx.SaveChangesAsync();
+            return true;
+        }
     }
 }
 

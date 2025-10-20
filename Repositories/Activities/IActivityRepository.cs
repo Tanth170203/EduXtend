@@ -12,6 +12,9 @@ namespace Repositories.Activities
         Task<int> GetRegistrationCountAsync(int activityId);
         Task<int> GetAttendanceCountAsync(int activityId);
         Task<int> GetFeedbackCountAsync(int activityId);
+        Task<Activity> CreateAsync(Activity activity);
+        Task<Activity?> UpdateAsync(Activity activity);
+        Task<bool> DeleteAsync(int id);
     }
 }
 

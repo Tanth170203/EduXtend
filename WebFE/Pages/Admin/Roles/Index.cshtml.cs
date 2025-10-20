@@ -17,6 +17,10 @@ public class IndexModel : PageModel
 
     public List<UserWithRolesViewModel> Users { get; set; } = new();
     public List<RoleViewModel> AllRoles { get; set; } = new();
+    public int TotalUsers { get; set; }
+    public int AdminCount { get; set; }
+    public int StudentCount { get; set; }
+    public int ClubManagerCount { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
@@ -52,6 +56,12 @@ public class IndexModel : PageModel
             }
         }
         catch { }
+
+        // Calculate statistics
+        TotalUsers = Users.Count;
+        AdminCount = Users.Count(u => u.Roles.Any(r => r.RoleName == "Admin"));
+        StudentCount = Users.Count(u => u.Roles.Any(r => r.RoleName == "Student"));
+        ClubManagerCount = Users.Count(u => u.Roles.Any(r => r.RoleName == "ClubManager"));
 
         return Page();
     }

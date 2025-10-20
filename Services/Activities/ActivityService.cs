@@ -1,5 +1,6 @@
 using BusinessObject.DTOs.Activity;
 using BusinessObject.Models;
+using BusinessObject.Enum;
 using Repositories.Activities;
 
 namespace Services.Activities
@@ -79,6 +80,74 @@ namespace Services.Activities
         {
             var activities = await _repo.GetActivitiesByClubIdAsync(clubId);
             return await MapToListDto(activities);
+        }
+
+        public async Task<ActivityDetailDto> AdminCreateAsync(int adminUserId, AdminCreateActivityDto dto)
+        {
+            if (dto.StartTime >= dto.EndTime)
+                throw new ArgumentException("StartTime must be earlier than EndTime");
+
+            var activity = new Activity
+            {
+                // Admin-created activity: ClubId null, approval fields null
+                ClubId = null,
+                Title = dto.Title,
+                Description = dto.Description,
+                Location = dto.Location,
+                ImageUrl = dto.ImageUrl,
+                StartTime = dto.StartTime,
+                EndTime = dto.EndTime,
+                Type = dto.Type,
+                RequiresApproval = false, // Admin-created path has no approval
+                CreatedById = adminUserId,
+                IsPublic = dto.IsPublic,
+                Status = "Approved", // Admin activities are considered approved
+                ApprovedById = null,
+                ApprovedAt = null,
+                MaxParticipants = dto.MaxParticipants,
+                MovementPoint = dto.MovementPoint,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var created = await _repo.CreateAsync(activity);
+            var detail = await GetActivityByIdAsync(created.Id);
+            return detail!;
+        }
+
+        public async Task<ActivityDetailDto?> AdminUpdateAsync(int adminUserId, int id, AdminUpdateActivityDto dto)
+        {
+            if (id != dto.Id) throw new ArgumentException("ID mismatch");
+            if (dto.StartTime >= dto.EndTime)
+                throw new ArgumentException("StartTime must be earlier than EndTime");
+
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null) return null;
+
+            // Keep admin rules: cleared approval/club fields, keep CreatedById as original or set to admin if missing
+            existing.ClubId = null;
+            existing.Title = dto.Title;
+            existing.Description = dto.Description;
+            existing.Location = dto.Location;
+            existing.ImageUrl = dto.ImageUrl;
+            existing.StartTime = dto.StartTime;
+            existing.EndTime = dto.EndTime;
+            existing.Type = dto.Type;
+            existing.RequiresApproval = false;
+            existing.CreatedById = existing.CreatedById == 0 ? adminUserId : existing.CreatedById;
+            existing.IsPublic = dto.IsPublic;
+            existing.Status = "Approved"; // stay approved
+            existing.ApprovedById = null;
+            existing.ApprovedAt = null;
+            existing.MaxParticipants = dto.MaxParticipants;
+            existing.MovementPoint = dto.MovementPoint;
+
+            await _repo.UpdateAsync(existing);
+            return await GetActivityByIdAsync(existing.Id);
+        }
+
+        public async Task<bool> AdminDeleteAsync(int id)
+        {
+            return await _repo.DeleteAsync(id);
         }
 
         private async Task<List<ActivityListItemDto>> MapToListDto(List<Activity> activities)
