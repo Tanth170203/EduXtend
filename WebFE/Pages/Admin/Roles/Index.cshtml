@@ -5,25 +5,91 @@
     Layout = "~/Pages/Shared/_AdminLayout.cshtml";
 }
 
-<div class="page-header">
-    <h1 class="page-title">Roles Management</h1>
-    <p class="page-description">Assign and manage user roles</p>
-</div>
+<div class="container-fluid px-4 py-4">
+    <div class="mb-4">
+        <h2 class="mb-1 fw-bold">Roles Management</h2>
+        <p class="text-muted mb-0">Assign and manage user roles</p>
+    </div>
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Total Users</p>
+                            <h2 class="mb-0 fw-bold">@Model.TotalUsers</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background-color: #e3f2fd;">
+                            <i class="bi bi-people" style="font-size: 1.5rem; color: #1976d2;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Admins</p>
+                            <h2 class="mb-0 fw-bold">@Model.AdminCount</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background-color: #fce4ec;">
+                            <i class="bi bi-shield-check" style="font-size: 1.5rem; color: #c2185b;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Students</p>
+                            <h2 class="mb-0 fw-bold">@Model.StudentCount</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background-color: #e8f5e9;">
+                            <i class="bi bi-mortarboard" style="font-size: 1.5rem; color: #388e3c;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Club Managers</p>
+                            <h2 class="mb-0 fw-bold">@Model.ClubManagerCount</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background-color: #fff3e0;">
+                            <i class="bi bi-person-badge" style="font-size: 1.5rem; color: #f57c00;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-}
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
+</div>
 
 <div class="content-card">
     <div class="content-card-header">
@@ -67,7 +133,7 @@
                             <td>
                                 <button type="button" class="btn btn-sm btn-outline-primary" 
                                         onclick="editRoles(@user.Id, '@user.FullName', '@string.Join(",", user.RoleIds)')">
-                                    <i data-lucide="shield" style="width: 14px; height: 14px;"></i> Manage Roles
+                                    <i class="bi bi-person-gear me-1"></i> Manage Roles
                                 </button>
                             </td>
                         </tr>
