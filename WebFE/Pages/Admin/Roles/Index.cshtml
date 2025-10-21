@@ -1,0 +1,217 @@
+@page
+@model WebFE.Pages.Admin.Roles.IndexModel
+@{
+    ViewData["Title"] = "Roles Management";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="mb-4">
+        <h2 class="mb-1 fw-bold">Roles Management</h2>
+        <p class="text-muted mb-0">Assign and manage user roles</p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Total Users</p>
+                            <h2 class="mb-0 fw-bold">@Model.TotalUsers</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background-color: #e3f2fd;">
+                            <i class="bi bi-people" style="font-size: 1.5rem; color: #1976d2;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Admins</p>
+                            <h2 class="mb-0 fw-bold">@Model.AdminCount</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background-color: #fce4ec;">
+                            <i class="bi bi-shield-check" style="font-size: 1.5rem; color: #c2185b;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Students</p>
+                            <h2 class="mb-0 fw-bold">@Model.StudentCount</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background-color: #e8f5e9;">
+                            <i class="bi bi-mortarboard" style="font-size: 1.5rem; color: #388e3c;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Club Managers</p>
+                            <h2 class="mb-0 fw-bold">@Model.ClubManagerCount</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background-color: #fff3e0;">
+                            <i class="bi bi-person-badge" style="font-size: 1.5rem; color: #f57c00;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-card">
+    <div class="content-card-header">
+        <h2 class="content-card-title">Users & Roles</h2>
+        <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search..." style="max-width: 300px;">
+    </div>
+    <div class="content-card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="rolesTable">
+                <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Current Roles</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr>
+                            <td><strong>@user.FullName</strong></td>
+                            <td>@user.Email</td>
+                            <td>
+                                @foreach (var role in user.Roles)
+                                {
+                                    <span class="badge bg-secondary me-1">@role.RoleName</span>
+                                }
+                            </td>
+                            <td>
+                                @if (user.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Banned</span>
+                                }
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="editRoles(@user.Id, '@user.FullName', '@string.Join(",", user.RoleIds)')">
+                                    <i class="bi bi-person-gear me-1"></i> Manage Roles
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Roles Modal -->
+<div class="modal fade" id="editRolesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Roles for <span id="userName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="UpdateRoles">
+                <div class="modal-body">
+                    <input type="hidden" name="userId" id="userId" />
+                    <p class="mb-3">Select roles for this user:</p>
+                    @foreach (var role in Model.AllRoles)
+                    {
+                        <div class="form-check mb-2">
+                            <input class="form-check-input role-checkbox" type="checkbox" 
+                                   name="roleIds" value="@role.Id" id="role_@role.Id">
+                            <label class="form-check-label" for="role_@role.Id">
+                                <strong>@role.RoleName</strong>
+                                @if (!string.IsNullOrEmpty(role.Description))
+                                {
+                                    <br/><small class="text-muted">@role.Description</small>
+                                }
+                            </label>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Roles</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        document.getElementById('searchInput').addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#rolesTable tbody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchValue) ? '' : 'none';
+            });
+        });
+
+        function editRoles(userId, userName, roleIdsStr) {
+            document.getElementById('userId').value = userId;
+            document.getElementById('userName').textContent = userName;
+            
+            // Uncheck all
+            document.querySelectorAll('.role-checkbox').forEach(cb => cb.checked = false);
+            
+            // Check current roles
+            if (roleIdsStr) {
+                const roleIds = roleIdsStr.split(',').map(id => parseInt(id));
+                roleIds.forEach(roleId => {
+                    const checkbox = document.getElementById('role_' + roleId);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            
+            new bootstrap.Modal(document.getElementById('editRolesModal')).show();
+            lucide.createIcons();
+        }
+    </script>
+}
+

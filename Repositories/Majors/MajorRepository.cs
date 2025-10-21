@@ -13,6 +13,10 @@ namespace Repositories.Majors
             _db = db;
         }
 
+        public async Task<Major?> GetByIdAsync(int id)
+            => await _db.Majors
+                .FirstOrDefaultAsync(m => m.Id == id);
+
         public async Task<Major?> GetByCodeAsync(string code)
             => await _db.Majors
                 .FirstOrDefaultAsync(m => m.Code == code);

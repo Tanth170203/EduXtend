@@ -21,6 +21,9 @@ public class Activity
     [MaxLength(255)]
     public string? Location { get; set; }
 
+    [MaxLength(500)]
+    public string? ImageUrl { get; set; }
+
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
 

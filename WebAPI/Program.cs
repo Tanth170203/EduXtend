@@ -3,21 +3,32 @@ using DataAccess;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Repositories.Activities;
+using Repositories.Clubs;
 using Repositories.LoggedOutTokens;
+using Repositories.Majors;
 using Repositories.MovementCriteria;
 using Repositories.Semesters;
-using Repositories.Users;
 using Repositories.Students;
+<<<<<<< HEAD
 using Repositories.Majors;
 using Repositories.Evidences;
 using Repositories.MovementRecords;
+=======
+using Repositories.Users;
+using Services.Activities;
+using Services.Clubs;
+>>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
 using Services.GGLogin;
 using Services.MovementCriteria;
 using Services.Semesters;
-using Services.UserImport;
 using Services.TokenCleanup;
+<<<<<<< HEAD
 using Services.Evidences;
 using Services.MovementRecords;
+=======
+using Services.UserImport;
+>>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
@@ -49,10 +60,17 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionRepository, MovementCriterionRepository>();
             builder.Services.AddScoped<IStudentRepository, StudentRepository>();
             builder.Services.AddScoped<IMajorRepository, MajorRepository>();
+<<<<<<< HEAD
             builder.Services.AddScoped<IEvidenceRepository, EvidenceRepository>();
             builder.Services.AddScoped<IMovementRecordRepository, MovementRecordRepository>();
             builder.Services.AddScoped<IMovementRecordDetailRepository, MovementRecordDetailRepository>();
+=======
+            builder.Services.AddScoped<Repositories.Roles.IRoleRepository, Repositories.Roles.RoleRepository>();
+>>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
             
+            builder.Services.AddScoped<IClubRepository, ClubRepository>();
+            builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
@@ -60,10 +78,17 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionGroupService, MovementCriterionGroupService>();
             builder.Services.AddScoped<IMovementCriterionService, MovementCriterionService>();
             builder.Services.AddScoped<IUserImportService, UserImportService>();
+<<<<<<< HEAD
             builder.Services.AddScoped<IEvidenceService, EvidenceService>();
             builder.Services.AddScoped<IMovementRecordService, MovementRecordService>();
             builder.Services.AddScoped<IMovementScoreCalculationService, MovementScoreCalculationService>();
             builder.Services.AddScoped<IClubMemberScoringService, ClubMemberScoringService>();
+=======
+            builder.Services.AddScoped<Services.Students.IStudentService, Services.Students.StudentService>();
+            builder.Services.AddScoped<Services.Users.IUserManagementService, Services.Users.UserManagementService>();
+            builder.Services.AddScoped<IClubService, ClubService>();
+            builder.Services.AddScoped<IActivityService, ActivityService>();
+>>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();

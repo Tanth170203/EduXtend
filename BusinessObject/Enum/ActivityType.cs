@@ -8,7 +8,11 @@ namespace BusinessObject.Enum
 {
     public enum ActivityType
     {
-        Club,
-        University
+        AcademicClub = 0,
+        Festival = 1,
+        SkillDevelopment = 2,
+        Volunteer = 3,
+        Health = 4,
+        Other = 5
     }
 }

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/WebFE.styles.css" asp-append-version="true" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
@@ -67,15 +69,15 @@
                 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">USER MANAGEMENT</div>
-                    <a class="sidebar-link" href="/Admin/Students">
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Students") == true ? "active" : "")" href="/Admin/Students">
                         <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
                         <span>Students</span>
                     </a>
-                    <a class="sidebar-link" href="/Admin/Staff">
-                        <i data-lucide="briefcase" style="width: 20px; height: 20px;"></i>
-                        <span>Staff</span>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Users") == true ? "active" : "")" href="/Admin/Users">
+                        <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                        <span>Users</span>
                     </a>
-                    <a class="sidebar-link" href="/Admin/Roles">
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Roles") == true ? "active" : "")" href="/Admin/Roles">
                         <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
                         <span>Roles</span>
                     </a>
@@ -83,7 +85,7 @@
                 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">CLUBS</div>
-                    <a class="sidebar-link" href="/Admin/Clubs">
+                    <a class="sidebar-link" href="/Clubs/Index">
                         <i data-lucide="users-2" style="width: 20px; height: 20px;"></i>
                         <span>Club List</span>
                     </a>

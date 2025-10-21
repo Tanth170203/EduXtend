@@ -1,0 +1,223 @@
+@page
+@model WebFE.Pages.Activities.IndexModel
+@{
+    ViewData["Title"] = "Activities";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<section class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">Activities & Events</h1>
+        <p class="text-muted">Join activities to gain experience and earn training points</p>
+    </div>
+
+    <!-- Search + Filters -->
+    <form method="get" class="card shadow-sm border-0 mb-4 p-4">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <input type="text"
+                       name="searchTerm"
+                       value="@Model.SearchTerm"
+                       class="form-control"
+                       placeholder="Search by title, description, location...">
+            </div>
+
+            <div class="col-md-2">
+                <select name="type" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="Club" selected="@(Model.Type == "Club")">Club</option>
+                    <option value="University" selected="@(Model.Type == "University")">University</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="Approved" selected="@(Model.Status == "Approved")">Approved</option>
+                    <option value="PendingApproval" selected="@(Model.Status == "PendingApproval")">Pending</option>
+                    <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
+                    <option value="Rejected" selected="@(Model.Status == "Rejected")">Rejected</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select name="filter" class="form-select">
+                    <option value="" selected="@(string.IsNullOrEmpty(Model.Filter))">All Activities</option>
+                    <option value="public" selected="@(Model.Filter == "public")">Public (Anyone)</option>
+                    <option value="club" selected="@(Model.Filter == "club")">Club Only</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Search
+            </button>
+
+            @if (!string.IsNullOrEmpty(Model.SearchTerm) || !string.IsNullOrEmpty(Model.Type) || 
+                 !string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Filter))
+            {
+                <a href="/Activities" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Clear Filters
+                </a>
+            }
+        </div>
+    </form>
+
+    <!-- Results Summary -->
+    <div class="mb-3">
+        <h5 class="text-muted">
+            <i class="bi bi-calendar-event"></i> Found <strong>@Model.Activities.Count</strong> 
+            activit@(Model.Activities.Count != 1 ? "ies" : "y")
+        </h5>
+    </div>
+
+    <!-- Activity Cards -->
+    <div class="row g-4">
+        @if (Model.Activities.Any())
+        {
+            foreach (var activity in Model.Activities)
+            {
+                var statusBadgeClass = activity.Status switch
+                {
+                    "Approved" => "bg-success",
+                    "PendingApproval" => "bg-warning text-dark",
+                    "Completed" => "bg-secondary",
+                    "Rejected" => "bg-danger",
+                    _ => "bg-secondary"
+                };
+
+                // Convert to local time for comparison (assume DB stores local time)
+                var now = DateTime.Now;
+                var isEnded = activity.EndTime < now;  // Activity has fully ended
+                var isOngoing = activity.StartTime <= now && now <= activity.EndTime;  // Currently happening
+                var isUpcoming = now < activity.StartTime && activity.Status == "Approved";  // Not started yet
+
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 @(isEnded ? "opacity-75" : "")">
+                        <!-- Activity Image -->
+                        @if (!string.IsNullOrWhiteSpace(activity.ImageUrl))
+                        {
+                            <img src="@activity.ImageUrl" 
+                                 class="card-img-top" 
+                                 style="height: 200px; object-fit: cover;"
+                                 alt="@activity.Title"
+                                 onerror="this.style.display='none'">
+                        }
+                        else
+                        {
+                            <div class="card-img-top bg-gradient-primary d-flex align-items-center justify-content-center" 
+                                 style="height: 200px;">
+                                <i class="bi bi-calendar-event text-white" style="font-size: 3rem;"></i>
+                            </div>
+                        }
+                        
+                        <!-- Activity Header -->
+                        <div class="card-header bg-white border-0 pt-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge @statusBadgeClass">@activity.Status</span>
+                                <span class="badge bg-info">@activity.Type</span>
+                            </div>
+                            
+                            @if (!activity.IsPublic)
+                            {
+                                <div class="mb-2">
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-lock"></i> Club Members Only
+                                    </span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mb-2">
+                                    <span class="badge bg-primary">
+                                        <i class="bi bi-globe"></i> Public
+                                    </span>
+                                </div>
+                            }
+
+                            <h5 class="card-title fw-bold mb-2">@activity.Title</h5>
+                            
+                            @if (!string.IsNullOrWhiteSpace(activity.ClubName))
+                            {
+                                <p class="text-muted small mb-0">
+                                    <i class="bi bi-people"></i> @activity.ClubName
+                                </p>
+                            }
+                        </div>
+
+                        <!-- Activity Body -->
+                        <div class="card-body">
+                            @if (!string.IsNullOrWhiteSpace(activity.Description))
+                            {
+                                <p class="text-muted small mb-3" style="max-height: 60px; overflow: hidden; text-overflow: ellipsis;">
+                                    @(activity.Description.Length > 100 ? activity.Description.Substring(0, 100) + "..." : activity.Description)
+                                </p>
+                            }
+
+                            <div class="d-flex flex-column gap-2 small text-muted">
+                                <div>
+                                    <i class="bi bi-calendar3"></i>
+                                    @activity.StartTime.ToString("ddd, MMM dd, yyyy")
+                                </div>
+                                <div>
+                                    <i class="bi bi-clock"></i>
+                                    @activity.StartTime.ToString("HH:mm") - @activity.EndTime.ToString("HH:mm")
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(activity.Location))
+                                {
+                                    <div>
+                                        <i class="bi bi-geo-alt"></i>
+                                        @activity.Location
+                                    </div>
+                                }
+                                <div class="text-success fw-bold">
+                                    <i class="bi bi-award"></i>
+                                    +@activity.MovementPoint points
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Activity Footer -->
+                        <div class="card-footer bg-transparent border-0 pb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-person-check"></i> 
+                                    @activity.CurrentParticipants@(activity.MaxParticipants.HasValue ? $"/{activity.MaxParticipants}" : "") registered
+                                </small>
+                                @if (activity.IsFull)
+                                {
+                                    <span class="badge bg-danger">Full</span>
+                                }
+                            </div>
+
+                            <div class="d-grid">
+                                <a asp-page="Details" asp-route-id="@activity.Id" 
+                                   class="btn btn-primary">
+                                    <i class="bi bi-info-circle"></i> View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="alert alert-info text-center" role="alert">
+                    <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+                    <h5>No activities found</h5>
+                    <p class="mb-0">Try adjusting your search filters or check back later for new activities.</p>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+</style>
+
