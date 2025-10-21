@@ -336,36 +336,50 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+            try {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
 
-            // Search functionality
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    filterTable();
-                });
-            }
+                // Search functionality
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) {
+                    searchInput.addEventListener('input', function() {
+                        filterTable();
+                    });
+                } else {
+                    console.warn('Search input not found');
+                }
 
-            // Sort functionality
-            const sortSelect = document.getElementById('sortSelect');
-            if (sortSelect) {
-                sortSelect.addEventListener('change', function() {
-                    sortTable(this.value);
-                });
+                // Sort functionality
+                const sortSelect = document.getElementById('sortSelect');
+                if (sortSelect) {
+                    sortSelect.addEventListener('change', function() {
+                        sortTable(this.value);
+                    });
+                } else {
+                    console.warn('Sort select not found');
+                }
+
+                // Initialize default sort
+                sortTable('score-desc');
+            } catch (error) {
+                console.error('Error initializing MovementReports page:', error);
             }
         });
 
         function filterTable() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const searchInput = document.getElementById('searchInput');
+            if (!searchInput) return;
+            
+            const searchTerm = searchInput.value.toLowerCase().trim();
             const rows = document.querySelectorAll('#recordsTable tbody tr');
 
             rows.forEach(row => {
-                const studentName = row.cells[2].textContent.toLowerCase();
-                const studentCode = row.cells[3].textContent.toLowerCase();
+                const studentName = row.cells[2]?.textContent?.toLowerCase() || '';
+                const studentCode = row.cells[3]?.textContent?.toLowerCase() || '';
 
-                if (studentName.includes(searchTerm) || studentCode.includes(searchTerm)) {
+                if (searchTerm === '' || studentName.includes(searchTerm) || studentCode.includes(searchTerm)) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';
@@ -375,27 +389,45 @@
 
         function sortTable(criteria) {
             const tbody = document.querySelector('#recordsTable tbody');
+            if (!tbody) return;
+            
             const rows = Array.from(tbody.querySelectorAll('tr'));
 
             rows.sort((a, b) => {
                 switch(criteria) {
                     case 'score-desc':
-                        return parseFloat(b.cells[5].textContent) - parseFloat(a.cells[5].textContent);
+                        const scoreA = parseFloat(a.cells[4]?.textContent?.trim() || '0');
+                        const scoreB = parseFloat(b.cells[4]?.textContent?.trim() || '0');
+                        return scoreB - scoreA;
                     case 'score-asc':
-                        return parseFloat(a.cells[5].textContent) - parseFloat(b.cells[5].textContent);
+                        const scoreA2 = parseFloat(a.cells[4]?.textContent?.trim() || '0');
+                        const scoreB2 = parseFloat(b.cells[4]?.textContent?.trim() || '0');
+                        return scoreA2 - scoreB2;
                     case 'name-asc':
-                        return a.cells[2].textContent.localeCompare(b.cells[2].textContent);
+                        const nameA = a.cells[2]?.textContent?.trim() || '';
+                        const nameB = b.cells[2]?.textContent?.trim() || '';
+                        return nameA.localeCompare(nameB);
                     case 'name-desc':
-                        return b.cells[2].textContent.localeCompare(a.cells[2].textContent);
+                        const nameA2 = a.cells[2]?.textContent?.trim() || '';
+                        const nameB2 = b.cells[2]?.textContent?.trim() || '';
+                        return nameB2.localeCompare(nameA2);
+                    default:
+                        return 0;
                 }
             });
 
+            // Clear tbody and re-append sorted rows
+            tbody.innerHTML = '';
             rows.forEach(row => tbody.appendChild(row));
         }
 
         function resetFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('sortSelect').value = 'score-desc';
+            const searchInput = document.getElementById('searchInput');
+            const sortSelect = document.getElementById('sortSelect');
+            
+            if (searchInput) searchInput.value = '';
+            if (sortSelect) sortSelect.value = 'score-desc';
+            
             filterTable();
             sortTable('score-desc');
         }

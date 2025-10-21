@@ -31,20 +31,12 @@ namespace Repositories.Students
                 .Include(s => s.Major)
                 .FirstOrDefaultAsync(s => s.UserId == userId);
 
-<<<<<<< HEAD
-        public async Task<Student?> GetByIdAsync(int id)
-            => await _db.Students
-                .Include(s => s.User)
-                .Include(s => s.Major)
-                .FirstOrDefaultAsync(s => s.Id == id);
-=======
         public async Task<List<Student>> GetAllAsync()
             => await _db.Students
                 .Include(s => s.User)
                 .Include(s => s.Major)
                 .OrderByDescending(s => s.EnrollmentDate)
                 .ToListAsync();
->>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
 
         public async Task<List<Student>> GetByStudentCodesAsync(List<string> studentCodes)
             => await _db.Students
@@ -53,10 +45,9 @@ namespace Repositories.Students
                 .Where(s => studentCodes.Contains(s.StudentCode))
                 .ToListAsync();
 
-<<<<<<< HEAD
         public async Task<bool> ExistsAsync(int id)
             => await _db.Students.AnyAsync(s => s.Id == id);
-=======
+
         public async Task<List<User>> GetUsersWithoutStudentInfoAsync()
         {
             // Get users with Student role but no Student record
@@ -85,7 +76,6 @@ namespace Repositories.Students
                 .Where(u => usersWithoutStudentInfo.Contains(u.Id))
                 .ToListAsync();
         }
->>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
 
         public async Task AddAsync(Student student)
         {

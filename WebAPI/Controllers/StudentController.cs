@@ -1,39 +1,35 @@
-<<<<<<< HEAD
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Repositories.Students;
-=======
 using BusinessObject.DTOs.Student;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Repositories.Students;
 using Services.Students;
->>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
 
 namespace WebAPI.Controllers;
 
 [ApiController]
 [Route("api/students")]
-<<<<<<< HEAD
 public class StudentController : ControllerBase
 {
     private readonly IStudentRepository _studentRepository;
+    private readonly IStudentService _studentService;
     private readonly ILogger<StudentController> _logger;
 
-    public StudentController(IStudentRepository studentRepository, ILogger<StudentController> logger)
+    public StudentController(IStudentRepository studentRepository, IStudentService studentService, ILogger<StudentController> logger)
     {
         _studentRepository = studentRepository;
+        _studentService = studentService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Get all active students (for dropdowns in scoring modal)
+    /// Get all active students (for dropdowns in scoring modal) - Repository approach
     /// </summary>
-    [HttpGet]
+    [HttpGet("active")]
     public async Task<ActionResult<IEnumerable<StudentDropdownDto>>> GetAllActive()
     {
         try
         {
-            _logger.LogInformation("📡 GET /api/students - Fetching all active students");
+            _logger.LogInformation("📡 GET /api/students/active - Fetching all active students");
             
             // Query students from context through repository pattern
             var students = await _studentRepository.GetAllActiveStudentsAsync();
@@ -55,21 +51,14 @@ public class StudentController : ControllerBase
         {
             _logger.LogError(ex, "❌ Error retrieving active students");
             return StatusCode(500, new { message = "Error retrieving student list." });
-=======
-[Authorize(Roles = "Admin")]
-public class StudentController : ControllerBase
-{
-    private readonly IStudentService _studentService;
-
-    public StudentController(IStudentService studentService)
-    {
-        _studentService = studentService;
+        }
     }
 
     /// <summary>
-    /// Get all students
+    /// Get all students - Service approach
     /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<IEnumerable<StudentDto>>> GetAll()
     {
         try
@@ -80,20 +69,18 @@ public class StudentController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "Error retrieving students", error = ex.Message });
->>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
         }
     }
 
     /// <summary>
-<<<<<<< HEAD
-    /// Get student by ID (for editing score)
+    /// Get student by ID (for editing score) - Repository approach
     /// </summary>
-    [HttpGet("{id}")]
-    public async Task<ActionResult<StudentDetailDto>> GetById(int id)
+    [HttpGet("detail/{id}")]
+    public async Task<ActionResult<StudentDetailDto>> GetDetailById(int id)
     {
         try
         {
-            _logger.LogInformation($"📡 GET /api/students/{id} - Fetching student details");
+            _logger.LogInformation($"📡 GET /api/students/detail/{id} - Fetching student details");
             
             var student = await _studentRepository.GetByIdAsync(id);
             if (student == null)
@@ -118,8 +105,11 @@ public class StudentController : ControllerBase
         {
             _logger.LogError(ex, "❌ Error retrieving student");
             return StatusCode(500, new { message = "Error retrieving student information." });
-=======
-    /// Get student by ID
+        }
+    }
+
+    /// <summary>
+    /// Get student by ID - Service approach
     /// </summary>
     [HttpGet("{id}")]
     public async Task<ActionResult<StudentDto>> GetById(int id)
@@ -135,13 +125,11 @@ public class StudentController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "Error retrieving student", error = ex.Message });
->>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
         }
     }
 
     /// <summary>
-<<<<<<< HEAD
-    /// Search students by name or code
+    /// Search students by name or code - Repository approach
     /// </summary>
     [HttpGet("search")]
     public async Task<ActionResult<IEnumerable<StudentDropdownDto>>> Search([FromQuery] string query)
@@ -176,8 +164,11 @@ public class StudentController : ControllerBase
         {
             _logger.LogError(ex, "❌ Error searching students");
             return StatusCode(500, new { message = "Error searching students." });
-=======
-    /// Get users with Student role but no student information
+        }
+    }
+
+    /// <summary>
+    /// Get users with Student role but no student information - Service approach
     /// </summary>
     [HttpGet("users-without-info")]
     public async Task<IActionResult> GetUsersWithoutStudentInfo()
@@ -194,7 +185,7 @@ public class StudentController : ControllerBase
     }
 
     /// <summary>
-    /// Create student information
+    /// Create student information - Service approach
     /// </summary>
     [HttpPost]
     public async Task<ActionResult<StudentDto>> Create([FromBody] CreateStudentDto dto)
@@ -222,7 +213,7 @@ public class StudentController : ControllerBase
     }
 
     /// <summary>
-    /// Update student information
+    /// Update student information - Service approach
     /// </summary>
     [HttpPut("{id}")]
     public async Task<ActionResult<StudentDto>> Update(int id, [FromBody] UpdateStudentDto dto)
@@ -253,7 +244,7 @@ public class StudentController : ControllerBase
     }
 
     /// <summary>
-    /// Delete student information
+    /// Delete student information - Service approach
     /// </summary>
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
@@ -269,22 +260,20 @@ public class StudentController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "Error deleting student", error = ex.Message });
->>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
         }
     }
 }
 
-<<<<<<< HEAD
 /// <summary>
 /// DTO for student dropdown (minimal info)
 /// </summary>
 public class StudentDropdownDto
 {
     public int Id { get; set; }
-    public string StudentCode { get; set; }
-    public string FullName { get; set; }
-    public string Email { get; set; }
-    public string Cohort { get; set; }
+    public string StudentCode { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Cohort { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -293,14 +282,12 @@ public class StudentDropdownDto
 public class StudentDetailDto
 {
     public int Id { get; set; }
-    public string StudentCode { get; set; }
-    public string FullName { get; set; }
-    public string Email { get; set; }
-    public string Cohort { get; set; }
-    public string Phone { get; set; }
+    public string StudentCode { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Cohort { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
     public DateTime DateOfBirth { get; set; }
-    public string Gender { get; set; }
-    public string Status { get; set; }
+    public string Gender { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
 }
-=======
->>>>>>> 13b7d842a613df7cf55b3363fc7fe76a1800a414
