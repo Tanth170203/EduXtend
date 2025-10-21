@@ -1,0 +1,185 @@
+@page
+@model WebFE.Pages.Admin.Evidences.ReviewModel
+@{
+    ViewData["Title"] = "Review Evidence";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Duyệt minh chứng</h2>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a asp-page="/Admin/Dashboard/Index">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a asp-page="/Admin/Evidences/Index">Evidences</a></li>
+                    <li class="breadcrumb-item active">Review</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Evidence != null)
+    {
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Thông tin minh chứng</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tiêu đề:</label>
+                            <p class="mb-0">@Model.Evidence.Title</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Sinh viên:</label>
+                            <p class="mb-0">@Model.Evidence.StudentName (@Model.Evidence.StudentCode)</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tiêu chí:</label>
+                            <p class="mb-0">
+                                @if (!string.IsNullOrEmpty(Model.Evidence.CriterionTitle))
+                                {
+                                    @Model.Evidence.CriterionTitle
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Chưa chọn tiêu chí</span>
+                                }
+                            </p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mô tả:</label>
+                            <p class="mb-0">
+                                @if (!string.IsNullOrEmpty(Model.Evidence.Description))
+                                {
+                                    @Model.Evidence.Description
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Không có mô tả</span>
+                                }
+                            </p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">File minh chứng:</label>
+                            <p class="mb-0">
+                                @if (!string.IsNullOrEmpty(Model.Evidence.FilePath))
+                                {
+                                    <a href="@Model.Evidence.FilePath" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
+                                        Xem file
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Không có file</span>
+                                }
+                            </p>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ngày nộp:</label>
+                            <p class="mb-0">@Model.Evidence.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label fw-bold">Trạng thái:</label>
+                            <p class="mb-0">
+                                <span class="badge bg-@(Model.Evidence.Status == "Pending" ? "warning" : Model.Evidence.Status == "Approved" ? "success" : "danger")">
+                                    @Model.Evidence.Status
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Duyệt minh chứng</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            <input type="hidden" asp-for="Input.Id" />
+
+                            <div class="mb-3">
+                                <label asp-for="Input.Status" class="form-label">Trạng thái <span class="text-danger">*</span></label>
+                                <select asp-for="Input.Status" class="form-select" required>
+                                    <option value="">-- Chọn trạng thái --</option>
+                                    <option value="Approved">✅ Duyệt (Approved)</option>
+                                    <option value="Rejected">❌ Từ chối (Rejected)</option>
+                                </select>
+                                <span asp-validation-for="Input.Status" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3" id="pointsField">
+                                <label asp-for="Input.Points" class="form-label">Điểm</label>
+                                <input asp-for="Input.Points" type="number" step="0.5" min="0" class="form-control" placeholder="Nhập điểm" />
+                                <small class="text-muted">Chỉ áp dụng khi duyệt</small>
+                                <span asp-validation-for="Input.Points" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.Comment" class="form-label">Nhận xét</label>
+                                <textarea asp-for="Input.Comment" class="form-control" rows="4" placeholder="Nhập nhận xét của bạn"></textarea>
+                                <span asp-validation-for="Input.Comment" class="text-danger"></span>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                                <strong>Lưu ý:</strong> Sau khi duyệt, sinh viên sẽ nhận được thông báo về kết quả.
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success">
+                                    <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                                    Xác nhận
+                                </button>
+                                <a asp-page="/Admin/Evidences/Index" class="btn btn-secondary">
+                                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                                    Hủy
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // Show/hide points field based on status
+        document.getElementById('Input_Status')?.addEventListener('change', function() {
+            const pointsField = document.getElementById('pointsField');
+            if (this.value === 'Approved') {
+                pointsField.style.display = 'block';
+            } else {
+                pointsField.style.display = 'none';
+                document.getElementById('Input_Points').value = '0';
+            }
+        });
+    </script>
+}
+

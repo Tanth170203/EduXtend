@@ -1,0 +1,411 @@
+@page
+@using BusinessObject.DTOs.MovementRecord
+@model WebFE.Pages.Admin.MovementReports.IndexModel
+@{
+    ViewData["Title"] = "Movement Reports";
+    ViewData["Breadcrumb"] = "Movement Reports";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">
+                <i data-lucide="bar-chart-3" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                Báo cáo Điểm Phong trào
+            </h1>
+            <p class="page-description">Quản lý và xem báo cáo điểm phong trào sinh viên theo học kỳ</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success" onclick="exportToExcel()">
+                <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                Xuất Excel
+            </button>
+            <button type="button" class="btn btn-primary" onclick="printReport()">
+                <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
+                In báo cáo
+            </button>
+            <a href="/Admin/MovementReports/AddScore" class="btn btn-warning">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                ➕ Cộng Điểm
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Messages -->
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i data-lucide="check-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Tổng sinh viên</p>
+                        <h3 class="mb-0 fw-bold">@Model.Records.Count</h3>
+                        <small class="text-success">
+                            <i data-lucide="trending-up" style="width: 12px; height: 12px;"></i>
+                            @(Model.SelectedSemesterId.HasValue ? "Trong học kỳ" : "Tất cả học kỳ")
+                        </small>
+                    </div>
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                        <i data-lucide="users" style="width: 32px; height: 32px; color: #0d6efd;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Điểm trung bình</p>
+                        <h3 class="mb-0 fw-bold text-success">
+                            @(Model.Records.Any() ? Model.Records.Average(r => r.TotalScore).ToString("F1") : "0")
+                        </h3>
+                        <small class="text-muted">/ 140 điểm</small>
+                    </div>
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                        <i data-lucide="trending-up" style="width: 32px; height: 32px; color: #198754;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Điểm cao nhất</p>
+                        <h3 class="mb-0 fw-bold text-warning">
+                            @(Model.Records.Any() ? Model.Records.Max(r => r.TotalScore).ToString("F1") : "0")
+                        </h3>
+                        <small class="text-muted">Top 1 scorer</small>
+                    </div>
+                    <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                        <i data-lucide="trophy" style="width: 32px; height: 32px; color: #ffc107;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Xuất sắc (≥80)</p>
+                        <h3 class="mb-0 fw-bold text-info">
+                            @Model.Records.Count(r => r.TotalScore >= 80)
+                        </h3>
+                        <small class="text-muted">
+                            @(Model.Records.Any() ? ((double)Model.Records.Count(r => r.TotalScore >= 80) / Model.Records.Count * 100).ToString("F1") : "0")%
+                        </small>
+                    </div>
+                    <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                        <i data-lucide="award" style="width: 32px; height: 32px; color: #0dcaf0;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="semesterSelect" class="form-label fw-semibold">
+                    <i data-lucide="filter" style="width: 14px; height: 14px;"></i>
+                    Lọc theo học kỳ
+                </label>
+                <select class="form-select" id="semesterSelect" name="semesterId" onchange="this.form.submit()">
+                    <option value="">📚 Tất cả học kỳ</option>
+                    @foreach (var semester in Model.Semesters)
+                    {
+                        <option value="@semester.Id" selected="@(Model.SelectedSemesterId == semester.Id)">
+                            @semester.Name
+                            (@semester.StartDate.ToString("MM/yyyy") - @semester.EndDate.ToString("MM/yyyy"))
+                            @(semester.IsActive ? "✓ Active" : "")
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">
+                    <i data-lucide="search" style="width: 14px; height: 14px;"></i>
+                    Tìm kiếm
+                </label>
+                <input type="text" class="form-control" id="searchInput" placeholder="Tên hoặc mã SV...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Sắp xếp</label>
+                <select class="form-select" id="sortSelect">
+                    <option value="score-desc">Điểm cao → thấp</option>
+                    <option value="score-asc">Điểm thấp → cao</option>
+                    <option value="name-asc">Tên A → Z</option>
+                    <option value="name-desc">Tên Z → A</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                    <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i>
+                    Reset
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Records Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">
+                <i data-lucide="list" style="width: 18px; height: 18px;"></i>
+                Danh sách điểm phong trào
+            </h5>
+            <span class="badge bg-primary">@Model.Records.Count sinh viên</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Records.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="recordsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4" style="width: 60px;">#</th>
+                            <th style="width: 80px;">Xếp hạng</th>
+                            <th>Sinh viên</th>
+                            <th>Mã SV</th>
+                            <th class="text-center">Tổng điểm</th>
+                            <th class="text-center">Cập nhật</th>
+                            <th class="text-center pe-4">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int rank = 1;
+                            string previousScore = "";
+                            int displayRank = 1;
+                        }
+                        @foreach (var record in Model.Records)
+                        {
+                            var currentScore = record.TotalScore.ToString("F1");
+                            if (currentScore != previousScore)
+                            {
+                                displayRank = rank;
+                                previousScore = currentScore;
+                            }
+
+                            var scoreClass = record.TotalScore >= 80 ? "success" : record.TotalScore >= 60 ? "warning" : "danger";
+                            var evaluation = record.TotalScore >= 80 ? "Xuất sắc" : record.TotalScore >= 60 ? "Khá" : "Cần cố gắng";
+                            var medalIcon = displayRank == 1 ? "🥇" : displayRank == 2 ? "🥈" : displayRank == 3 ? "🥉" : "";
+
+                            <tr class="record-row">
+                                <td class="ps-4 text-muted">@rank</td>
+                                <td>
+                                    @if (displayRank <= 3)
+                                    {
+                                        <span class="badge bg-warning text-dark px-3 py-2">
+                                            @medalIcon #@displayRank
+                                        </span>
+                                    }
+                                    else if (displayRank <= 10)
+                                    {
+                                        <span class="badge bg-info px-3 py-2">#@displayRank</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">#@displayRank</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-2">
+                                            @(string.IsNullOrEmpty(record.StudentName) ? "?" : record.StudentName.Substring(0, 1).ToUpper())
+                                        </div>
+                                        <strong>@record.StudentName</strong>
+                                    </div>
+                                </td>
+                                <td><code>@record.StudentCode</code></td>
+                                <td class="text-center">
+                                    <div class="score-display">
+                                        <strong class="fs-5 text-@scoreClass">@record.TotalScore.ToString("F1")</strong>
+                                        <small class="text-muted d-block">/140</small>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <small class="text-muted">
+                                        @(record.LastUpdated?.ToString("dd/MM/yy") ?? record.CreatedAt.ToString("dd/MM/yy"))
+                                    </small>
+                                </td>
+                                <td class="text-center pe-4">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="/Admin/MovementReports/Detail?id=@record.Id"
+                                           class="btn btn-outline-primary"
+                                           title="Xem chi tiết">
+                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                        <a href="/Admin/MovementReports/AddScore?studentId=@record.StudentId&studentName=@Uri.EscapeDataString(record.StudentName)&studentCode=@record.StudentCode"
+                                           class="btn btn-outline-warning"
+                                           title="Cộng điểm">
+                                            <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            rank++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i data-lucide="inbox" style="width: 64px; height: 64px; color: #9ca3af;"></i>
+                <p class="text-muted mt-3 mb-0">Chưa có dữ liệu điểm phong trào</p>
+                <p class="text-muted">
+                    @(Model.SelectedSemesterId.HasValue ? "Không có sinh viên nào trong học kỳ này" : "Hệ thống chưa có dữ liệu")
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+
+    .score-display {
+        padding: 8px;
+        border-radius: 8px;
+        background: #f8f9fa;
+    }
+
+    .record-row:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+
+    .card {
+        transition: all 0.3s ease;
+    }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    filterTable();
+                });
+            }
+
+            // Sort functionality
+            const sortSelect = document.getElementById('sortSelect');
+            if (sortSelect) {
+                sortSelect.addEventListener('change', function() {
+                    sortTable(this.value);
+                });
+            }
+        });
+
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#recordsTable tbody tr');
+
+            rows.forEach(row => {
+                const studentName = row.cells[2].textContent.toLowerCase();
+                const studentCode = row.cells[3].textContent.toLowerCase();
+
+                if (studentName.includes(searchTerm) || studentCode.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function sortTable(criteria) {
+            const tbody = document.querySelector('#recordsTable tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+
+            rows.sort((a, b) => {
+                switch(criteria) {
+                    case 'score-desc':
+                        return parseFloat(b.cells[5].textContent) - parseFloat(a.cells[5].textContent);
+                    case 'score-asc':
+                        return parseFloat(a.cells[5].textContent) - parseFloat(b.cells[5].textContent);
+                    case 'name-asc':
+                        return a.cells[2].textContent.localeCompare(b.cells[2].textContent);
+                    case 'name-desc':
+                        return b.cells[2].textContent.localeCompare(a.cells[2].textContent);
+                }
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('sortSelect').value = 'score-desc';
+            filterTable();
+            sortTable('score-desc');
+        }
+
+        function exportToExcel() {
+            alert('Chức năng xuất Excel đang được phát triển!');
+        }
+
+        function printReport() {
+            window.print();
+        }
+    </script>
+}

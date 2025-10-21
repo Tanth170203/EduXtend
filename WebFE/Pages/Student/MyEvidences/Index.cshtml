@@ -1,0 +1,213 @@
+@page
+@using BusinessObject.DTOs.Evidence
+@model WebFE.Pages.Student.MyEvidences.IndexModel
+@{
+    ViewData["Title"] = "My Evidences";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-1">Minh chứng của tôi</h1>
+            <p class="text-muted">Quản lý minh chứng phong trào của bạn</p>
+        </div>
+        <a href="/Student/MyEvidences/Submit" class="btn btn-primary">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            Nộp minh chứng mới
+        </a>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i data-lucide="check-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+            @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Tổng minh chứng</p>
+                            <h3 class="mb-0">@Model.Evidences.Count</h3>
+                        </div>
+                        <i data-lucide="file-text" style="width: 32px; height: 32px; color: #3b82f6;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Chờ duyệt</p>
+                            <h3 class="mb-0">@Model.Evidences.Count(e => e.Status == "Pending")</h3>
+                        </div>
+                        <i data-lucide="clock" style="width: 32px; height: 32px; color: #f59e0b;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Đã duyệt</p>
+                            <h3 class="mb-0">@Model.Evidences.Count(e => e.Status == "Approved")</h3>
+                        </div>
+                        <i data-lucide="check-circle" style="width: 32px; height: 32px; color: #10b981;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-muted mb-1">Tổng điểm</p>
+                            <h3 class="mb-0">@Model.Evidences.Where(e => e.Status == "Approved").Sum(e => e.Points)</h3>
+                        </div>
+                        <i data-lucide="award" style="width: 32px; height: 32px; color: #8b5cf6;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evidence List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Danh sách minh chứng</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Evidences.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tiêu đề</th>
+                                <th>Tiêu chí</th>
+                                <th>Trạng thái</th>
+                                <th>Điểm</th>
+                                <th>Ngày nộp</th>
+                                <th>Ghi chú</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var evidence in Model.Evidences)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@evidence.Title</strong>
+                                        @if (!string.IsNullOrEmpty(evidence.Description))
+                                        {
+                                            <br />
+                                            <small class="text-muted">@evidence.Description</small>
+                                        }
+                                    </td>
+                                    <td>@evidence.CriterionTitle</td>
+                                    <td>
+                                        @if (evidence.Status == "Pending")
+                                        {
+                                            <span class="badge bg-warning">
+                                                <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
+                                                Chờ duyệt
+                                            </span>
+                                        }
+                                        else if (evidence.Status == "Approved")
+                                        {
+                                            <span class="badge bg-success">
+                                                <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
+                                                Đã duyệt
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i data-lucide="x-circle" style="width: 12px; height: 12px;"></i>
+                                                Từ chối
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (evidence.Status == "Approved")
+                                        {
+                                            <strong class="text-success">+@evidence.Points điểm</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>@evidence.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(evidence.ReviewerComment))
+                                        {
+                                            <small class="text-muted">@evidence.ReviewerComment</small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (evidence.Status == "Pending")
+                                        {
+                                            <form method="post" asp-page-handler="Delete" style="display: inline;">
+                                                <input type="hidden" name="id" value="@evidence.Id">
+                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Xóa minh chứng này?')">
+                                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i data-lucide="inbox" style="width: 64px; height: 64px; color: #9ca3af;"></i>
+                    <p class="text-muted mt-3 mb-0">Bạn chưa nộp minh chứng nào</p>
+                    <p class="text-muted">Nhấn "Nộp minh chứng mới" để bắt đầu</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+}
+
+

@@ -9,11 +9,15 @@ using Repositories.Semesters;
 using Repositories.Users;
 using Repositories.Students;
 using Repositories.Majors;
+using Repositories.Evidences;
+using Repositories.MovementRecords;
 using Services.GGLogin;
 using Services.MovementCriteria;
 using Services.Semesters;
 using Services.UserImport;
 using Services.TokenCleanup;
+using Services.Evidences;
+using Services.MovementRecords;
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
@@ -45,6 +49,9 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionRepository, MovementCriterionRepository>();
             builder.Services.AddScoped<IStudentRepository, StudentRepository>();
             builder.Services.AddScoped<IMajorRepository, MajorRepository>();
+            builder.Services.AddScoped<IEvidenceRepository, EvidenceRepository>();
+            builder.Services.AddScoped<IMovementRecordRepository, MovementRecordRepository>();
+            builder.Services.AddScoped<IMovementRecordDetailRepository, MovementRecordDetailRepository>();
             
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -53,10 +60,15 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionGroupService, MovementCriterionGroupService>();
             builder.Services.AddScoped<IMovementCriterionService, MovementCriterionService>();
             builder.Services.AddScoped<IUserImportService, UserImportService>();
+            builder.Services.AddScoped<IEvidenceService, EvidenceService>();
+            builder.Services.AddScoped<IMovementRecordService, MovementRecordService>();
+            builder.Services.AddScoped<IMovementScoreCalculationService, MovementScoreCalculationService>();
+            builder.Services.AddScoped<IClubMemberScoringService, ClubMemberScoringService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
             builder.Services.AddHostedService<TokenCleanupService>();
+            builder.Services.AddHostedService<MovementScoreAutomationService>();
 
 
 
@@ -67,22 +79,22 @@ namespace WebAPI
                 .AddScheme<AuthenticationSchemeOptions, CustomJwtAuthenticationHandler>("CustomJWT", options => { });
 
 
-            builder.Services.AddAuthorization(options =>
-            {
-                // Role-based policies
-                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-                options.AddPolicy("StudentOnly", policy => policy.RequireRole("Student"));
-                options.AddPolicy("ClubManagerOnly", policy => policy.RequireRole("ClubManager"));
-                options.AddPolicy("ClubMemberOnly", policy => policy.RequireRole("ClubMember"));
+            //builder.Services.AddAuthorization(options =>
+            //{
+            //    // Role-based policies
+            //    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+            //    options.AddPolicy("StudentOnly", policy => policy.RequireRole("Student"));
+            //    options.AddPolicy("ClubManagerOnly", policy => policy.RequireRole("ClubManager"));
+            //    options.AddPolicy("ClubMemberOnly", policy => policy.RequireRole("ClubMember"));
                 
-                // Combined policies
-                options.AddPolicy("ClubManagement", policy => 
-                    policy.RequireRole("Admin", "ClubManager"));
-                options.AddPolicy("ClubAccess", policy => 
-                    policy.RequireRole("Admin", "ClubManager", "ClubMember"));
-                options.AddPolicy("AllUsers", policy => 
-                    policy.RequireRole("Admin", "Student", "ClubManager", "ClubMember"));
-            });
+            //    // Combined policies
+            //    options.AddPolicy("ClubManagement", policy => 
+            //        policy.RequireRole("Admin", "ClubManager"));
+            //    options.AddPolicy("ClubAccess", policy => 
+            //        policy.RequireRole("Admin", "ClubManager", "ClubMember"));
+            //    options.AddPolicy("AllUsers", policy => 
+            //        policy.RequireRole("Admin", "Student", "ClubManager", "ClubMember"));
+            //});
             
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
