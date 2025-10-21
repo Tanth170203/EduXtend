@@ -1,0 +1,93 @@
+@page
+@model WebFE.Pages.Student.MyEvidences.SubmitModel
+@{
+    ViewData["Title"] = "Submit Evidence";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">Submit Evidence</h2>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a asp-page="/Student/Dashboard/Index">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a asp-page="/Student/MyEvidences/Index">My Evidences</a></li>
+                    <li class="breadcrumb-item active">Submit</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                <div class="mb-3">
+                    <label asp-for="Input.Title" class="form-label">Title <span class="text-danger">*</span></label>
+                    <input asp-for="Input.Title" class="form-control" required />
+                    <span asp-validation-for="Input.Title" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.Description" class="form-label">Description</label>
+                    <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
+                    <span asp-validation-for="Input.Description" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.CriterionId" class="form-label">Movement Criterion</label>
+                    <select asp-for="Input.CriterionId" class="form-select">
+                        <option value="">-- Select Criterion (Optional) --</option>
+                        @foreach (var criterion in Model.Criteria)
+                        {
+                            <option value="@criterion.Id">@criterion.GroupName - @criterion.Name (@criterion.Score points)</option>
+                        }
+                    </select>
+                    <small class="text-muted">Select the criterion this evidence supports</small>
+                    <span asp-validation-for="Input.CriterionId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.FilePath" class="form-label">File Path / URL</label>
+                    <input asp-for="Input.FilePath" class="form-control" placeholder="Enter file path or URL" />
+                    <small class="text-muted">Optional: Link to supporting document</small>
+                    <span asp-validation-for="Input.FilePath" class="text-danger"></span>
+                </div>
+
+                <div class="alert alert-info">
+                    <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                    <strong>Note:</strong> After submission, your evidence will be reviewed by staff. You can check the status in "My Evidences" page.
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        Submit Evidence
+                    </button>
+                    <a asp-page="/Student/MyEvidences/Index" class="btn btn-secondary">
+                        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+}
+

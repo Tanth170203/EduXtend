@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net;
-using System.Text;
 using System.Text.Json;
 
 namespace WebFE.Pages.Admin.Criteria
@@ -87,106 +86,6 @@ namespace WebFE.Pages.Admin.Criteria
             return Page();
         }
 
-        // Create Group handler
-        public async Task<IActionResult> OnPostCreateGroupAsync(string Name, string? Description, int MaxScore, string TargetType)
-        {
-            try
-            {
-                var model = new CreateMovementCriterionGroupDto
-                {
-                    Name = Name,
-                    Description = Description,
-                    MaxScore = MaxScore,
-                    TargetType = TargetType
-                };
-
-                var json = JsonSerializer.Serialize(model);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                
-                using var httpClient = CreateHttpClient();
-                var response = await httpClient.PostAsync("/api/movement-criterion-groups", content);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    SuccessMessage = "Criteria group added successfully!";
-                    return RedirectToPage();
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning("Create criterion group failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    
-                    // Try to parse error message from response
-                    try
-                    {
-                        var errorResponse = JsonSerializer.Deserialize<dynamic>(errorContent);
-                        ErrorMessage = $"Unable to add criteria group: {errorResponse}";
-                    }
-                    catch
-                    {
-                        ErrorMessage = $"Unable to add criteria group: {response.StatusCode}";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating criterion group");
-                ErrorMessage = "An error occurred. Please try again.";
-            }
-
-            return RedirectToPage();
-        }
-
-        // Update Group handler
-        public async Task<IActionResult> OnPostUpdateGroupAsync(int Id, string Name, string? Description, int MaxScore, string TargetType)
-        {
-            try
-            {
-                var model = new UpdateMovementCriterionGroupDto
-                {
-                    Id = Id,
-                    Name = Name,
-                    Description = Description,
-                    MaxScore = MaxScore,
-                    TargetType = TargetType
-                };
-
-                var json = JsonSerializer.Serialize(model);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                
-                using var httpClient = CreateHttpClient();
-                var response = await httpClient.PutAsync($"/api/movement-criterion-groups/{Id}", content);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    SuccessMessage = "Criteria group updated successfully!";
-                    return RedirectToPage();
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning("Update criterion group failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    
-                    // Try to parse error message from response
-                    try
-                    {
-                        var errorResponse = JsonSerializer.Deserialize<dynamic>(errorContent);
-                        ErrorMessage = $"Unable to update criteria group: {errorResponse}";
-                    }
-                    catch
-                    {
-                        ErrorMessage = $"Unable to update criteria group: {response.StatusCode}";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating criterion group");
-                ErrorMessage = "An error occurred. Please try again.";
-            }
-
-            return RedirectToPage();
-        }
 
         // Delete Group handler
         public async Task<IActionResult> OnPostDeleteGroupAsync(int Id)

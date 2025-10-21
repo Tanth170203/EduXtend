@@ -1,0 +1,149 @@
+@page
+@using BusinessObject.DTOs.MovementRecord
+@model WebFE.Pages.Admin.MovementReports.DetailModel
+@{
+    ViewData["Title"] = "Movement Record Detail";
+    ViewData["Breadcrumb"] = "Detail";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">Chi tiết Điểm Phong trào</h1>
+            <p class="page-description">Xem chi tiết điểm phong trào của sinh viên</p>
+        </div>
+        <div>
+            <a href="/Admin/MovementReports" class="btn btn-secondary">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                Quay lại
+            </a>
+        </div>
+    </div>
+</div>
+
+@if (Model.Record != null)
+{
+    <!-- Student Info -->
+    <div class="content-card mb-4">
+        <div class="content-card-header">
+            <h3 class="content-card-title">Thông tin sinh viên</h3>
+        </div>
+        <div class="content-card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>Họ tên:</strong>
+                    <p>@Model.Record.StudentName</p>
+                </div>
+                <div class="col-md-3">
+                    <strong>Mã sinh viên:</strong>
+                    <p>@Model.Record.StudentCode</p>
+                </div>
+                <div class="col-md-3">
+                    <strong>Học kỳ:</strong>
+                    <p>@Model.Record.SemesterName</p>
+                </div>
+                <div class="col-md-3">
+                    <strong>Tổng điểm:</strong>
+                    <p class="fs-4 fw-bold text-primary">@Model.Record.TotalScore.ToString("F1") / 140</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Score Details -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <h3 class="content-card-title">Chi tiết điểm theo tiêu chí</h3>
+        </div>
+        <div class="content-card-body">
+            @if (Model.Record.Details.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nhóm tiêu chí</th>
+                                <th>Tiêu chí</th>
+                                <th>Điểm tối đa</th>
+                                <th>Điểm đạt được</th>
+                                <th>Ngày cộng điểm</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detail in Model.Record.Details.OrderBy(d => d.GroupName))
+                            {
+                                <tr>
+                                    <td>@detail.GroupName</td>
+                                    <td>@detail.CriterionTitle</td>
+                                    <td>@detail.CriterionMaxScore</td>
+                                    <td>
+                                        <strong class="text-success">@detail.Score</strong>
+                                    </td>
+                                    <td>@detail.AwardedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-active">
+                                <td colspan="3" class="text-end"><strong>Tổng cộng:</strong></td>
+                                <td colspan="2"><strong class="fs-5 text-primary">@Model.Record.TotalScore.ToString("F1")</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Score Chart (Group by Criterion Group) -->
+                <div class="mt-4">
+                    <h5>Thống kê theo nhóm tiêu chí</h5>
+                    @{
+                        var groupedScores = Model.Record.Details
+                            .GroupBy(d => d.GroupName)
+                            .Select(g => new { GroupName = g.Key, TotalScore = g.Sum(d => d.Score) })
+                            .OrderByDescending(g => g.TotalScore);
+                    }
+                    <div class="row">
+                        @foreach (var group in groupedScores)
+                        {
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">@group.GroupName</h6>
+                                        <p class="card-text fs-4 fw-bold text-primary">@group.TotalScore điểm</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i data-lucide="inbox" style="width: 48px; height: 48px; color: #9ca3af;"></i>
+                    <p class="text-muted mt-3">Chưa có điểm chi tiết</p>
+                </div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        <i data-lucide="alert-triangle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        Không tìm thấy thông tin điểm phong trào.
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+}
+
+

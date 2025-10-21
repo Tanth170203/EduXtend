@@ -67,6 +67,13 @@ namespace Repositories.Semesters
                 .FirstOrDefaultAsync(s => s.IsActive);
         }
 
+        public async Task<Semester?> GetCurrentSemesterAsync()
+        {
+            // Same as GetActiveAsync - return the currently active semester
+            return await _context.Semesters
+                .FirstOrDefaultAsync(s => s.IsActive);
+        }
+
         public async Task<bool> HasRelatedDataAsync(int id)
         {
             // Check if there are any related data (activities, movement records, etc.)

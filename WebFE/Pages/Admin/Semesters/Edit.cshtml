@@ -1,0 +1,104 @@
+@page
+@model WebFE.Pages.Admin.Semesters.EditModel
+@{
+    ViewData["Title"] = "Chỉnh sửa học kỳ";
+    ViewData["Breadcrumb"] = "Edit Semester";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header mb-4">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h1 class="page-title">
+                <i data-lucide="edit-3" style="width: 28px; height: 28px;"></i>
+                Chỉnh sửa học kỳ
+            </h1>
+            <p class="page-description">Cập nhật thông tin học kỳ</p>
+        </div>
+        <a href="/Admin/Semesters" class="btn btn-outline-secondary">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Quay lại
+        </a>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i data-lucide="calendar"></i> Thông tin học kỳ</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="mb-4">
+                        <label asp-for="Name" class="form-label fw-bold">
+                            <i data-lucide="type" style="width: 16px; height: 16px;"></i>
+                            Tên học kỳ <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Name" class="form-control form-control-lg" required />
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="StartDate" class="form-label fw-bold">
+                                <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                Ngày bắt đầu <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="StartDate" type="date" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="EndDate" class="form-label fw-bold">
+                                <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                Ngày kết thúc <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="EndDate" type="date" class="form-control" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsActive" class="form-check-label fw-bold">
+                                <i data-lucide="play-circle" style="width: 16px; height: 16px;"></i>
+                                Học kỳ đang hoạt động
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-between">
+                        <a href="/Admin/Semesters" class="btn btn-secondary">
+                            <i data-lucide="x"></i> Hủy
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold">
+                            <i data-lucide="save"></i> Cập nhật học kỳ
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+}
+

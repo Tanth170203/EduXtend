@@ -19,10 +19,10 @@
             <p class="page-description">Quản lý các tiêu chí và nhóm tiêu chí đánh giá sinh hoạt</p>
         </div>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-primary d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+            <a href="/Admin/Criteria/AddGroup" class="btn btn-primary d-flex align-items-center gap-2">
                 <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
                 Thêm nhóm tiêu chí
-            </button>
+            </a>
         </div>
     </div>
 </div>
@@ -144,116 +144,7 @@
     </div>
 </div>
 
-<!-- Add Group Modal -->
-<div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="addGroupModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addGroupModalLabel">
-                    <i data-lucide="plus-circle" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                    Thêm nhóm tiêu chí mới
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" asp-page-handler="CreateGroup">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="addName" class="form-label">Criteria Group Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="addName" name="Name" required placeholder="Example: I. CLUB ACTIVITIES">
-                        <div class="form-text">Group name will be displayed in the evaluation system</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="addDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="addDescription" name="Description" rows="3" placeholder="Detailed description of this criteria group"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="addMaxScore" class="form-label">Maximum Score <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="addMaxScore" name="MaxScore" required min="0" max="1000" value="100">
-                                <div class="form-text">Maximum score: 0-1000</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="addTargetType" class="form-label">Target Type <span class="text-danger">*</span></label>
-                                <select class="form-select" id="addTargetType" name="TargetType" required>
-                                    <option value="Student">Student</option>
-                                    <option value="Club">Club</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="alert alert-info">
-                        <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                        <small>Sau khi tạo nhóm, bạn có thể thêm các tiêu chí cụ thể vào nhóm này.</small>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i data-lucide="save" style="width: 16px; height: 16px;"></i>
-                        Thêm nhóm
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Group Modal -->
-<div class="modal fade" id="editGroupModal" tabindex="-1" aria-labelledby="editGroupModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editGroupModalLabel">
-                    <i data-lucide="edit-3" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                    Chỉnh sửa nhóm tiêu chí
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" asp-page-handler="UpdateGroup">
-                <input type="hidden" name="Id" id="editId">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="editName" class="form-label">Criteria Group Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="editName" name="Name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="editDescription" name="Description" rows="3"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="editMaxScore" class="form-label">Maximum Score <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="editMaxScore" name="MaxScore" required min="0" max="1000">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="editTargetType" class="form-label">Target Type <span class="text-danger">*</span></label>
-                                <select class="form-select" id="editTargetType" name="TargetType" required>
-                                    <option value="Student">Student</option>
-                                    <option value="Club">Club</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i data-lucide="save" style="width: 16px; height: 16px;"></i>
-                        Cập nhật
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Confirm Modal -->
+<!-- Delete Confirm Modal (kept for simple confirmation) -->
 <div class="modal fade" id="deleteGroupModal" tabindex="-1" aria-labelledby="deleteGroupModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -287,26 +178,7 @@
                 lucide.createIcons();
             }
             
-            // Edit button click
-            document.querySelectorAll('[data-group-id]').forEach(btn => {
-                if (btn.classList.contains('btn-edit')) {
-                    btn.addEventListener('click', function() {
-                        const id = this.dataset.groupId;
-                        const name = this.dataset.groupName;
-                        const description = this.dataset.groupDescription || '';
-                        const maxScore = this.dataset.groupMaxScore;
-                        const targetType = this.dataset.groupTargetType;
-                        
-                        document.getElementById('editId').value = id;
-                        document.getElementById('editName').value = name;
-                        document.getElementById('editDescription').value = description;
-                        document.getElementById('editMaxScore').value = maxScore;
-                        document.getElementById('editTargetType').value = targetType;
-                    });
-                }
-            });
-            
-            // Delete button click
+            // Delete button click (only keep delete modal handler)
             document.querySelectorAll('[data-group-id]').forEach(btn => {
                 if (btn.classList.contains('btn-delete')) {
                     btn.addEventListener('click', function() {

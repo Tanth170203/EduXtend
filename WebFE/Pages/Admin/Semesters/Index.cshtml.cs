@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net;
-using System.Text;
 using System.Text.Json;
 
 namespace WebFE.Pages.Admin.Semesters
@@ -94,83 +93,6 @@ namespace WebFE.Pages.Admin.Semesters
             return Page();
         }
 
-        // Semester handlers - Direct API calls with cookie forwarding
-        public async Task<IActionResult> OnPostCreateSemesterAsync(string Name, DateTime StartDate, DateTime EndDate)
-        {
-            try
-            {
-                var model = new CreateSemesterDto
-                {
-                    Name = Name,
-                    StartDate = StartDate,
-                    EndDate = EndDate
-                };
-
-                var json = JsonSerializer.Serialize(model);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                
-                using var httpClient = CreateHttpClient();
-                var response = await httpClient.PostAsync("/api/semesters", content);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    SuccessMessage = "Semester added successfully!";
-                    return RedirectToPage();
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning("Create semester failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = $"Unable to add semester: {response.StatusCode}";
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating semester");
-                ErrorMessage = "An error occurred. Please try again.";
-            }
-
-            return RedirectToPage();
-        }
-
-        public async Task<IActionResult> OnPostUpdateSemesterAsync(int Id, string Name, DateTime StartDate, DateTime EndDate)
-        {
-            try
-            {
-                var model = new UpdateSemesterDto
-                {
-                    Id = Id,
-                    Name = Name,
-                    StartDate = StartDate,
-                    EndDate = EndDate
-                };
-
-                var json = JsonSerializer.Serialize(model);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                
-                using var httpClient = CreateHttpClient();
-                var response = await httpClient.PutAsync($"/api/semesters/{Id}", content);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    SuccessMessage = "Semester updated successfully!";
-                    return RedirectToPage();
-                }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning("Update semester failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = $"Unable to update semester: {response.StatusCode}";
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating semester");
-                ErrorMessage = "An error occurred. Please try again.";
-            }
-
-            return RedirectToPage();
-        }
 
         public async Task<IActionResult> OnPostDeleteSemesterAsync(int Id)
         {

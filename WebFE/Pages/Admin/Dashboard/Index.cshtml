@@ -79,6 +79,239 @@
     </div>
 </div>
 
+<!-- Movement Evaluation Statistics -->
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        <h2 class="content-card-title">
+            <i data-lucide="award" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+            Movement Evaluation Statistics
+        </h2>
+        <a href="/Admin/MovementReports" class="btn btn-sm btn-primary">
+            <i data-lucide="bar-chart-3" style="width: 14px; height: 14px;"></i>
+            View Full Report
+        </a>
+    </div>
+    <div class="content-card-body">
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Pending Evidences</p>
+                                <h3 class="mb-0 text-warning">@Model.PendingEvidences</h3>
+                            </div>
+                            <i data-lucide="clock" style="width: 32px; height: 32px; color: #f59e0b;"></i>
+                        </div>
+                        <a href="/Admin/Evidences?filter=pending" class="btn btn-sm btn-outline-warning mt-2 w-100">
+                            <i data-lucide="eye" style="width: 12px; height: 12px;"></i>
+                            Review Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Total Records</p>
+                                <h3 class="mb-0 text-info">@Model.TotalMovementRecords</h3>
+                            </div>
+                            <i data-lucide="file-text" style="width: 32px; height: 32px; color: #06b6d4;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Average Score</p>
+                                <h3 class="mb-0 text-success">@Model.AverageMovementScore.ToString("F1")</h3>
+                            </div>
+                            <i data-lucide="trending-up" style="width: 32px; height: 32px; color: #10b981;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1 small">Top Scorer</p>
+                                <h3 class="mb-0 text-primary">
+                                    @(Model.TopScorers.Any() ? Model.TopScorers.First().TotalScore.ToString("F1") : "0")
+                                </h3>
+                            </div>
+                            <i data-lucide="trophy" style="width: 32px; height: 32px; color: #3b82f6;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.TopScorers.Any())
+        {
+            <h6 class="mb-3">Top 5 Students by Movement Score</h6>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Student</th>
+                            <th>Student Code</th>
+                            <th>Semester</th>
+                            <th>Total Score</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.TopScorers.Count; i++)
+                        {
+                            var record = Model.TopScorers[i];
+                            <tr>
+                                <td>
+                                    @if (i < 3)
+                                    {
+                                        <span class="badge bg-warning">
+                                            <i data-lucide="trophy" style="width: 12px; height: 12px;"></i>
+                                            #@(i + 1)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>#@(i + 1)</span>
+                                    }
+                                </td>
+                                <td><strong>@record.StudentName</strong></td>
+                                <td>@record.StudentCode</td>
+                                <td>@record.SemesterName</td>
+                                <td>
+                                    <span class="badge bg-success">@record.TotalScore.ToString("F1")</span>
+                                </td>
+                                <td>
+                                    <a href="/Admin/MovementReports/Detail?id=@record.Id" class="btn btn-sm btn-outline-primary">
+                                        <i data-lucide="eye" style="width: 12px; height: 12px;"></i>
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                No movement records available yet.
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Scoring Management Section (NEW) -->
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        <h2 class="content-card-title">
+            <i data-lucide="plus-circle" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+            Scoring Management
+        </h2>
+        <a href="/Admin/MovementReports" class="btn btn-sm btn-warning">
+            <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+            Add Manual Score
+        </a>
+    </div>
+    <div class="content-card-body">
+        <div class="row g-3">
+            <!-- Manual Scoring Card -->
+            <div class="col-md-4">
+                <div class="card border-warning h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="card-title fw-bold">Manual Scoring</h6>
+                                <p class="text-muted small mb-0">Cộng điểm trực tiếp cho sinh viên</p>
+                            </div>
+                            <i data-lucide="hand" style="width: 24px; height: 24px; color: #f59e0b;"></i>
+                        </div>
+                        <div class="mb-3">
+                            <p class="mb-2"><small class="text-muted">Chức năng:</small></p>
+                            <ul class="small mb-0 ps-3">
+                                <li>Cộng điểm thủ công cho sinh viên</li>
+                                <li>Chọn danh mục & hành vi</li>
+                                <li>Tự động điều chỉnh theo QĐ 414</li>
+                            </ul>
+                        </div>
+                        <a href="/Admin/MovementReports" class="btn btn-sm btn-warning w-100">
+                            <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i>
+                            Cộng Điểm
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Club Member Scoring Card -->
+            <div class="col-md-4">
+                <div class="card border-success h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="card-title fw-bold">Club Member Scoring</h6>
+                                <p class="text-muted small mb-0">Tự động hàng tháng</p>
+                            </div>
+                            <i data-lucide="users" style="width: 24px; height: 24px; color: #10b981;"></i>
+                        </div>
+                        <div class="mb-3">
+                            <p class="mb-2"><small class="text-muted">Chức năng:</small></p>
+                            <ul class="small mb-0 ps-3">
+                                <li>Tự động chạy mỗi 6 giờ</li>
+                                <li>Tính điểm theo vai trò CLB</li>
+                                <li>Cộng dồn, cap 50 điểm</li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-sm btn-success w-100" onclick="alert('Chức năng tự động chạy mỗi 6 giờ\nXem logs: /Admin/MovementReports')">
+                            <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+                            Status: Active
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score Validation Card -->
+            <div class="col-md-4">
+                <div class="card border-info h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="card-title fw-bold">Score Validation</h6>
+                                <p class="text-muted small mb-0">Quy tắc QĐ 414</p>
+                            </div>
+                            <i data-lucide="check-circle" style="width: 24px; height: 24px; color: #06b6d4;"></i>
+                        </div>
+                        <div class="mb-3">
+                            <p class="mb-2"><small class="text-muted">Giới hạn điểm:</small></p>
+                            <ul class="small mb-0 ps-3">
+                                <li>Cat 1: ≤35 | Cat 2: ≤50</li>
+                                <li>Cat 3: ≤25 | Cat 4: ≤30</li>
+                                <li>Tổng: 60-140 điểm</li>
+                            </ul>
+                        </div>
+                        <a href="/Admin/Criteria" class="btn btn-sm btn-info w-100">
+                            <i data-lucide="settings" style="width: 14px; height: 14px;"></i>
+                            View Criteria
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Quick Actions -->
 <div class="content-card">
     <div class="content-card-header">
@@ -93,6 +326,36 @@
                 <div class="quick-action-content">
                     <div class="quick-action-title">Manage Semesters</div>
                     <p class="quick-action-desc">Add, edit, delete semesters</p>
+                </div>
+            </a>
+            
+            <a href="/Admin/Criteria" class="quick-action-btn">
+                <div class="quick-action-icon" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #d97706;">
+                    <i data-lucide="list-checks" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Manage Criteria</div>
+                    <p class="quick-action-desc">Configure evaluation criteria</p>
+                </div>
+            </a>
+
+            <a href="/Admin/Evidences" class="quick-action-btn">
+                <div class="quick-action-icon" style="background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); color: #ea580c;">
+                    <i data-lucide="file-check" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Review Evidences</div>
+                    <p class="quick-action-desc">Review student evidences</p>
+                </div>
+            </a>
+
+            <a href="/Admin/MovementReports" class="quick-action-btn">
+                <div class="quick-action-icon" style="background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%); color: #7c3aed;">
+                    <i data-lucide="bar-chart-3" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Movement Reports</div>
+                    <p class="quick-action-desc">View movement score reports</p>
                 </div>
             </a>
             
@@ -125,6 +388,17 @@
                     <p class="quick-action-desc">Configure evaluation criteria</p>
                 </div>
             </a>
+
+            <!-- NEW: Quick Score Button -->
+            <button onclick="document.location='/Admin/MovementReports'" class="quick-action-btn" style="border: none; background: linear-gradient(135deg, #fef08a 0%, #fef3c7 100%); cursor: pointer;">
+                <div class="quick-action-icon" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #ffffff;">
+                    <i data-lucide="plus-circle" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">➕ Add Score</div>
+                    <p class="quick-action-desc">Cộng điểm cho sinh viên</p>
+                </div>
+            </button>
         </div>
     </div>
 </div>

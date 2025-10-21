@@ -1,0 +1,361 @@
+@page
+@model WebFE.Pages.Admin.MovementReports.AddScoreModel
+@{
+    ViewData["Title"] = "Cộng Điểm Phong Trào";
+    ViewData["Breadcrumb"] = "Cộng Điểm";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header mb-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">
+                <i data-lucide="plus-circle" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                Cộng Điểm Phong Trào
+            </h1>
+            <p class="page-description">Thêm điểm phong trào cho sinh viên</p>
+        </div>
+        <div>
+            <a href="/Admin/MovementReports" class="btn btn-outline-secondary">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                Quay lại
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Messages -->
+@if (!string.IsNullOrEmpty(Model.SuccessMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i data-lucide="check-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.SuccessMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Add Score Form Card -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0 fw-semibold">
+                    <i data-lucide="edit-3" style="width: 20px; height: 20px;"></i>
+                    Thông tin cộng điểm
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    
+                    <!-- Student Selection -->
+                    <div class="mb-4">
+                        <label for="StudentId" class="form-label fw-semibold">
+                            <i data-lucide="users" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                            Sinh viên <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="StudentId" class="form-select form-select-lg" id="StudentId" required onchange="updateStudentDisplay()">
+                            <option value="">-- Chọn sinh viên --</option>
+                            @foreach (var student in Model.Students)
+                            {
+                                var displayName = string.IsNullOrEmpty(student.FullName) ? "Không rõ tên" : student.FullName;
+                                var displayCode = student.StudentCode ?? "N/A";
+                                <option value="@student.Id" selected="@(Model.PreSelectedStudentId == student.Id)">
+                                    @displayName (@displayCode)
+                                </option>
+                            }
+                        </select>
+                        <small class="text-muted d-block mt-2">
+                            <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                            Chọn sinh viên cần cộng điểm
+                        </small>
+                    </div>
+
+                    <!-- Selected Student Info Display -->
+                    <div id="studentInfoBox" class="alert alert-light border border-info @(Model.PreSelectedStudentId.HasValue ? "" : "d-none") mb-4">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-info bg-opacity-10 p-2 me-3">
+                                <i data-lucide="user-check" style="width: 24px; height: 24px; color: #0d6efd;"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1 fw-semibold" id="studentNameDisplay">
+                                    @(Model.PreSelectedStudentName ?? "Chưa chọn sinh viên")
+                                </h6>
+                                <small class="text-muted" id="studentCodeDisplay">
+                                    Mã SV: @(Model.PreSelectedStudentCode ?? "---")
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Group Selection -->
+                    <div class="mb-4">
+                        <label for="GroupId" class="form-label fw-semibold">
+                            <i data-lucide="folder" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                            Danh mục <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="GroupId" class="form-select form-select-lg" id="GroupId" required onchange="updateCriteriaDropdown()">
+                            <option value="">-- Chọn danh mục --</option>
+                            @foreach (var group in Model.Groups)
+                            {
+                                <option value="@group.Id" data-max="@group.MaxScore">
+                                    @group.Name (Max: @group.MaxScore điểm)
+                                </option>
+                            }
+                        </select>
+                        <small class="text-muted d-block mt-2">
+                            <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                            Chọn danh mục trước, sau đó chọn tiêu chí cụ thể
+                        </small>
+                    </div>
+
+                    <!-- Criterion Selection (dependent on Group) -->
+                    <div class="mb-4">
+                        <label for="CriterionId" class="form-label fw-semibold">
+                            <i data-lucide="list" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                            Tiêu chí <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="CriterionId" class="form-select form-select-lg" id="CriterionId" required disabled onchange="updateScoreHint()">
+                            <option value="">-- Chọn danh mục trước --</option>
+                        </select>
+                        <small class="text-muted d-block mt-2" id="criterionHint">
+                            <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                            Tiêu chí sẽ được hiển thị sau khi chọn danh mục
+                        </small>
+                    </div>
+
+                    <!-- Score Input -->
+                    <div class="mb-4">
+                        <label for="Score" class="form-label fw-semibold">
+                            <i data-lucide="award" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                            Điểm <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Score" type="number" class="form-control" id="Score" min="0" max="100" step="0.5" placeholder="Nhập điểm (VD: 5, 10, 15)" required>
+                        <small class="text-muted d-block mt-2" id="scoreHint">
+                            <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                            Phạm vi: 0 - 100 (sẽ tự động điều chỉnh nếu vượt max danh mục)
+                        </small>
+                    </div>
+
+                    <!-- Comments field removed - not stored in database -->
+
+                    <!-- Info Box -->
+                    <div class="alert alert-info bg-info bg-opacity-10 border-0">
+                        <div class="d-flex">
+                            <i data-lucide="alert-circle" style="width: 18px; height: 18px; margin-right: 10px; color: #0d6efd; flex-shrink: 0; margin-top: 2px;"></i>
+                            <div>
+                                <strong>Lưu ý quan trọng:</strong>
+                                <ul class="mb-0 mt-2 ms-2">
+                                    <li>📅 <strong>Ngày thực hiện:</strong> Mặc định là ngày hôm nay</li>
+                                    <li>🎯 <strong>Chọn danh mục:</strong> Chọn danh mục trước, sau đó chọn tiêu chí cụ thể</li>
+                                    <li>🔄 <strong>Cộng dồn:</strong> Các tiêu chí khác nhau trong cùng danh mục sẽ được cộng dồn</li>
+                                    <li>🔄 <strong>Cập nhật:</strong> Cùng tiêu chí sẽ cập nhật điểm thay vì tạo mới</li>
+                                    <li>⚠️ <strong>Tự động điều chỉnh:</strong> Nếu vượt quá giới hạn tiêu chí, điểm sẽ được điều chỉnh về max</li>
+                                    <li>🎓 <strong>Chỉ cho sinh viên:</strong> Chỉ hiển thị danh mục và tiêu chí dành cho sinh viên</li>
+                                    <!-- Comments requirement removed - field not stored in database -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="/Admin/MovementReports" class="btn btn-outline-secondary">
+                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                            Hủy
+                        </a>
+                        <button type="submit" class="btn btn-warning btn-lg fw-bold">
+                            <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+                            Xác nhận cộng điểm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // All criteria data from server
+        const allCriteria = @Html.Raw(Json.Serialize(Model.AllCriteria));
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        function updateStudentDisplay() {
+            const studentSelect = document.getElementById('StudentId');
+            const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+            const studentInfoBox = document.getElementById('studentInfoBox');
+            
+            if (studentSelect.value) {
+                const fullText = selectedOption.textContent;
+                const match = fullText.match(/\(([^)]+)\)/);
+                const code = match ? match[1] : 'N/A';
+                const name = fullText.replace(/\s*\([^)]*\)/, '').trim();
+                
+                document.getElementById('studentNameDisplay').textContent = name;
+                document.getElementById('studentCodeDisplay').textContent = 'Mã SV: ' + code;
+                studentInfoBox.classList.remove('d-none');
+            } else {
+                studentInfoBox.classList.add('d-none');
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function updateCriteriaDropdown() {
+            const groupSelect = document.getElementById('GroupId');
+            const criterionSelect = document.getElementById('CriterionId');
+            const criterionHint = document.getElementById('criterionHint');
+            const scoreHint = document.getElementById('scoreHint');
+            const selectedGroupId = parseInt(groupSelect.value);
+            
+            // Clear current options
+            criterionSelect.innerHTML = '<option value="">-- Chọn tiêu chí --</option>';
+            
+            if (selectedGroupId) {
+                // Filter criteria by selected group
+                const filteredCriteria = allCriteria.filter(c => c.groupId === selectedGroupId);
+                
+                if (filteredCriteria.length > 0) {
+                    // Add filtered criteria to dropdown
+                    filteredCriteria.forEach(criterion => {
+                        const option = document.createElement('option');
+                        option.value = criterion.id;
+                        option.setAttribute('data-max', criterion.maxScore);
+                        option.textContent = `${criterion.title} (Max: ${criterion.maxScore} điểm)`;
+                        criterionSelect.appendChild(option);
+                    });
+                    
+                    criterionSelect.disabled = false;
+                    criterionHint.innerHTML = '<i data-lucide="info" style="width: 14px; height: 14px;"></i> Đã tải ' + filteredCriteria.length + ' tiêu chí cho danh mục này';
+                } else {
+                    criterionSelect.disabled = true;
+                    criterionHint.innerHTML = '<i data-lucide="alert-circle" style="width: 14px; height: 14px;"></i> Danh mục này chưa có tiêu chí nào';
+                }
+
+                // Update criterion max score hint (sẽ được cập nhật khi chọn criterion)
+                scoreHint.innerHTML = '<i data-lucide="info" style="width: 14px; height: 14px;"></i> Chọn tiêu chí để xem giới hạn cụ thể';
+                
+                // Reset score hint and validate current score
+                updateScoreHint();
+                validateScore();
+            } else {
+                criterionSelect.disabled = true;
+                criterionSelect.innerHTML = '<option value="">-- Chọn danh mục trước --</option>';
+                criterionHint.innerHTML = '<i data-lucide="info" style="width: 14px; height: 14px;"></i> Tiêu chí sẽ được hiển thị sau khi chọn danh mục';
+                scoreHint.innerHTML = '<i data-lucide="info" style="width: 14px; height: 14px;"></i> Phạm vi: 0 - 100 (báo lỗi nếu vượt quá giới hạn tiêu chí hoặc nhóm)';
+            }
+
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function updateScoreHint() {
+            const criterionSelect = document.getElementById('CriterionId');
+            const scoreHint = document.getElementById('scoreHint');
+            const selectedOption = criterionSelect.options[criterionSelect.selectedIndex];
+            
+            if (criterionSelect.value) {
+                const criterionMaxScore = selectedOption.getAttribute('data-max');
+                scoreHint.innerHTML = `<i data-lucide="info" style="width: 14px; height: 14px;"></i> Giới hạn tiêu chí: ${criterionMaxScore} điểm/lần (báo lỗi nếu vượt quá)`;
+            } else {
+                scoreHint.innerHTML = '<i data-lucide="info" style="width: 14px; height: 14px;"></i> Chọn tiêu chí để xem giới hạn cụ thể';
+            }
+        }
+
+        // FIXED: Thêm validation ngay trên frontend để tối ưu UX
+        function validateScore() {
+            const criterionSelect = document.getElementById('CriterionId');
+            const scoreInput = document.getElementById('Score');
+            const scoreHint = document.getElementById('scoreHint');
+            
+            if (criterionSelect.value && scoreInput.value) {
+                const selectedOption = criterionSelect.options[criterionSelect.selectedIndex];
+                const criterionMaxScore = parseFloat(selectedOption.getAttribute('data-max'));
+                const inputScore = parseFloat(scoreInput.value);
+                
+                if (inputScore > criterionMaxScore) {
+                    scoreHint.innerHTML = `<i data-lucide="alert-circle" style="width: 14px; height: 14px; color: red;"></i> <span style="color: red;">Lỗi: Điểm nhập (${inputScore}) vượt quá giới hạn tiêu chí (${criterionMaxScore} điểm)</span>`;
+                    scoreInput.classList.add('is-invalid');
+                    return false;
+                } else {
+                    scoreHint.innerHTML = `<i data-lucide="check-circle" style="width: 14px; height: 14px; color: green;"></i> <span style="color: green;">Điểm hợp lệ</span>`;
+                    scoreInput.classList.remove('is-invalid');
+                    return true;
+                }
+            }
+            return true;
+        }
+
+        // Add event listener for real-time validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const scoreInput = document.getElementById('Score');
+            if (scoreInput) {
+                scoreInput.addEventListener('input', validateScore);
+                scoreInput.addEventListener('blur', validateScore);
+            }
+        });
+    </script>
+}
+
+<style>
+    .page-header {
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    /* FIXED: CSS cho validation */
+    .is-invalid {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+
+    .validation-error {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .validation-success {
+        color: #28a745;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .form-label {
+        margin-bottom: 0.5rem;
+    }
+
+    .alert ul {
+        padding-left: 1rem;
+    }
+
+    .alert li {
+        margin-bottom: 0.5rem;
+    }
+</style>
+

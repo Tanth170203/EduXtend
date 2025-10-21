@@ -1,0 +1,201 @@
+@page
+@using BusinessObject.DTOs.MovementRecord
+@model WebFE.Pages.Student.MyScore.IndexModel
+@{
+    ViewData["Title"] = "My Movement Score";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 class="h3 mb-1">Điểm phong trào của tôi</h1>
+        <p class="text-muted">Xem chi tiết điểm phong trào của bạn theo từng học kỳ</p>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (Model.Summary != null)
+    {
+        <!-- Summary Stats -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Điểm trung bình</p>
+                                <h2 class="mb-0 text-primary">@Model.Summary.AverageScore.ToString("F1")</h2>
+                            </div>
+                            <i data-lucide="trending-up" style="width: 40px; height: 40px; color: #3b82f6;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Điểm cao nhất</p>
+                                <h2 class="mb-0 text-success">@Model.Summary.HighestScore.ToString("F1")</h2>
+                            </div>
+                            <i data-lucide="arrow-up-circle" style="width: 40px; height: 40px; color: #10b981;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Điểm thấp nhất</p>
+                                <h2 class="mb-0 text-warning">@Model.Summary.LowestScore.ToString("F1")</h2>
+                            </div>
+                            <i data-lucide="arrow-down-circle" style="width: 40px; height: 40px; color: #f59e0b;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="text-muted mb-1">Tổng học kỳ</p>
+                                <h2 class="mb-0 text-info">@Model.Summary.TotalSemesters</h2>
+                            </div>
+                            <i data-lucide="calendar" style="width: 40px; height: 40px; color: #06b6d4;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Records by Semester -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Điểm theo học kỳ</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.Summary.Records.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Học kỳ</th>
+                                    <th>Tổng điểm</th>
+                                    <th>Số tiêu chí đạt được</th>
+                                    <th>Đánh giá</th>
+                                    <th>Ngày cập nhật</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var record in Model.Summary.Records)
+                                {
+                                    var scoreClass = record.TotalScore >= 80 ? "success" : record.TotalScore >= 60 ? "warning" : "danger";
+                                    var evaluation = record.TotalScore >= 80 ? "Xuất sắc" : record.TotalScore >= 60 ? "Khá" : "Cần cố gắng";
+                                    
+                                    <tr>
+                                        <td><strong>@record.SemesterName</strong></td>
+                                        <td>
+                                            <span class="fs-5 fw-bold text-@scoreClass">@record.TotalScore.ToString("F1")</span>
+                                            <small class="text-muted">/ 140</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">@record.DetailCount tiêu chí</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-@scoreClass">@evaluation</span>
+                                        </td>
+                                        <td>@(record.LastUpdated?.ToString("dd/MM/yyyy") ?? record.CreatedAt.ToString("dd/MM/yyyy"))</td>
+                                        <td>
+                                            <a href="/Student/MyScore/Detail?id=@record.Id" class="btn btn-sm btn-primary">
+                                                <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                                Xem chi tiết
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Progress Chart -->
+                    <div class="mt-4">
+                        <h6>Biểu đồ tiến độ</h6>
+                        <div class="row">
+                            @foreach (var record in Model.Summary.Records.OrderBy(r => r.SemesterId))
+                            {
+                                var percentage = (record.TotalScore / 140.0) * 100;
+                                var progressClass = percentage >= 80 ? "success" : percentage >= 60 ? "warning" : "danger";
+                                
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-subtitle mb-3 text-muted">@record.SemesterName</h6>
+                                            <div class="progress" style="height: 25px;">
+                                                <div class="progress-bar bg-@progressClass" role="progressbar" 
+                                                     style="width: @percentage%" 
+                                                     aria-valuenow="@percentage" aria-valuemin="0" aria-valuemax="100">
+                                                    <strong>@record.TotalScore.ToString("F1")</strong>
+                                                </div>
+                                            </div>
+                                            <small class="text-muted mt-1 d-block">@percentage.ToString("F1")% hoàn thành</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i data-lucide="inbox" style="width: 64px; height: 64px; color: #9ca3af;"></i>
+                        <p class="text-muted mt-3">Chưa có dữ liệu điểm phong trào</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <div class="d-flex align-items-center">
+                <i data-lucide="info" style="width: 24px; height: 24px; margin-right: 1rem;"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">Chưa có điểm phong trào</h5>
+                    <p class="mb-0">Bạn chưa có điểm phong trào nào được ghi nhận. Hãy tham gia các hoạt động và nộp minh chứng để tích lũy điểm!</p>
+                    <a href="/Student/MyEvidences" class="btn btn-primary btn-sm mt-3">
+                        <i data-lucide="file-plus" style="width: 14px; height: 14px;"></i>
+                        Nộp minh chứng ngay
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+}
+
+

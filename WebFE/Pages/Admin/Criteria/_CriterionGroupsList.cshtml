@@ -49,16 +49,9 @@
                                 <a href="/Admin/Criteria/Detail?groupId=@group.Id" class="btn btn-sm btn-outline-info me-2" title="View Details">
                                     <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
                                 </a>
-                                <button type="button" class="btn btn-sm btn-outline-primary btn-edit me-2" 
-                                        data-bs-toggle="modal" data-bs-target="#editGroupModal"
-                                        data-group-id="@group.Id"
-                                        data-group-name="@group.Name"
-                                        data-group-description="@group.Description"
-                                        data-group-max-score="@group.MaxScore"
-                                        data-group-target-type="@group.TargetType"
-                                        title="Edit">
+                                <a href="/Admin/Criteria/EditGroup?id=@group.Id" class="btn btn-sm btn-outline-primary me-2" title="Edit">
                                     <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
-                                </button>
+                                </a>
                                 <button type="button" class="btn btn-sm btn-outline-danger btn-delete" 
                                         data-bs-toggle="modal" data-bs-target="#deleteGroupModal"
                                         data-group-id="@group.Id"
@@ -80,10 +73,10 @@
                 </div>
                 <h4 class="empty-state-title">Chưa có nhóm tiêu chí nào</h4>
                 <p class="empty-state-description">Bắt đầu bằng cách thêm nhóm tiêu chí đầu tiên vào hệ thống</p>
-                <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                <a href="/Admin/Criteria/AddGroup" class="btn btn-primary mt-3">
                     <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
                     Thêm nhóm tiêu chí đầu tiên
-                </button>
+                </a>
             </div>
         }
     </div>

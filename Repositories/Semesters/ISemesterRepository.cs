@@ -16,6 +16,7 @@ namespace Repositories.Semesters
         Task<bool> DeleteAsync(int id);
         Task<bool> ExistsAsync(int id);
         Task<Semester?> GetActiveAsync();
+        Task<Semester?> GetCurrentSemesterAsync();
         Task<bool> HasRelatedDataAsync(int id);
     }
 }
