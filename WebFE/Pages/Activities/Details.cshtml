@@ -303,7 +303,7 @@
                     {
                         @if (activity.IsPublic)
                         {
-                            <button class="btn btn-success w-100 mb-2" onclick="alert('Registration feature coming soon!')">
+                            <button class="btn btn-success w-100 mb-2" id="registerBtn" onclick="registerActivity(@activity.Id)">
                                 <i class="bi bi-check-circle"></i> Register Now
                             </button>
                         }
@@ -320,12 +320,18 @@
                             }
                         }
                     }
+                    else if (activity.IsRegistered && activity.HasAttended)
+                    {
+                        <button class="btn btn-success w-100 mb-2" id="registeredBtn" disabled>
+                            <i class="bi bi-patch-check-fill"></i> Your attendance has been taken
+                        </button>
+                    }
                     else if (activity.IsRegistered)
                     {
-                        <button class="btn btn-primary w-100 mb-2" disabled>
-                            <i class="bi bi-check-circle-fill"></i> Already Registered
+                        <button class="btn btn-primary w-100 mb-2" id="registeredBtn" disabled>
+                            <i class="bi bi-check-circle-fill"></i> Activity registered
                         </button>
-                        <button class="btn btn-outline-danger w-100 btn-sm" onclick="alert('Unregister feature coming soon!')">
+                        <button class="btn btn-outline-danger w-100 btn-sm" onclick="unregisterActivity(@activity.Id)">
                             <i class="bi bi-x-circle"></i> Unregister
                         </button>
                     }
@@ -391,4 +397,62 @@
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 </style>
+
+<script>
+    async function registerActivity(activityId) {
+        try {
+            const baseUrl = '@Model.ApiBaseUrl';
+            const url = (baseUrl ? baseUrl : '') + `/api/activity/${activityId}/register`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                const msg = data?.message || 'Registration failed';
+                alert(msg);
+                return;
+            }
+
+            const btn = document.getElementById('registerBtn');
+            if (btn) {
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-primary');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Activity registered';
+            }
+        } catch (e) {
+            alert('Registration failed. Please try again.');
+        }
+    }
+
+    async function unregisterActivity(activityId) {
+        try {
+            const baseUrl = '@Model.ApiBaseUrl';
+            const url = (baseUrl ? baseUrl : '') + `/api/activity/${activityId}/unregister`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                alert(data?.message || 'Unregister failed');
+                return;
+            }
+            // Reload to refresh state
+            location.reload();
+        } catch (e) {
+            alert('Unregister failed. Please try again.');
+        }
+    }
+</script>
 
