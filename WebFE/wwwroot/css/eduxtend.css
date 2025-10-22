@@ -76,6 +76,20 @@ body {
   padding: 0;
 }
 
+/* Sticky footer layout */
+html, body {
+  height: 100%;
+}
+
+body > main {
+  min-height: calc(100% - 70px - 220px); /* header height + footer approx */
+  display: block;
+}
+
+footer {
+  margin-top: 0 !important;
+}
+
 /* Typography */
 h1 {
   font-size: 2.5rem;
