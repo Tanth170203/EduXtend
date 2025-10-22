@@ -1,0 +1,257 @@
+@page
+@model WebFE.Pages.Student.ProfileModel
+@{
+    ViewData["Title"] = "Profile";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4">Personal Profile</h2>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success">@Model.SuccessMessage</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3 position-relative d-inline-block">
+                        <img id="profileAvatar" src="@(!string.IsNullOrWhiteSpace(Model.Form.AvatarUrl) ? Model.Form.AvatarUrl : "/images/default-avatar.png")" alt="Avatar" class="rounded-circle" style="width: 110px; height: 110px; object-fit: cover;" />
+                        <button type="button" class="icon-btn position-absolute" title="Edit avatar" onclick="enterEdit('avatar')" style="right: -6px; bottom: -6px; background: #fff; border-radius: 50%; padding: 6px; box-shadow: 0 0 0 1px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.1);">
+                            <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    </div>
+                    <div id="avatarEditRow" class="mb-3 d-none">
+                        <div class="input-group input-group-sm">
+                            <input id="profileAvatarInput" class="form-control" placeholder="Avatar URL" value="@Model.Form.AvatarUrl" />
+                            <button class="icon-btn" type="button" onclick="saveInline('avatar')" title="Save" style="padding: 0 8px;">
+                                <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                            </button>
+                            <button class="icon-btn" type="button" onclick="cancelEdit('avatar')" title="Cancel" style="padding: 0 8px;">
+                                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                        <div><span id="avatarError" class="text-danger small d-none">Invalid URL.</span></div>
+                    </div>
+                    <h5 class="mb-1 d-inline-flex align-items-center gap-2">
+                        <span id="profileNameView">@Model.Form.FullName</span>
+                        <input id="profileNameInput" class="form-control form-control-sm d-none" value="@Model.Form.FullName" style="width: auto; display: inline-block;" />
+                        <button type="button" class="icon-btn" title="Edit name" onclick="enterEdit('name')">
+                            <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        <button type="button" id="saveNameBtn" class="icon-btn d-none" title="Save" onclick="saveInline('name')">
+                            <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        </button>
+                        <button type="button" id="cancelNameBtn" class="icon-btn d-none" title="Cancel" onclick="cancelEdit('name')">
+                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </h5>
+                    <div class="text-muted">@Model.Profile?.Email</div>
+                    <hr />
+                    <div class="text-start small">
+                        <div class="mb-1"><strong>Student ID:</strong> @Model.StudentId</div>
+                        <div class="mb-1"><strong>Major:</strong> @Model.MajorName</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h5 class="mb-3">General Information</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted" style="width: 220px;">Student ID</td><td style="width: 20px;">:</td>
+                                    <td>@Model.StudentId</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Major</td><td>:</td>
+                                    <td>@Model.MajorName</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Date of Birth</td><td>:</td>
+                                    <td>@(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Gender</td><td>:</td>
+                                    <td>@(Model.Gender ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Cohort</td><td>:</td>
+                                    <td>@(Model.Cohort ?? "-")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Email</td><td>:</td>
+                                    <td>@Model.Profile?.Email</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Phone number</td><td>:</td>
+                                    <td>
+                                        <span id="profilePhoneView">@(Model.Form.PhoneNumber ?? "-")</span>
+                                        <input id="profilePhoneInput" class="form-control form-control-sm d-none" value="@Model.Form.PhoneNumber" style="width: 180px; display: inline-block;" />
+                                        <span id="phoneError" class="text-danger small d-none ms-2">Phone number must contain digits only.</span>
+                                        <button type="button" class="icon-btn ms-2" title="Edit phone" onclick="enterEdit('phone')">
+                                            <i data-lucide="pencil" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                        <button type="button" id="savePhoneBtn" class="icon-btn d-none" title="Save" onclick="saveInline('phone')">
+                                            <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                        <button type="button" id="cancelPhoneBtn" class="icon-btn d-none" title="Cancel" onclick="cancelEdit('phone')">
+                                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h5 class="mt-4">Other Information</h5>
+                    <div class="mb-3">
+                        <div class="text-muted mb-2">Roles:</div>
+                        @if (Model.Roles?.Any() == true)
+                        {
+                            foreach (var r in Model.Roles)
+                            {
+                                <span class="badge bg-primary me-1">@r</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Small style for icon-only buttons -->
+<style>
+    .icon-btn { background: transparent; border: none; padding: 0; line-height: 1; color: inherit; }
+    .icon-btn:focus { outline: none; box-shadow: none; }
+    .icon-btn:hover { opacity: 0.8; }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ensure header avatar/name sync on page load
+            if (typeof updateAuthUI === 'function') {
+                updateAuthUI();
+            }
+        });
+
+        function setVisibility(idsToShow = [], idsToHide = []) {
+            idsToShow.forEach(id => document.getElementById(id)?.classList.remove('d-none'));
+            idsToHide.forEach(id => document.getElementById(id)?.classList.add('d-none'));
+            if (window.lucide && lucide.createIcons) lucide.createIcons();
+        }
+
+        window.enterEdit = function(field) {
+            if (field === 'name') {
+                setVisibility(['profileNameInput','saveNameBtn','cancelNameBtn'], ['profileNameView']);
+                document.getElementById('profileNameInput').focus();
+            }
+            if (field === 'phone') {
+                setVisibility(['profilePhoneInput','savePhoneBtn','cancelPhoneBtn'], ['profilePhoneView']);
+                document.getElementById('profilePhoneInput').focus();
+            }
+            if (field === 'avatar') {
+                setVisibility(['avatarEditRow'], []);
+                document.getElementById('profileAvatarInput').focus();
+            }
+        }
+
+        window.cancelEdit = function(field) {
+            if (field === 'name') {
+                const view = document.getElementById('profileNameView');
+                document.getElementById('profileNameInput').value = view.textContent;
+                setVisibility(['profileNameView'], ['profileNameInput','saveNameBtn','cancelNameBtn']);
+            }
+            if (field === 'phone') {
+                const view = document.getElementById('profilePhoneView');
+                document.getElementById('profilePhoneInput').value = view.textContent === '-' ? '' : view.textContent;
+                setVisibility(['profilePhoneView'], ['profilePhoneInput','savePhoneBtn','cancelPhoneBtn']);
+                document.getElementById('phoneError').classList.add('d-none');
+            }
+            if (field === 'avatar') {
+                setVisibility([], ['avatarEditRow']);
+            }
+        }
+
+        function isValidUrl(str) {
+            try {
+                const u = new URL(str);
+                return u.protocol === 'http:' || u.protocol === 'https:';
+            } catch { return false; }
+        }
+
+        window.saveInline = async function(field) {
+            try {
+                // client-side phone validation
+                const phoneVal = document.getElementById('profilePhoneInput').value?.trim() || '';
+                if (field === 'phone' && /[^\d]/.test(phoneVal)) {
+                    document.getElementById('phoneError').classList.remove('d-none');
+                    return;
+                } else {
+                    document.getElementById('phoneError').classList.add('d-none');
+                }
+
+                // client-side avatar URL validation
+                const avatarVal = document.getElementById('profileAvatarInput')?.value?.trim() || '';
+                if (field === 'avatar') {
+                    if (avatarVal && !isValidUrl(avatarVal)) {
+                        document.getElementById('avatarError').classList.remove('d-none');
+                        return;
+                    }
+                    document.getElementById('avatarError').classList.add('d-none');
+                }
+
+                const body = {
+                    fullName: document.getElementById('profileNameInput').value?.trim() || '',
+                    phoneNumber: phoneVal || null,
+                    avatarUrl: avatarVal || null
+                };
+
+                const res = await fetch(`${API_BASE_URL}/api/profile`, {
+                    method: 'PUT',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error('Failed to update profile');
+                const updated = await res.json();
+
+                // Update UI
+                document.getElementById('profileNameView').textContent = updated.fullName || '';
+                document.getElementById('profileNameInput').value = updated.fullName || '';
+                document.getElementById('profilePhoneView').textContent = updated.phoneNumber || '-';
+                document.getElementById('profilePhoneInput').value = updated.phoneNumber || '';
+                if (updated.avatarUrl) {
+                    document.getElementById('profileAvatar').src = updated.avatarUrl;
+                    const avIn = document.getElementById('profileAvatarInput');
+                    if (avIn) avIn.value = updated.avatarUrl;
+                }
+
+                if (typeof updateAuthUI === 'function') updateAuthUI();
+
+                cancelEdit(field);
+            } catch (e) {
+                console.error(e);
+                alert('Failed to update profile');
+            }
+        }
+    </script>
+}
+
+

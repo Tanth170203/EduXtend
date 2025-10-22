@@ -74,6 +74,7 @@ namespace WebAPI
             builder.Services.AddScoped<IClubMemberScoringService, ClubMemberScoringService>();
             builder.Services.AddScoped<Services.Students.IStudentService, Services.Students.StudentService>();
             builder.Services.AddScoped<Services.Users.IUserManagementService, Services.Users.UserManagementService>();
+            builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
             builder.Services.AddScoped<IClubService, ClubService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
 
