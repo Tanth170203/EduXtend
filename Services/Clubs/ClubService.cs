@@ -28,6 +28,7 @@ namespace Services.Clubs
                     LogoUrl = c.LogoUrl,
                     CategoryName = c.Category.Name,
                     IsActive = c.IsActive,
+                    IsRecruitmentOpen = c.IsRecruitmentOpen,
                     FoundedDate = c.FoundedDate,
                     Description = c.Description,
                     MemberCount = await _repo.GetMemberCountAsync(c.Id),
@@ -53,6 +54,7 @@ namespace Services.Clubs
                     LogoUrl = c.LogoUrl,
                     CategoryName = c.Category.Name,
                     IsActive = c.IsActive,
+                    IsRecruitmentOpen = c.IsRecruitmentOpen,
                     FoundedDate = c.FoundedDate,
                     Description = c.Description,
                     MemberCount = await _repo.GetMemberCountAsync(c.Id),
@@ -88,6 +90,7 @@ namespace Services.Clubs
                 LogoUrl = c.LogoUrl,
                 BannerUrl = c.BannerUrl,
                 IsActive = c.IsActive,
+                IsRecruitmentOpen = c.IsRecruitmentOpen,
                 FoundedDate = c.FoundedDate,
                 CategoryName = c.Category.Name,
                 MemberCount = c.Members.Count(m => m.IsActive),
@@ -95,6 +98,36 @@ namespace Services.Clubs
                 DepartmentCount = c.Departments.Count,
                 AwardCount = c.Awards.Count,
                 RoleDistribution = roleDistribution
+            };
+        }
+
+        public async Task<ClubDetailDto?> GetManagedClubByUserIdAsync(int userId)
+        {
+            var club = await _repo.GetManagedClubByUserIdAsync(userId);
+            if (club == null) return null;
+
+            // Get detailed info
+            return await GetClubByIdAsync(club.Id);
+        }
+
+        public async Task<bool> ToggleRecruitmentAsync(int clubId, bool isOpen)
+        {
+            return await _repo.ToggleRecruitmentAsync(clubId, isOpen);
+        }
+
+        public async Task<RecruitmentStatusDto?> GetRecruitmentStatusAsync(int clubId)
+        {
+            var club = await _repo.GetByIdAsync(clubId);
+            if (club == null) return null;
+
+            var pendingCount = await _repo.GetPendingRequestCountAsync(clubId);
+
+            return new RecruitmentStatusDto
+            {
+                ClubId = club.Id,
+                ClubName = club.Name,
+                IsRecruitmentOpen = club.IsRecruitmentOpen,
+                PendingRequestCount = pendingCount
             };
         }
     }

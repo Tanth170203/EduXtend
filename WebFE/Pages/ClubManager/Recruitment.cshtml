@@ -1,0 +1,175 @@
+@page
+@model WebFE.Pages.ClubManager.RecruitmentModel
+@{
+    ViewData["Title"] = "Recruitment Management";
+    ViewData["Breadcrumb"] = "Recruitment";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">Recruitment Management</h1>
+    <p class="page-description">Quản lý tuyển thành viên mới</p>
+</div>
+
+<!-- Recruitment Status Card -->
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        <h2 class="content-card-title">
+            <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+            Recruitment Status
+        </h2>
+    </div>
+    <div class="content-card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="stat-card-icon @(Model.IsRecruitmentOpen ? "green" : "orange")" style="width: 60px; height: 60px;">
+                        <i data-lucide="@(Model.IsRecruitmentOpen ? "door-open" : "door-closed")" style="width: 30px; height: 30px;"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-1">@(Model.IsRecruitmentOpen ? "Recruitment is OPEN" : "Recruitment is CLOSED")</h4>
+                        <p class="text-muted mb-0">@(Model.IsRecruitmentOpen ? "Accepting new member applications" : "Not accepting applications")</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mb-3">
+                    <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                    @if (Model.IsRecruitmentOpen)
+                    {
+                        <span><strong>Students can now apply to join your club.</strong> They can select a department and upload their CV.</span>
+                    }
+                    else
+                    {
+                        <span><strong>Students cannot apply at this time.</strong> Open recruitment to start accepting new members.</span>
+                    }
+                </div>
+
+                <button id="toggleRecruitmentBtn" class="btn @(Model.IsRecruitmentOpen ? "btn-warning" : "btn-success") btn-lg">
+                    <i data-lucide="@(Model.IsRecruitmentOpen ? "door-closed" : "door-open")" style="width: 20px; height: 20px;"></i>
+                    @(Model.IsRecruitmentOpen ? "Close Recruitment" : "Open Recruitment")
+                </button>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                            Pending Applications
+                        </h5>
+                        <div class="d-flex align-items-center justify-content-between mt-3">
+                            <div>
+                                <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary);">@Model.PendingRequestCount</div>
+                                <p class="text-muted mb-0">Applications waiting for review</p>
+                            </div>
+                            <div>
+                                <a href="/ClubManager/Requests" class="btn btn-primary">
+                                    <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                                    Review Applications
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-1">Total Applications (All Time)</p>
+                        <h3 class="mb-0">--</h3>
+                    </div>
+                    <i data-lucide="file-text" style="width: 24px; height: 24px; color: #6b7280;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-1">Approved This Month</p>
+                        <h3 class="mb-0 text-success">--</h3>
+                    </div>
+                    <i data-lucide="check-circle" style="width: 24px; height: 24px; color: #10b981;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <p class="text-muted mb-1">Rejection Rate</p>
+                        <h3 class="mb-0 text-danger">--</h3>
+                    </div>
+                    <i data-lucide="x-circle" style="width: 24px; height: 24px; color: #ef4444;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        const clubId = @Model.ClubId;
+        const toggleBtn = document.getElementById('toggleRecruitmentBtn');
+
+        toggleBtn.addEventListener('click', async () => {
+            const currentStatus = @Model.IsRecruitmentOpen.ToString().ToLower();
+            const newStatus = !currentStatus;
+
+            // Confirm action
+            const action = newStatus ? 'open' : 'close';
+            const confirmMsg = newStatus 
+                ? 'Students will be able to apply to join your club. Are you sure?' 
+                : 'Students will not be able to apply. Are you sure?';
+
+            if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} recruitment?\n\n${confirmMsg}`)) {
+                return;
+            }
+
+            toggleBtn.disabled = true;
+            toggleBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+
+            try {
+                const response = await fetch(`https://localhost:5001/api/club/${clubId}/toggle-recruitment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ isOpen: newStatus })
+                });
+
+                if (response.ok) {
+                    // Reload page to reflect changes
+                    window.location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.message || 'Failed to update recruitment status'));
+                    toggleBtn.disabled = false;
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error toggling recruitment:', error);
+                alert('An error occurred. Please try again.');
+                toggleBtn.disabled = false;
+                lucide.createIcons();
+            }
+        });
+    </script>
+}
+

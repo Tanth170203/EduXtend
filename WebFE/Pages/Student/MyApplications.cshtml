@@ -1,0 +1,163 @@
+@page
+@model WebFE.Pages.Student.MyApplicationsModel
+@{
+    ViewData["Title"] = "My Applications";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5" style="margin-top: 80px;">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <h1 class="page-title">
+            <i data-lucide="file-text" style="width: 32px; height: 32px;"></i>
+            My Club Applications
+        </h1>
+        <p class="page-description text-muted">Track your club join requests and interview schedules</p>
+    </div>
+
+    @if (Model.Applications.Count == 0)
+    {
+        <div class="card shadow-sm border-0 text-center py-5">
+            <div class="card-body">
+                <i data-lucide="inbox" style="width: 64px; height: 64px; color: var(--muted); margin-bottom: 1rem;"></i>
+                <h5 class="text-muted mb-3">No Applications Yet</h5>
+                <p class="text-muted mb-4">You haven't applied to any clubs yet. Browse clubs to get started!</p>
+                <a href="/Clubs/Active" class="btn btn-primary">
+                    <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                    Browse Clubs
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var app in Model.Applications)
+            {
+                <div class="col-lg-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-3">
+                                @if (!string.IsNullOrEmpty(app.ClubLogoUrl))
+                                {
+                                    <img src="@app.ClubLogoUrl" alt="Club Logo" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
+                                        @app.ClubName.Substring(0, 1)
+                                    </div>
+                                }
+                                <div>
+                                    <h5 class="mb-0">@app.ClubName</h5>
+                                    <small class="text-muted">Applied @app.CreatedAt.ToString("dd/MM/yyyy")</small>
+                                </div>
+                            </div>
+                            @{
+                                var statusBadge = app.Status == "Pending" ? "warning" : (app.Status == "Approved" ? "success" : "danger");
+                            }
+                            <span class="badge bg-@statusBadge">@app.Status</span>
+                        </div>
+                        <div class="card-body">
+                            @if (!string.IsNullOrEmpty(app.DepartmentName))
+                            {
+                                <div class="mb-2">
+                                    <small class="text-muted">Department:</small>
+                                    <div><strong>@app.DepartmentName</strong></div>
+                                </div>
+                            }
+                            
+                            @if (!string.IsNullOrEmpty(app.Motivation))
+                            {
+                                <div class="mb-3">
+                                    <small class="text-muted">Motivation:</small>
+                                    <p class="mb-0">@app.Motivation</p>
+                                </div>
+                            }
+
+                            <!-- Interview Section (loaded via JavaScript) -->
+                            <div id="interview-@app.Id" class="interview-section"></div>
+
+                            <div class="d-flex gap-2 mt-3">
+                                <a href="/Clubs/Apply/@app.ClubId" class="btn btn-outline-primary btn-sm">
+                                    <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                    View Details
+                                </a>
+                                @if (!string.IsNullOrEmpty(app.CvUrl))
+                                {
+                                    <a href="https://localhost:5001/api/fileupload/cv/@System.IO.Path.GetFileName(app.CvUrl)" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                        <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
+                                        View CV
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        const applications = @Html.Raw(Json.Serialize(Model.Applications.Select(a => new { a.Id, a.ClubId })));
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            for (const app of applications) {
+                await loadInterviewForApplication(app.Id);
+            }
+        });
+
+        async function loadInterviewForApplication(requestId) {
+            try {
+                const response = await fetch('https://localhost:5001/api/interview/request/' + requestId, {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const interview = await response.json();
+                    displayInterview(requestId, interview);
+                }
+            } catch (error) {
+                console.error('Error loading interview for request ' + requestId, error);
+            }
+        }
+
+        function displayInterview(requestId, interview) {
+            const container = document.getElementById('interview-' + requestId);
+            const scheduledDate = new Date(interview.scheduledDate).toLocaleString('vi-VN');
+            const statusClass = interview.status === 'Completed' ? 'success' : (interview.status === 'Scheduled' ? 'primary' : 'secondary');
+            const hasEvaluation = interview.evaluation && interview.evaluation.trim() !== '';
+
+            let html = '<div class="alert alert-' + statusClass + ' mt-3 mb-0">';
+            html += '<div class="d-flex align-items-center gap-2 mb-2">';
+            html += '<i data-lucide="calendar" style="width: 18px; height: 18px;"></i>';
+            html += '<strong>Interview Scheduled</strong>';
+            html += '</div>';
+            html += '<div class="small">';
+            html += '<div><i data-lucide="clock" style="width: 14px; height: 14px;"></i> <strong>Date:</strong> ' + scheduledDate + '</div>';
+            html += '<div><i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> <strong>Location:</strong> ' + interview.location + '</div>';
+            
+            if (interview.notes) {
+                html += '<div class="mt-2"><strong>Notes:</strong> ' + interview.notes + '</div>';
+            }
+            
+            if (hasEvaluation) {
+                html += '<div class="mt-2 pt-2 border-top">';
+                html += '<strong>Evaluation:</strong>';
+                html += '<div class="mt-1">' + interview.evaluation + '</div>';
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            html += '</div>';
+
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+    </script>
+}
+

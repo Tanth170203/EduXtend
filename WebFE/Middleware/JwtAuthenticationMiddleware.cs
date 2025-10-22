@@ -104,7 +104,7 @@ namespace WebFE.Middleware
 
         private bool IsProtectedPage(string path)
         {
-            var protectedPrefixes = new[] { "/admin/", "/club/", "/student/" };
+            var protectedPrefixes = new[] { "/admin/", "/club/", "/student/", "/clubmanager/" };
             return protectedPrefixes.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -114,6 +114,14 @@ namespace WebFE.Middleware
             if (path.StartsWith("/admin/", StringComparison.OrdinalIgnoreCase))
             {
                 return userRoles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
+            }
+
+            // ClubManager pages - only ClubManager and Admin
+            if (path.StartsWith("/clubmanager/", StringComparison.OrdinalIgnoreCase))
+            {
+                return userRoles.Any(r => 
+                    r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
+                    r.Equals("ClubManager", StringComparison.OrdinalIgnoreCase));
             }
 
             // Club pages - Admin, ClubManager, ClubMember

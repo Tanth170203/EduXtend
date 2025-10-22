@@ -1,0 +1,332 @@
+@page "{requestId:int}"
+@model WebFE.Pages.ClubManager.InterviewDetailsModel
+@{
+    ViewData["Title"] = "Interview Details";
+    ViewData["Breadcrumb"] = "Interview Details";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="page-title">Interview Details</h1>
+                <p class="page-description">Review interview and submit evaluation</p>
+            </div>
+            <a href="/ClubManager/Requests" class="btn btn-outline-secondary">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                Back to Requests
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Interview Information -->
+        <div class="col-lg-8">
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h2 class="content-card-title">
+                        <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+                        Interview Schedule
+                    </h2>
+                </div>
+                <div class="content-card-body">
+                    <div id="interviewInfo">
+                        <div class="text-center py-5">
+                            <span class="spinner-border text-primary"></span>
+                            <p class="mt-2 text-muted">Loading interview details...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluation Form -->
+            <div class="content-card" id="evaluationCard" style="display: none;">
+                <div class="content-card-header">
+                    <h2 class="content-card-title">
+                        <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
+                        Interview Evaluation
+                    </h2>
+                </div>
+                <div class="content-card-body">
+                    <form id="evaluationForm">
+                        <div class="mb-4">
+                            <label for="evaluation" class="form-label fw-semibold">
+                                Evaluation & Notes *
+                            </label>
+                            <textarea class="form-control" id="evaluation" rows="8" maxlength="2000" placeholder="Write your evaluation of the interview..." required></textarea>
+                            <div class="form-text">
+                                <span id="evalCharCount">0</span>/2000 characters
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                            After submitting your evaluation, you can approve or reject the application.
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submitEvalBtn">
+                            <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                            Submit Evaluation
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Decision Buttons -->
+            <div class="content-card mt-4" id="decisionCard" style="display: none;">
+                <div class="content-card-header">
+                    <h2 class="content-card-title">
+                        <i data-lucide="check-square" style="width: 20px; height: 20px;"></i>
+                        Final Decision
+                    </h2>
+                </div>
+                <div class="content-card-body">
+                    <p class="text-muted mb-3">Based on your evaluation, make a final decision:</p>
+                    <div class="d-flex gap-3">
+                        <button class="btn btn-success btn-lg" onclick="processRequest('Approve')">
+                            <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                            Approve Application
+                        </button>
+                        <button class="btn btn-danger btn-lg" onclick="processRequest('Reject')">
+                            <i data-lucide="x-circle" style="width: 20px; height: 20px;"></i>
+                            Reject Application
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applicant Information -->
+        <div class="col-lg-4">
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h2 class="content-card-title">
+                        <i data-lucide="user" style="width: 20px; height: 20px;"></i>
+                        Applicant Information
+                    </h2>
+                </div>
+                <div class="content-card-body">
+                    <div id="applicantInfo">
+                        <div class="text-center py-3">
+                            <span class="spinner-border spinner-border-sm text-primary"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        const requestId = @Model.RequestId;
+        let interviewId = null;
+        let hasEvaluation = false;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadInterviewData();
+        });
+
+        async function loadInterviewData() {
+            try {
+                // Get interview by join request ID
+                const response = await fetch(`https://localhost:5001/api/interview/request/${requestId}`, {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const interview = await response.json();
+                    interviewId = interview.id;
+                    hasEvaluation = interview.evaluation != null && interview.evaluation.trim() !== '';
+                    displayInterviewInfo(interview);
+                    displayApplicantInfo(interview);
+
+                    // Show evaluation form if no evaluation yet
+                    if (!hasEvaluation) {
+                        document.getElementById('evaluationCard').style.display = 'block';
+                    } else {
+                        // Show decision buttons if evaluation exists
+                        document.getElementById('decisionCard').style.display = 'block';
+                    }
+
+                    lucide.createIcons();
+                } else if (response.status === 404) {
+                    document.getElementById('interviewInfo').innerHTML = `
+                        <div class="alert alert-warning">
+                            <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
+                            <strong>No interview scheduled yet.</strong> Please go back and schedule an interview first.
+                        </div>
+                    `;
+                    lucide.createIcons();
+                } else {
+                    throw new Error('Failed to load interview');
+                }
+            } catch (error) {
+                console.error('Error loading interview:', error);
+                document.getElementById('interviewInfo').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i data-lucide="x-circle" style="width: 20px; height: 20px;"></i>
+                        Failed to load interview details. Please try again.
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+        }
+
+        function displayInterviewInfo(interview) {
+            const scheduledDate = new Date(interview.scheduledDate).toLocaleString('vi-VN');
+            const status = interview.status;
+            const statusClass = status === 'Completed' ? 'success' : 'warning';
+
+            let html = `
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Scheduled Date & Time</label>
+                        <p class="fw-semibold"><i data-lucide="calendar" style="width: 16px; height: 16px;"></i> ${scheduledDate}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Location</label>
+                        <p class="fw-semibold"><i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> ${interview.location}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Status</label>
+                        <p><span class="badge bg-${statusClass}">${status}</span></p>
+                    </div>
+            `;
+
+            if (interview.notes) {
+                html += `
+                    <div class="col-12">
+                        <label class="form-label text-muted small">Notes</label>
+                        <p class="border p-3 rounded bg-light">${interview.notes}</p>
+                    </div>
+                `;
+            }
+
+            if (hasEvaluation) {
+                html += `
+                    <div class="col-12">
+                        <label class="form-label text-muted small">Evaluation</label>
+                        <p class="border p-3 rounded bg-light">${interview.evaluation}</p>
+                    </div>
+                `;
+            }
+
+            html += `</div>`;
+            document.getElementById('interviewInfo').innerHTML = html;
+        }
+
+        function displayApplicantInfo(interview) {
+            const html = `
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Name</label>
+                    <p class="fw-semibold">${interview.userName}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Email</label>
+                    <p>${interview.userEmail}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small">Club</label>
+                    <p class="fw-semibold">${interview.clubName}</p>
+                </div>
+                <a href="/ClubManager/Requests" class="btn btn-sm btn-outline-primary w-100">
+                    <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
+                    View Full Application
+                </a>
+            `;
+            document.getElementById('applicantInfo').innerHTML = html;
+        }
+
+        // Character counter
+        const evaluationInput = document.getElementById('evaluation');
+        const evalCharCount = document.getElementById('evalCharCount');
+        if (evaluationInput) {
+            evaluationInput.addEventListener('input', () => {
+                evalCharCount.textContent = evaluationInput.value.length;
+            });
+        }
+
+        // Submit evaluation
+        document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const evaluation = evaluationInput.value.trim();
+            if (!evaluation) {
+                alert('Please write an evaluation');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitEvalBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+            try {
+                const response = await fetch(`https://localhost:5001/api/interview/${interviewId}/evaluation`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ evaluation })
+                });
+
+                if (response.ok) {
+                    alert('Evaluation submitted successfully!');
+                    window.location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.message || 'Failed to submit evaluation'));
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i data-lucide="save" style="width: 16px; height: 16px;"></i> Submit Evaluation';
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="save" style="width: 16px; height: 16px;"></i> Submit Evaluation';
+                lucide.createIcons();
+            }
+        });
+
+        // Process request (Approve/Reject)
+        window.processRequest = async function(action) {
+            const confirmMsg = action === 'Approve'
+                ? 'Approve this application? The student will be added to your club.'
+                : 'Reject this application? This action cannot be undone.';
+
+            if (!confirm(confirmMsg)) return;
+
+            const decisionCard = document.getElementById('decisionCard');
+            decisionCard.innerHTML = '<div class="text-center py-3"><span class="spinner-border text-primary"></span><p class="mt-2">Processing...</p></div>';
+
+            try {
+                const response = await fetch(`https://localhost:5001/api/joinrequest/${requestId}/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ action })
+                });
+
+                if (response.ok) {
+                    alert(`Application ${action.toLowerCase()}d successfully!`);
+                    window.location.href = '/ClubManager/Requests';
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.message || 'Failed to process request'));
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                window.location.reload();
+            }
+        };
+
+        lucide.createIcons();
+    </script>
+}
+

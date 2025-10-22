@@ -13,6 +13,8 @@ using Repositories.Students;
 using Repositories.Evidences;
 using Repositories.MovementRecords;
 using Repositories.Users;
+using Repositories.JoinRequests;
+using Repositories.Interviews;
 using Services.Activities;
 using Services.Clubs;
 using Services.GGLogin;
@@ -22,6 +24,8 @@ using Services.TokenCleanup;
 using Services.Evidences;
 using Services.MovementRecords;
 using Services.UserImport;
+using Services.JoinRequests;
+using Services.Interviews;
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
@@ -60,6 +64,8 @@ namespace WebAPI
             
             builder.Services.AddScoped<IClubRepository, ClubRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+            builder.Services.AddScoped<IJoinRequestRepository, JoinRequestRepository>();
+            builder.Services.AddScoped<IInterviewRepository, InterviewRepository>();
 
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -74,9 +80,10 @@ namespace WebAPI
             builder.Services.AddScoped<IClubMemberScoringService, ClubMemberScoringService>();
             builder.Services.AddScoped<Services.Students.IStudentService, Services.Students.StudentService>();
             builder.Services.AddScoped<Services.Users.IUserManagementService, Services.Users.UserManagementService>();
-            builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
             builder.Services.AddScoped<IClubService, ClubService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
+            builder.Services.AddScoped<IJoinRequestService, JoinRequestService>();
+            builder.Services.AddScoped<IInterviewService, InterviewService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
@@ -164,6 +171,9 @@ namespace WebAPI
             app.UseCors("react");
 
             app.UseHttpsRedirection();
+            
+            // Enable serving static files (for uploaded CVs, images, etc.)
+            app.UseStaticFiles();
 
             // Custom middleware (order matters!)
             // app.UseAutoRefreshToken();  // DISABLED: Let frontend handle token refresh

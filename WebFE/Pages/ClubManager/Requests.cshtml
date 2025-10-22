@@ -1,0 +1,455 @@
+@page
+@model WebFE.Pages.ClubManager.RequestsModel
+@{
+    ViewData["Title"] = "Join Requests";
+    ViewData["Breadcrumb"] = "Join Requests";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">Join Requests Management</h1>
+    <p class="page-description">Quản lý đơn xin gia nhập câu lạc bộ</p>
+</div>
+
+<!-- Recruitment Status Card -->
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        <h2 class="content-card-title">
+            <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+            Recruitment Status
+        </h2>
+    </div>
+    <div class="content-card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="stat-card-icon @(Model.IsRecruitmentOpen ? "green" : "orange")" style="width: 60px; height: 60px;">
+                        <i data-lucide="@(Model.IsRecruitmentOpen ? "door-open" : "door-closed")" style="width: 30px; height: 30px;"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-1">Recruitment is @(Model.IsRecruitmentOpen ? "OPEN" : "CLOSED")</h4>
+                        <p class="text-muted mb-0">
+                            @if (Model.IsRecruitmentOpen)
+                            {
+                                <text>Students can apply to join your club</text>
+                            }
+                            else
+                            {
+                                <text>Not accepting new applications</text>
+                            }
+                        </p>
+                    </div>
+                </div>
+
+                <div class="alert @(Model.IsRecruitmentOpen ? "alert-success" : "alert-secondary") mb-0">
+                    <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                    @if (Model.IsRecruitmentOpen)
+                    {
+                        <span><strong>Students can now apply to join your club.</strong> They can select a department and upload their CV.</span>
+                    }
+                    else
+                    {
+                        <span><strong>Students cannot apply at this time.</strong> Open recruitment to start accepting new members.</span>
+                    }
+                </div>
+            </div>
+
+            <div class="col-md-4 text-center">
+                <button id="toggleRecruitmentBtn" class="btn @(Model.IsRecruitmentOpen ? "btn-warning" : "btn-success") btn-lg w-100">
+                    <i data-lucide="@(Model.IsRecruitmentOpen ? "door-closed" : "door-open")" style="width: 20px; height: 20px;"></i>
+                    @(Model.IsRecruitmentOpen ? "Close Recruitment" : "Open Recruitment")
+                </button>
+                <small class="text-muted d-block mt-2">
+                    @Model.PendingRequests.Count pending applications
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Requests -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h2 class="content-card-title">
+            <i data-lucide="inbox" style="width: 20px; height: 20px;"></i>
+            Pending Applications (@Model.PendingRequests.Count)
+        </h2>
+        <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
+            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+            Refresh
+        </button>
+    </div>
+    <div class="content-card-body">
+        @if (!Model.PendingRequests.Any())
+        {
+            <div class="text-center py-5">
+                <i data-lucide="inbox" style="width: 64px; height: 64px; color: #cbd5e1; margin-bottom: 1rem;"></i>
+                <h5 class="text-muted">No pending applications</h5>
+                <p class="text-muted">
+                    @if (Model.IsRecruitmentOpen)
+                    {
+                        <text>Applications will appear here when students apply</text>
+                    }
+                    else
+                    {
+                        <text>Open recruitment to start accepting applications</text>
+                    }
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Department</th>
+                            <th>Applied Date</th>
+                            <th>Motivation</th>
+                            <th>CV</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in Model.PendingRequests)
+                        {
+                            <tr id="request-@request.Id">
+                                <td>
+                                    <div>
+                                        <strong>@request.UserName</strong>
+                                        <br/>
+                                        <small class="text-muted">@request.UserEmail</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(request.DepartmentName))
+                                    {
+                                        <span class="badge bg-primary">@request.DepartmentName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No preference</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small>@request.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(request.Motivation))
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary view-motivation-btn" data-request-id="@request.Id" data-student-name="@request.UserName" data-motivation="@request.Motivation">
+                                            <i data-lucide="message-circle" style="width: 14px; height: 14px;"></i>
+                                            View
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(request.CvUrl))
+                                    {
+                                        <a href="https://localhost:5001/api/fileupload/cv/@System.IO.Path.GetFileName(request.CvUrl)" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
+                                            View CV
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (request.HasInterview)
+                                    {
+                                        <a href="/ClubManager/InterviewDetails/@request.Id" class="btn btn-sm btn-success">
+                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                            View Interview
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-primary schedule-interview-btn" data-request-id="@request.Id" data-student-name="@request.UserName">
+                                            <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                                            Schedule Interview
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Motivation Modal -->
+<div class="modal fade" id="motivationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i data-lucide="message-circle" style="width: 20px; height: 20px;"></i>
+                    Motivation Letter
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6 id="modalStudentName" class="mb-3"></h6>
+                <p id="modalMotivation" class="mb-0"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Interview Modal -->
+<div class="modal fade" id="scheduleInterviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+                    Schedule Interview
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="scheduleInterviewForm">
+                <div class="modal-body">
+                    <input type="hidden" id="interviewJoinRequestId" />
+                    <h6 id="interviewStudentName" class="mb-3"></h6>
+                    
+                    <div class="mb-3">
+                        <label for="scheduledDate" class="form-label">Interview Date & Time *</label>
+                        <input type="datetime-local" class="form-control" id="scheduledDate" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location *</label>
+                        <input type="text" class="form-control" id="location" placeholder="e.g. Room 101, Building A" required maxlength="200" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="notes" rows="3" placeholder="Any additional information for the applicant..." maxlength="1000"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="scheduleBtn">
+                        <i data-lucide="calendar-check" style="width: 16px; height: 16px;"></i>
+                        Schedule Interview
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        const clubId = @Model.ClubId;
+        const toggleBtn = document.getElementById('toggleRecruitmentBtn');
+
+        // Toggle recruitment
+        toggleBtn.addEventListener('click', async () => {
+            const currentStatus = @Model.IsRecruitmentOpen.ToString().ToLower();
+            const newStatus = !currentStatus;
+            const action = newStatus ? 'open' : 'close';
+            const confirmMsg = newStatus 
+                ? 'Students will be able to apply to join your club. Are you sure?' 
+                : 'Students will not be able to apply. Are you sure?';
+
+            const actionText = action.charAt(0).toUpperCase() + action.slice(1);
+            if (!confirm(actionText + ' recruitment?\n\n' + confirmMsg)) {
+                return;
+            }
+
+            toggleBtn.disabled = true;
+            toggleBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+
+            try {
+                const response = await fetch('https://localhost:5001/api/club/' + clubId + '/toggle-recruitment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ isOpen: newStatus })
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.message || 'Failed to update recruitment status'));
+                    toggleBtn.disabled = false;
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                toggleBtn.disabled = false;
+                lucide.createIcons();
+            }
+        });
+
+        // Show schedule interview modal
+        function showScheduleInterview(requestId, studentName) {
+            document.getElementById('interviewJoinRequestId').value = requestId;
+            document.getElementById('interviewStudentName').textContent = 'Student: ' + studentName;
+            
+            // Set minimum date to now
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            document.getElementById('scheduledDate').min = localDateTime;
+            
+            const modal = new bootstrap.Modal(document.getElementById('scheduleInterviewModal'));
+            modal.show();
+            lucide.createIcons();
+        }
+
+        // Attach event listeners to schedule interview buttons
+        document.querySelectorAll('.schedule-interview-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const requestId = this.getAttribute('data-request-id');
+                const studentName = this.getAttribute('data-student-name');
+                showScheduleInterview(requestId, studentName);
+            });
+        });
+
+        // Handle schedule interview form submission
+        document.getElementById('scheduleInterviewForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const requestId = document.getElementById('interviewJoinRequestId').value;
+            const scheduledDate = document.getElementById('scheduledDate').value;
+            const location = document.getElementById('location').value;
+            const notes = document.getElementById('notes').value;
+            
+            console.log('Scheduling interview for request:', requestId);
+            console.log('Scheduled date:', scheduledDate);
+            console.log('Location:', location);
+            
+            if (!scheduledDate || !location) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            const scheduleBtn = document.getElementById('scheduleBtn');
+            scheduleBtn.disabled = true;
+            scheduleBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Scheduling...';
+            
+            try {
+                const payload = {
+                    joinRequestId: parseInt(requestId),
+                    scheduledDate: new Date(scheduledDate).toISOString(),
+                    location: location.trim(),
+                    notes: notes ? notes.trim() : null
+                };
+                
+                console.log('Sending payload:', payload);
+                
+                const response = await fetch('https://localhost:5001/api/interview/schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Interview created:', result);
+                    alert('Interview scheduled successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('scheduleInterviewModal')).hide();
+                    // Redirect to interview details page
+                    window.location.href = '/ClubManager/InterviewDetails/' + requestId;
+                } else {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    let errorMessage = 'Failed to schedule interview';
+                    try {
+                        const error = JSON.parse(errorText);
+                        errorMessage = error.message || errorMessage;
+                    } catch (e) {
+                        errorMessage = errorText || errorMessage;
+                    }
+                    alert('Error: ' + errorMessage);
+                    scheduleBtn.disabled = false;
+                    scheduleBtn.innerHTML = '<i data-lucide="calendar-check" style="width: 16px; height: 16px;"></i> Schedule Interview';
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred: ' + error.message);
+                scheduleBtn.disabled = false;
+                scheduleBtn.innerHTML = '<i data-lucide="calendar-check" style="width: 16px; height: 16px;"></i> Schedule Interview';
+                lucide.createIcons();
+            }
+        });
+
+        // Process request (Approve/Reject)
+        window.processRequest = async function(requestId, action) {
+            const confirmMsg = action === 'Approve' 
+                ? 'Approve this application? The student will be added to your club.'
+                : 'Reject this application? This action cannot be undone.';
+
+            if (!confirm(confirmMsg)) return;
+
+            const row = document.getElementById('request-' + requestId);
+            const originalContent = row.innerHTML;
+            row.innerHTML = '<td colspan="6" class="text-center"><span class="spinner-border spinner-border-sm"></span> Processing...</td>';
+
+            try {
+                const response = await fetch('https://localhost:5001/api/joinrequest/' + requestId + '/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ action: action })
+                });
+
+                if (response.ok) {
+                    alert('Application ' + action.toLowerCase() + 'd successfully!');
+                    window.location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.message || 'Failed to process request'));
+                    row.innerHTML = originalContent;
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                row.innerHTML = originalContent;
+                lucide.createIcons();
+            }
+        };
+
+        // Show motivation modal
+        function showMotivation(id, studentName, motivation) {
+            document.getElementById('modalStudentName').textContent = studentName;
+            document.getElementById('modalMotivation').textContent = motivation;
+            new bootstrap.Modal(document.getElementById('motivationModal')).show();
+            lucide.createIcons();
+        }
+
+        // Attach event listeners to view motivation buttons
+        document.querySelectorAll('.view-motivation-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const requestId = this.getAttribute('data-request-id');
+                const studentName = this.getAttribute('data-student-name');
+                const motivation = this.getAttribute('data-motivation');
+                showMotivation(requestId, studentName, motivation);
+            });
+        });
+    </script>
+}
+

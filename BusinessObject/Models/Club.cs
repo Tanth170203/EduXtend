@@ -19,6 +19,7 @@ public class Club
     public string? BannerUrl { get; set; }
     public DateTime FoundedDate { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;
+    public bool IsRecruitmentOpen { get; set; } = false;
 
     public int CategoryId { get; set; }
     public ClubCategory Category { get; set; } = null!;

@@ -12,8 +12,14 @@ public class JoinRequest
     public int UserId { get; set; }
     public User User { get; set; } = null!;
     
+    public int? DepartmentId { get; set; }
+    public ClubDepartment? Department { get; set; }
+    
     [MaxLength(500)]
     public string? Motivation { get; set; }
+    
+    [MaxLength(255)]
+    public string? CvUrl { get; set; }
     
     [MaxLength(50)]
     public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Cancelled
