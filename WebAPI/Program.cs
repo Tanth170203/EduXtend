@@ -75,6 +75,7 @@ namespace WebAPI
             builder.Services.AddScoped<IMovementCriterionService, MovementCriterionService>();
             builder.Services.AddScoped<IUserImportService, UserImportService>();
             builder.Services.AddScoped<IEvidenceService, EvidenceService>();
+            builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
             builder.Services.AddScoped<IMovementRecordService, MovementRecordService>();
             builder.Services.AddScoped<IMovementScoreCalculationService, MovementScoreCalculationService>();
             builder.Services.AddScoped<IClubMemberScoringService, ClubMemberScoringService>();
@@ -145,6 +146,9 @@ namespace WebAPI
                         Array.Empty<string>()
                     }
                 });
+
+                // Add support for file upload operations
+                options.OperationFilter<WebAPI.Swagger.FileUploadOperationFilter>();
             });
 
             builder.Services.AddCors(opt =>

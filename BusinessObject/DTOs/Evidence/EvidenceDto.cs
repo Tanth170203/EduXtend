@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace BusinessObject.DTOs.Evidence;
 
@@ -15,6 +16,7 @@ public class EvidenceDto
     public string? ActivityTitle { get; set; }
     public int? CriterionId { get; set; }
     public string? CriterionTitle { get; set; }
+    public int CriterionMaxScore { get; set; } // ✅ NEW: Max points for this criterion
     public string Title { get; set; } = null!;
     public string? Description { get; set; }
     public string? FilePath { get; set; }
@@ -28,7 +30,7 @@ public class EvidenceDto
 }
 
 /// <summary>
-/// DTO for creating new Evidence
+/// DTO for creating new Evidence (from API with file upload)
 /// </summary>
 public class CreateEvidenceDto
 {
@@ -46,8 +48,31 @@ public class CreateEvidenceDto
     [MaxLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
     public string? Description { get; set; }
 
-    [MaxLength(255, ErrorMessage = "File path cannot exceed 255 characters")]
+    // File will be uploaded separately and FilePath will be set after upload
+    public IFormFile? File { get; set; }
+    
+    // This will be set after file is uploaded to Cloudinary
     public string? FilePath { get; set; }
+}
+
+/// <summary>
+/// DTO for creating evidence from WebFE (without file, only metadata)
+/// </summary>
+public class CreateEvidenceRequestDto
+{
+    [Required(ErrorMessage = "Student ID is required")]
+    public int StudentId { get; set; }
+
+    public int? ActivityId { get; set; }
+
+    public int? CriterionId { get; set; }
+
+    [Required(ErrorMessage = "Title is required")]
+    [MaxLength(200, ErrorMessage = "Title cannot exceed 200 characters")]
+    public string Title { get; set; } = null!;
+
+    [MaxLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+    public string? Description { get; set; }
 }
 
 /// <summary>

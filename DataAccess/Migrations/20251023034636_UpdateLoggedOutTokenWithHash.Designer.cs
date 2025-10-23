@@ -4,6 +4,7 @@ using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(EduXtendContext))]
-    partial class EduXtendContextModelSnapshot : ModelSnapshot
+    [Migration("20251023034636_UpdateLoggedOutTokenWithHash")]
+    partial class UpdateLoggedOutTokenWithHash
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -221,9 +224,6 @@ namespace DataAccess.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsRecruitmentOpen")
                         .HasColumnType("bit");
 
                     b.Property<string>("LogoUrl")
@@ -478,56 +478,6 @@ namespace DataAccess.Migrations
                     b.ToTable("Evidences");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.Interview", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CreatedById")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Evaluation")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("JoinRequestId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime>("ScheduledDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("JoinRequestId");
-
-                    b.ToTable("Interviews");
-                });
-
             modelBuilder.Entity("BusinessObject.Models.JoinRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -541,13 +491,6 @@ namespace DataAccess.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("CvUrl")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<int?>("DepartmentId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Motivation")
                         .HasMaxLength(500)
@@ -570,8 +513,6 @@ namespace DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClubId");
-
-                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("ProcessedById");
 
@@ -604,8 +545,8 @@ namespace DataAccess.Migrations
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
@@ -1455,25 +1396,6 @@ namespace DataAccess.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.Interview", b =>
-                {
-                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.JoinRequest", "JoinRequest")
-                        .WithMany()
-                        .HasForeignKey("JoinRequestId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("JoinRequest");
-                });
-
             modelBuilder.Entity("BusinessObject.Models.JoinRequest", b =>
                 {
                     b.HasOne("BusinessObject.Models.Club", "Club")
@@ -1481,11 +1403,6 @@ namespace DataAccess.Migrations
                         .HasForeignKey("ClubId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.ClubDepartment", "Department")
-                        .WithMany()
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("BusinessObject.Models.User", "ProcessedBy")
                         .WithMany()
@@ -1499,8 +1416,6 @@ namespace DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Club");
-
-                    b.Navigation("Department");
 
                     b.Navigation("ProcessedBy");
 

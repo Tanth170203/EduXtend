@@ -2,145 +2,129 @@
 @using BusinessObject.DTOs.MovementRecord
 @model WebFE.Pages.Student.MyScore.DetailModel
 @{
-    ViewData["Title"] = "Score Detail";
+    ViewData["Title"] = "Chi tiết điểm phong trào";
     Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container py-4">
-    <!-- Page Header -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
+<section class="container my-5">
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
-            <h1 class="h3 mb-1">Chi tiết điểm phong trào</h1>
-            <p class="text-muted">Xem chi tiết điểm phong trào theo từng tiêu chí</p>
+            <h1 class="fw-bold mb-1">Chi tiết điểm phong trào</h1>
+            <p class="text-muted mb-0">Xem điểm theo từng nhóm và tiêu chí</p>
         </div>
-        <a href="/Student/MyScore" class="btn btn-secondary">
-            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
-            Quay lại
+        <a href="/Student/MyScore" class="btn btn-outline-secondary rounded-pill">
+            <i class="bi bi-arrow-left"></i> Quay lại
         </a>
     </div>
 
     @if (Model.Record != null)
     {
-        <!-- Score Summary -->
-        <div class="card mb-4">
+        <!-- Summary -->
+        <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-8">
-                        <h5 class="card-title mb-3">@Model.Record.SemesterName</h5>
+                <div class="row g-3">
+                    <div class="col-lg-8">
+                        <h5 class="fw-semibold mb-3">@Model.Record.SemesterName</h5>
                         <div class="row">
                             <div class="col-md-6">
-                                <p class="mb-1"><strong>Họ tên:</strong> @Model.Record.StudentName</p>
-                                <p class="mb-1"><strong>Mã SV:</strong> @Model.Record.StudentCode</p>
+                                <div class="small text-muted">Họ tên</div>
+                                <div class="fw-semibold">@Model.Record.StudentName</div>
+                                <div class="small text-muted mt-2">Mã sinh viên</div>
+                                <div class="fw-semibold">@Model.Record.StudentCode</div>
                             </div>
                             <div class="col-md-6">
-                                <p class="mb-1"><strong>Ngày tạo:</strong> @Model.Record.CreatedAt.ToString("dd/MM/yyyy")</p>
-                                <p class="mb-1"><strong>Cập nhật:</strong> @(Model.Record.LastUpdated?.ToString("dd/MM/yyyy HH:mm") ?? "-")</p>
+                                <div class="small text-muted">Ngày tạo</div>
+                                <div class="fw-semibold">@Model.Record.CreatedAt.ToString("dd/MM/yyyy")</div>
+                                <div class="small text-muted mt-2">Cập nhật</div>
+                                <div class="fw-semibold">@(Model.Record.LastUpdated?.ToString("dd/MM/yyyy HH:mm") ?? "-")</div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 text-end">
-                        <p class="text-muted mb-1">Tổng điểm</p>
-                        <h1 class="display-4 text-primary mb-0">@Model.Record.TotalScore.ToString("F1")</h1>
-                        <p class="text-muted">/ 140 điểm</p>
+                    <div class="col-lg-4 text-lg-end">
                         @{
-                            var percentage = (Model.Record.TotalScore / 140.0) * 100;
+                            var percent = (Model.Record.TotalScore / 140.0) * 100.0;
+                            var cls = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
                         }
-                        <div class="progress" style="height: 10px;">
-                            <div class="progress-bar @(percentage >= 80 ? "bg-success" : percentage >= 60 ? "bg-warning" : "bg-danger")" 
-                                 role="progressbar" 
-                                 style="width: @percentage%" 
-                                 aria-valuenow="@percentage" 
-                                 aria-valuemin="0" 
-                                 aria-valuemax="100">
-                            </div>
+                        <div class="text-muted">Tổng điểm</div>
+                        <div class="display-6 fw-bold text-primary">@Model.Record.TotalScore.ToString("F1")</div>
+                        <small class="text-muted">/ 140</small>
+                        <div class="progress mt-2" style="height:10px;">
+                            <div class="progress-bar bg-@cls" style="width:@percent%" role="progressbar"></div>
                         </div>
-                        <small class="text-muted">@percentage.ToString("F1")% hoàn thành</small>
+                        <small class="text-muted">@percent.ToString("F1")% hoàn thành</small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Score Details by Criterion -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Chi tiết điểm theo tiêu chí</h5>
+        <!-- Details -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-0 pt-4">
+                <h5 class="mb-0 fw-semibold"><i class="bi bi-list-check me-1"></i> Chi tiết theo tiêu chí</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body pt-0">
                 @if (Model.Record.Details.Any())
                 {
                     <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
                                 <tr>
                                     <th>Nhóm tiêu chí</th>
                                     <th>Tiêu chí</th>
-                                    <th>Điểm tối đa</th>
-                                    <th>Điểm đạt được</th>
-                                    <th>Tỷ lệ</th>
+                                    <th class="text-center">Điểm tối đa</th>
+                                    <th class="text-center">Điểm đạt</th>
+                                    <th class="text-center">Tỷ lệ</th>
                                     <th>Ngày cộng điểm</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var detail in Model.Record.Details.OrderBy(d => d.GroupName))
+                                @foreach (var d in Model.Record.Details.OrderBy(x => x.GroupName).ThenBy(x => x.CriterionTitle))
                                 {
-                                    var detailPercentage = (detail.Score / detail.CriterionMaxScore) * 100;
-                                    var badgeClass = detailPercentage >= 80 ? "success" : detailPercentage >= 60 ? "warning" : "info";
-                                    
+                                    var p = (d.Score / d.CriterionMaxScore) * 100.0;
+                                    var b = p >= 80 ? "success" : p >= 60 ? "warning" : "info";
                                     <tr>
-                                        <td><span class="badge bg-secondary">@detail.GroupName</span></td>
-                                        <td>@detail.CriterionTitle</td>
-                                        <td>@detail.CriterionMaxScore</td>
-                                        <td>
-                                            <strong class="text-@badgeClass">@detail.Score</strong>
-                                        </td>
-                                        <td>
-                                            <div class="progress" style="width: 100px; height: 20px;">
-                                                <div class="progress-bar bg-@badgeClass" 
-                                                     role="progressbar" 
-                                                     style="width: @detailPercentage%" 
-                                                     aria-valuenow="@detailPercentage" 
-                                                     aria-valuemin="0" 
-                                                     aria-valuemax="100">
-                                                    <small>@detailPercentage.ToString("F0")%</small>
-                                                </div>
+                                        <td><span class="badge bg-secondary">@d.GroupName</span></td>
+                                        <td class="fw-semibold">@d.CriterionTitle</td>
+                                        <td class="text-center">@d.CriterionMaxScore</td>
+                                        <td class="text-center"><span class="fw-semibold text-@b">@d.Score</span></td>
+                                        <td class="text-center">
+                                            <div class="progress" style="height:16px; width:110px; margin:0 auto;">
+                                                <div class="progress-bar bg-@b" style="width:@p%" role="progressbar"></div>
                                             </div>
+                                            <small class="text-muted">@p.ToString("F0")%</small>
                                         </td>
-                                        <td>@detail.AwardedAt.ToString("dd/MM/yyyy")</td>
+                                        <td>@d.AwardedAt.ToString("dd/MM/yyyy")</td>
                                     </tr>
                                 }
                             </tbody>
                             <tfoot>
                                 <tr class="table-active">
                                     <td colspan="3" class="text-end"><strong>Tổng cộng:</strong></td>
-                                    <td colspan="3">
-                                        <strong class="fs-5 text-primary">@Model.Record.TotalScore.ToString("F1") điểm</strong>
-                                    </td>
+                                    <td colspan="3"><strong class="fs-5 text-primary">@Model.Record.TotalScore.ToString("F1") điểm</strong></td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
 
-                    <!-- Score by Group Summary -->
+                    <!-- By Group -->
                     <div class="mt-4">
-                        <h6>Tổng hợp theo nhóm tiêu chí</h6>
+                        <h6 class="text-muted">Tổng hợp theo nhóm tiêu chí</h6>
                         <div class="row">
                             @{
-                                var groupedScores = Model.Record.Details
-                                    .GroupBy(d => d.GroupName)
-                                    .Select(g => new { GroupName = g.Key, TotalScore = g.Sum(d => d.Score), Count = g.Count() })
-                                    .OrderByDescending(g => g.TotalScore);
+                                var groups = Model.Record.Details
+                                    .GroupBy(g => g.GroupName)
+                                    .Select(g => new { Group = g.Key, Score = g.Sum(x => x.Score), Count = g.Count() })
+                                    .OrderByDescending(x => x.Score);
                             }
-                            @foreach (var group in groupedScores)
+                            @foreach (var g in groups)
                             {
                                 <div class="col-md-4 mb-3">
-                                    <div class="card">
+                                    <div class="card border-0 shadow-sm h-100">
                                         <div class="card-body">
-                                            <h6 class="card-title">@group.GroupName</h6>
-                                            <p class="card-text">
-                                                <span class="fs-4 fw-bold text-primary">@group.TotalScore điểm</span>
-                                                <br />
-                                                <small class="text-muted">@group.Count tiêu chí đạt được</small>
-                                            </p>
+                                            <h6 class="mb-1">@g.Group</h6>
+                                            <div class="fw-bold text-primary fs-5">@g.Score điểm</div>
+                                            <small class="text-muted">@g.Count tiêu chí đạt</small>
                                         </div>
                                     </div>
                                 </div>
@@ -151,8 +135,8 @@
                 else
                 {
                     <div class="text-center py-5">
-                        <i data-lucide="inbox" style="width: 64px; height: 64px; color: #9ca3af;"></i>
-                        <p class="text-muted mt-3">Chưa có điểm chi tiết</p>
+                        <i class="bi bi-inbox" style="font-size:3rem; color:#9ca3af;"></i>
+                        <p class="text-muted mt-3 mb-0">Chưa có điểm chi tiết</p>
                     </div>
                 }
             </div>
@@ -160,21 +144,8 @@
     }
     else
     {
-        <div class="alert alert-warning">
-            <i data-lucide="alert-triangle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-            Không tìm thấy thông tin điểm phong trào.
+        <div class="alert alert-warning shadow-sm">
+            <i class="bi bi-exclamation-triangle me-2"></i> Không tìm thấy bản ghi điểm phong trào.
         </div>
     }
-</div>
-
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-        });
-    </script>
-}
-
-
+</section>

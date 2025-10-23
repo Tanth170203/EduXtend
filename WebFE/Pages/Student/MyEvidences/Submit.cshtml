@@ -1,93 +1,172 @@
-@page
+﻿@page
 @model WebFE.Pages.Student.MyEvidences.SubmitModel
 @{
-    ViewData["Title"] = "Submit Evidence";
+    ViewData["Title"] = "Nộp minh chứng";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<section class="container my-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-            <h2 class="mb-0">Submit Evidence</h2>
-            <nav aria-label="breadcrumb" class="mt-2">
-                <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a asp-page="/Student/Dashboard/Index">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a asp-page="/Student/MyEvidences/Index">My Evidences</a></li>
-                    <li class="breadcrumb-item active">Submit</li>
-                </ol>
-            </nav>
+            <h1 class="fw-bold mb-1">Nộp minh chứng</h1>
+            <p class="text-muted mb-0">Gửi minh chứng cho hoạt động/tiêu chí phong trào bạn đã tham gia</p>
         </div>
+        <a asp-page="/Student/MyEvidences/Index" class="btn btn-outline-secondary rounded-pill">
+            <i class="bi bi-arrow-left"></i> Quay lại danh sách
+        </a>
     </div>
 
+    <!-- Alerts -->
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @Model.ErrorMessage
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@Model.SuccessMessage
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <form method="post">
+    <!-- Form -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0 pt-4">
+            <h5 class="mb-0 fw-semibold"><i class="bi bi-upload me-1"></i> Thông tin minh chứng</h5>
+            <small class="text-muted">Điền thông tin và tải tệp minh chứng.</small>
+        </div>
+
+        <div class="card-body pt-0">
+            <form method="post" enctype="multipart/form-data" id="evidenceForm">
+                <!-- Tiêu đề -->
                 <div class="mb-3">
-                    <label asp-for="Input.Title" class="form-label">Title <span class="text-danger">*</span></label>
-                    <input asp-for="Input.Title" class="form-control" required />
+                    <label asp-for="Input.Title" class="form-label fw-semibold">Tiêu đề <span class="text-danger">*</span></label>
+                    <input asp-for="Input.Title" class="form-control" placeholder="VD: Tham gia Ngày hội Open Day 2025" required />
                     <span asp-validation-for="Input.Title" class="text-danger"></span>
                 </div>
 
+                <!-- Mô tả -->
                 <div class="mb-3">
-                    <label asp-for="Input.Description" class="form-label">Description</label>
-                    <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
-                    <span asp-validation-for="Input.Description" class="text-danger"></span>
+                    <label asp-for="Input.Description" class="form-label fw-semibold">Mô tả chi tiết</label>
+                    <textarea asp-for="Input.Description" class="form-control" rows="4" placeholder="Mô tả hoạt động, vai trò, kết quả..."></textarea>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Không bắt buộc nhưng giúp duyệt nhanh hơn</small>
+                        <small class="text-muted"><span id="descCount">0</span>/1000 ký tự</small>
+                    </div>
                 </div>
 
+                <!-- Tiêu chí -->
                 <div class="mb-3">
-                    <label asp-for="Input.CriterionId" class="form-label">Movement Criterion</label>
+                    <label asp-for="Input.CriterionId" class="form-label fw-semibold">Tiêu chí phong trào</label>
                     <select asp-for="Input.CriterionId" class="form-select">
-                        <option value="">-- Select Criterion (Optional) --</option>
-                        @foreach (var criterion in Model.Criteria)
+                        <option value="">-- Chọn tiêu chí phù hợp (không bắt buộc) --</option>
+                        @foreach (var c in Model.Criteria)
                         {
-                            <option value="@criterion.Id">@criterion.GroupName - @criterion.Name (@criterion.Score points)</option>
+                            <option value="@c.Id">@c.Title (0-@c.MaxScore điểm)</option>
                         }
                     </select>
-                    <small class="text-muted">Select the criterion this evidence supports</small>
                     <span asp-validation-for="Input.CriterionId" class="text-danger"></span>
+                    <div class="form-text">
+                        <i class="bi bi-info-circle"></i>
+                        Chọn tiêu chí phù hợp với minh chứng của bạn để admin dễ dàng duyệt và cộng điểm.
+                    </div>
                 </div>
 
+                <!-- File upload -->
                 <div class="mb-3">
-                    <label asp-for="Input.FilePath" class="form-label">File Path / URL</label>
-                    <input asp-for="Input.FilePath" class="form-control" placeholder="Enter file path or URL" />
-                    <small class="text-muted">Optional: Link to supporting document</small>
-                    <span asp-validation-for="Input.FilePath" class="text-danger"></span>
+                    <label asp-for="Input.File" class="form-label fw-semibold">Tệp minh chứng</label>
+                    <div id="dropzone" class="border rounded-3 p-4 text-center bg-light-subtle">
+                        <i class="bi bi-cloud-upload" style="font-size:2rem;"></i>
+                        <p class="mb-1">Kéo thả tệp vào đây hoặc nhấn để chọn</p>
+                        <small class="text-muted">Định dạng: JPG, PNG, PDF, DOC, DOCX (Tối đa 10MB)</small>
+                        <input asp-for="Input.File" type="file" class="form-control d-none"
+                               accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" id="fileInput" />
+                    </div>
+
+                    <!-- Preview -->
+                    <div id="filePreview" class="mt-3" style="display:none;">
+                        <div class="alert alert-success d-flex align-items-center mb-0" role="alert">
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            <div>
+                                <div class="fw-semibold">Tệp đã chọn: <span id="fileName"></span></div>
+                                <small class="text-muted">Kích thước: <span id="fileSize"></span></small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" id="changeFileBtn">
+                                <i class="bi bi-arrow-repeat"></i> Đổi tệp
+                            </button>
+                        </div>
+                    </div>
+                    <span asp-validation-for="Input.File" class="text-danger"></span>
                 </div>
 
+                <!-- Ghi chú -->
                 <div class="alert alert-info">
-                    <i data-lucide="info" style="width: 16px; height: 16px;"></i>
-                    <strong>Note:</strong> After submission, your evidence will be reviewed by staff. You can check the status in "My Evidences" page.
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Lưu ý:</strong> Sau khi nộp, minh chứng sẽ được CTSV kiểm duyệt. Theo dõi trạng thái trong mục <em>“Minh chứng của tôi”</em>.
                 </div>
 
+                <!-- Actions -->
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
-                        Submit Evidence
+                    <button type="submit" class="btn btn-primary rounded-pill" id="submitBtn">
+                        <i class="bi bi-check2-circle"></i> <span id="submitText">Nộp minh chứng</span>
+                        <span class="spinner-border spinner-border-sm ms-2" role="status" id="loadingSpinner" style="display:none;">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </span>
                     </button>
-                    <a asp-page="/Student/MyEvidences/Index" class="btn btn-secondary">
-                        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-                        Cancel
+                    <a asp-page="/Student/MyEvidences/Index" class="btn btn-outline-secondary rounded-pill">
+                        <i class="bi bi-x-circle"></i> Hủy
                     </a>
                 </div>
             </form>
         </div>
     </div>
-</div>
+</section>
+
+<style>
+    #dropzone {
+        cursor: pointer;
+        border: 2px dashed var(--bs-border-color);
+        transition: border-color .15s ease, background-color .15s ease;
+    }
+
+        #dropzone.dragover {
+            background-color: rgba(13,110,253,.05);
+            border-color: var(--bs-primary);
+        }
+</style>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        // Initialize Lucide icons
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+        // Description count
+        const desc=document.getElementById('Input_Description');
+        const descCount=document.getElementById('descCount');
+        if(desc&&descCount){ const up=()=>descCount.textContent=(desc.value||'').length; desc.addEventListener('input',up); up(); }
+
+        // Dropzone
+        const dz=document.getElementById('dropzone'), fi=document.getElementById('fileInput');
+        const pv=document.getElementById('filePreview'), fn=document.getElementById('fileName'), fs=document.getElementById('fileSize');
+        const changeBtn=document.getElementById('changeFileBtn');
+        const maxSize=10*1024*1024, allowed=['.jpg','.jpeg','.png','.pdf','.doc','.docx'];
+        const fmt=n=>{if(n===0)return'0 B';const k=1024,u=['B','KB','MB','GB'];const i=Math.floor(Math.log(n)/Math.log(k));return (n/Math.pow(k,i)).toFixed(2)+' '+u[i];};
+        const valid=(f)=>{const ext=(f.name.match(/\.[^.]+$/)?.[0]||'').toLowerCase(); if(!allowed.includes(ext)){alert('Định dạng không hợp lệ.'); return false;}
+                           if(f.size>maxSize){alert('Kích thước vượt quá 10MB.'); return false;} return true;};
+        const show=(f)=>{fn.textContent=f.name; fs.textContent=fmt(f.size); pv.style.display='block';};
+
+        dz.addEventListener('click',()=>fi.click());
+        dz.addEventListener('dragover',e=>{e.preventDefault(); dz.classList.add('dragover');});
+        dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+        dz.addEventListener('drop',e=>{e.preventDefault(); dz.classList.remove('dragover'); const f=e.dataTransfer.files?.[0]; if(f&&valid(f)){ fi.files=e.dataTransfer.files; show(f); }});
+        fi.addEventListener('change',e=>{const f=e.target.files?.[0]; if(f&&valid(f)) show(f);});
+        changeBtn?.addEventListener('click',()=>fi.click());
+
+        // Submit spinner
+        const form=document.getElementById('evidenceForm');
+        const btn=document.getElementById('submitBtn'), text=document.getElementById('submitText'), sp=document.getElementById('loadingSpinner');
+        form.addEventListener('submit',()=>{ btn.disabled=true; text.textContent='Đang tải...'; sp.style.display='inline-block'; });
     </script>
 }
-
