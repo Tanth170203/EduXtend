@@ -39,9 +39,18 @@ namespace WebFE.Pages
                         .Select(c => c.Value)
                         .ToList();
 
-                    return roles.Contains("Admin") 
-                        ? Redirect("/Admin/Dashboard") 
-                        : Redirect("/Index");
+                    if (roles.Contains("Admin"))
+                    {
+                        return Redirect("/Admin/Dashboard");
+                    }
+                    else if (roles.Contains("ClubManager"))
+                    {
+                        return Redirect("/ClubManager");
+                    }
+                    else
+                    {
+                        return Redirect("/Index");
+                    }
                 }
                 catch
                 {

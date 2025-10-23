@@ -81,5 +81,37 @@ namespace Repositories.Clubs
             => await _ctx.Activities
                 .Where(a => a.ClubId == clubId)
                 .CountAsync();
+
+        public async Task<Club?> GetManagedClubByUserIdAsync(int userId)
+        {
+            // Find club where user is President or Manager
+            var club = await _ctx.ClubMembers
+                .AsNoTracking()
+                .Include(cm => cm.Student)
+                .Include(cm => cm.Club)
+                    .ThenInclude(c => c.Category)
+                .Where(cm => cm.Student.UserId == userId 
+                    && cm.IsActive
+                    && (cm.RoleInClub == "President" || cm.RoleInClub == "Manager"))
+                .Select(cm => cm.Club)
+                .FirstOrDefaultAsync();
+
+            return club;
+        }
+
+        public async Task<bool> ToggleRecruitmentAsync(int clubId, bool isOpen)
+        {
+            var club = await _ctx.Clubs.FindAsync(clubId);
+            if (club == null) return false;
+
+            club.IsRecruitmentOpen = isOpen;
+            await _ctx.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<int> GetPendingRequestCountAsync(int clubId)
+            => await _ctx.JoinRequests
+                .Where(jr => jr.ClubId == clubId && jr.Status == "Pending")
+                .CountAsync();
     }
 }

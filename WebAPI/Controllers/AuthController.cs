@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Repositories.LoggedOutTokens;
 using Services.GGLogin;
+using Repositories.Users;
+using Repositories.Students;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -18,19 +20,25 @@ namespace WebAPI.Controllers
         private readonly ILoggedOutTokenRepository _blacklistRepo;
         private readonly JwtOptions _jwt;
         private readonly ILogger<AuthController> _logger;
+        private readonly IUserRepository _userRepo;
+        private readonly IStudentRepository _studentRepo;
 
         public AuthController(
             IGoogleAuthService googleAuthService,
             ITokenService tokenService,
             ILoggedOutTokenRepository blacklistRepo,
             IOptions<JwtOptions> jwtOptions,
-            ILogger<AuthController> logger)
+            ILogger<AuthController> logger,
+            IUserRepository userRepo,
+            IStudentRepository studentRepo)
         {
             _googleAuthService = googleAuthService;
             _tokenService = tokenService;
             _blacklistRepo = blacklistRepo;
             _jwt = jwtOptions.Value;
             _logger = logger;
+            _userRepo = userRepo;
+            _studentRepo = studentRepo;
         }
 
         /// <summary>
@@ -167,23 +175,43 @@ namespace WebAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet("me")]
-        public IActionResult GetCurrentUser()
+        public async Task<IActionResult> GetCurrentUser()
         {
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var fullName = User.FindFirst(ClaimTypes.Name)?.Value;
-                var email = User.FindFirst(ClaimTypes.Email)?.Value;
-                var avatar = User.FindFirst("avatar")?.Value;
-                var roles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                {
+                    return Unauthorized(new { message = "Missing user id" });
+                }
+
+                var user = await _userRepo.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                var roles = user.UserRoles?.Where(ur => ur.Role != null).Select(ur => ur.Role!.RoleName).ToList() ?? new List<string>();
+
+                var student = await _studentRepo.GetByUserIdAsync(userId);
 
                 return Ok(new
                 {
-                    id = userId,
-                    name = fullName,
-                    email,
-                    avatar,
-                    roles
+                    id = user.Id,
+                    name = user.FullName,
+                    email = user.Email,
+                    avatar = user.AvatarUrl,
+                    roles,
+                    student = student == null ? null : new
+                    {
+                        studentId = student.StudentCode,
+                        cohort = student.Cohort,
+                        major = student.Major?.Name,
+                        majorCode = student.Major?.Code,
+                        dateOfBirth = student.DateOfBirth,
+                        gender = student.Gender.ToString(),
+                        phone = student.Phone
+                    }
                 });
             }
             catch (Exception ex)
@@ -374,7 +402,7 @@ namespace WebAPI.Controllers
                 return "/Admin/Dashboard";
             
             if (roles.Contains("ClubManager"))
-                return "/Club/Dashboard";
+                return "/ClubManager";
             
             if (roles.Contains("ClubMember"))
                 return "/Club/MyClubs";

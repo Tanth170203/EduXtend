@@ -28,6 +28,8 @@ namespace BusinessObject.DTOs.Activity
         public bool CanRegister { get; set; }
         public bool IsRegistered { get; set; }
         public bool IsFull { get; set; }
+        public bool HasAttended { get; set; }
+        public bool HasFeedback { get; set; }
     }
 }
 

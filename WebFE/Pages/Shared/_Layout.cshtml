@@ -35,13 +35,32 @@
                                 <span>Home</span>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center gap-2 px-3"
-                               asp-page="/Clubs/Active"
+                        <li class="nav-item dropdown">
+                            <a class="nav-link d-flex align-items-center gap-2 px-3 dropdown-toggle" href="#" id="clubsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                                style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
                                 <i data-lucide="users" style="width: 18px; height: 18px;"></i>
                                 <span>Clubs</span>
                             </a>
+                            <ul class="dropdown-menu" aria-labelledby="clubsDropdown" style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.1);">
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" asp-page="/Clubs/Active">
+                                        <i data-lucide="list" style="width: 16px; height: 16px;"></i>
+                                        <span>List of Clubs</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="/Student/MyApplications">
+                                        <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+                                        <span>My Applications</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="/MyClubs">
+                                        <i data-lucide="users-2" style="width: 16px; height: 16px;"></i>
+                                        <span>My Clubs</span>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/Activities/Index" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
@@ -79,7 +98,7 @@
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="border-radius: var(--radius); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid var(--border);">
                                     <li>
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="/Profile">
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="/Student/Profile">
                                             <i data-lucide="user" style="width: 16px; height: 16px;"></i>
                                             <span>Profile</span>
                                         </a>
@@ -134,7 +153,7 @@
         @RenderBody()
     </main>
 
-    <footer style="background-color: var(--primary); color: var(--primary-foreground); padding: 2rem 0; margin-top: 4rem;">
+    <footer style="background-color: var(--primary); color: var(--primary-foreground); padding: 2rem 0; margin-top: 0;">
         <div class="container-custom">
             <div class="row">
                 <div class="col-md-4 mb-4">

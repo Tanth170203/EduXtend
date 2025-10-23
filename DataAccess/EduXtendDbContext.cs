@@ -24,6 +24,7 @@ public class EduXtendContext : DbContext
     public DbSet<ClubDepartment> ClubDepartments { get; set; }
     public DbSet<ClubMember> ClubMembers { get; set; }
     public DbSet<JoinRequest> JoinRequests { get; set; }
+    public DbSet<Interview> Interviews { get; set; }
 
     // Activity related
     public DbSet<Activity> Activities { get; set; }
@@ -105,6 +106,25 @@ public class EduXtendContext : DbContext
             .HasOne(jr => jr.ProcessedBy)
             .WithMany()
             .HasForeignKey(jr => jr.ProcessedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<JoinRequest>()
+            .HasOne(jr => jr.Department)
+            .WithMany()
+            .HasForeignKey(jr => jr.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Interview
+        modelBuilder.Entity<Interview>()
+            .HasOne(i => i.JoinRequest)
+            .WithMany()
+            .HasForeignKey(i => i.JoinRequestId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Interview>()
+            .HasOne(i => i.CreatedBy)
+            .WithMany()
+            .HasForeignKey(i => i.CreatedById)
             .OnDelete(DeleteBehavior.Restrict);
 
         // ==== ACTIVITY ====
@@ -285,6 +305,7 @@ public class EduXtendContext : DbContext
         modelBuilder.Entity<ClubDepartment>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<ClubMember>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<JoinRequest>().Property(e => e.Id).UseIdentityColumn();
+        modelBuilder.Entity<Interview>().Property(e => e.Id).UseIdentityColumn();
         
         modelBuilder.Entity<Activity>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<ActivityRegistration>().Property(e => e.Id).UseIdentityColumn();

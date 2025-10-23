@@ -59,6 +59,25 @@ namespace WebAPI.Controllers
             return Ok(updated);
         }
 
+		// GET api/admin/activities/{id}/registrants
+		[HttpGet("{id:int}/registrants")]
+		public async Task<IActionResult> GetRegistrants(int id)
+		{
+			var adminId = GetAdminUserId();
+			var list = await _service.GetRegistrantsAsync(adminId, id);
+			return Ok(list);
+		}
+
+		// POST api/admin/activities/{id}/attendance/{userId}
+		[HttpPost("{id:int}/attendance/{userId:int}")]
+		public async Task<IActionResult> SetAttendance(int id, int userId, [FromQuery] bool isPresent)
+		{
+			var adminId = GetAdminUserId();
+			var (success, message) = await _service.SetAttendanceAsync(adminId, id, userId, isPresent);
+			if (!success) return BadRequest(new { message });
+			return Ok(new { message });
+		}
+
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -66,6 +85,15 @@ namespace WebAPI.Controllers
             if (!ok) return NotFound();
             return NoContent();
         }
+
+		// GET api/admin/activities/{id}/feedbacks
+		[HttpGet("{id:int}/feedbacks")]
+		public async Task<IActionResult> GetFeedbacks(int id)
+		{
+			var adminId = GetAdminUserId();
+			var list = await _service.GetActivityFeedbacksAsync(adminId, id);
+			return Ok(list);
+		}
     }
 }
 

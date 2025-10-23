@@ -1,0 +1,181 @@
+@page
+@model WebFE.Pages.ClubManager.IndexModel
+@{
+    ViewData["Title"] = "Club Manager Dashboard";
+    ViewData["Breadcrumb"] = "Dashboard";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">Club Manager Dashboard</h1>
+    <p class="page-description">Quản lý hoạt động câu lạc bộ của bạn</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">My Club</p>
+            </div>
+            <div class="stat-card-icon blue">
+                <i data-lucide="users-2" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.ClubName</div>
+        <div class="stat-card-change positive">
+            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+            <span>Active</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Total Members</p>
+            </div>
+            <div class="stat-card-icon green">
+                <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.TotalMembers</div>
+        <div class="stat-card-change positive">
+            <i data-lucide="trending-up" style="width: 16px; height: 16px;"></i>
+            <span>+5 this month</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Upcoming Activities</p>
+            </div>
+            <div class="stat-card-icon purple">
+                <i data-lucide="calendar-check" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.UpcomingActivities</div>
+        <div class="stat-card-change positive">
+            <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+            <span>Next 30 days</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Join Requests</p>
+            </div>
+            <div class="stat-card-icon orange">
+                <i data-lucide="user-plus" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.PendingRequests</div>
+        <div class="stat-card-change @(Model.PendingRequests > 0 ? "negative" : "")">
+            <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+            <span>@(Model.PendingRequests > 0 ? "Needs review" : "No pending")</span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="content-card mb-4">
+    <div class="content-card-header">
+        <h2 class="content-card-title">Quick Actions</h2>
+    </div>
+    <div class="content-card-body">
+        <div class="quick-actions">
+            <a href="/ClubManager/Activities/Create" class="quick-action-btn">
+                <div class="quick-action-icon">
+                    <i data-lucide="plus-circle" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Create Activity</div>
+                    <p class="quick-action-desc">Tạo hoạt động mới cho câu lạc bộ</p>
+                </div>
+            </a>
+            
+            <a href="/ClubManager/Members" class="quick-action-btn">
+                <div class="quick-action-icon" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af;">
+                    <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Manage Members</div>
+                    <p class="quick-action-desc">Quản lý thành viên câu lạc bộ</p>
+                </div>
+            </a>
+
+            <a href="/ClubManager/Requests" class="quick-action-btn">
+                <div class="quick-action-icon" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #d97706;">
+                    <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Join Requests</div>
+                    <p class="quick-action-desc">Quản lý & duyệt đơn tham gia</p>
+                </div>
+            </a>
+
+            <a href="/ClubManager/ClubInfo" class="quick-action-btn">
+                <div class="quick-action-icon" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); color: #059669;">
+                    <i data-lucide="info" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div class="quick-action-content">
+                    <div class="quick-action-title">Club Information</div>
+                    <p class="quick-action-desc">Cập nhật thông tin CLB</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h2 class="content-card-title">Recent Activities</h2>
+                <a href="/ClubManager/Activities" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="content-card-body">
+                <div class="text-center py-5 text-muted">
+                    <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                    <p>No activities yet. Create your first activity!</p>
+                    <a href="/ClubManager/Activities/Create" class="btn btn-primary mt-2">
+                        <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                        Create Activity
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h2 class="content-card-title">Notifications</h2>
+            </div>
+            <div class="content-card-body">
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex gap-3">
+                        <div class="flex-shrink-0">
+                            <div class="stat-card-icon blue" style="width: 40px; height: 40px;">
+                                <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">Welcome to Club Manager!</div>
+                            <p class="text-muted small mb-0">Start managing your club</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}
