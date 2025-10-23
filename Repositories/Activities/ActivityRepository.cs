@@ -90,7 +90,7 @@ namespace Repositories.Activities
 
         public async Task<int> GetRegistrationCountAsync(int activityId)
             => await _ctx.ActivityRegistrations
-                .Where(r => r.ActivityId == activityId)
+                .Where(r => r.ActivityId == activityId && r.Status != "Cancelled")
                 .CountAsync();
 
         public async Task<int> GetAttendanceCountAsync(int activityId)
@@ -129,6 +129,152 @@ namespace Repositories.Activities
             await _ctx.SaveChangesAsync();
             return true;
         }
+
+		public async Task<bool> IsRegisteredAsync(int activityId, int userId)
+			=> await _ctx.ActivityRegistrations
+				.Where(r => r.ActivityId == activityId && r.UserId == userId && r.Status == "Registered")
+				.AnyAsync();
+
+		public async Task<ActivityRegistration> AddRegistrationAsync(int activityId, int userId)
+		{
+			var reg = new ActivityRegistration
+			{
+				ActivityId = activityId,
+				UserId = userId,
+				Status = "Registered",
+				CreatedAt = DateTime.UtcNow
+			};
+			_ctx.ActivityRegistrations.Add(reg);
+			await _ctx.SaveChangesAsync();
+			return reg;
+		}
+
+		public async Task<bool> IsUserMemberOfClubAsync(int userId, int clubId)
+		{
+			// Map user -> student -> club member
+			var studentId = await _ctx.Students
+				.Where(s => s.UserId == userId)
+				.Select(s => s.Id)
+				.FirstOrDefaultAsync();
+			if (studentId == 0) return false;
+
+			var isMember = await _ctx.ClubMembers
+				.AnyAsync(m => m.ClubId == clubId && m.StudentId == studentId && m.IsActive);
+			return isMember;
+		}
+
+		public async Task<bool> HasAttendanceAsync(int activityId, int userId)
+		{
+			var attendedByAttendance = await _ctx.ActivityAttendances
+				.AnyAsync(a => a.ActivityId == activityId && a.UserId == userId && a.IsPresent);
+			if (attendedByAttendance) return true;
+
+			// Also allow checking via registration status = Attended
+			var attendedByRegistration = await _ctx.ActivityRegistrations
+				.AnyAsync(r => r.ActivityId == activityId && r.UserId == userId && r.Status == "Attended");
+			return attendedByRegistration;
+		}
+
+		public async Task<bool> HasAnyAttendanceRecordAsync(int activityId, int userId)
+			=> await _ctx.ActivityAttendances.AnyAsync(a => a.ActivityId == activityId && a.UserId == userId);
+
+		public async Task<ActivityRegistration?> GetRegistrationAsync(int activityId, int userId)
+			=> await _ctx.ActivityRegistrations
+				.FirstOrDefaultAsync(r => r.ActivityId == activityId && r.UserId == userId);
+
+		public async Task<bool> CancelRegistrationAsync(int activityId, int userId)
+		{
+			var reg = await _ctx.ActivityRegistrations
+				.FirstOrDefaultAsync(r => r.ActivityId == activityId && r.UserId == userId && r.Status == "Registered");
+			if (reg == null) return false;
+			reg.Status = "Cancelled";
+			await _ctx.SaveChangesAsync();
+			return true;
+		}
+
+		public async Task<List<ActivityRegistration>> GetUserRegistrationsAsync(int userId)
+			=> await _ctx.ActivityRegistrations
+				.Where(r => r.UserId == userId && (r.Status == "Registered" || r.Status == "Attended"))
+				.Include(r => r.Activity)
+				.ThenInclude(a => a.Club)
+				.ToListAsync();
+
+		public async Task<bool> HasFeedbackAsync(int activityId, int userId)
+			=> await _ctx.ActivityFeedbacks.AnyAsync(f => f.ActivityId == activityId && f.UserId == userId);
+
+		public async Task<ActivityFeedback> AddFeedbackAsync(int activityId, int userId, int rating, string? comment)
+		{
+			var fb = new ActivityFeedback
+			{
+				ActivityId = activityId,
+				UserId = userId,
+				Rating = rating,
+				Comment = comment,
+				CreatedAt = DateTime.UtcNow
+			};
+			_ctx.ActivityFeedbacks.Add(fb);
+			await _ctx.SaveChangesAsync();
+			return fb;
+		}
+
+		public async Task<ActivityFeedback?> GetFeedbackAsync(int activityId, int userId)
+			=> await _ctx.ActivityFeedbacks.FirstOrDefaultAsync(f => f.ActivityId == activityId && f.UserId == userId);
+
+		public async Task UpdateFeedbackAsync(ActivityFeedback feedback)
+		{
+			_ctx.ActivityFeedbacks.Update(feedback);
+			await _ctx.SaveChangesAsync();
+		}
+
+		public async Task<List<(int UserId, string FullName, string Email, bool? IsPresent)>> GetRegistrantsWithAttendanceAsync(int activityId)
+		{
+			var regs = await _ctx.ActivityRegistrations
+				.Where(r => r.ActivityId == activityId && (r.Status == "Registered" || r.Status == "Attended"))
+				.Select(r => new { r.UserId, r.User.FullName, r.User.Email })
+				.ToListAsync();
+
+			var attendanceMap = await _ctx.ActivityAttendances
+				.Where(a => a.ActivityId == activityId)
+				.ToDictionaryAsync(a => a.UserId, a => (bool?)a.IsPresent);
+
+			return regs.Select(r => (r.UserId, r.FullName, r.Email, attendanceMap.ContainsKey(r.UserId) ? attendanceMap[r.UserId] : null))
+				.ToList();
+		}
+
+		public async Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int checkedById)
+		{
+			var existing = await _ctx.ActivityAttendances.FirstOrDefaultAsync(a => a.ActivityId == activityId && a.UserId == userId);
+			if (existing == null)
+			{
+				_ctx.ActivityAttendances.Add(new ActivityAttendance
+				{
+					ActivityId = activityId,
+					UserId = userId,
+					IsPresent = isPresent,
+					CheckedAt = DateTime.UtcNow,
+					CheckedById = checkedById
+				});
+			}
+			else
+			{
+				existing.IsPresent = isPresent;
+				existing.CheckedAt = DateTime.UtcNow;
+				existing.CheckedById = checkedById;
+			}
+
+			// Do not change registration status; keep as 'Registered' to preserve signup count.
+			await _ctx.SaveChangesAsync();
+		}
+
+		public async Task<List<(int UserId, string FullName, string Email, int Rating, string? Comment, DateTime CreatedAt)>> GetFeedbacksAsync(int activityId)
+		{
+			return await _ctx.ActivityFeedbacks
+				.Where(f => f.ActivityId == activityId)
+				.Select(f => new { f.UserId, f.User.FullName, f.User.Email, f.Rating, f.Comment, f.CreatedAt })
+				.AsNoTracking()
+				.ToListAsync()
+				.ContinueWith(t => t.Result.Select(x => (x.UserId, x.FullName, x.Email, x.Rating, x.Comment, x.CreatedAt)).ToList());
+		}
     }
 }
 

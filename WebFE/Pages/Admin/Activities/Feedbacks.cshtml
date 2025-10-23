@@ -1,0 +1,47 @@
+@page "/Admin/Activities/Feedbacks/{id:int}"
+@model WebFE.Pages.Admin.Activities.FeedbacksModel
+@{
+    ViewData["Title"] = "Activity Feedbacks";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Feedbacks</h2>
+        <a class="btn btn-outline-secondary" href="/Admin/Activities/Details/@Model.ActivityId">
+            <i class="bi bi-arrow-left me-2"></i>Back to Activity
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Rating</th>
+                            <th>Comment</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in Model.Items)
+                        {
+                            <tr>
+                                <td>@f.FullName</td>
+                                <td>@f.Email</td>
+                                <td>@f.Rating</td>
+                                <td>@(string.IsNullOrWhiteSpace(f.Comment) ? "-" : f.Comment)</td>
+                                <td>@f.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
