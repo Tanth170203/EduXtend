@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Club Manager - EduXtend</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WebFE.styles.css" asp-append-version="true" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="admin-body">
+    <!-- Sidebar -->
+    <div class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <div class="d-flex align-items-center gap-2">
+                <div class="sidebar-logo" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    C
+                </div>
+                <div class="sidebar-title">
+                    <div class="sidebar-brand">EduXtend</div>
+                    <div class="sidebar-subtitle">Club Manager</div>
+                </div>
+            </div>
+            <button class="sidebar-toggle d-lg-none" onclick="toggleSidebar()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-content">
+            <nav class="sidebar-nav">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">OVERVIEW</div>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/ClubManager/Index" ? "active" : "")" href="/ClubManager">
+                        <i data-lucide="layout-dashboard" style="width: 20px; height: 20px;"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">CLUB MANAGEMENT</div>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/ClubManager/ClubInfo") == true ? "active" : "")" href="/ClubManager/ClubInfo">
+                        <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                        <span>Club Information</span>
+                    </a>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/ClubManager/Requests") == true || ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/ClubManager/Recruitment") == true ? "active" : "")" href="/ClubManager/Requests">
+                        <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+                        <span>Join Requests</span>
+                    </a>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/ClubManager/Members") == true ? "active" : "")" href="/ClubManager/Members">
+                        <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                        <span>Members</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">ACTIVITIES</div>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/ClubManager/Activities") == true ? "active" : "")" href="/ClubManager/Activities">
+                        <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+                        <span>All Activities</span>
+                    </a>
+                    <a class="sidebar-link" href="/ClubManager/Activities/Create">
+                        <i data-lucide="plus-circle" style="width: 20px; height: 20px;"></i>
+                        <span>Create Activity</span>
+                    </a>
+                    <a class="sidebar-link" href="/ClubManager/Attendances">
+                        <i data-lucide="clipboard-check" style="width: 20px; height: 20px;"></i>
+                        <span>Attendances</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">CONTENT</div>
+                    <a class="sidebar-link" href="/ClubManager/News">
+                        <i data-lucide="newspaper" style="width: 20px; height: 20px;"></i>
+                        <span>Club News</span>
+                    </a>
+                    <a class="sidebar-link" href="/ClubManager/Gallery">
+                        <i data-lucide="images" style="width: 20px; height: 20px;"></i>
+                        <span>Gallery</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+        
+        <div class="sidebar-footer">
+            <a class="sidebar-link" href="/">
+                <i data-lucide="home" style="width: 20px; height: 20px;"></i>
+                <span>Back to Home</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="admin-main">
+        <!-- Top Header -->
+        <header class="admin-header">
+            <div class="admin-header-left">
+                <button class="sidebar-toggle-btn d-lg-none" onclick="toggleSidebar()">
+                    <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+                </button>
+                <button class="sidebar-toggle-btn d-none d-lg-flex" onclick="toggleSidebarCollapse()">
+                    <i data-lucide="panel-left" style="width: 20px; height: 20px;"></i>
+                </button>
+                <div class="admin-breadcrumb">
+                    <span class="breadcrumb-item">Club Manager</span>
+                    @if (ViewData["Breadcrumb"] != null)
+                    {
+                        <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+                        <span class="breadcrumb-item active">@ViewData["Breadcrumb"]</span>
+                    }
+                </div>
+            </div>
+            
+            <div class="admin-header-right">
+                <!-- Notification Bell -->
+                <div class="header-icon-btn" onclick="toggleNotificationCenter()">
+                    <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+                    <div class="notification-badge"></div>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="dropdown">
+                    <button class="user-menu-btn" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img id="clubManagerUserAvatar" src="" alt="Avatar" class="user-avatar" />
+                        <div class="user-info d-none d-md-block">
+                            <div class="user-name" id="clubManagerUserName">Club Manager</div>
+                            <div class="user-role">Club Manager</div>
+                        </div>
+                        <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end admin-dropdown-menu" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" href="/Profile">
+                                <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                                <span>Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/ClubManager/Settings">
+                                <i data-lucide="settings" style="width: 16px; height: 16px;"></i>
+                                <span>Settings</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="#" onclick="logout(); return false;">
+                                <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+                                <span>Logout</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Page Content -->
+        <main class="admin-content">
+            @RenderBody()
+        </main>
+        
+        <!-- Footer -->
+        <footer class="admin-footer">
+            <div class="footer-content">
+                <div class="footer-text">
+                    &copy; 2025 EduXtend. All rights reserved.
+                </div>
+                <div class="footer-links">
+                    <a href="/Privacy">Privacy Policy</a>
+                    <span>•</span>
+                    <a href="/Terms">Terms</a>
+                    <span>•</span>
+                    <a href="/Contact">Contact</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
+    <script src="~/js/admin-dashboard.js" asp-append-version="true"></script>
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Check authentication status and update UI
+        document.addEventListener('DOMContentLoaded', async function() {
+            await updateClubManagerAuthUI();
+            
+            // Check for stored notifications from redirects
+            checkStoredNotifications();
+        });
+
+        async function updateClubManagerAuthUI() {
+            const user = await getUser();
+            if (user && user.avatar) {
+                document.getElementById('clubManagerUserAvatar').src = user.avatar;
+            }
+            if (user && user.name) {
+                document.getElementById('clubManagerUserName').textContent = user.name;
+            }
+        }
+
+        function checkStoredNotifications() {
+            // Check for login success message
+            const loginSuccess = sessionStorage.getItem('loginSuccess');
+            if (loginSuccess) {
+                try {
+                    const notification = JSON.parse(loginSuccess);
+                    if (typeof success === 'function') {
+                        success(notification.title, notification.message, 5000);
+                    }
+                    sessionStorage.removeItem('loginSuccess');
+                } catch (e) {
+                    console.error('Error parsing login success notification:', e);
+                }
+            }
+
+            // Check for logout success message
+            const logoutSuccess = sessionStorage.getItem('logoutSuccess');
+            if (logoutSuccess) {
+                try {
+                    const notification = JSON.parse(logoutSuccess);
+                    if (typeof info === 'function') {
+                        info(notification.title, notification.message, 5000);
+                    }
+                    sessionStorage.removeItem('logoutSuccess');
+                } catch (e) {
+                    console.error('Error parsing logout success notification:', e);
+                }
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('show');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        function toggleSidebarCollapse() {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+        }
+
+        // Restore sidebar state
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

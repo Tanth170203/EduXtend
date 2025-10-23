@@ -13,5 +13,8 @@ namespace Services.Clubs
         Task<List<ClubListItemDto>> SearchClubsAsync(string? searchTerm, string? categoryName, bool? isActive);
         Task<ClubDetailDto?> GetClubByIdAsync(int id);
         Task<List<string>> GetAllCategoryNamesAsync();
+        Task<ClubDetailDto?> GetManagedClubByUserIdAsync(int userId);
+        Task<bool> ToggleRecruitmentAsync(int clubId, bool isOpen);
+        Task<RecruitmentStatusDto?> GetRecruitmentStatusAsync(int clubId);
     }
 }

@@ -401,7 +401,7 @@ namespace WebAPI.Controllers
                 return "/Admin/Dashboard";
             
             if (roles.Contains("ClubManager"))
-                return "/Club/Dashboard";
+                return "/ClubManager";
             
             if (roles.Contains("ClubMember"))
                 return "/Club/MyClubs";

@@ -14,6 +14,7 @@ namespace BusinessObject.DTOs.Club
         public string? LogoUrl { get; set; }
         public string CategoryName { get; set; } = null!;
         public bool IsActive { get; set; }
+        public bool IsRecruitmentOpen { get; set; }
         public DateTime FoundedDate { get; set; }
         public string? Description { get; set; }
         public int MemberCount { get; set; }

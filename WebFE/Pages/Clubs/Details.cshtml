@@ -18,6 +18,11 @@
         </div>
     </div>
 
+    <!-- Recruitment Status & Apply Button -->
+    <div id="applicationStatusContainer">
+        <!-- Will be populated by JavaScript -->
+    </div>
+
     <!-- Club Stats -->
     <div class="row text-center mb-5">
         <div class="col-md-3 col-6">
@@ -232,3 +237,142 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        const clubId = @c.Id;
+        const isRecruitmentOpen = @c.IsRecruitmentOpen.ToString().ToLower();
+
+        // Check application status on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadApplicationStatus();
+        });
+
+        async function loadApplicationStatus() {
+            const container = document.getElementById('applicationStatusContainer');
+
+            try {
+                // Try to get user's existing request
+                const response = await fetch(`https://localhost:5001/api/joinrequest/my-request/${clubId}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    // User has an existing request
+                    const request = await response.json();
+                    container.innerHTML = getRequestStatusHtml(request);
+                } else if (response.status === 404) {
+                    // No existing request - show apply button or closed message
+                    container.innerHTML = getApplyButtonHtml();
+                } else if (response.status === 401) {
+                    // User not logged in - show recruitment status only
+                    container.innerHTML = getRecruitmentStatusHtml();
+                }
+            } catch (error) {
+                console.error('Error loading application status:', error);
+                container.innerHTML = getRecruitmentStatusHtml();
+            }
+
+            lucide.createIcons();
+        }
+
+        function getRequestStatusHtml(request) {
+            const statusColors = {
+                'Pending': { bg: 'warning', icon: 'clock', text: 'Your application is pending review' },
+                'Approved': { bg: 'success', icon: 'check-circle', text: 'Congratulations! Your application has been approved' },
+                'Rejected': { bg: 'danger', icon: 'x-circle', text: 'Your application was not approved' }
+            };
+
+            const status = statusColors[request.status] || statusColors['Pending'];
+            const appliedDate = new Date(request.createdAt).toLocaleDateString('vi-VN');
+            
+            let actionButton = '';
+            if (request.status === 'Pending') {
+                actionButton = `
+                    <span class="badge bg-warning fs-6 px-3 py-2">
+                        <i data-lucide="clock" style="width: 16px; height: 16px;"></i>
+                        Under Review
+                    </span>
+                `;
+            } else if (request.status === 'Approved') {
+                actionButton = `
+                    <span class="badge bg-success fs-6 px-3 py-2">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        You're a member!
+                    </span>
+                `;
+            } else if (request.status === 'Rejected' && isRecruitmentOpen) {
+                actionButton = `
+                    <button class="btn btn-secondary" onclick="alert('Please contact club manager for more information')">
+                        <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                        More Info
+                    </button>
+                `;
+            }
+
+            return `
+                <div class="alert alert-${status.bg} d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <i data-lucide="${status.icon}" style="width: 20px; height: 20px;"></i>
+                        <strong>Application Status: ${request.status}</strong>
+                        <span class="ms-2">${status.text}</span>
+                        <br/>
+                        <small>Applied on: ${appliedDate}</small>
+                        ${request.departmentName ? `<br/><small>Department: <strong>${request.departmentName}</strong></small>` : ''}
+                    </div>
+                    <div>
+                        ${actionButton}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getApplyButtonHtml() {
+            if (isRecruitmentOpen) {
+                return `
+                    <div class="alert alert-success d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+                            <strong>Recruitment is OPEN!</strong>
+                            <span class="ms-2">We're looking for passionate members to join our club.</span>
+                        </div>
+                        <a href="/Clubs/Apply/${clubId}" class="btn btn-success">
+                            <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                            Apply Now
+                        </a>
+                    </div>
+                `;
+            } else {
+                return getRecruitmentStatusHtml();
+            }
+        }
+
+        function getRecruitmentStatusHtml() {
+            if (isRecruitmentOpen) {
+                return `
+                    <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+                            <strong>Recruitment is OPEN!</strong>
+                            <span class="ms-2">Login to apply and join our club.</span>
+                        </div>
+                        <a href="/Auth/Login" class="btn btn-primary">
+                            <i data-lucide="log-in" style="width: 16px; height: 16px;"></i>
+                            Login to Apply
+                        </a>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="alert alert-secondary d-flex align-items-center mb-4">
+                        <i data-lucide="door-closed" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                        <span>Recruitment is currently closed. Check back later for opportunities to join!</span>
+                    </div>
+                `;
+            }
+        }
+    </script>
+}
