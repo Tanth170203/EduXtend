@@ -2,212 +2,342 @@
 @using BusinessObject.DTOs.Evidence
 @model WebFE.Pages.Student.MyEvidences.IndexModel
 @{
-    ViewData["Title"] = "My Evidences";
+    ViewData["Title"] = "Minh chứng của tôi";
     Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container py-4">
-    <!-- Page Header -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
+<section class="container my-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-            <h1 class="h3 mb-1">Minh chứng của tôi</h1>
-            <p class="text-muted">Quản lý minh chứng phong trào của bạn</p>
+            <h1 class="fw-bold mb-1">Minh chứng của tôi</h1>
+            <p class="text-muted mb-0">Quản lý và theo dõi các minh chứng phong trào của bạn</p>
         </div>
-        <a href="/Student/MyEvidences/Submit" class="btn btn-primary">
-            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-            Nộp minh chứng mới
+        <a class="btn btn-primary rounded-pill" href="/Student/MyEvidences/Submit">
+            <i class="bi bi-plus-circle"></i> Nộp minh chứng mới
         </a>
     </div>
 
-    <!-- Alert Messages -->
+    <!-- Alerts -->
     @if (!string.IsNullOrEmpty(Model.SuccessMessage))
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i data-lucide="check-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-            @Model.SuccessMessage
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            <strong>Thành công!</strong> @Model.SuccessMessage
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-            @Model.ErrorMessage
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            <strong>Lỗi!</strong> @Model.ErrorMessage
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    <!-- Stats -->
+    <!-- Quick Stats (based on ALL evidences, not filtered) -->
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <p class="text-muted mb-1">Tổng minh chứng</p>
-                            <h3 class="mb-0">@Model.Evidences.Count</h3>
+                            <p class="text-muted mb-2 fw-medium">Tổng minh chứng</p>
+                            <h2 class="mb-0 fw-bold">@Model.Evidences.Count</h2>
                         </div>
-                        <i data-lucide="file-text" style="width: 32px; height: 32px; color: #3b82f6;"></i>
+                        <div class="rounded-3 p-3" style="background-color:#e3f2fd;">
+                            <i class="bi bi-file-text" style="font-size:1.5rem;"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <p class="text-muted mb-1">Chờ duyệt</p>
-                            <h3 class="mb-0">@Model.Evidences.Count(e => e.Status == "Pending")</h3>
+                            <p class="text-muted mb-2 fw-medium">Chờ duyệt</p>
+                            <h2 class="mb-0 fw-bold">
+                                @Model.Evidences.Count(e => e.Status == "Pending")
+                            </h2>
                         </div>
-                        <i data-lucide="clock" style="width: 32px; height: 32px; color: #f59e0b;"></i>
+                        <div class="rounded-3 p-3" style="background-color:#fff3e0;">
+                            <i class="bi bi-hourglass-split" style="font-size:1.5rem;"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <p class="text-muted mb-1">Đã duyệt</p>
-                            <h3 class="mb-0">@Model.Evidences.Count(e => e.Status == "Approved")</h3>
+                            <p class="text-muted mb-2 fw-medium">Đã duyệt</p>
+                            <h2 class="mb-0 fw-bold">
+                                @Model.Evidences.Count(e => e.Status == "Approved")
+                            </h2>
                         </div>
-                        <i data-lucide="check-circle" style="width: 32px; height: 32px; color: #10b981;"></i>
+                        <div class="rounded-3 p-3" style="background-color:#e8f5e9;">
+                            <i class="bi bi-check-circle" style="font-size:1.5rem;"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start">
                         <div>
-                            <p class="text-muted mb-1">Tổng điểm</p>
-                            <h3 class="mb-0">@Model.Evidences.Where(e => e.Status == "Approved").Sum(e => e.Points)</h3>
+                            <p class="text-muted mb-2 fw-medium">Tổng điểm</p>
+                            <h2 class="mb-0 fw-bold">
+                                +@Model.Evidences.Where(e => e.Status == "Approved").Sum(e => e.Points)
+                            </h2>
                         </div>
-                        <i data-lucide="award" style="width: 32px; height: 32px; color: #8b5cf6;"></i>
+                        <div class="rounded-3 p-3" style="background-color:#f3e5f5;">
+                            <i class="bi bi-star-fill" style="font-size:1.5rem;"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Evidence List -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="card-title mb-0">Danh sách minh chứng</h5>
+    <!-- Bộ lọc (auto-submit với debounce) -->
+    <form method="get" id="filterForm" class="card shadow-sm border-0 mb-4 p-4">
+        <div class="row g-3">
+            <div class="col-md-5">
+                <input type="text" name="searchTerm" value="@Model.SearchTerm"
+                       class="form-control filter-input-text" placeholder="Tìm theo tiêu đề, mô tả, tiêu chí...">
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select filter-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="Pending" selected="@(Model.Status == "Pending")">Chờ duyệt</option>
+                    <option value="Approved" selected="@(Model.Status == "Approved")">Đã duyệt</option>
+                    <option value="Rejected" selected="@(Model.Status == "Rejected")">Từ chối</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="criterion" value="@Model.Criterion"
+                       class="form-control filter-input-text" placeholder="Lọc theo tiêu chí">
+            </div>
+            <div class="col-md-2">
+                <select name="sort" class="form-select filter-select">
+                    <option value="">Mới nhất</option>
+                    <option value="date_desc" selected="@(Model.Sort == "date_desc")">Mới nhất</option>
+                    <option value="date_asc" selected="@(Model.Sort == "date_asc")">Cũ nhất</option>
+                    <option value="point_desc" selected="@(Model.Sort == "point_desc")">Điểm cao → thấp</option>
+                    <option value="point_asc" selected="@(Model.Sort == "point_asc")">Điểm thấp → cao</option>
+                </select>
+            </div>
         </div>
-        <div class="card-body">
-            @if (Model.Evidences.Any())
+        <div class="d-flex gap-2 mt-3 align-items-center">
+            <small class="text-muted">
+                <i class="bi bi-info-circle"></i> Filter tự động khi nhập
+            </small>
+            @if (!string.IsNullOrEmpty(Model.SearchTerm) ||
+                        !string.IsNullOrEmpty(Model.Status) ||
+                        !string.IsNullOrEmpty(Model.Criterion) ||
+                        !string.IsNullOrEmpty(Model.Sort))
             {
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Tiêu đề</th>
-                                <th>Tiêu chí</th>
-                                <th>Trạng thái</th>
-                                <th>Điểm</th>
-                                <th>Ngày nộp</th>
-                                <th>Ghi chú</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var evidence in Model.Evidences)
-                            {
-                                <tr>
-                                    <td>
-                                        <strong>@evidence.Title</strong>
-                                        @if (!string.IsNullOrEmpty(evidence.Description))
-                                        {
-                                            <br />
-                                            <small class="text-muted">@evidence.Description</small>
-                                        }
-                                    </td>
-                                    <td>@evidence.CriterionTitle</td>
-                                    <td>
-                                        @if (evidence.Status == "Pending")
-                                        {
-                                            <span class="badge bg-warning">
-                                                <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
-                                                Chờ duyệt
-                                            </span>
-                                        }
-                                        else if (evidence.Status == "Approved")
-                                        {
-                                            <span class="badge bg-success">
-                                                <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
-                                                Đã duyệt
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">
-                                                <i data-lucide="x-circle" style="width: 12px; height: 12px;"></i>
-                                                Từ chối
-                                            </span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (evidence.Status == "Approved")
-                                        {
-                                            <strong class="text-success">+@evidence.Points điểm</strong>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                    <td>@evidence.SubmittedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(evidence.ReviewerComment))
-                                        {
-                                            <small class="text-muted">@evidence.ReviewerComment</small>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (evidence.Status == "Pending")
-                                        {
-                                            <form method="post" asp-page-handler="Delete" style="display: inline;">
-                                                <input type="hidden" name="id" value="@evidence.Id">
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Xóa minh chứng này?')">
-                                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                                                </button>
-                                            </form>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                <a href="/Student/MyEvidences" class="btn btn-outline-secondary btn-sm ms-auto">
+                    <i class="bi bi-x-circle"></i> Xóa bộ lọc
+                </a>
+            }
+        </div>
+    </form>
+
+    <!-- Summary (filtered results) -->
+    <div class="mb-3">
+        <h5 class="text-muted">
+            <i class="bi bi-collection"></i> 
+            @if (Model.FilteredEvidences.Count != Model.Evidences.Count)
+            {
+                <span>Tìm thấy <strong>@Model.FilteredEvidences.Count</strong> / @Model.Evidences.Count minh chứng</span>
             }
             else
             {
-                <div class="text-center py-5">
-                    <i data-lucide="inbox" style="width: 64px; height: 64px; color: #9ca3af;"></i>
-                    <p class="text-muted mt-3 mb-0">Bạn chưa nộp minh chứng nào</p>
-                    <p class="text-muted">Nhấn "Nộp minh chứng mới" để bắt đầu</p>
-                </div>
+                <span>Tổng <strong>@Model.Evidences.Count</strong> minh chứng</span>
             }
+        </h5>
+    </div>
+
+    <!-- Table (đồng kiểu Clubs) -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4" style="width:40%;">Tiêu đề & mô tả</th>
+                            <th>Tiêu chí</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center">Điểm</th>
+                            <th>Ngày nộp</th>
+                            <th class="text-end" style="width:190px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.FilteredEvidences.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="bi bi-inbox" style="font-size:3rem;"></i>
+                                    @if (!Model.Evidences.Any())
+                                    {
+                                        <div class="mt-3">Chưa có minh chứng nào</div>
+                                        <div class="small">Nhấn "Nộp minh chứng mới" để bắt đầu</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="mt-3">Không tìm thấy minh chứng phù hợp</div>
+                                        <div class="small">Thử thay đổi bộ lọc hoặc <a href="/Student/MyEvidences">xóa bộ lọc</a></div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var evidence in Model.FilteredEvidences)
+                            {
+                                var statusBadge = evidence.Status switch
+                                {
+                                    "Approved" => "bg-success",
+                                    "Pending" => "bg-warning text-dark",
+                                    "Rejected" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+                                <tr>
+                                    <td class="px-4">
+                                        <div class="fw-semibold mb-1">@evidence.Title</div>
+                                        @if (!string.IsNullOrEmpty(evidence.Description))
+                                        {
+                                            <div class="text-muted small text-truncate-2">
+                                                @(evidence.Description.Length > 120 ? evidence.Description.Substring(0, 120) + "..." : evidence.Description)
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">
+                                            <i class="bi bi-list-check me-1"></i>@evidence.CriterionTitle
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @statusBadge">
+                                            @if (evidence.Status == "Approved")
+                                            {
+                                                <i class="bi bi-check-circle me-1"></i>
+                                            }
+                                            else if (evidence.Status == "Pending")
+                                            {
+
+                                                <i class="bi bi-hourglass-split me-1"></i>
+                                            }
+                                            else
+                                            {
+
+                                                <i class="bi bi-x-circle me-1"></i>
+                                            }
+                                        @(
+                                                                            evidence.Status == "Approved" ? "Đã duyệt" :
+                                                                            evidence.Status == "Pending" ? "Chờ duyệt" : "Từ chối"
+                                                                            )
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                @if (evidence.Status == "Approved")
+                                        {
+                                            <span class="fw-semibold text-success">+@evidence.Points</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="small">@evidence.SubmittedAt.ToString("dd/MM/yyyy")</div>
+                                        <div class="text-muted small">@evidence.SubmittedAt.ToString("HH:mm")</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-inline-flex gap-2">
+                                            @if (!string.IsNullOrEmpty(evidence.FilePath))
+                                            {
+                                                <a class="btn btn-sm btn-outline-info rounded-pill"
+                                                   href="@evidence.FilePath"
+                                                   target="_blank"
+                                                   title="Xem minh chứng">
+                                                    <i class="bi bi-eye"></i> Xem
+                                                </a>
+                                            }
+                                            @if (evidence.Status == "Pending")
+                                            {
+                                                <form method="post" asp-page-handler="Delete" class="d-inline">
+                                                    <input type="hidden" name="id" value="@evidence.Id" />
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-danger rounded-pill"
+                                                            onclick="return confirm('Xác nhận xóa minh chứng này?')"
+                                                            title="Xóa">
+                                                        <i class="bi bi-trash3"></i> Xóa
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
+</section>
+
+<style>
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
 
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+            // ✅ Auto-filter functionality
+            const filterForm = document.getElementById('filterForm');
+            const textInputs = document.querySelectorAll('.filter-input-text');
+            const selectInputs = document.querySelectorAll('.filter-select');
+            
+            let debounceTimer;
+
+            // Debounce function for text inputs (300ms delay)
+            function debounceSubmit() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    filterForm.submit();
+                }, 300);
             }
+
+            // Auto-submit on text input (with debounce)
+            textInputs.forEach(input => {
+                input.addEventListener('input', debounceSubmit);
+            });
+
+            // Auto-submit on select change (instant, no debounce)
+            selectInputs.forEach(select => {
+                select.addEventListener('change', () => {
+                    filterForm.submit();
+                });
+            });
+
+            // Tooltips if needed
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
         });
     </script>
 }
-
-

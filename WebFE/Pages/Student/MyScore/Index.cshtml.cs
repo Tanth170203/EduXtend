@@ -50,8 +50,17 @@ namespace WebFE.Pages.Student.MyScore
         {
             try
             {
-                // Get current user ID from authentication
-                StudentId = GetCurrentUserId();
+                // ✅ Get STUDENT ID (not User ID) from JWT claims
+                StudentId = GetCurrentStudentId();
+                
+                if (StudentId <= 0)
+                {
+                    _logger.LogWarning("❌ StudentId is 0 or invalid! User needs to re-login.");
+                    ErrorMessage = "Unable to identify student. Please logout and login again.";
+                    return Page();
+                }
+
+                _logger.LogInformation("Loading movement summary for StudentId: {StudentId}", StudentId);
                 
                 using var httpClient = CreateHttpClient();
                 var response = await httpClient.GetAsync($"/api/movement-records/student/{StudentId}/summary");
@@ -63,15 +72,18 @@ namespace WebFE.Pages.Student.MyScore
                     {
                         PropertyNameCaseInsensitive = true
                     });
+                    _logger.LogInformation("✅ Loaded movement summary for StudentId: {StudentId}", StudentId);
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     // No records yet - this is okay
                     Summary = null;
+                    _logger.LogInformation("No movement records found for StudentId: {StudentId}", StudentId);
                 }
                 else
                 {
-                    _logger.LogError("Failed to load movement summary: {StatusCode}", response.StatusCode);
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Failed to load movement summary: {StatusCode} - {Error}", response.StatusCode, errorContent);
                     ErrorMessage = "Unable to load movement score.";
                 }
             }
@@ -84,39 +96,54 @@ namespace WebFE.Pages.Student.MyScore
             return Page();
         }
 
-        private int GetCurrentUserId()
+        /// <summary>
+        /// Get current STUDENT ID (not User ID) from JWT claims with fallback
+        /// </summary>
+        private int GetCurrentStudentId()
         {
             try
             {
-                // Try to get from JWT claims first
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (userIdClaim != null && int.TryParse(userIdClaim, out var userId))
+                // ✅ FIRST: Try to get StudentId from JWT claims
+                var studentIdClaim = User.FindFirst("StudentId")?.Value;
+                if (studentIdClaim != null && int.TryParse(studentIdClaim, out var studentId) && studentId > 0)
                 {
-                    return userId;
+                    _logger.LogInformation("Got StudentId from claim: {StudentId}", studentId);
+                    return studentId;
                 }
 
-                // Fallback: try to get from JWT token in cookie
+                // ✅ FALLBACK: Try to get from JWT token in cookie
                 if (Request.Cookies.TryGetValue("AccessToken", out var token))
                 {
                     var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
                     if (handler.CanReadToken(token))
                     {
                         var jwt = handler.ReadJwtToken(token);
-                        var userIdFromToken = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-                        if (userIdFromToken != null && int.TryParse(userIdFromToken, out var userIdFromJwt))
+                        
+                        // Try StudentId first
+                        var studentIdFromToken = jwt.Claims.FirstOrDefault(c => c.Type == "StudentId")?.Value;
+                        if (studentIdFromToken != null && int.TryParse(studentIdFromToken, out var studentIdFromJwt) && studentIdFromJwt > 0)
                         {
+                            _logger.LogInformation("Got StudentId from JWT token: {StudentId}", studentIdFromJwt);
+                            return studentIdFromJwt;
+                        }
+
+                        // Fallback to UserId if StudentId not in token
+                        var userIdFromToken = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                        if (userIdFromToken != null && int.TryParse(userIdFromToken, out var userIdFromJwt) && userIdFromJwt > 0)
+                        {
+                            _logger.LogWarning("Only found UserId {UserId}, StudentId not in token. User may need to re-login.", userIdFromJwt);
                             return userIdFromJwt;
                         }
                     }
                 }
 
-                _logger.LogWarning("Could not determine current user ID, defaulting to 1");
-                return 1; // Fallback to 1 if cannot determine
+                _logger.LogWarning("❌ Could not determine StudentId from claims or token!");
+                return 0;  // ✅ Return 0, NOT 1 - so we can detect the error
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting current user ID, defaulting to 1");
-                return 1; // Fallback to 1 on error
+                _logger.LogError(ex, "❌ Error getting StudentId");
+                return 0;  // ✅ Return 0, NOT 1
             }
         }
     }

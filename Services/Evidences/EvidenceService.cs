@@ -188,6 +188,7 @@ public class EvidenceService : IEvidenceService
             ActivityTitle = evidence.Activity?.Title,
             CriterionId = evidence.CriterionId,
             CriterionTitle = evidence.Criterion?.Title,
+            CriterionMaxScore = evidence.Criterion?.MaxScore ?? 0, // ✅ NEW
             Title = evidence.Title,
             Description = evidence.Description,
             FilePath = evidence.FilePath,

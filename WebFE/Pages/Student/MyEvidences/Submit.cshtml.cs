@@ -37,15 +37,16 @@ namespace WebFE.Pages.Student.MyEvidences
             public string Title { get; set; } = string.Empty;
             public string? Description { get; set; }
             public int? CriterionId { get; set; }
-            public string? FilePath { get; set; }
+            public IFormFile? File { get; set; }
         }
 
         public class CriterionOptionDto
         {
             public int Id { get; set; }
-            public string Name { get; set; } = string.Empty;
-            public int Score { get; set; }
-            public string GroupName { get; set; } = string.Empty;
+            public string Title { get; set; } = string.Empty;  // ✅ Tên tiêu chí con
+            public int MaxScore { get; set; }  // ✅ Điểm tối đa
+            public string GroupName { get; set; } = string.Empty;  // Chỉ để nhận dữ liệu, không hiển thị
+            public bool IsActive { get; set; }
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -53,7 +54,9 @@ namespace WebFE.Pages.Student.MyEvidences
             try
             {
                 using var httpClient = CreateHttpClient();
-                var response = await httpClient.GetAsync("/api/movement-criteria");
+                
+                // ✅ Chỉ load criteria cho Student (không load criteria của Club)
+                var response = await httpClient.GetAsync("/api/movement-criteria/by-target-type/Student");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -64,8 +67,14 @@ namespace WebFE.Pages.Student.MyEvidences
                     });
                     if (criteria != null)
                     {
-                        Criteria = criteria;
+                        // ✅ Chỉ lấy criteria đang active
+                        Criteria = criteria.Where(c => c.IsActive).ToList();
+                        _logger.LogInformation("Loaded {Count} active Student criteria", Criteria.Count);
                     }
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to load criteria: {StatusCode}", response.StatusCode);
                 }
             }
             catch (Exception ex)
@@ -87,21 +96,54 @@ namespace WebFE.Pages.Student.MyEvidences
             try
             {
                 var studentId = GetCurrentUserId();
-                
-                var createDto = new CreateEvidenceDto
-                {
-                    StudentId = studentId,
-                    Title = Input.Title,
-                    Description = Input.Description,
-                    CriterionId = Input.CriterionId,
-                    FilePath = Input.FilePath
-                };
-
-                var json = JsonSerializer.Serialize(createDto);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 using var httpClient = CreateHttpClient();
-                var response = await httpClient.PostAsync("/api/evidences", content);
+
+                // Create multipart form data
+                using var formData = new MultipartFormDataContent();
+
+                // Add text fields
+                formData.Add(new StringContent(studentId.ToString()), "StudentId");
+                formData.Add(new StringContent(Input.Title), "Title");
+                
+                if (!string.IsNullOrEmpty(Input.Description))
+                {
+                    formData.Add(new StringContent(Input.Description), "Description");
+                }
+                
+                if (Input.CriterionId.HasValue)
+                {
+                    formData.Add(new StringContent(Input.CriterionId.Value.ToString()), "CriterionId");
+                }
+
+                // Add file if provided
+                if (Input.File != null && Input.File.Length > 0)
+                {
+                    // Validate file size (10MB max)
+                    const long maxFileSize = 10 * 1024 * 1024; // 10MB
+                    if (Input.File.Length > maxFileSize)
+                    {
+                        ErrorMessage = "File size exceeds 10MB limit.";
+                        await OnGetAsync();
+                        return Page();
+                    }
+
+                    // Validate file extension
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf", ".doc", ".docx" };
+                    var extension = Path.GetExtension(Input.File.FileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(extension))
+                    {
+                        ErrorMessage = "Invalid file type. Allowed types: JPG, PNG, PDF, DOC, DOCX.";
+                        await OnGetAsync();
+                        return Page();
+                    }
+
+                    var fileContent = new StreamContent(Input.File.OpenReadStream());
+                    fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(Input.File.ContentType);
+                    formData.Add(fileContent, "File", Input.File.FileName);
+                }
+
+                var response = await httpClient.PostAsync("/api/evidences", formData);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -112,13 +154,30 @@ namespace WebFE.Pages.Student.MyEvidences
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogWarning("Submit evidence failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = "Unable to submit evidence.";
+                    
+                    // Try to parse error message from JSON
+                    try
+                    {
+                        var errorJson = JsonSerializer.Deserialize<JsonElement>(errorContent);
+                        if (errorJson.TryGetProperty("message", out var messageProperty))
+                        {
+                            ErrorMessage = messageProperty.GetString() ?? "Unable to submit evidence.";
+                        }
+                        else
+                        {
+                            ErrorMessage = "Unable to submit evidence.";
+                        }
+                    }
+                    catch
+                    {
+                        ErrorMessage = "Unable to submit evidence.";
+                    }
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error submitting evidence");
-                ErrorMessage = "An error occurred.";
+                ErrorMessage = "An error occurred while submitting evidence.";
             }
 
             await OnGetAsync();
@@ -129,24 +188,52 @@ namespace WebFE.Pages.Student.MyEvidences
         {
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (userIdClaim != null && int.TryParse(userIdClaim, out var userId))
-                {
-                    return userId;
-                }
-                
+                // Try to get StudentId from JWT claims first (for Student users)
                 var studentIdClaim = User.FindFirst("StudentId")?.Value;
                 if (studentIdClaim != null && int.TryParse(studentIdClaim, out var studentId))
                 {
+                    _logger.LogInformation("Got StudentId from claim: {StudentId}", studentId);
                     return studentId;
                 }
+
+                // Fallback: try to get from JWT token in cookie
+                if (Request.Cookies.TryGetValue("AccessToken", out var token))
+                {
+                    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                    if (handler.CanReadToken(token))
+                    {
+                        var jwt = handler.ReadJwtToken(token);
+                        
+                        // Log all claims for debugging
+                        _logger.LogInformation("JWT Claims: {Claims}", 
+                            string.Join(", ", jwt.Claims.Select(c => $"{c.Type}={c.Value}")));
+                        
+                        // Try to get StudentId from token
+                        var studentIdFromToken = jwt.Claims.FirstOrDefault(c => c.Type == "StudentId")?.Value;
+                        if (studentIdFromToken != null && int.TryParse(studentIdFromToken, out var studentIdFromJwt))
+                        {
+                            _logger.LogInformation("Got StudentId from JWT token: {StudentId}", studentIdFromJwt);
+                            return studentIdFromJwt;
+                        }
+
+                        // Fallback to UserId if StudentId not found
+                        var userIdFromToken = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                        if (userIdFromToken != null && int.TryParse(userIdFromToken, out var userIdFromJwt))
+                        {
+                            _logger.LogWarning("Only found UserId {UserId}, StudentId not in token. User may need to re-login.", userIdFromJwt);
+                            return userIdFromJwt; // This might cause issues if UserId != StudentId
+                        }
+                    }
+                }
+
+                _logger.LogWarning("Could not determine StudentId from any source");
+                return 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting user ID from claims");
+                _logger.LogError(ex, "Error getting StudentId");
+                return 0;
             }
-            
-            return 0;
         }
 
         private HttpClient CreateHttpClient()

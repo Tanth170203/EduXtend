@@ -2,6 +2,7 @@
 using BusinessObject.Models;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Repositories.Users;
@@ -21,11 +22,13 @@ namespace Services.GGLogin
     {
         private readonly EduXtendContext _context;
         private readonly JwtOptions _jwtOptions;
+        private readonly ILogger<TokenService> _logger;
 
-        public TokenService(EduXtendContext context, IOptions<JwtOptions> jwtOptions)
+        public TokenService(EduXtendContext context, IOptions<JwtOptions> jwtOptions, ILogger<TokenService> logger)
         {
             _context = context;
             _jwtOptions = jwtOptions.Value;
+            _logger = logger;
         }
 
         public string GenerateAccessToken(User user)
@@ -131,6 +134,27 @@ namespace Services.GGLogin
                         claims.Add(new Claim(ClaimTypes.Role, userRole.Role.RoleName));
                     }
                 }
+            }
+
+            // ✅ Thêm StudentId vào claims nếu user là Student
+            try
+            {
+                var student = _context.Students.FirstOrDefault(s => s.UserId == user.Id);
+                if (student != null)
+                {
+                    claims.Add(new Claim("StudentId", student.Id.ToString()));
+                    claims.Add(new Claim("StudentCode", student.StudentCode));
+                    _logger.LogInformation("✅ Added StudentId to JWT: UserId={UserId} → StudentId={StudentId}, StudentCode={StudentCode}", 
+                        user.Id, student.Id, student.StudentCode);
+                }
+                else
+                {
+                    _logger.LogWarning("⚠️ No Student found for UserId={UserId}. User might not be a Student or Student record missing.", user.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error loading Student for UserId={UserId}", user.Id);
             }
 
             return claims;

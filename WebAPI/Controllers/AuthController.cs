@@ -358,7 +358,8 @@ namespace WebAPI.Controllers
                 var jwtToken = handler.ReadJwtToken(token);
                 var expiresAt = jwtToken.ValidTo;
 
-                await _blacklistRepo.AddAsync(token, userId, expiresAt, reason);
+                // Use the new AddFullTokenAsync which handles hashing internally
+                await _blacklistRepo.AddFullTokenAsync(token, userId, expiresAt, reason);
             }
             catch (Exception ex)
             {

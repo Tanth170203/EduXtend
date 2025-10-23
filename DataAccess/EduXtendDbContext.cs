@@ -73,7 +73,7 @@ public class EduXtendContext : DbContext
 
         // LoggedOutToken
         modelBuilder.Entity<LoggedOutToken>()
-            .HasIndex(lot => lot.Token)
+            .HasIndex(lot => lot.TokenHash)
             .IsUnique();
 
         modelBuilder.Entity<LoggedOutToken>()
