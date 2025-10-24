@@ -1,0 +1,66 @@
+@page
+@model WebFE.Pages.ClubManager.ClubInfoModel
+@{
+    ViewData["Title"] = "Club Information";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<div class="content-card">
+    <div class="content-card-header">
+        <h2 class="content-card-title">Club Information</h2>
+    </div>
+    <div class="content-card-body">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+        <form method="post" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Name</label>
+                <input asp-for="Input.Name" class="form-control" />
+                <span asp-validation-for="Input.Name" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Sub Name</label>
+                <input asp-for="Input.SubName" class="form-control" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea asp-for="Input.Description" class="form-control" rows="4"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Logo URL</label>
+                <input asp-for="Input.LogoUrl" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Banner URL</label>
+                <input asp-for="Input.BannerUrl" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Category</label>
+                <select asp-for="Input.CategoryId" class="form-select">
+                    <option value="">-- Keep current: @Model.CurrentCategoryName --</option>
+                    @foreach (var cat in Model.Categories)
+                    {
+                        <option value="@cat.Id">@cat.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-center">
+                <div class="form-check mt-4">
+                    <input name="Input.IsActive" value="true" class="form-check-input" type="checkbox" @(Model.CurrentIsActive ? "checked" : "") />
+                    <label class="form-check-label">Active</label>
+                </div>
+            </div>
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+

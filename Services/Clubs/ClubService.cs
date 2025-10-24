@@ -130,5 +130,72 @@ namespace Services.Clubs
                 PendingRequestCount = pendingCount
             };
         }
+
+        public async Task<List<MyClubItemDto>> GetMyClubsAsync(int userId)
+        {
+            var list = await _repo.GetClubsByUserIdAsync(userId);
+            var result = new List<MyClubItemDto>();
+            foreach (var (club, role) in list)
+            {
+                result.Add(new MyClubItemDto
+                {
+                    ClubId = club.Id,
+                    Name = club.Name,
+                    SubName = club.SubName,
+                    LogoUrl = club.LogoUrl,
+                    CategoryName = club.Category.Name,
+                    IsActive = club.IsActive,
+                    RoleInClub = role,
+                    IsManager = string.Equals(role, "President", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(role, "Manager", StringComparison.OrdinalIgnoreCase)
+                });
+            }
+            return result.OrderBy(c => c.Name).ToList();
+        }
+
+        public async Task<List<ClubMemberItemDto>> GetClubMembersAsync(int clubId)
+        {
+            var raw = await _repo.GetClubMembersAsync(clubId);
+            return raw.Select(x => new ClubMemberItemDto
+            {
+                StudentId = x.StudentId,
+                FullName = x.FullName,
+                RoleInClub = x.RoleInClub,
+                IsActive = x.IsActive,
+                JoinedAt = x.JoinedAt
+            }).OrderBy(m => m.FullName).ToList();
+        }
+
+        public Task<bool> LeaveClubAsync(int userId, int clubId)
+            => _repo.LeaveClubAsync(userId, clubId);
+
+        public async Task<List<ClubMemberManageItemDto>> GetMembersForManageAsync(int clubId)
+        {
+            var list = await _repo.GetMembersForManageAsync(clubId);
+            return list.Select(x => new ClubMemberManageItemDto
+            {
+                Id = x.Id,
+                StudentId = x.StudentId,
+                FullName = x.FullName,
+                RoleInClub = x.RoleInClub,
+                IsActive = x.IsActive,
+                JoinedAt = x.JoinedAt
+            }).ToList();
+        }
+
+        public Task<bool> UpdateMemberRoleAsync(int clubId, int studentId, string role)
+            => _repo.UpdateMemberRoleAsync(clubId, studentId, role);
+
+        public Task<bool> RemoveMemberAsync(int clubId, int studentId)
+            => _repo.RemoveMemberAsync(clubId, studentId);
+
+        public Task<bool> UpdateClubInfoAsync(int clubId, UpdateClubInfoDto dto)
+            => _repo.UpdateClubInfoAsync(clubId, dto.Name, dto.SubName, dto.Description, dto.LogoUrl, dto.BannerUrl, dto.CategoryId, dto.IsActive);
+
+        public async Task<List<CategoryItemDto>> GetAllCategoriesAsyncLite()
+        {
+            var list = await _repo.GetAllCategoriesAsyncLite();
+            return list.Select(x => new CategoryItemDto { Id = x.Id, Name = x.Name }).ToList();
+        }
     }
 }

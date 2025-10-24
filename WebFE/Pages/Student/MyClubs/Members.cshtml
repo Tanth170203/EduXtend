@@ -1,0 +1,55 @@
+@page
+@model WebFE.Pages.Student.MyClubs.MembersModel
+@{
+    ViewData["Title"] = "Club Members";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<section class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold">Members - @Model.ClubName</h1>
+            <p class="text-muted mb-0">Danh sách thành viên</p>
+        </div>
+        <a href="/Student/MyClubs" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại My Clubs
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Họ tên</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Tham gia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.Members)
+                    {
+                        <tr>
+                            <td>@m.FullName</td>
+                            <td><span class="badge bg-info">@m.RoleInClub</span></td>
+                            <td>
+                                @if (m.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td>@m.JoinedAt.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+

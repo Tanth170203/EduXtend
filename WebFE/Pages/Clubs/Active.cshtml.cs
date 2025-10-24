@@ -1,4 +1,5 @@
 using BusinessObject.DTOs.Club;
+using BusinessObject.DTOs;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net.Http.Json;
 
@@ -12,6 +13,10 @@ namespace WebFE.Pages.Clubs
         public ActiveModel(IHttpClientFactory http) => _http = http;
 
         public List<ClubListItemDto> Clubs { get; private set; } = new();
+        public int PageNumber { get; private set; }
+        public int PageSize { get; private set; } = 9;
+        public int TotalItems { get; private set; }
+        public int TotalPages { get; private set; }
 
         [BindProperty(SupportsGet = true)]
         public string? SearchTerm { get; set; }
@@ -24,7 +29,7 @@ namespace WebFE.Pages.Clubs
 
         public List<string> Categories { get; set; } = new();
 
-        public async Task OnGetAsync()
+        public async Task OnGetAsync([FromQuery] int page = 1)
         {
             var client = _http.CreateClient("ApiClient");
             
@@ -40,20 +45,22 @@ namespace WebFE.Pages.Clubs
             
             // Always filter for active clubs
             queryParams.Add("isActive=true");
+            queryParams.Add($"page={page}");
+            queryParams.Add($"pageSize={PageSize}");
+            if (!string.IsNullOrWhiteSpace(SortBy)) queryParams.Add($"sortBy={Uri.EscapeDataString(SortBy)}");
 
-            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-            var endpoint = queryParams.Count > 0 ? $"api/club/search{queryString}" : "api/club";
-            
-            var clubs = await client.GetFromJsonAsync<List<ClubListItemDto>>(endpoint) ?? new();
+            var queryString = "?" + string.Join("&", queryParams);
+            var endpoint = $"api/club/search-paged{queryString}";
 
-            // Apply sorting
-            Clubs = SortBy switch
+            var result = await client.GetFromJsonAsync<PagedResult<ClubListItemDto>>(endpoint);
+            if (result != null)
             {
-                "newest" => clubs.OrderByDescending(c => c.FoundedDate).ToList(),
-                "members" => clubs.OrderByDescending(c => c.MemberCount).ToList(),
-                "az" => clubs.OrderBy(c => c.Name).ToList(),
-                _ => clubs.OrderBy(c => c.Name).ToList()
-            };
+                Clubs = result.Items ?? new();
+                PageNumber = result.PageNumber;
+                PageSize = result.PageSize;
+                TotalItems = result.TotalItems;
+                TotalPages = result.TotalPages;
+            }
         }
 
         public string Img(string? url, string fallback) =>

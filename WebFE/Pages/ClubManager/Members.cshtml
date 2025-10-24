@@ -1,0 +1,61 @@
+@page
+@model WebFE.Pages.ClubManager.MembersModel
+@{
+    ViewData["Title"] = "Manage Members";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<div class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+        <h2 class="content-card-title">Members</h2>
+    </div>
+    <div class="content-card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.Members)
+                    {
+                        <tr>
+                            <td>@m.FullName</td>
+                            <td>
+                                <form method="post" asp-page-handler="UpdateRole" class="d-flex gap-2 align-items-center">
+                                    <input type="hidden" name="studentId" value="@m.StudentId" />
+                                    <input type="hidden" name="ClubId" value="@Model.ClubId" />
+                                    <select name="role" class="form-select form-select-sm" style="max-width: 180px;">
+                                        <option value="Member" selected="@(m.RoleInClub=="Member")">Member</option>
+                                        <option value="Manager" selected="@(m.RoleInClub=="Manager")">Manager</option>
+                                        <option value="VicePresident" selected="@(m.RoleInClub=="VicePresident")">VicePresident</option>
+                                        <option value="President" selected="@(m.RoleInClub=="President")">President</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                                </form>
+                            </td>
+                            <td>
+                                @if (m.IsActive) { <span class="badge bg-success">Active</span>; } else { <span class="badge bg-secondary">Inactive</span>; }
+                            </td>
+                            <td>@m.JoinedAt.ToString("dd/MM/yyyy")</td>
+                            <td class="text-end">
+                                <form method="post" asp-page-handler="Remove" onsubmit="return confirm('Remove this member?');">
+                                    <input type="hidden" name="studentId" value="@m.StudentId" />
+                                    <input type="hidden" name="ClubId" value="@Model.ClubId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+

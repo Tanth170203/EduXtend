@@ -67,8 +67,8 @@
     <!-- Results Summary -->
     <div class="mb-3">
         <h5 class="text-muted">
-            <i class="bi bi-calendar-event"></i> Found <strong>@Model.Activities.Count</strong> 
-            activit@(Model.Activities.Count != 1 ? "ies" : "y")
+            <i class="bi bi-calendar-event"></i> Found <strong>@Model.TotalItems</strong> 
+            activit@(Model.TotalItems != 1 ? "ies" : "y")
         </h5>
     </div>
 
@@ -213,6 +213,38 @@
             </div>
         }
     </div>
+
+    @{
+        var hasPages = Model.TotalPages > 1;
+        var baseQs = new List<string>();
+        if (!string.IsNullOrEmpty(Model.SearchTerm)) { baseQs.Add($"searchTerm={System.Uri.EscapeDataString(Model.SearchTerm)}"); }
+        if (!string.IsNullOrEmpty(Model.Type)) { baseQs.Add($"type={System.Uri.EscapeDataString(Model.Type)}"); }
+        if (!string.IsNullOrEmpty(Model.Status)) { baseQs.Add($"status={System.Uri.EscapeDataString(Model.Status)}"); }
+        if (!string.IsNullOrEmpty(Model.Filter)) { baseQs.Add($"filter={System.Uri.EscapeDataString(Model.Filter)}"); }
+        var baseQuery = baseQs.Count > 0 ? "?" + string.Join("&", baseQs) + "&" : "?";
+    }
+
+    @if (hasPages)
+    {
+        <nav class="d-flex justify-content-center mt-4">
+            <ul class="pagination">
+                <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="@(baseQuery)page=@(Model.PageNumber - 1)">Previous</a>
+                </li>
+
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" href="@(baseQuery)page=@i">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" href="@(baseQuery)page=@(Model.PageNumber + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
 </section>
 
 <style>

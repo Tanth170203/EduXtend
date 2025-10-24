@@ -1,0 +1,59 @@
+@page
+@model WebFE.Pages.Student.MyClubs.IndexModel
+@{
+    ViewData["Title"] = "My Clubs";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<section class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold">My Clubs</h1>
+            <p class="text-muted mb-0">Danh sách CLB bạn đang tham gia hoặc quản lý</p>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    @if (Model.Items.Any())
+    {
+        <div class="list-group shadow-sm">
+            @foreach (var item in Model.Items)
+            {
+                var href = item.IsManager ? "/ClubManager" : $"/Clubs/Details/{item.ClubId}";
+                <a href="@href" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="@(string.IsNullOrEmpty(item.LogoUrl) ? "/img/club-placeholder.png" : item.LogoUrl)"
+                             alt="logo"
+                             style="width:48px;height:48px;border-radius:8px;object-fit:cover;"
+                             onerror="this.style.display='none'" />
+                        <div>
+                            <div class="fw-bold">@item.Name</div>
+                            @if (!string.IsNullOrWhiteSpace(item.SubName))
+                            {
+                                <small class="text-muted">@item.SubName</small>
+                            }
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-info">@item.CategoryName</span>
+                        <span class="badge @(item.IsManager ? "bg-success" : "bg-secondary")">@item.RoleInClub</span>
+                        @if (item.IsManager)
+                        {
+                            <span class="text-primary small">Quản lý →</span>
+                        }
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">Bạn chưa tham gia CLB nào.</div>
+    }
+</section>
+
+

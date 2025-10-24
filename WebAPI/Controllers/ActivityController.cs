@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Activities;
 using System.Security.Claims;
+using BusinessObject.DTOs;
+using System.Linq;
 
 namespace WebAPI.Controllers
 {
@@ -33,6 +35,48 @@ namespace WebAPI.Controllers
         {
             var data = await _service.SearchActivitiesAsync(searchTerm, type, status, isPublic, clubId);
             return Ok(data);
+        }
+
+        // GET api/activity/paged?page=1&pageSize=9
+        [HttpGet("paged")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAllPaged([FromQuery] int page = 1, [FromQuery] int pageSize = 9)
+        {
+            var list = await _service.GetAllActivitiesAsync();
+            return Ok(BuildPaged(list, page, pageSize));
+        }
+
+        // GET api/activity/search-paged?searchTerm=...&type=...&status=...&isPublic=true&page=1&pageSize=9
+        [HttpGet("search-paged")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SearchPaged(
+            [FromQuery] string? searchTerm,
+            [FromQuery] string? type,
+            [FromQuery] string? status,
+            [FromQuery] bool? isPublic,
+            [FromQuery] int? clubId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 9)
+        {
+            var list = await _service.SearchActivitiesAsync(searchTerm, type, status, isPublic, clubId);
+            return Ok(BuildPaged(list, page, pageSize));
+        }
+
+        private static PagedResult<T> BuildPaged<T>(List<T> source, int page, int pageSize)
+        {
+            if (pageSize <= 0) pageSize = 9;
+            if (page <= 0) page = 1;
+            var totalItems = source.Count;
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            var items = source.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return new PagedResult<T>
+            {
+                Items = items,
+                PageNumber = page,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages
+            };
         }
 
         // GET api/activity/{id}

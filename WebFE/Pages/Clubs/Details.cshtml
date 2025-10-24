@@ -13,10 +13,28 @@
              style="height:260px; object-fit:cover;">
         <div class="position-absolute bottom-0 start-0 p-4 text-white"
              style="background:linear-gradient(to top,rgba(0,0,0,0.6),transparent)">
-            <h1 class="fw-bold">@c.Name</h1>
-            <p class="text-light mb-1">@c.Description</p>
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div>
+                    <h1 class="fw-bold mb-1">@c.Name</h1>
+                    <p class="text-light mb-1">@c.Description</p>
+                </div>               
+            </div>
         </div>
     </div>
+    @if (Model.IsCurrentUserMember && !Model.IsCurrentUserManager)
+    {
+        <div class="mb-4 d-flex gap-2">
+            <a href="/Student/MyClubs/Members?clubId=@c.Id" class="btn btn-outline-secondary">
+                <i class="bi bi-people"></i> Members
+            </a>
+            <form method="post" asp-page-handler="Leave" onsubmit="return confirm('Rời khỏi CLB này?');">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="bi bi-box-arrow-right"></i> Rời CLB
+                </button>
+            </form>
+        </div>
+    }
+    
 
     <!-- Recruitment Status & Apply Button -->
     <div id="applicationStatusContainer">
@@ -24,22 +42,34 @@
     </div>
 
     <!-- Club Stats -->
-    <div class="row text-center mb-5">
-        <div class="col-md-3 col-6">
-            <h4 class="fw-bold text-primary">@c.MemberCount</h4>
-            <p class="text-muted small mb-0"><i class="bi bi-people"></i> Members</p>
+    <div class="stat-grid mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#eef4ff;color:#0d6efd;">
+                <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-value">@c.MemberCount</div>
+            <div class="stat-label">Members</div>
         </div>
-        <div class="col-md-3 col-6">
-            <h4 class="fw-bold text-success">@c.ActivityCount</h4>
-            <p class="text-muted small mb-0"><i class="bi bi-calendar-event"></i> Activities</p>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#e8fff3;color:#198754;">
+                <i class="bi bi-calendar-event"></i>
+            </div>
+            <div class="stat-value">@c.ActivityCount</div>
+            <div class="stat-label">Activities</div>
         </div>
-        <div class="col-md-3 col-6">
-            <h4 class="fw-bold text-info">@c.DepartmentCount</h4>
-            <p class="text-muted small mb-0"><i class="bi bi-diagram-3"></i> Departments</p>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#e7f6ff;color:#0aa2c0;">
+                <i class="bi bi-diagram-3"></i>
+            </div>
+            <div class="stat-value">@c.DepartmentCount</div>
+            <div class="stat-label">Departments</div>
         </div>
-        <div class="col-md-3 col-6">
-            <h4 class="fw-bold text-warning">@c.AwardCount</h4>
-            <p class="text-muted small mb-0"><i class="bi bi-trophy"></i> Awards</p>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:#fff7e6;color:#d97706;">
+                <i class="bi bi-trophy"></i>
+            </div>
+            <div class="stat-value">@c.AwardCount</div>
+            <div class="stat-label">Awards</div>
         </div>
     </div>
 
@@ -244,6 +274,7 @@
 
         const clubId = @c.Id;
         const isRecruitmentOpen = @c.IsRecruitmentOpen.ToString().ToLower();
+        const isMember = @Model.IsCurrentUserMember.ToString().ToLower();
 
         // Check application status on page load
         document.addEventListener('DOMContentLoaded', async () => {
@@ -254,6 +285,10 @@
             const container = document.getElementById('applicationStatusContainer');
 
             try {
+                if (isMember) {
+                    container.innerHTML = getAlreadyMemberHtml();
+                    return;
+                }
                 // Try to get user's existing request
                 const response = await fetch(`https://localhost:5001/api/joinrequest/my-request/${clubId}`, {
                     method: 'GET',
@@ -277,6 +312,17 @@
             }
 
             lucide.createIcons();
+        }
+
+        function getAlreadyMemberHtml() {
+            return `
+                <div class="alert alert-success d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                        <strong>You're a member of this club.</strong>
+                    </div>
+                </div>
+            `;
         }
 
         function getRequestStatusHtml(request) {
@@ -376,3 +422,33 @@
         }
     </script>
 }
+
+<style>
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+    }
+    .stat-card {
+        background: #fff;
+        border: 1px solid var(--border, #e9ecef);
+        border-radius: .75rem;
+        padding: 1rem;
+        text-align: center;
+        box-shadow: 0 1px 2px rgba(0,0,0,.03);
+    }
+    .stat-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: inline-flex; align-items: center; justify-content: center; 
+        margin-bottom: .5rem; font-size: 1.25rem;
+    }
+    .stat-value { font-size: 1.5rem; font-weight: 700; }
+    .stat-label { color: #6c757d; font-size: .9rem; }
+
+    @@media (max-width: 992px) {
+        .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @@media (max-width: 576px) {
+        .stat-grid { grid-template-columns: 1fr; }
+    }
+</style>
