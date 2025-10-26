@@ -94,7 +94,33 @@ namespace WebAPI.Controllers
 			var list = await _service.GetActivityFeedbacksAsync(adminId, id);
 			return Ok(list);
 		}
+
+		// POST api/admin/activities/{id}/approve
+		[HttpPost("{id:int}/approve")]
+		public async Task<IActionResult> Approve(int id, [FromBody] ApprovalRequest request)
+		{
+			var adminId = GetAdminUserId();
+			var result = await _service.ApproveActivityAsync(adminId, id);
+			if (result == null) return NotFound(new { message = "Activity not found" });
+			return Ok(result);
+		}
+
+		// POST api/admin/activities/{id}/reject
+		[HttpPost("{id:int}/reject")]
+		public async Task<IActionResult> Reject(int id, [FromBody] ApprovalRequest request)
+		{
+			var adminId = GetAdminUserId();
+			var result = await _service.RejectActivityAsync(adminId, id);
+			if (result == null) return NotFound(new { message = "Activity not found" });
+			return Ok(result);
+		}
     }
+
+	public class ApprovalRequest
+	{
+		public int AdminUserId { get; set; }
+		public string Action { get; set; } = string.Empty;
+	}
 }
 
 

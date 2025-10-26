@@ -37,8 +37,8 @@ namespace WebFE.Pages.Activities
             if (!string.IsNullOrWhiteSpace(Type))
                 queryParams.Add($"type={Uri.EscapeDataString(Type)}");
             
-            if (!string.IsNullOrWhiteSpace(Status))
-                queryParams.Add($"status={Uri.EscapeDataString(Status)}");
+            // Always filter only Approved activities for public page
+            queryParams.Add("status=Approved");
 
             // Filter by public/club activities
             if (Filter == "public")
@@ -46,8 +46,8 @@ namespace WebFE.Pages.Activities
             else if (Filter == "club")
                 queryParams.Add("isPublic=false");
 
-            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
-            var endpoint = queryParams.Count > 0 ? $"api/activity/search{queryString}" : "api/activity";
+            var queryString = "?" + string.Join("&", queryParams);
+            var endpoint = $"api/activity/search{queryString}";
 
             Activities = await client.GetFromJsonAsync<List<ActivityListItemDto>>(endpoint) ?? new();
         }

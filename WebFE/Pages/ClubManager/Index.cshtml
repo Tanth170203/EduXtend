@@ -86,7 +86,7 @@
     </div>
     <div class="content-card-body">
         <div class="quick-actions">
-            <a href="/ClubManager/Activities/Create" class="quick-action-btn">
+            <a href="/ClubManager/Activities" class="quick-action-btn">
                 <div class="quick-action-icon">
                     <i data-lucide="plus-circle" style="width: 24px; height: 24px;"></i>
                 </div>
@@ -95,6 +95,7 @@
                     <p class="quick-action-desc">Tạo hoạt động mới cho câu lạc bộ</p>
                 </div>
             </a>
+
             
             <a href="/ClubManager/Members" class="quick-action-btn">
                 <div class="quick-action-icon" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af;">
@@ -141,7 +142,7 @@
                 <div class="text-center py-5 text-muted">
                     <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
                     <p>No activities yet. Create your first activity!</p>
-                    <a href="/ClubManager/Activities/Create" class="btn btn-primary mt-2">
+                    <a href="/ClubManager/Activities" class="btn btn-primary mt-2">
                         <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
                         Create Activity
                     </a>
@@ -176,6 +177,14 @@
 
 @section Scripts {
     <script>
-        lucide.createIcons();
+        // Initialize Lucide icons on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+                
+                // Re-run after short delay to catch any dynamically loaded content
+                setTimeout(() => lucide.createIcons(), 100);
+            }
+        });
     </script>
 }

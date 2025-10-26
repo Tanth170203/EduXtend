@@ -94,8 +94,8 @@
 <div class="content-card">
     <div class="content-card-header">
         <h2 class="content-card-title">Students List</h2>
-        <div class="d-flex gap-2">
-            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search students..." style="max-width: 300px;">
+        <div class="d-flex gap-2 align-items-center">
+            <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search by code, name, or email..." style="max-width: 350px;">
         </div>
     </div>
     <div class="content-card-body">
@@ -114,10 +114,12 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tableBody">
                         @foreach (var student in Model.Students)
                         {
-                            <tr>
+                            <tr data-student-code="@student.StudentCode.ToLower()" 
+                                data-full-name="@student.FullName.ToLower()" 
+                                data-email="@student.Email.ToLower()">
                                 <td><strong>@student.StudentCode</strong></td>
                                 <td>@student.FullName</td>
                                 <td>@student.Email</td>
@@ -160,6 +162,16 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Pagination Info and Controls -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="text-muted small">
+                    Showing <span id="showingFrom">1</span> to <span id="showingTo">10</span> of <span id="totalItems">@Model.Students.Count</span> students
+                </div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
+                </nav>
+            </div>
         }
         else
         {
@@ -201,16 +213,127 @@
     <script>
         lucide.createIcons();
 
-        // Search functionality
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            const searchValue = this.value.toLowerCase();
-            const rows = document.querySelectorAll('#studentsTable tbody tr');
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchValue) ? '' : 'none';
-            });
+        let currentPage = 1;
+        let itemsPerPage = 10; // Fixed at 10 per page
+        let allRows = [];
+        let filteredRows = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            allRows = Array.from(document.querySelectorAll('#tableBody tr'));
+            filteredRows = [...allRows];
+            updatePagination();
+            displayPage(1);
         });
+
+        // Search functionality - Real-time by Student Code, Full Name, Email
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchValue = this.value.toLowerCase().trim();
+            
+            filteredRows = allRows.filter(row => {
+                const studentCode = row.getAttribute('data-student-code') || '';
+                const fullName = row.getAttribute('data-full-name') || '';
+                const email = row.getAttribute('data-email') || '';
+                
+                return studentCode.includes(searchValue) || 
+                       fullName.includes(searchValue) || 
+                       email.includes(searchValue);
+            });
+            
+            currentPage = 1;
+            updatePagination();
+            displayPage(1);
+        });
+
+        // Display page
+        function displayPage(page) {
+            currentPage = page;
+            const startIndex = (page - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            
+            // Hide all rows
+            allRows.forEach(row => row.style.display = 'none');
+            
+            // Show only rows for current page
+            filteredRows.slice(startIndex, endIndex).forEach(row => {
+                row.style.display = '';
+            });
+            
+            // Update info
+            const showingFrom = filteredRows.length === 0 ? 0 : startIndex + 1;
+            const showingTo = Math.min(endIndex, filteredRows.length);
+            document.getElementById('showingFrom').textContent = showingFrom;
+            document.getElementById('showingTo').textContent = showingTo;
+            document.getElementById('totalItems').textContent = filteredRows.length;
+            
+            // Re-render icons
+            lucide.createIcons();
+        }
+
+        // Update pagination with First, Last, numbered pages
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+            const paginationEl = document.getElementById('pagination');
+            paginationEl.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+            
+            // First button
+            const firstLi = document.createElement('li');
+            firstLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            firstLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(1); return false;">First</a>`;
+            paginationEl.appendChild(firstLi);
+            
+            // Show page numbers around current page
+            const maxButtons = 5; // Show max 5 number buttons
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+            
+            // Adjust if near start or end
+            if (currentPage <= 3) {
+                endPage = Math.min(totalPages, maxButtons);
+            }
+            if (currentPage >= totalPages - 2) {
+                startPage = Math.max(1, totalPages - maxButtons + 1);
+            }
+            
+            // Show ... if there are pages before startPage
+            if (startPage > 1) {
+                const dots = document.createElement('li');
+                dots.className = 'page-item disabled';
+                dots.innerHTML = `<span class="page-link">...</span>`;
+                paginationEl.appendChild(dots);
+            }
+            
+            // Page number buttons
+            for (let i = startPage; i <= endPage; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>`;
+                paginationEl.appendChild(li);
+            }
+            
+            // Show ... if there are pages after endPage
+            if (endPage < totalPages) {
+                const dots = document.createElement('li');
+                dots.className = 'page-item disabled';
+                dots.innerHTML = `<span class="page-link">...</span>`;
+                paginationEl.appendChild(dots);
+            }
+            
+            // Last button
+            const lastLi = document.createElement('li');
+            lastLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            lastLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">Last</a>`;
+            paginationEl.appendChild(lastLi);
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            displayPage(page);
+            updatePagination();
+        }
 
         // Delete confirmation
         function confirmDelete(id, name) {
@@ -229,6 +352,18 @@
             display: flex;
             align-items: center;
             min-height: calc(100% - 1rem);
+        }
+        
+        /* Pagination styling */
+        .pagination {
+            gap: 0.25rem;
+        }
+        .page-link {
+            border-radius: 0.375rem;
+        }
+        .page-item.active .page-link {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
         }
     </style>
 }

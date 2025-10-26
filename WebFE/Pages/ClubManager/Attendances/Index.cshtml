@@ -1,0 +1,185 @@
+@page
+@model WebFE.Pages.ClubManager.Attendances.IndexModel
+@{
+    ViewData["Title"] = "Attendance Management";
+    ViewData["Breadcrumb"] = "Attendances";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-clipboard2-check text-success me-2"></i>Attendance Management
+        </h1>
+        <p class="page-description">Manage attendance for your club activities</p>
+    </div>
+</div>
+
+@if (Model.Activities.Count == 0)
+{
+    <div class="content-card">
+        <div class="content-card-body text-center py-5">
+            <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
+            <h4 class="mb-2">No Activities Available</h4>
+            <p class="text-muted mb-4">You don't have any approved activities yet.</p>
+            <a href="/ClubManager/Activities/Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Create Activity
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Filter -->
+    <div class="content-card mb-4">
+        <div class="content-card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control border-start-0" id="searchInput" 
+                       placeholder="Search activities by title or location...">
+            </div>
+        </div>
+    </div>
+
+    <!-- Activities Grid -->
+    <div class="row g-4" id="activitiesGrid">
+        @foreach (var activity in Model.Activities)
+        {
+            var now = DateTime.Now;
+            var hasEnded = activity.EndTime < now;
+            var isOngoing = activity.StartTime <= now && now <= activity.EndTime;
+            var isUpcoming = now < activity.StartTime;
+
+            <div class="col-md-6 col-lg-4 activity-card" 
+                 data-title="@activity.Title.ToLower()" 
+                 data-location="@(activity.Location?.ToLower() ?? "")">
+                <div class="content-card h-100">
+                    <!-- Activity Image -->
+                    @if (!string.IsNullOrWhiteSpace(activity.ImageUrl))
+                    {
+                        <img src="@activity.ImageUrl" class="card-img-top" 
+                             style="height: 180px; object-fit: cover;" alt="@activity.Title">
+                    }
+                    else
+                    {
+                        <div class="bg-gradient-primary" style="height: 180px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-calendar-event text-white" style="font-size: 3rem;"></i>
+                        </div>
+                    }
+
+                    <div class="content-card-body d-flex flex-column">
+                        <!-- Status Badge -->
+                        <div class="mb-2">
+                            @if (hasEnded)
+                            {
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-clock-history me-1"></i>Ended
+                                </span>
+                            }
+                            else if (isOngoing)
+                            {
+                                <span class="badge bg-success">
+                                    <i class="bi bi-play-circle me-1"></i>Ongoing
+                                </span>
+                            }
+                            else if (isUpcoming)
+                            {
+                                <span class="badge bg-info">
+                                    <i class="bi bi-calendar-event me-1"></i>Upcoming
+                                </span>
+                            }
+                            
+                            <span class="badge bg-primary-subtle text-primary border border-primary ms-1">
+                                @activity.Type
+                            </span>
+                        </div>
+
+                        <!-- Title -->
+                        <h5 class="fw-semibold mb-2">@activity.Title</h5>
+
+                        <!-- Schedule -->
+                        <div class="text-muted small mb-2">
+                            <i class="bi bi-calendar3 me-1"></i>
+                            @activity.StartTime.ToString("dd MMM yyyy")
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(activity.Location))
+                        {
+                            <div class="text-muted small mb-3">
+                                <i class="bi bi-geo-alt me-1"></i>
+                                @activity.Location
+                            </div>
+                        }
+
+                        <!-- Stats -->
+                        <div class="row g-2 mb-3 mt-auto">
+                            <div class="col-6">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <div class="fw-bold text-primary">@activity.CurrentParticipants</div>
+                                    <small class="text-muted">Registered</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-2 bg-light rounded">
+                                    <div class="fw-bold text-success">@(activity.HasAttended ? "✓" : "—")</div>
+                                    <small class="text-muted">Attendance</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Button -->
+                        <a href="/ClubManager/Activities/Attendances/@activity.Id" 
+                           class="btn btn-outline-success w-100">
+                            <i class="bi bi-clipboard-check me-2"></i>Manage Attendance
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .bg-primary-subtle {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+    
+    .content-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .content-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1) !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Search functionality
+        document.getElementById('searchInput')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.activity-card');
+            
+            cards.forEach(card => {
+                const title = card.getAttribute('data-title');
+                const location = card.getAttribute('data-location');
+                
+                if (title.includes(searchTerm) || location.includes(searchTerm)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        lucide.createIcons();
+    </script>
+}
+

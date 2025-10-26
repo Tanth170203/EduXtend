@@ -12,18 +12,23 @@ namespace WebFE.Pages.Admin.Activities
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<EditModel> _logger;
+        private readonly IConfiguration _config;
 
-        public EditModel(IHttpClientFactory httpClientFactory, ILogger<EditModel> logger)
+        public EditModel(IHttpClientFactory httpClientFactory, ILogger<EditModel> logger, IConfiguration config)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
+            _config = config;
         }
 
         [BindProperty(SupportsGet = true)] public int Id { get; set; }
         [BindProperty] public AdminUpdateActivityInput Input { get; set; } = new();
+        public string ApiBaseUrl { get; set; } = string.Empty;
 
         public async Task<IActionResult> OnGetAsync()
         {
+            ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "";
+            
             var token = Request.Cookies["AccessToken"];
             if (string.IsNullOrWhiteSpace(token)) return RedirectToPage("/Auth/Login");
 
@@ -51,6 +56,8 @@ namespace WebFE.Pages.Admin.Activities
 
         public async Task<IActionResult> OnPostAsync()
         {
+            ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "";
+            
             if (!ModelState.IsValid) return Page();
             var token = Request.Cookies["AccessToken"];
             if (string.IsNullOrWhiteSpace(token)) return RedirectToPage("/Auth/Login");
@@ -94,7 +101,7 @@ namespace WebFE.Pages.Admin.Activities
             public string? ImageUrl { get; set; }
             [Required] public DateTime StartTime { get; set; }
             [Required] public DateTime EndTime { get; set; }
-            [Required] public ActivityType Type { get; set; } = ActivityType.AcademicClub;
+            [Required] public ActivityType Type { get; set; } = ActivityType.LargeEvent;
             public bool IsPublic { get; set; } = true;
             public int? MaxParticipants { get; set; }
             [Range(0, 1000)] public double MovementPoint { get; set; }

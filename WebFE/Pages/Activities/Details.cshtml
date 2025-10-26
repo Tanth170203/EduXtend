@@ -299,26 +299,26 @@
                     }
 
                     <!-- Registration Button -->
-                    @if ((isUpcoming || isOngoing) && activity.CanRegister && !activity.IsRegistered)
+                    @{ var isAuth = User?.Identity?.IsAuthenticated ?? false; }
+
+                    @* Prioritize non-registrable states first *@
+                    @if (activity.Status != "Approved")
                     {
-                        @if (activity.IsPublic)
-                        {
-                            <button class="btn btn-success w-100 mb-2" id="registerBtn" onclick="registerActivity(@activity.Id)">
-                                <i class="bi bi-check-circle"></i> Register Now
-                            </button>
-                        }
-                        else
-                        {
-                            <button class="btn btn-warning w-100 mb-2" onclick="alert('Please join the club first to register!')">
-                                <i class="bi bi-lock"></i> Members Only
-                            </button>
-                            @if (activity.ClubId.HasValue)
-                            {
-                                <a asp-page="/Clubs/Details" asp-route-id="@activity.ClubId" class="btn btn-outline-primary w-100 btn-sm">
-                                    Join @activity.ClubName
-                                </a>
-                            }
-                        }
+                        <button class="btn btn-secondary w-100" disabled>
+                            <i class="bi bi-hourglass-split"></i> @activity.Status
+                        </button>
+                    }
+                    else if (isEnded)
+                    {
+                        <button class="btn btn-secondary w-100" disabled>
+                            <i class="bi bi-clock-history"></i> Activity Ended
+                        </button>
+                    }
+                    else if (activity.MaxParticipants.HasValue && activity.CurrentParticipants >= activity.MaxParticipants)
+                    {
+                        <button class="btn btn-secondary w-100" disabled>
+                            <i class="bi bi-x-circle"></i> Registration Full
+                        </button>
                     }
                     else if (activity.IsRegistered && activity.HasAttended)
                     {
@@ -335,23 +335,29 @@
                             <i class="bi bi-x-circle"></i> Unregister
                         </button>
                     }
-                    else if (activity.CurrentParticipants >= activity.MaxParticipants)
+                    else if (!isAuth)
                     {
-                        <button class="btn btn-secondary w-100" disabled>
-                            <i class="bi bi-x-circle"></i> Registration Full
+                        <a asp-page="/Auth/Login" class="btn btn-primary w-100 mb-2">
+                            <i class="bi bi-box-arrow-in-right"></i> Login to Register
+                        </a>
+                    }
+                    else if ((isUpcoming || isOngoing) && activity.CanRegister)
+                    {
+                        <button class="btn btn-success w-100 mb-2" id="registerBtn" onclick="registerActivity(@activity.Id)">
+                            <i class="bi bi-check-circle"></i> Register Now
                         </button>
                     }
-                    else if (isEnded)
+                    else if (isAuth && (isUpcoming || isOngoing) && !activity.IsPublic && !activity.CanRegister)
                     {
-                        <button class="btn btn-secondary w-100" disabled>
-                            <i class="bi bi-clock-history"></i> Activity Ended
+                        <button class="btn btn-secondary w-100 mb-2" disabled>
+                            <i class="bi bi-lock"></i> Members Only
                         </button>
-                    }
-                    else if (activity.Status != "Approved")
-                    {
-                        <button class="btn btn-secondary w-100" disabled>
-                            <i class="bi bi-hourglass-split"></i> @activity.Status
-                        </button>
+                        @if (activity.ClubId.HasValue)
+                        {
+                            <a asp-page="/Clubs/Details" asp-route-id="@activity.ClubId" class="btn btn-outline-primary w-100 btn-sm">
+                                Join @activity.ClubName
+                            </a>
+                        }
                     }
                 </div>
             </div>

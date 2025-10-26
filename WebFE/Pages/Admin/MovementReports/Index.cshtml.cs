@@ -9,21 +9,15 @@ using System.Text.Json;
 
 namespace WebFE.Pages.Admin.MovementReports
 {
-    public class IndexModel : PageModel
+    public class IndexModel(
+        IHttpClientFactory httpClientFactory,
+        ILogger<IndexModel> logger,
+        IConfiguration configuration) : PageModel
     {
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<IndexModel> _logger;
-        private readonly IConfiguration _configuration;
-
-        public IndexModel(
-            IHttpClientFactory httpClientFactory,
-            ILogger<IndexModel> logger,
-            IConfiguration configuration)
-        {
-            _httpClientFactory = httpClientFactory;
-            _logger = logger;
-            _configuration = configuration;
-        }
+        private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+        private readonly ILogger<IndexModel> _logger = logger;
+        private readonly IConfiguration _configuration = configuration;
+        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
         // Data Properties
         public List<MovementRecordDto> Records { get; set; } = new();
@@ -32,9 +26,9 @@ namespace WebFE.Pages.Admin.MovementReports
 
         // Statistics Properties
         public int TotalStudents => Records.Count;
-        public double AverageScore => Records.Any() ? Records.Average(r => r.TotalScore) : 0;
-        public double HighestScore => Records.Any() ? Records.Max(r => r.TotalScore) : 0;
-        public double LowestScore => Records.Any() ? Records.Min(r => r.TotalScore) : 0;
+        public double AverageScore => Records.Count > 0 ? Records.Average(r => r.TotalScore) : 0;
+        public double HighestScore => Records.Count > 0 ? Records.Max(r => r.TotalScore) : 0;
+        public double LowestScore => Records.Count > 0 ? Records.Min(r => r.TotalScore) : 0;
         public int ExcellentCount => Records.Count(r => r.TotalScore >= 80);
         public int GoodCount => Records.Count(r => r.TotalScore >= 60 && r.TotalScore < 80);
         public int NeedImprovementCount => Records.Count(r => r.TotalScore < 60);
@@ -54,7 +48,7 @@ namespace WebFE.Pages.Admin.MovementReports
             var handler = new HttpClientHandler
             {
                 UseCookies = true,
-                CookieContainer = new CookieContainer(),
+                CookieContainer = new(),
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
             };
 
@@ -62,7 +56,7 @@ namespace WebFE.Pages.Admin.MovementReports
             foreach (var cookie in Request.Cookies)
             {
                 handler.CookieContainer.Add(
-                    new Uri(_configuration["ApiSettings:BaseUrl"] ?? "https://localhost:5001"),
+                    new(_configuration["ApiSettings:BaseUrl"] ?? "https://localhost:5001"),
                     new Cookie(cookie.Key, cookie.Value)
                 );
             }
@@ -71,9 +65,7 @@ namespace WebFE.Pages.Admin.MovementReports
             {
                 BaseAddress = new Uri(_configuration["ApiSettings:BaseUrl"] ?? "https://localhost:5001")
             };
-            client.DefaultRequestHeaders.Accept.Add(
-                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json")
-            );
+            client.DefaultRequestHeaders.Accept.Add(new("application/json"));
 
             return client;
         }
@@ -132,10 +124,7 @@ namespace WebFE.Pages.Admin.MovementReports
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var semesters = JsonSerializer.Deserialize<List<SemesterDto>>(
-                        content,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                    );
+                    var semesters = JsonSerializer.Deserialize<List<SemesterDto>>(content, JsonOptions);
 
                     if (semesters != null)
                     {
@@ -172,10 +161,7 @@ namespace WebFE.Pages.Admin.MovementReports
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var records = JsonSerializer.Deserialize<List<MovementRecordDto>>(
-                        content,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                    );
+                    var records = JsonSerializer.Deserialize<List<MovementRecordDto>>(content, JsonOptions);
 
                     if (records != null)
                     {
@@ -355,8 +341,7 @@ namespace WebFE.Pages.Admin.MovementReports
             int studentId,
             int categoryId,
             double score,
-            string comments,
-            string awardedDate)
+            string comments)
         {
             if (studentId <= 0 || categoryId <= 0 || score < 0)
             {
@@ -379,10 +364,7 @@ namespace WebFE.Pages.Admin.MovementReports
                 if (semesterResponse.IsSuccessStatusCode)
                 {
                     var semesterContent = await semesterResponse.Content.ReadAsStringAsync();
-                    var semesters = JsonSerializer.Deserialize<List<SemesterDto>>(
-                        semesterContent,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                    );
+                    var semesters = JsonSerializer.Deserialize<List<SemesterDto>>(semesterContent, JsonOptions);
 
                     if (semesters?.Any() == true)
                     {
@@ -447,7 +429,7 @@ namespace WebFE.Pages.Admin.MovementReports
         /// <summary>
         /// Export to Excel (placeholder for future implementation)
         /// </summary>
-        public async Task<IActionResult> OnPostExportExcelAsync(int? semesterId)
+        public IActionResult OnPostExportExcel(int? semesterId)
         {
             // TODO: Implement Excel export
             ErrorMessage = "Chức năng xuất Excel đang được phát triển.";
@@ -457,7 +439,7 @@ namespace WebFE.Pages.Admin.MovementReports
         /// <summary>
         /// Export to PDF (placeholder for future implementation)
         /// </summary>
-        public async Task<IActionResult> OnPostExportPdfAsync(int recordId)
+        public IActionResult OnPostExportPdf()
         {
             // TODO: Implement PDF export
             ErrorMessage = "Chức năng xuất PDF đang được phát triển.";

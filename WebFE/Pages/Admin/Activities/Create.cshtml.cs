@@ -13,21 +13,52 @@ namespace WebFE.Pages.Admin.Activities
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<CreateModel> _logger;
+        private readonly IConfiguration _config;
 
-        public CreateModel(IHttpClientFactory httpClientFactory, ILogger<CreateModel> logger)
+        public CreateModel(IHttpClientFactory httpClientFactory, ILogger<CreateModel> logger, IConfiguration config)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
+            _config = config;
         }
 
         [BindProperty]
         public AdminCreateActivityInput Input { get; set; } = new();
+        
+        public string ApiBaseUrl { get; set; } = string.Empty;
 
-        public void OnGet() { }
+        public void OnGet()
+        {
+            ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "";
+            
+            // Set default times without seconds
+            var tomorrow = DateTime.Now.AddDays(1);
+            Input.StartTime = new DateTime(tomorrow.Year, tomorrow.Month, tomorrow.Day, tomorrow.Hour, tomorrow.Minute, 0);
+            Input.EndTime = Input.StartTime.AddHours(2);
+        }
 
         public async Task<IActionResult> OnPostAsync()
         {
+            ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "";
+            
             if (!ModelState.IsValid) return Page();
+
+            // Server-side date validations
+            if (Input.StartTime < DateTime.Now)
+            {
+                ModelState.AddModelError("Input.StartTime", "Không được chọn ngày giờ bắt đầu trong quá khứ");
+                return Page();
+            }
+            if (Input.EndTime < DateTime.Now)
+            {
+                ModelState.AddModelError("Input.EndTime", "End time cannot be in the past");
+                return Page();
+            }
+            if (Input.EndTime <= Input.StartTime)
+            {
+                ModelState.AddModelError("Input.EndTime", "Thời gian kết thúc phải sau thời gian bắt đầu");
+                return Page();
+            }
 
             var token = Request.Cookies["AccessToken"];
             if (string.IsNullOrWhiteSpace(token)) return RedirectToPage("/Auth/Login");
@@ -69,7 +100,7 @@ namespace WebFE.Pages.Admin.Activities
             public string? ImageUrl { get; set; }
             [Required] public DateTime StartTime { get; set; } = DateTime.Now.AddDays(1);
             [Required] public DateTime EndTime { get; set; } = DateTime.Now.AddDays(1).AddHours(2);
-            [Required] public ActivityType Type { get; set; } = ActivityType.AcademicClub;
+            [Required] public ActivityType Type { get; set; } = ActivityType.LargeEvent;
             public bool IsPublic { get; set; } = true;
             public int? MaxParticipants { get; set; }
             [Range(0, 1000)] public double MovementPoint { get; set; } = 0;
