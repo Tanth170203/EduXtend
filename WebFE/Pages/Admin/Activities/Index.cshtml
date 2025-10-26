@@ -11,9 +11,18 @@
             <h2 class="mb-1 fw-bold">Activities</h2>
             <p class="text-muted mb-0">Manage all system activities</p>
         </div>
-        <a class="btn btn-primary" href="/Admin/Activities/Create">
-            <i class="bi bi-plus-circle me-2"></i>New Activity
-        </a>
+        <div>
+            <a class="btn btn-warning me-2" href="/Admin/Activities/PendingApprovals">
+                <i class="bi bi-hourglass-split me-2"></i>Request Activities
+                @if (Model.PendingActivities > 0)
+                {
+                    <span class="badge bg-white text-warning ms-2">@Model.PendingActivities</span>
+                }
+            </a>
+            <a class="btn btn-primary" href="/Admin/Activities/Create">
+                <i class="bi bi-plus-circle me-2"></i>New Activity
+            </a>
+        </div>
     </div>
 
     <!-- Statistics Cards -->

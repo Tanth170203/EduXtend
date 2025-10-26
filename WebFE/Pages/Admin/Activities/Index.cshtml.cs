@@ -34,19 +34,22 @@ namespace WebFE.Pages.Admin.Activities
             var client = _httpClientFactory.CreateClient("ApiClient");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+            // Always show only Approved items in Admin list view
             var qs = new List<string>();
             if (!string.IsNullOrWhiteSpace(SearchTerm)) qs.Add($"searchTerm={Uri.EscapeDataString(SearchTerm)}");
             if (!string.IsNullOrWhiteSpace(Type)) qs.Add($"type={Uri.EscapeDataString(Type)}");
-            if (!string.IsNullOrWhiteSpace(Status)) qs.Add($"status={Uri.EscapeDataString(Status)}");
+            qs.Add("status=Approved");
             if (IsPublic.HasValue) qs.Add($"isPublic={(IsPublic.Value ? "true" : "false")}");
-            var endpoint = qs.Count > 0 ? $"/api/admin/activities?{string.Join("&", qs)}" : "/api/admin/activities";
+            var endpoint = $"/api/admin/activities?{string.Join("&", qs)}";
 
             Items = await client.GetFromJsonAsync<List<ActivityListItemDto>>(endpoint) ?? new();
             
             // Calculate statistics
             TotalActivities = Items.Count;
             ApprovedActivities = Items.Count(a => a.Status == "Approved");
-            PendingActivities = Items.Count(a => a.Status == "PendingApproval");
+            // Fetch pending approvals count separately (table shows only approved)
+            var pending = await client.GetFromJsonAsync<List<ActivityListItemDto>>("/api/admin/activities?status=PendingApproval");
+            PendingActivities = pending?.Count ?? 0;
             UpcomingActivities = Items.Count(a => a.StartTime > DateTime.Now && a.Status == "Approved");
             
             return Page();

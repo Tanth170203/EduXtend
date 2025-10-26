@@ -21,14 +21,7 @@ namespace WebFE.Middleware
         {
             var path = context.Request.Path.Value?.ToLower() ?? "";
 
-            // Skip for public pages
-            if (IsPublicPage(path))
-            {
-                await _next(context);
-                return;
-            }
-
-            // Extract and validate token
+            // Always try to parse JWT token if available (even on public pages)
             if (context.Request.Cookies.TryGetValue("AccessToken", out var token))
             {
                 try
@@ -38,43 +31,56 @@ namespace WebFE.Middleware
                     {
                         var jwt = handler.ReadJwtToken(token);
                         
+                        // Check if token is expired
                         if (jwt.ValidTo < DateTime.UtcNow)
                         {
-                            context.Response.Redirect("/Auth/Login");
-                            return;
+                            // Only redirect to login if this is a protected page
+                            if (IsProtectedPage(path))
+                            {
+                                context.Response.Redirect("/Auth/Login");
+                                return;
+                            }
+                            // For public pages, just don't set user context
                         }
-
-                        var roles = jwt.Claims
-                            .Where(c => c.Type == ClaimTypes.Role || 
-                                       c.Type == "role" || 
-                                       c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
-                            .Select(c => c.Value)
-                            .ToList();
-
-                        if (!HasAccess(path, roles))
+                        else
                         {
-                            _logger.LogWarning("Access denied for user with roles [{Roles}] to {Path}", string.Join(", ", roles), path);
-                            context.Response.Redirect("/Error?code=403");
-                            return;
-                        }
+                            // Token is valid, set user context
+                            SetUserContext(context, jwt);
 
-                        SetUserContext(context, jwt);
-                    }
-                    else
-                    {
-                        context.Response.Redirect("/Auth/Login");
-                        return;
+                            // Check access only for protected pages
+                            if (!IsPublicPage(path))
+                            {
+                                var roles = jwt.Claims
+                                    .Where(c => c.Type == ClaimTypes.Role || 
+                                               c.Type == "role" || 
+                                               c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+                                    .Select(c => c.Value)
+                                    .ToList();
+
+                                if (!HasAccess(path, roles))
+                                {
+                                    _logger.LogWarning("Access denied for user with roles [{Roles}] to {Path}", string.Join(", ", roles), path);
+                                    context.Response.Redirect("/Error?code=403");
+                                    return;
+                                }
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error validating JWT token");
-                    context.Response.Redirect("/Auth/Login");
-                    return;
+                    // Only redirect to login if this is a protected page
+                    if (IsProtectedPage(path))
+                    {
+                        context.Response.Redirect("/Auth/Login");
+                        return;
+                    }
                 }
             }
             else if (IsProtectedPage(path))
             {
+                // No token and trying to access protected page
                 context.Response.Redirect("/Auth/Login");
                 return;
             }

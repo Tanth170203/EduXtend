@@ -100,6 +100,51 @@ namespace Repositories.Students
             var student = await _db.Students.FindAsync(id);
             if (student != null)
             {
+                int userId = student.UserId;
+
+                // Remove related MovementRecords first
+                var movementRecords = await _db.MovementRecords.Where(mr => mr.StudentId == id).ToListAsync();
+                if (movementRecords.Any())
+                {
+                    _db.MovementRecords.RemoveRange(movementRecords);
+                }
+
+                // Remove related ActivityRegistrations (by UserId)
+                var registrations = await _db.ActivityRegistrations.Where(ar => ar.UserId == userId).ToListAsync();
+                if (registrations.Any())
+                {
+                    _db.ActivityRegistrations.RemoveRange(registrations);
+                }
+
+                // Remove related ActivityAttendances (by UserId)
+                var attendances = await _db.ActivityAttendances.Where(aa => aa.UserId == userId).ToListAsync();
+                if (attendances.Any())
+                {
+                    _db.ActivityAttendances.RemoveRange(attendances);
+                }
+
+                // Remove related ClubMembers
+                var clubMembers = await _db.ClubMembers.Where(cm => cm.StudentId == id).ToListAsync();
+                if (clubMembers.Any())
+                {
+                    _db.ClubMembers.RemoveRange(clubMembers);
+                }
+
+                // Remove related JoinRequests (by UserId)
+                var joinRequests = await _db.JoinRequests.Where(jr => jr.UserId == userId).ToListAsync();
+                if (joinRequests.Any())
+                {
+                    _db.JoinRequests.RemoveRange(joinRequests);
+                }
+
+                // Remove related Evidences
+                var evidences = await _db.Evidences.Where(e => e.StudentId == id).ToListAsync();
+                if (evidences.Any())
+                {
+                    _db.Evidences.RemoveRange(evidences);
+                }
+
+                // Finally remove the student
                 _db.Students.Remove(student);
                 await _db.SaveChangesAsync();
             }

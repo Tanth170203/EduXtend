@@ -1,0 +1,162 @@
+@page
+@model WebFE.Pages.Admin.Activities.PendingApprovalsModel
+@{
+    ViewData["Title"] = "Pending Approvals";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1 fw-bold">Request Activities</h2>
+            <p class="text-muted mb-0">Review and approve pending activity requests</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="/Admin/Activities">
+            <i class="bi bi-arrow-left me-2"></i>Back to Activities
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.PendingActivities == null || Model.PendingActivities.Count == 0)
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+                <h4 class="mt-3 text-muted">No Pending Requests</h4>
+                <p class="text-muted">All activity requests have been processed</p>
+                <a href="/Admin/Activities" class="btn btn-primary mt-3">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Activities
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="bi bi-hourglass-split me-2"></i>
+                    Pending Activities (@Model.PendingActivities.Count)
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Activity</th>
+                                <th>Club</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Created By</th>
+                                <th>Public</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var activity in Model.PendingActivities)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            @if (!string.IsNullOrEmpty(activity.ImageUrl))
+                                            {
+                                                <img src="@activity.ImageUrl" alt="@activity.Title"
+                                                     class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                            }
+                                            else
+                                            {
+                                                <div class="bg-primary text-white rounded me-3 d-flex align-items-center justify-content-center"
+                                                     style="width: 50px; height: 50px;">
+                                                    <i class="bi bi-calendar-event"></i>
+                                                </div>
+                                            }
+                                            <div>
+                                                <strong>@activity.Title</strong>
+                                                @if (!string.IsNullOrEmpty(activity.Description))
+                                                {
+                                                    <br />
+                                                    <small class="text-muted">
+                                                        @(activity.Description.Length > 80 ? activity.Description.Substring(0, 80) + "..." : activity.Description)
+                                                    </small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(activity.ClubName))
+                                        {
+                                            <span class="badge bg-info">@activity.ClubName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">System</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">@activity.Type</span>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            @activity.StartTime.ToString("dd MMM yyyy")
+                                            <br />
+                                            @activity.StartTime.ToString("HH:mm") - @activity.EndTime.ToString("HH:mm")
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">Created by user</small>
+                                    </td>
+                                    <td>
+                                        @if (activity.IsPublic)
+                                        {
+                                            <span class="badge bg-success">Public</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Private</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group" role="group">
+                                            <a href="/Admin/Activities/Details/@activity.Id" class="btn btn-sm btn-outline-primary" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <form method="post" asp-page-handler="Approve" asp-route-id="@activity.Id" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-success" title="Approve"
+                                                        onclick="return confirm('Approve this activity?')">
+                                                    <i class="bi bi-check-circle"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-page-handler="Reject" asp-route-id="@activity.Id" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Reject"
+                                                        onclick="return confirm('Reject this activity?')">
+                                                    <i class="bi bi-x-circle"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+

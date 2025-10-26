@@ -77,20 +77,30 @@ namespace Services.Activities
             };
         }
 
-		public async Task<ActivityDetailDto?> GetActivityByIdAsync(int id, int? currentUserId)
+	public async Task<ActivityDetailDto?> GetActivityByIdAsync(int id, int? currentUserId)
+	{
+		var basic = await GetActivityByIdAsync(id);
+		if (basic == null) return null;
+
+		if (currentUserId.HasValue)
 		{
-			var basic = await GetActivityByIdAsync(id);
-			if (basic == null) return null;
-
-			if (currentUserId.HasValue)
+			basic.IsRegistered = await _repo.IsRegisteredAsync(id, currentUserId.Value);
+			// Consider user "attended state" as: has any attendance record (present or absent)
+			basic.HasAttended = await _repo.HasAnyAttendanceRecordAsync(id, currentUserId.Value);
+			
+			// Check membership for club-only activities
+			if (!basic.IsPublic && basic.ClubId.HasValue)
 			{
-				basic.IsRegistered = await _repo.IsRegisteredAsync(id, currentUserId.Value);
-				// Consider user "attended state" as: has any attendance record (present or absent)
-				basic.HasAttended = await _repo.HasAnyAttendanceRecordAsync(id, currentUserId.Value);
+				var isMember = await _repo.IsUserMemberOfClubAsync(currentUserId.Value, basic.ClubId.Value);
+				if (!isMember)
+				{
+					basic.CanRegister = false;
+				}
 			}
-
-			return basic;
 		}
+
+		return basic;
+	}
 
         public async Task<List<ActivityListItemDto>> GetActivitiesByClubIdAsync(int clubId)
         {
@@ -163,6 +173,139 @@ namespace Services.Activities
 
         public async Task<bool> AdminDeleteAsync(int id)
         {
+            return await _repo.DeleteAsync(id);
+        }
+
+        public async Task<ActivityDetailDto?> ApproveActivityAsync(int adminUserId, int activityId)
+        {
+            var existing = await _repo.GetByIdAsync(activityId);
+            if (existing == null) return null;
+
+            existing.Status = "Approved";
+            existing.ApprovedById = adminUserId;
+            existing.ApprovedAt = DateTime.UtcNow;
+
+            await _repo.UpdateAsync(existing);
+            return await GetActivityByIdAsync(existing.Id);
+        }
+
+        public async Task<ActivityDetailDto?> RejectActivityAsync(int adminUserId, int activityId)
+        {
+            var existing = await _repo.GetByIdAsync(activityId);
+            if (existing == null) return null;
+
+            existing.Status = "Rejected";
+            existing.ApprovedById = adminUserId;
+            existing.ApprovedAt = DateTime.UtcNow;
+
+            await _repo.UpdateAsync(existing);
+            return await GetActivityByIdAsync(existing.Id);
+        }
+
+        // ================== CLUB MANAGER CRUD ==================
+        public async Task<List<ActivityListItemDto>> GetActivitiesByManagerIdAsync(int managerUserId)
+        {
+            // Get all activities where CreatedById = managerUserId AND ClubId is not null
+            var allActivities = await _repo.GetAllAsync();
+            var managerActivities = allActivities.Where(a => a.CreatedById == managerUserId && a.ClubId.HasValue).ToList();
+            return await MapToListDto(managerActivities);
+        }
+
+        public async Task<ActivityDetailDto> ClubCreateAsync(int managerUserId, int clubId, ClubCreateActivityDto dto)
+        {
+            if (dto.StartTime >= dto.EndTime)
+                throw new ArgumentException("StartTime must be earlier than EndTime");
+
+            // Check if activity type is Club Activity (internal activities)
+            bool isClubActivity = dto.Type == ActivityType.ClubMeeting || 
+                                 dto.Type == ActivityType.ClubTraining || 
+                                 dto.Type == ActivityType.ClubWorkshop;
+
+            var activity = new Activity
+            {
+                ClubId = clubId,
+                Title = dto.Title,
+                Description = dto.Description,
+                Location = dto.Location,
+                ImageUrl = dto.ImageUrl,
+                StartTime = dto.StartTime,
+                EndTime = dto.EndTime,
+                Type = dto.Type,
+                RequiresApproval = !isClubActivity, // Club internal activities don't require approval
+                CreatedById = managerUserId,
+                IsPublic = dto.IsPublic,
+                Status = isClubActivity ? "Approved" : "PendingApproval", // Auto-approve club activities
+                MaxParticipants = dto.MaxParticipants,
+                MovementPoint = dto.MovementPoint,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var created = await _repo.CreateAsync(activity);
+
+            // If mandatory club activity, auto-register all club members
+            if (isClubActivity && dto.IsMandatory)
+            {
+                var clubMembers = await _repo.GetClubMemberUserIdsAsync(clubId);
+                foreach (var member in clubMembers)
+                {
+                    try
+                    {
+                        // Check if already registered to avoid duplicates
+                        var isRegistered = await _repo.IsRegisteredAsync(created.Id, member.UserId);
+                        if (!isRegistered)
+                        {
+                            await _repo.AddRegistrationAsync(created.Id, member.UserId);
+                        }
+                    }
+                    catch
+                    {
+                        // Continue registering other members even if one fails
+                    }
+                }
+            }
+
+            var detail = await GetActivityByIdAsync(created.Id);
+            return detail!;
+        }
+
+        public async Task<ActivityDetailDto?> ClubUpdateAsync(int managerUserId, int id, ClubCreateActivityDto dto)
+        {
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null) return null;
+            if (existing.ClubId == null) return null; // not a club activity
+            if (existing.CreatedById != managerUserId) return null; // not owner
+
+            if (dto.StartTime >= dto.EndTime)
+                throw new ArgumentException("StartTime must be earlier than EndTime");
+
+            existing.Title = dto.Title;
+            existing.Description = dto.Description;
+            existing.Location = dto.Location;
+            existing.ImageUrl = dto.ImageUrl;
+            existing.StartTime = dto.StartTime;
+            existing.EndTime = dto.EndTime;
+            existing.Type = dto.Type;
+            existing.IsPublic = dto.IsPublic;
+            existing.MaxParticipants = dto.MaxParticipants;
+            existing.MovementPoint = dto.MovementPoint;
+            // Reset approval if was rejected
+            if (existing.Status == "Rejected")
+            {
+                existing.Status = "PendingApproval";
+                existing.ApprovedById = null;
+                existing.ApprovedAt = null;
+            }
+
+            await _repo.UpdateAsync(existing);
+            return await GetActivityByIdAsync(existing.Id);
+        }
+
+        public async Task<bool> ClubDeleteAsync(int managerUserId, int id)
+        {
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing == null) return false;
+            if (existing.ClubId == null) return false;
+            if (existing.CreatedById != managerUserId) return false;
             return await _repo.DeleteAsync(id);
         }
 
@@ -352,14 +495,58 @@ namespace Services.Activities
 			}).ToList();
 		}
 
-		public async Task<(bool success, string message)> SetAttendanceAsync(int adminUserId, int activityId, int targetUserId, bool isPresent)
+	public async Task<(bool success, string message)> SetAttendanceAsync(int adminUserId, int activityId, int targetUserId, bool isPresent)
+	{
+		var activity = await _repo.GetByIdAsync(activityId);
+		if (activity == null) return (false, "Activity not found");
+		if (activity.ClubId != null) return (false, "Attendance for club activities is managed by Club Manager");
+		await _repo.SetAttendanceAsync(activityId, targetUserId, isPresent, adminUserId);
+		return (true, "Attendance updated");
+	}
+
+	// ================= CLUB MANAGER ATTENDANCE =================
+	public async Task<List<AdminActivityRegistrantDto>> GetClubRegistrantsAsync(int managerUserId, int activityId)
+	{
+		var activity = await _repo.GetByIdAsync(activityId);
+		if (activity == null) return new List<AdminActivityRegistrantDto>();
+		
+		// Only allow club managers to manage attendance for their club activities
+		if (!activity.ClubId.HasValue) return new List<AdminActivityRegistrantDto>();
+		
+		// Check if user is manager of this club
+		var isManager = await _repo.IsUserManagerOfClubAsync(managerUserId, activity.ClubId.Value);
+		if (!isManager)
 		{
-			var activity = await _repo.GetByIdAsync(activityId);
-			if (activity == null) return (false, "Activity not found");
-			if (activity.ClubId != null) return (false, "Attendance for club activities is managed by Club Manager");
-			await _repo.SetAttendanceAsync(activityId, targetUserId, isPresent, adminUserId);
-			return (true, "Attendance updated");
+			throw new UnauthorizedAccessException("You are not the manager of this club");
 		}
+
+		var list = await _repo.GetRegistrantsWithAttendanceAsync(activityId);
+		return list.Select(x => new AdminActivityRegistrantDto
+		{
+			UserId = x.UserId,
+			FullName = x.FullName,
+			Email = x.Email,
+			IsPresent = x.IsPresent
+		}).ToList();
+	}
+
+	public async Task<(bool success, string message)> SetClubAttendanceAsync(int managerUserId, int activityId, int targetUserId, bool isPresent)
+	{
+		var activity = await _repo.GetByIdAsync(activityId);
+		if (activity == null) return (false, "Activity not found");
+		
+		if (!activity.ClubId.HasValue) return (false, "This is not a club activity");
+		
+		// Check if user is manager of this club
+		var isManager = await _repo.IsUserManagerOfClubAsync(managerUserId, activity.ClubId.Value);
+		if (!isManager)
+		{
+			throw new UnauthorizedAccessException("You are not the manager of this club");
+		}
+
+		await _repo.SetAttendanceAsync(activityId, targetUserId, isPresent, managerUserId);
+		return (true, "Attendance updated");
+	}
 
 		public async Task<List<AdminActivityFeedbackDto>> GetActivityFeedbacksAsync(int adminUserId, int activityId)
 		{

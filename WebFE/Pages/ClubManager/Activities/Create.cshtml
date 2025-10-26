@@ -1,0 +1,467 @@
+@page
+@model WebFE.Pages.ClubManager.Activities.CreateModel
+@{
+    ViewData["Title"] = "Create Activity";
+    ViewData["Breadcrumb"] = "Create Activity";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Create Activity</h1>
+        <p class="page-description">T&#7841;o ho&#7841;t &#273;&#7897;ng m&#7899;i cho câu l&#7841;c b&#7897;</p>
+    </div>
+    <a href="/ClubManager/Activities" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        Back
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-warning">
+        @Model.ErrorMessage
+    </div>
+}
+
+<!-- Form -->
+<form method="post" class="needs-validation" novalidate>
+    <div class="row g-4">
+        <!-- Main Form -->
+        <div class="col-lg-8">
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Basic Information</h5>
+                </div>
+                <div class="content-card-body">
+                    <!-- Title -->
+                    <div class="mb-3">
+                        <label asp-for="Activity.Title" class="form-label">Activity Title <span class="text-danger">*</span></label>
+                        <input asp-for="Activity.Title" class="form-control" required />
+                        <span asp-validation-for="Activity.Title" class="text-danger"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label asp-for="Activity.Description" class="form-label">Description</label>
+                        <textarea asp-for="Activity.Description" class="form-control" rows="4" 
+                                  placeholder="Describe your activity..."></textarea>
+                        <span asp-validation-for="Activity.Description" class="text-danger"></span>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="mb-3">
+                        <label asp-for="Activity.Location" class="form-label">Location</label>
+                        <input asp-for="Activity.Location" class="form-control" placeholder="e.g., Hall A, Building B" />
+                        <span asp-validation-for="Activity.Location" class="text-danger"></span>
+                    </div>
+
+                    <!-- Image Upload (Cloudinary) -->
+                    <div class="mb-3">
+                        <label class="form-label">Activity Image</label>
+                        <input type="file" class="form-control" id="imageFile" accept="image/*" />
+                        <input type="hidden" asp-for="Activity.ImageUrl" />
+                        <div id="imagePreview" class="mt-2" style="display:none;">
+                            <img id="previewImg" src="#" class="rounded" style="max-width: 100%; height: auto;" />
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-2" id="removeImageBtn">Remove</button>
+                        </div>
+                        <div class="form-text">Upload an image from your device. We will store it on Cloudinary.</div>
+                        <div id="imageUploadStatus" class="small text-muted mt-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Date & Time -->
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Date & Time</h5>
+                </div>
+                <div class="content-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Activity.StartTime" class="form-label">Start Date & Time <span class="text-danger">*</span></label>
+                            <input asp-for="Activity.StartTime" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" step="60" id="startTimeInput" required />
+                            <span asp-validation-for="Activity.StartTime" class="text-danger"></span>
+                            <div id="startTimeError" class="text-danger small"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Activity.EndTime" class="form-label">End Date & Time <span class="text-danger">*</span></label>
+                            <input asp-for="Activity.EndTime" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" step="60" id="endTimeInput" required />
+                            <span asp-validation-for="Activity.EndTime" class="text-danger"></span>
+                            <div id="endTimeError" class="text-danger small"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Activity Settings -->
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Activity Settings</h5>
+                </div>
+                <div class="content-card-body">
+                    <!-- Type -->
+                    <div class="mb-3">
+                        <label asp-for="Activity.Type" class="form-label">Activity Type <span class="text-danger">*</span></label>
+                        <select asp-for="Activity.Type" class="form-select" id="activityTypeSelect" required>
+                            <optgroup label="Club Activities (Internal)">
+                                <option value="ClubMeeting">Club Meeting</option>
+                                <option value="ClubTraining">Club Training</option>
+                                <option value="ClubWorkshop">Club Workshop</option>
+                            </optgroup>
+                            <optgroup label="Events">
+                                <option value="LargeEvent">Large Event (100-200 people)</option>
+                                <option value="MediumEvent">Medium Event (50-100 people)</option>
+                                <option value="SmallEvent">Small Event (&lt;50 people)</option>
+                            </optgroup>
+                            <optgroup label="Competitions">
+                                <option value="SchoolCompetition">School Competition</option>
+                                <option value="ProvincialCompetition">Provincial Competition</option>
+                                <option value="NationalCompetition">National Competition</option>
+                            </optgroup>
+                            <optgroup label="Community">
+                                <option value="Volunteer">Volunteer</option>
+                            </optgroup>
+                            <optgroup label="Collaboration">
+                                <option value="ClubCollaboration">Club Collaboration</option>
+                                <option value="SchoolCollaboration">School Collaboration</option>
+                                <option value="EnterpriseCollaboration">Enterprise Collaboration</option>
+                            </optgroup>
+                            <optgroup label="Other">
+                                <option value="Other">Other</option>
+                            </optgroup>
+                        </select>
+                        <span asp-validation-for="Activity.Type" class="text-danger"></span>
+                    </div>
+
+                    <!-- Mandatory Toggle (Only for Club Activities) -->
+                    <div class="mb-3" id="mandatorySection" style="display:none;">
+                        <input type="hidden" asp-for="Activity.IsMandatory" id="isMandatoryHidden" />
+                        <button type="button" class="btn btn-outline-secondary w-100" id="mandatoryBtn">
+                            <i data-lucide="users" style="width: 16px; height: 16px;"></i>
+                            <span id="mandatoryBtnText">Make Mandatory for All Members</span>
+                        </button>
+                        <small class="form-text text-muted d-block mt-1">
+                            Click to automatically register all club members and set max participants to club size.
+                        </small>
+                    </div>
+
+                    <!-- Max Participants -->
+                    <div class="mb-3">
+                        <label asp-for="Activity.MaxParticipants" class="form-label">Max Participants</label>
+                        <input asp-for="Activity.MaxParticipants" type="number" class="form-control" id="maxParticipantsInput" min="1" placeholder="Leave empty for unlimited" />
+                        <span asp-validation-for="Activity.MaxParticipants" class="text-danger"></span>
+                    </div>
+
+                    <!-- Movement Points -->
+                    <div class="mb-3">
+                        <label asp-for="Activity.MovementPoint" class="form-label">Movement Points</label>
+                        <input asp-for="Activity.MovementPoint" type="number" step="0.5" class="form-control" min="0" />
+                        <span asp-validation-for="Activity.MovementPoint" class="text-danger"></span>
+                        <small class="form-text text-muted">Points awarded to participants</small>
+                    </div>
+
+                    <!-- Public Activity -->
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="Activity.IsPublic" class="form-check-input" type="checkbox" role="switch" />
+                        <label asp-for="Activity.IsPublic" class="form-check-label">
+                            Public Activity
+                        </label>
+                        <small class="form-text text-muted d-block">If checked, all students can register. Otherwise, only club members can participate.</small>
+                    </div>
+
+                    <!-- Approval Note (Hidden for Club Activities) -->
+                    <div class="alert alert-info" id="approvalNote">
+                        <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                        <strong>Note:</strong> This activity will be submitted for admin approval before it becomes visible to students.
+                    </div>
+
+                    <!-- Club Activity Note (Shown for Club Activities) -->
+                    <div class="alert alert-success" id="clubActivityNote" style="display:none;">
+                        <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                        <strong>Internal Activity:</strong> Club activities do not require admin approval and are created immediately.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                    Submit for Approval
+                </button>
+                <a href="/ClubManager/Activities" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        // Form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+
+        // ===== Mandatory Button & Club Activity Type Logic =====
+        const activityTypeSelect = document.getElementById('activityTypeSelect');
+        const mandatorySection = document.getElementById('mandatorySection');
+        const mandatoryBtn = document.getElementById('mandatoryBtn');
+        const mandatoryBtnText = document.getElementById('mandatoryBtnText');
+        const isMandatoryHidden = document.getElementById('isMandatoryHidden');
+        const maxParticipantsInput = document.getElementById('maxParticipantsInput');
+        const approvalNote = document.getElementById('approvalNote');
+        const clubActivityNote = document.getElementById('clubActivityNote');
+        
+        let isMandatory = false;
+        let clubMemberCount = 0;
+
+        // Fetch club member count
+        async function fetchClubMemberCount() {
+            try {
+                const res = await fetch('@Model.ApiBaseUrl/api/club/my-managed-club', {
+                    credentials: 'include'
+                });
+                if (res.ok) {
+                    const club = await res.json();
+                    clubMemberCount = club.memberCount || 0;
+                }
+            } catch (err) {
+                console.error('Failed to fetch club member count:', err);
+            }
+        }
+        fetchClubMemberCount();
+
+        // Check if activity type is Club Activity (ClubMeeting=0, ClubTraining=1, ClubWorkshop=2)
+        function isClubActivity(type) {
+            return type === 'ClubMeeting' || type === 'ClubTraining' || type === 'ClubWorkshop';
+        }
+
+        // Update UI based on activity type
+        function updateActivityTypeUI() {
+            const selectedType = activityTypeSelect.value;
+            const isClubActType = isClubActivity(selectedType);
+            
+            // Show/hide mandatory section
+            mandatorySection.style.display = isClubActType ? 'block' : 'none';
+            
+            // Show/hide approval notes
+            approvalNote.style.display = isClubActType ? 'none' : 'block';
+            clubActivityNote.style.display = isClubActType ? 'block' : 'none';
+            
+            // Reset mandatory state if not club activity
+            if (!isClubActType && isMandatory) {
+                toggleMandatory();
+            }
+
+            lucide.createIcons();
+        }
+
+        // Toggle mandatory state
+        function toggleMandatory() {
+            isMandatory = !isMandatory;
+            isMandatoryHidden.value = isMandatory.toString();
+            
+            if (isMandatory) {
+                // Activate mandatory mode
+                mandatoryBtn.classList.remove('btn-outline-secondary');
+                mandatoryBtn.classList.add('btn-primary');
+                mandatoryBtnText.textContent = 'Mandatory: All Members Registered';
+                maxParticipantsInput.value = clubMemberCount;
+                maxParticipantsInput.readOnly = true;
+            } else {
+                // Deactivate mandatory mode
+                mandatoryBtn.classList.remove('btn-primary');
+                mandatoryBtn.classList.add('btn-outline-secondary');
+                mandatoryBtnText.textContent = 'Make Mandatory for All Members';
+                maxParticipantsInput.value = '';
+                maxParticipantsInput.readOnly = false;
+            }
+            lucide.createIcons();
+        }
+
+        // Event listeners
+        activityTypeSelect.addEventListener('change', updateActivityTypeUI);
+        mandatoryBtn.addEventListener('click', toggleMandatory);
+
+        // Initial setup
+        updateActivityTypeUI();
+
+        // ===== Date Validation =====
+        const startTimeInput = document.getElementById('startTimeInput');
+        const endTimeInput = document.getElementById('endTimeInput');
+        const startTimeError = document.getElementById('startTimeError');
+        const endTimeError = document.getElementById('endTimeError');
+
+        function setError(element, message) {
+            if (!element) return;
+            element.textContent = message || '';
+        }
+        function clearErrors() {
+            setError(startTimeError, '');
+            setError(endTimeError, '');
+        }
+        
+        // Set minimum date to now and update every minute
+        function updateMinDateTime() {
+            const now = new Date();
+            const minDateTime = now.toISOString().slice(0, 16);
+            startTimeInput.setAttribute('min', minDateTime);
+            endTimeInput.setAttribute('min', minDateTime);
+        }
+        updateMinDateTime();
+        setInterval(updateMinDateTime, 60000); // Update every minute
+        
+        // Validate dates on change
+        startTimeInput?.addEventListener('change', function() {
+            clearErrors();
+            const startDate = new Date(this.value);
+            const currentDate = new Date();
+            
+            if (this.value && startDate < currentDate) {
+                setError(startTimeError, 'Không được chọn ngày giờ bắt đầu trong quá khứ');
+                this.value = '';
+                return;
+            }
+            
+            // Update end time minimum to start time
+            if (this.value) endTimeInput.setAttribute('min', this.value);
+            
+            // Check if end time is before or equal to start time
+            if (endTimeInput.value && new Date(endTimeInput.value) <= startDate) {
+                setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
+                endTimeInput.value = '';
+            }
+        });
+        
+        endTimeInput?.addEventListener('change', function() {
+            clearErrors();
+            const endDate = new Date(this.value);
+            const currentDate = new Date();
+            
+            if (this.value && endDate < currentDate) {
+                setError(endTimeError, 'End time cannot be in the past');
+                this.value = '';
+                return;
+            }
+            
+            if (startTimeInput.value && endDate <= new Date(startTimeInput.value)) {
+                setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
+                this.value = '';
+            }
+        });
+        
+        // Validate before form submit
+        document.querySelector('form')?.addEventListener('submit', function(e) {
+            clearErrors();
+            const startDate = startTimeInput.value ? new Date(startTimeInput.value) : null;
+            const endDate = endTimeInput.value ? new Date(endTimeInput.value) : null;
+            const currentDate = new Date();
+            let hasError = false;
+            
+            if (startDate && startDate < currentDate) {
+                setError(startTimeError, 'Không được chọn ngày giờ bắt đầu trong quá khứ');
+                hasError = true;
+            }
+            
+            if (endDate && endDate < currentDate) {
+                setError(endTimeError, 'End time cannot be in the past');
+                hasError = true;
+            }
+            
+            if (startDate && endDate && endDate <= startDate) {
+                setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
+                hasError = true;
+            }
+            
+            if (hasError) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // ===== Image upload to Cloudinary via backend helper =====
+        const fileInput = document.getElementById('imageFile');
+        const statusEl = document.getElementById('imageUploadStatus');
+        const preview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const removeBtn = document.getElementById('removeImageBtn');
+
+        fileInput?.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            
+            statusEl.textContent = 'Uploading...';
+            statusEl.classList.remove('text-danger', 'text-success');
+            statusEl.classList.add('text-primary');
+
+            try {
+                const form = new FormData();
+                form.append('file', file);
+                
+                console.log('Uploading file:', file.name);
+                
+                const res = await fetch('@Model.ApiBaseUrl/api/activity/upload-image', {
+                    method: 'POST',
+                    body: form,
+                    credentials: 'include'
+                });
+                
+                console.log('Upload response status:', res.status);
+                
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error('Upload error:', errorText);
+                    throw new Error(`Upload failed: ${res.status} ${errorText}`);
+                }
+                
+                const data = await res.json();
+                console.log('Upload response data:', data);
+                
+                if (!data.url) {
+                    throw new Error('No URL returned from server');
+                }
+
+                // Set hidden field and preview
+                document.getElementById('Activity_ImageUrl').value = data.url;
+                previewImg.src = data.url;
+                preview.style.display = 'block';
+                statusEl.textContent = '✓ Uploaded successfully';
+                statusEl.classList.remove('text-primary', 'text-danger');
+                statusEl.classList.add('text-success');
+            } catch (err) {
+                console.error('Upload error:', err);
+                statusEl.textContent = '✗ ' + (err.message || 'Upload failed');
+                statusEl.classList.remove('text-primary', 'text-success');
+                statusEl.classList.add('text-danger');
+                fileInput.value = ''; // Clear file input on error
+            }
+        });
+
+        removeBtn?.addEventListener('click', () => {
+            document.getElementById('Activity_ImageUrl').value = '';
+            previewImg.src = '#';
+            preview.style.display = 'none';
+            fileInput.value = '';
+            statusEl.textContent = '';
+        });
+    </script>
+    <partial name="_ValidationScriptsPartial" />
+}
+

@@ -1,0 +1,250 @@
+@page
+@model WebFE.Pages.ClubManager.Activities.IndexModel
+@{
+    ViewData["Title"] = "My Activities";
+    ViewData["Breadcrumb"] = "Activities";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">My Activities</h1>
+        <p class="page-description">Qu&#7843;n lý các ho&#7841;t &#273;&#7897;ng c&#7911;a câu l&#7841;c b&#7897;</p>
+    </div>
+    <a href="/ClubManager/Activities/Create" class="btn btn-primary">
+        <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+        Create Activity
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filters -->
+<div class="content-card mb-4">
+    <div class="content-card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="PendingApproval">Pending Approval</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="typeFilter">
+                    <option value="">All Types</option>
+                    <option value="AcademicClub">Academic Club</option>
+                    <option value="Festival">Festival</option>
+                    <option value="SkillDevelopment">Skill Development</option>
+                    <option value="Volunteer">Volunteer</option>
+                    <option value="Health">Health</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search activities...">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activities List -->
+<div class="content-card">
+    <div class="content-card-body">
+        @if (Model.Activities == null || Model.Activities.Count == 0)
+        {
+            <div class="text-center py-5 text-muted">
+                <i data-lucide="inbox" style="width: 64px; height: 64px; margin-bottom: 1rem;"></i>
+                <h4>No activities yet</h4>
+                <p>Create your first activity to get started!</p>
+                <a href="/ClubManager/Activities/Create" class="btn btn-primary mt-3">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                    Create Activity
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover" id="activitiesTable">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Participants</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var activity in Model.Activities)
+                        {
+                            var statusClass = activity.Status switch
+                            {
+                                "Approved" => "bg-success",
+                                "PendingApproval" => "bg-warning text-dark",
+                                "Rejected" => "bg-danger",
+                                "Completed" => "bg-secondary",
+                                _ => "bg-secondary"
+                            };
+
+                            var typeDisplay = activity.Type switch
+                            {
+                                "AcademicClub" => "Academic Club",
+                                "SkillDevelopment" => "Skill Development",
+                                _ => activity.Type
+                            };
+
+                            <tr data-status="@activity.Status" data-type="@activity.Type" data-title="@activity.Title.ToLower()">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(activity.ImageUrl))
+                                        {
+                                            <img src="@activity.ImageUrl" alt="@activity.Title" 
+                                                 class="rounded me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-primary text-white rounded me-2 d-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px;">
+                                                <i data-lucide="calendar"></i>
+                                            </div>
+                                        }
+                                        <div>
+                                            <strong>@activity.Title</strong>
+                                            @if (activity.IsPublic)
+                                            {
+                                                <span class="badge bg-info ms-2">Public</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">@typeDisplay</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        @activity.StartTime.ToString("MMM dd, yyyy")
+                                        <br />
+                                        @activity.StartTime.ToString("HH:mm") - @activity.EndTime.ToString("HH:mm")
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge @statusClass">@activity.Status</span>
+                                </td>
+                                <td>
+                                    @if (activity.MaxParticipants.HasValue)
+                                    {
+                                        <span>@activity.CurrentParticipants / @activity.MaxParticipants</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@activity.CurrentParticipants</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="/ClubManager/Activities/Details/@activity.Id" class="btn btn-sm btn-outline-primary" title="View Details">
+                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                        @if (activity.Status != "Approved")
+                                        {
+                                            <a href="/ClubManager/Activities/Edit/@activity.Id" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                            </a>
+                                        }
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteActivity(@activity.Id, '@activity.Title')" title="Delete">
+                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="activityNameDelete"></strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" id="deleteForm">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        let deleteActivityId = 0;
+
+        function deleteActivity(id, name) {
+            deleteActivityId = id;
+            document.getElementById('activityNameDelete').textContent = name;
+            document.getElementById('deleteForm').action = `?handler=Delete&id=${id}`;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        // Filters
+        document.getElementById('statusFilter').addEventListener('change', filterTable);
+        document.getElementById('typeFilter').addEventListener('change', filterTable);
+        document.getElementById('searchInput').addEventListener('input', filterTable);
+
+        function filterTable() {
+            const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value.toLowerCase();
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#activitiesTable tbody tr');
+
+            rows.forEach(row => {
+                const status = row.dataset.status.toLowerCase();
+                const type = row.dataset.type.toLowerCase();
+                const title = row.dataset.title;
+
+                const matchStatus = !statusFilter || status === statusFilter;
+                const matchType = !typeFilter || type === typeFilter;
+                const matchSearch = !searchText || title.includes(searchText);
+
+                row.style.display = matchStatus && matchType && matchSearch ? '' : 'none';
+            });
+        }
+    </script>
+}
+
+

@@ -23,12 +23,27 @@
                     <div class="col-md-4">
                         <label asp-for="Input.Type" class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
                         <select asp-for="Input.Type" class="form-select form-select-lg">
-                            <option value="0">Academic Club</option>
-                            <option value="1">Festival</option>
-                            <option value="2">Skill Development</option>
-                            <option value="3">Volunteer</option>
-                            <option value="4">Health</option>
-                            <option value="5">Other</option>
+                            <optgroup label="Events">
+                                <option value="3">Large Event (100-200 people)</option>
+                                <option value="4">Medium Event (50-100 people)</option>
+                                <option value="5">Small Event (&lt;50 people)</option>
+                            </optgroup>
+                            <optgroup label="Competitions">
+                                <option value="6">School Competition</option>
+                                <option value="7">Provincial Competition</option>
+                                <option value="8">National Competition</option>
+                            </optgroup>
+                            <optgroup label="Community">
+                                <option value="9">Volunteer</option>
+                            </optgroup>
+                            <optgroup label="Collaboration">
+                                <option value="10">Club Collaboration</option>
+                                <option value="11">School Collaboration</option>
+                                <option value="12">Enterprise Collaboration</option>
+                            </optgroup>
+                            <optgroup label="Other">
+                                <option value="13">Other</option>
+                            </optgroup>
                         </select>
                     </div>
                     
@@ -42,18 +57,28 @@
                         <input asp-for="Input.Location" class="form-control" placeholder="Room 101, Building A" />
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="Input.ImageUrl" class="form-label fw-semibold">Image URL</label>
-                        <input asp-for="Input.ImageUrl" class="form-control" placeholder="https://example.com/image.jpg" />
-                        <div class="form-text">Enter a URL for the activity image</div>
+                        <label class="form-label fw-semibold">Activity Image</label>
+                        <input type="file" class="form-control" id="imageFile" accept="image/*" />
+                        <input type="hidden" asp-for="Input.ImageUrl" />
+                        <div id="imagePreview" class="mt-2" style="display:none;">
+                            <img id="previewImg" src="#" class="rounded" style="max-width: 100%; max-height: 200px;" />
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-2" id="removeImageBtn">Remove</button>
+                        </div>
+                        <div class="form-text">Upload an image from your device</div>
+                        <div id="imageUploadStatus" class="small text-muted mt-1"></div>
                     </div>
                     
                     <div class="col-md-6">
                         <label asp-for="Input.StartTime" class="form-label fw-semibold">Start Time <span class="text-danger">*</span></label>
-                        <input asp-for="Input.StartTime" type="datetime-local" class="form-control" />
+                        <input asp-for="Input.StartTime" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" id="startTimeInput" step="60" />
+                        <span asp-validation-for="Input.StartTime" class="text-danger small"></span>
+                        <div id="startTimeError" class="text-danger small"></div>
                     </div>
                     <div class="col-md-6">
                         <label asp-for="Input.EndTime" class="form-label fw-semibold">End Time <span class="text-danger">*</span></label>
-                        <input asp-for="Input.EndTime" type="datetime-local" class="form-control" />
+                        <input asp-for="Input.EndTime" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" id="endTimeInput" step="60" />
+                        <span asp-validation-for="Input.EndTime" class="text-danger small"></span>
+                        <div id="endTimeError" class="text-danger small"></div>
                     </div>
                     
                     <div class="col-md-4">
@@ -87,5 +112,166 @@
 </div>
 
 <partial name="_ValidationScriptsPartial" />
+
+<script>
+    // ===== Date Validation =====
+    const startTimeInput = document.getElementById('startTimeInput');
+    const endTimeInput = document.getElementById('endTimeInput');
+    const startTimeError = document.getElementById('startTimeError');
+    const endTimeError = document.getElementById('endTimeError');
+
+    function setError(element, message) {
+        if (!element) return;
+        element.textContent = message || '';
+    }
+    function clearErrors() {
+        setError(startTimeError, '');
+        setError(endTimeError, '');
+    }
+    
+    // Set minimum date to now and update every minute
+    function updateMinDateTime() {
+        const now = new Date();
+        const minDateTime = now.toISOString().slice(0, 16);
+        startTimeInput.setAttribute('min', minDateTime);
+        endTimeInput.setAttribute('min', minDateTime);
+    }
+    updateMinDateTime();
+    setInterval(updateMinDateTime, 60000); // Update every minute
+    
+    // Validate dates on change
+    startTimeInput?.addEventListener('change', function() {
+        clearErrors();
+        const startDate = new Date(this.value);
+        const currentDate = new Date();
+        
+        if (this.value && startDate < currentDate) {
+            setError(startTimeError, 'Không được chọn ngày giờ bắt đầu trong quá khứ');
+            this.value = '';
+            return;
+        }
+        
+        // Update end time minimum to start time
+        if (this.value) endTimeInput.setAttribute('min', this.value);
+        
+        // Check if end time is before or equal to start time
+        if (endTimeInput.value && new Date(endTimeInput.value) <= startDate) {
+            setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
+            endTimeInput.value = '';
+        }
+    });
+    
+    endTimeInput?.addEventListener('change', function() {
+        clearErrors();
+        const endDate = new Date(this.value);
+        const currentDate = new Date();
+        
+        if (this.value && endDate < currentDate) {
+            setError(endTimeError, 'End time cannot be in the past');
+            this.value = '';
+            return;
+        }
+        
+        if (startTimeInput.value && endDate <= new Date(startTimeInput.value)) {
+            setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
+            this.value = '';
+        }
+    });
+    
+    // Validate before form submit
+    document.querySelector('form')?.addEventListener('submit', function(e) {
+        clearErrors();
+        const startDate = startTimeInput.value ? new Date(startTimeInput.value) : null;
+        const endDate = endTimeInput.value ? new Date(endTimeInput.value) : null;
+        const currentDate = new Date();
+        let hasError = false;
+        
+        if (startDate && startDate < currentDate) {
+            setError(startTimeError, 'Không được chọn ngày giờ bắt đầu trong quá khứ');
+            hasError = true;
+        }
+        
+        if (endDate && endDate < currentDate) {
+            setError(endTimeError, 'End time cannot be in the past');
+            hasError = true;
+        }
+        
+        if (startDate && endDate && endDate <= startDate) {
+            setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
+            hasError = true;
+        }
+        
+        if (hasError) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // ===== Image upload to Cloudinary =====
+    const fileInput = document.getElementById('imageFile');
+    const statusEl = document.getElementById('imageUploadStatus');
+    const preview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    const removeBtn = document.getElementById('removeImageBtn');
+
+    fileInput?.addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        
+        statusEl.textContent = 'Uploading...';
+        statusEl.classList.remove('text-danger', 'text-success');
+        statusEl.classList.add('text-primary');
+
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            
+            console.log('Uploading file:', file.name);
+            
+            const res = await fetch('@Model.ApiBaseUrl/api/activity/upload-image', {
+                method: 'POST',
+                body: form,
+                credentials: 'include'
+            });
+            
+            console.log('Upload response status:', res.status);
+            
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('Upload error:', errorText);
+                throw new Error(`Upload failed: ${res.status}`);
+            }
+            
+            const data = await res.json();
+            console.log('Upload response data:', data);
+            
+            if (!data.url) {
+                throw new Error('No URL returned from server');
+            }
+
+            // Set hidden field and preview
+            document.getElementById('Input_ImageUrl').value = data.url;
+            previewImg.src = data.url;
+            preview.style.display = 'block';
+            statusEl.textContent = '✓ Uploaded successfully';
+            statusEl.classList.remove('text-primary', 'text-danger');
+            statusEl.classList.add('text-success');
+        } catch (err) {
+            console.error('Upload error:', err);
+            statusEl.textContent = '✗ ' + (err.message || 'Upload failed');
+            statusEl.classList.remove('text-primary', 'text-success');
+            statusEl.classList.add('text-danger');
+            fileInput.value = '';
+        }
+    });
+
+    removeBtn?.addEventListener('click', () => {
+        document.getElementById('Input_ImageUrl').value = '';
+        previewImg.src = '#';
+        preview.style.display = 'none';
+        fileInput.value = '';
+        statusEl.textContent = '';
+    });
+</script>
 
 

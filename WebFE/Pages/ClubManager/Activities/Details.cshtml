@@ -1,0 +1,336 @@
+@page "{id:int}"
+@model WebFE.Pages.ClubManager.Activities.DetailsModel
+@{
+    ViewData["Title"] = "Activity Details";
+    ViewData["Breadcrumb"] = "Activity Details";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+    var activity = Model.Activity!;
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">@activity.Title</h1>
+        <p class="page-description">Activity details and information</p>
+    </div>
+    <div>
+        <a href="/ClubManager/Activities" class="btn btn-outline-secondary me-2">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back
+        </a>
+        @if (activity.Status != "Approved")
+        {
+            <a href="/ClubManager/Activities/Edit/@activity.Id" class="btn btn-primary">
+                <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                Edit
+            </a>
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Main Information -->
+    <div class="col-lg-8">
+        <div class="content-card mb-4">
+            <div class="content-card-body">
+                @if (!string.IsNullOrWhiteSpace(activity.ImageUrl))
+                {
+                    <img src="@activity.ImageUrl" class="img-fluid rounded mb-4" 
+                         style="max-height: 400px; width: 100%; object-fit: cover;" alt="@activity.Title" />
+                }
+                
+                <div class="mb-4">
+                    <h5 class="fw-semibold mb-3">Description</h5>
+                    <p class="text-muted" style="white-space: pre-wrap;">@(activity.Description ?? "No description provided")</p>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded">
+                            <small class="text-muted d-block mb-1">
+                                <i data-lucide="tag" style="width: 14px; height: 14px;"></i> Type
+                            </small>
+                            <span class="badge bg-info">@activity.Type</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded">
+                            <small class="text-muted d-block mb-1">
+                                <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Status
+                            </small>
+                            @{
+                                var statusClass = activity.Status switch
+                                {
+                                    "Approved" => "success",
+                                    "PendingApproval" => "warning text-dark",
+                                    "Rejected" => "danger",
+                                    "Completed" => "secondary",
+                                    _ => "secondary"
+                                };
+                            }
+                            <span class="badge bg-@statusClass">@activity.Status</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded">
+                            <small class="text-muted d-block mb-1">
+                                <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Visibility
+                            </small>
+                            @if (activity.IsPublic)
+                            {
+                                <span class="badge bg-success">Public</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Private</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded">
+                            <small class="text-muted d-block mb-1">
+                                <i data-lucide="award" style="width: 14px; height: 14px;"></i> Movement Points
+                            </small>
+                            <strong class="text-success">+@activity.MovementPoint points</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule & Location -->
+        <div class="content-card mb-4">
+            <div class="content-card-header">
+                <h5 class="content-card-title">Schedule & Location</h5>
+            </div>
+            <div class="content-card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <i data-lucide="calendar" class="text-primary me-3" style="width: 20px; height: 20px; margin-top: 2px;"></i>
+                            <div>
+                                <small class="text-muted d-block">Start Time</small>
+                                <strong>@activity.StartTime.ToString("dddd, dd MMMM yyyy")</strong>
+                                <div class="text-muted">@activity.StartTime.ToString("HH:mm")</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-start">
+                            <i data-lucide="calendar-check" class="text-success me-3" style="width: 20px; height: 20px; margin-top: 2px;"></i>
+                            <div>
+                                <small class="text-muted d-block">End Time</small>
+                                <strong>@activity.EndTime.ToString("dddd, dd MMMM yyyy")</strong>
+                                <div class="text-muted">@activity.EndTime.ToString("HH:mm")</div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(activity.Location))
+                    {
+                        <div class="col-12">
+                            <div class="d-flex align-items-start">
+                                <i data-lucide="map-pin" class="text-danger me-3" style="width: 20px; height: 20px; margin-top: 2px;"></i>
+                                <div>
+                                    <small class="text-muted d-block">Location</small>
+                                    <strong>@activity.Location</strong>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Statistics Card -->
+        <div class="content-card mb-4">
+            <div class="content-card-header">
+                <h5 class="content-card-title">Statistics</h5>
+            </div>
+            <div class="content-card-body">
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">
+                            <i data-lucide="users" style="width: 14px; height: 14px;"></i> Participants
+                        </small>
+                        <strong>@activity.RegisteredCount</strong>
+                    </div>
+                    @if (activity.MaxParticipants.HasValue)
+                    {
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-primary" 
+                                 style="width: @((double)activity.RegisteredCount / activity.MaxParticipants.Value * 100)%"></div>
+                        </div>
+                        <small class="text-muted">@activity.RegisteredCount / @activity.MaxParticipants maximum</small>
+                    }
+                    else
+                    {
+                        <small class="text-muted">Unlimited capacity</small>
+                    }
+                </div>
+
+                <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Attended
+                        </small>
+                        <strong>@activity.AttendedCount</strong>
+                    </div>
+                </div>
+
+                <div class="mb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i data-lucide="message-square" style="width: 14px; height: 14px;"></i> Feedback
+                        </small>
+                        <strong>@activity.FeedbackCount</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="content-card mb-4">
+            <div class="content-card-header">
+                <h5 class="content-card-title">Quick Actions</h5>
+            </div>
+            <div class="content-card-body">
+                <div class="d-grid gap-2">
+                    @if (activity.Status != "Approved")
+                    {
+                        <a href="/ClubManager/Activities/Edit/@activity.Id" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil-square me-2"></i>Edit Activity
+                        </a>
+                    }
+                    <a href="/ClubManager/Activities/Attendances/@activity.Id" class="btn btn-outline-success">
+                        <i class="bi bi-clipboard-check me-2"></i>Manage Attendance
+                    </a>
+                    <a href="/ClubManager/Activities/Feedbacks/@activity.Id" class="btn btn-outline-info">
+                        <i class="bi bi-chat-left-text me-2"></i>View Feedback
+                    </a>
+                    @if (activity.Status != "Approved")
+                    {
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="bi bi-trash me-2"></i>Delete Activity
+                        </button>
+                    }
+                    <a href="/ClubManager/Activities" class="btn btn-outline-secondary">
+                        <i class="bi bi-list me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Club Information -->
+        @if (!string.IsNullOrWhiteSpace(activity.ClubName))
+        {
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Club</h5>
+                </div>
+                <div class="content-card-body">
+                    <div class="d-flex align-items-center">
+                        @if (!string.IsNullOrWhiteSpace(activity.ClubLogo))
+                        {
+                            <img src="@activity.ClubLogo" alt="@activity.ClubName" 
+                                 class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <div class="bg-primary text-white rounded me-3 d-flex align-items-center justify-content-center" 
+                                 style="width: 50px; height: 50px;">
+                                <i data-lucide="users"></i>
+                            </div>
+                        }
+                        <div>
+                            <strong>@activity.ClubName</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Timestamps -->
+        <div class="content-card">
+            <div class="content-card-header">
+                <h5 class="content-card-title">Timestamps</h5>
+            </div>
+            <div class="content-card-body">
+                <div class="mb-3">
+                    <small class="text-muted d-block">Created</small>
+                    <span>@activity.CreatedAt.ToString("dd MMM yyyy, HH:mm")</span>
+                </div>
+                @if (activity.ApprovedAt.HasValue)
+                {
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Approved</small>
+                        <span>@activity.ApprovedAt.Value.ToString("dd MMM yyyy, HH:mm")</span>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(activity.ApprovedByName))
+                {
+                    <div>
+                        <small class="text-muted d-block">Approved By</small>
+                        <span>@activity.ApprovedByName</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
+                    Confirm Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Are you sure you want to delete this activity?</p>
+                <p class="text-danger small mb-0 mt-2">
+                    <strong>Warning:</strong> This action cannot be undone. All registrations and attendance records will be removed.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" asp-page-handler="Delete" style="display: inline;">
+                    <input type="hidden" name="id" value="@activity.Id" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>
+                        Delete Activity
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Initialize Lucide icons on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+                
+                // Re-run after short delay to catch any dynamically loaded content
+                setTimeout(() => lucide.createIcons(), 100);
+            }
+        });
+        
+        // Re-initialize Lucide icons when modal is shown
+        const deleteModal = document.getElementById('deleteModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('shown.bs.modal', function () {
+                lucide.createIcons();
+            });
+        }
+    </script>
+}
+

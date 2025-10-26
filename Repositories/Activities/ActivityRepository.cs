@@ -149,19 +149,36 @@ namespace Repositories.Activities
 			return reg;
 		}
 
-		public async Task<bool> IsUserMemberOfClubAsync(int userId, int clubId)
-		{
-			// Map user -> student -> club member
-			var studentId = await _ctx.Students
-				.Where(s => s.UserId == userId)
-				.Select(s => s.Id)
-				.FirstOrDefaultAsync();
-			if (studentId == 0) return false;
+	public async Task<bool> IsUserMemberOfClubAsync(int userId, int clubId)
+	{
+		// Map user -> student -> club member
+		var studentId = await _ctx.Students
+			.Where(s => s.UserId == userId)
+			.Select(s => s.Id)
+			.FirstOrDefaultAsync();
+		if (studentId == 0) return false;
 
-			var isMember = await _ctx.ClubMembers
-				.AnyAsync(m => m.ClubId == clubId && m.StudentId == studentId && m.IsActive);
-			return isMember;
-		}
+		var isMember = await _ctx.ClubMembers
+			.AnyAsync(m => m.ClubId == clubId && m.StudentId == studentId && m.IsActive);
+		return isMember;
+	}
+
+	public async Task<bool> IsUserManagerOfClubAsync(int userId, int clubId)
+	{
+		// Map user -> student -> club member with Manager or President role
+		var studentId = await _ctx.Students
+			.Where(s => s.UserId == userId)
+			.Select(s => s.Id)
+			.FirstOrDefaultAsync();
+		if (studentId == 0) return false;
+
+		var isManager = await _ctx.ClubMembers
+			.AnyAsync(m => m.ClubId == clubId 
+				&& m.StudentId == studentId 
+				&& m.IsActive
+				&& (m.RoleInClub == "Manager" || m.RoleInClub == "President"));
+		return isManager;
+	}
 
 		public async Task<bool> HasAttendanceAsync(int activityId, int userId)
 		{
@@ -274,6 +291,18 @@ namespace Repositories.Activities
 				.AsNoTracking()
 				.ToListAsync()
 				.ContinueWith(t => t.Result.Select(x => (x.UserId, x.FullName, x.Email, x.Rating, x.Comment, x.CreatedAt)).ToList());
+		}
+
+		public async Task<List<(int UserId, int StudentId)>> GetClubMemberUserIdsAsync(int clubId)
+		{
+			return await _ctx.ClubMembers
+				.Where(cm => cm.ClubId == clubId && cm.IsActive)
+				.Include(cm => cm.Student)
+				.ThenInclude(s => s.User)
+				.Select(cm => new { cm.Student.User.Id, cm.StudentId })
+				.AsNoTracking()
+				.ToListAsync()
+				.ContinueWith(t => t.Result.Select(x => (x.Id, x.StudentId)).ToList());
 		}
     }
 }

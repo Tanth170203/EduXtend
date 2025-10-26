@@ -35,9 +35,10 @@
         
         <div class="sidebar-content">
             <nav class="sidebar-nav">
+                @{ var current = ViewContext.RouteData.Values["Page"]?.ToString() ?? string.Empty; }
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">OVERVIEW</div>
-                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/ClubManager/Index" ? "active" : "")" href="/ClubManager">
+                    <a class="sidebar-link @(current == "/ClubManager/Index" ? "active" : "")" href="/ClubManager">
                         <i data-lucide="layout-dashboard" style="width: 20px; height: 20px;"></i>
                         <span>Dashboard</span>
                     </a>
@@ -45,15 +46,15 @@
                 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">CLUB MANAGEMENT</div>
-                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/ClubManager/ClubInfo") == true ? "active" : "")" href="/ClubManager/ClubInfo">
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/ClubInfo") ? "active" : "")" href="/ClubManager/ClubInfo">
                         <i data-lucide="info" style="width: 20px; height: 20px;"></i>
                         <span>Club Information</span>
                     </a>
-                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/ClubManager/Requests") == true || ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/ClubManager/Recruitment") == true ? "active" : "")" href="/ClubManager/Requests">
+                    <a class="sidebar-link @((current.StartsWith("/ClubManager/Requests") || current.StartsWith("/ClubManager/Recruitment")) ? "active" : "")" href="/ClubManager/Requests">
                         <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
                         <span>Join Requests</span>
                     </a>
-                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/ClubManager/Members") == true ? "active" : "")" href="/ClubManager/Members">
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/Members") ? "active" : "")" href="/ClubManager/Members">
                         <i data-lucide="users" style="width: 20px; height: 20px;"></i>
                         <span>Members</span>
                     </a>
@@ -61,15 +62,11 @@
                 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">ACTIVITIES</div>
-                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/ClubManager/Activities") == true ? "active" : "")" href="/ClubManager/Activities">
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/Activities") ? "active" : "")" href="/ClubManager/Activities">
                         <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
                         <span>All Activities</span>
                     </a>
-                    <a class="sidebar-link" href="/ClubManager/Activities/Create">
-                        <i data-lucide="plus-circle" style="width: 20px; height: 20px;"></i>
-                        <span>Create Activity</span>
-                    </a>
-                    <a class="sidebar-link" href="/ClubManager/Attendances">
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/Attendances") ? "active" : "")" href="/ClubManager/Attendances">
                         <i data-lucide="clipboard-check" style="width: 20px; height: 20px;"></i>
                         <span>Attendances</span>
                     </a>

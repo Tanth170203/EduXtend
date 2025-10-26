@@ -506,7 +506,15 @@
 
 @section Scripts {
     <script>
-        lucide.createIcons();
+        // Initialize Lucide icons on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+                
+                // Re-run after short delay to catch any dynamically loaded content
+                setTimeout(() => lucide.createIcons(), 100);
+            }
+        });
     </script>
 }
 

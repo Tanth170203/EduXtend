@@ -85,6 +85,8 @@ namespace WebAPI
             builder.Services.AddScoped<IActivityService, ActivityService>();
             builder.Services.AddScoped<IJoinRequestService, JoinRequestService>();
             builder.Services.AddScoped<IInterviewService, InterviewService>();
+            builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
+
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();

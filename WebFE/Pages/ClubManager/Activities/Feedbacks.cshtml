@@ -1,8 +1,8 @@
-@page "/Admin/Activities/Feedbacks/{id:int}"
-@model WebFE.Pages.Admin.Activities.FeedbacksModel
+@page "/ClubManager/Activities/Feedbacks/{id:int}"
+@model WebFE.Pages.ClubManager.Activities.FeedbacksModel
 @{
     ViewData["Title"] = "Activity Feedbacks";
-    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
 }
 
 <div class="container-fluid px-4 py-4">
@@ -13,7 +13,7 @@
             </h2>
             <p class="text-muted mb-0">View participant feedback and ratings</p>
         </div>
-        <a class="btn btn-outline-secondary px-4" href="/Admin/Activities/Details/@Model.ActivityId">
+        <a class="btn btn-outline-secondary px-4" href="/ClubManager/Activities/Details/@Model.ActivityId">
             <i class="bi bi-arrow-left me-2"></i>Back to Activity
         </a>
     </div>
@@ -135,5 +135,6 @@
     border-style: dashed !important;
 }
 </style>
+
 
 

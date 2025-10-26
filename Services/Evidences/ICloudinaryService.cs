@@ -34,6 +34,16 @@ public interface ICloudinaryService
     Task<string> UploadEvidenceFileAsync(IFormFile file, string studentCode);
 
     /// <summary>
+    /// Upload activity image to Cloudinary.
+    /// Images are stored in activities/ folder (root level, not under evidences/).
+    /// Only accepts image files (.jpg, .png, .gif, .webp).
+    /// Automatically applies optimization (q_auto, f_auto).
+    /// </summary>
+    /// <param name="file">The image file to upload</param>
+    /// <returns>Cloudinary secure URL with auto-optimization</returns>
+    Task<string> UploadActivityImageAsync(IFormFile file);
+
+    /// <summary>
     /// Delete file from Cloudinary by public ID or URL.
     /// 
     /// Automatically handles:

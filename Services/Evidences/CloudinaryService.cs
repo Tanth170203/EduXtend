@@ -167,6 +167,88 @@ public class CloudinaryService : ICloudinaryService
     }
 
     /// <summary>
+    /// Upload activity image to Cloudinary in activities/ folder (root level).
+    /// Only accepts image files. Automatically applies quality and format optimization.
+    /// </summary>
+    public async Task<string> UploadActivityImageAsync(IFormFile file)
+    {
+        try
+        {
+            // ===== VALIDATIONS =====
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("File is empty or null");
+            if (file.Length > _maxFileSize)
+                throw new ArgumentException($"File size exceeds maximum allowed size of {_maxFileSize / (1024 * 1024)}MB");
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var isImage = _allowedImageExtensions.Contains(ext);
+
+            if (!isImage)
+                throw new ArgumentException($"Only image files are allowed for activities. Allowed: {string.Join(", ", _allowedImageExtensions)}");
+
+            // ===== MIME TYPE VALIDATION =====
+            if (!ValidateMimeType(file, ext))
+                throw new ArgumentException($"File MIME type does not match extension {ext}. Possible file tampering detected.");
+
+            var baseName = Path.GetFileNameWithoutExtension(file.FileName);
+            var safeName = Slugify(baseName);
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+
+            // Upload to root-level "activities" folder
+            var folder = "activities";
+            var publicIdWithoutFolder = $"{timestamp}_{safeName}";
+
+            using var stream = file.OpenReadStream();
+
+            // IMAGE: Use ImageUploadParams for proper resource type handling
+            var imageParams = new ImageUploadParams
+            {
+                File = new FileDescription(file.FileName, stream),
+                Folder = folder,
+                PublicId = publicIdWithoutFolder,
+                UseFilename = false,
+                Overwrite = false
+            };
+            var uploadResult = await _cloudinary.UploadAsync(imageParams);
+            
+            _logger.LogInformation("Uploaded activity image to Cloudinary. PublicId={PublicId}, Size={Size}bytes", 
+                folder + "/" + publicIdWithoutFolder, file.Length);
+
+            // ===== CHECK UPLOAD ERROR =====
+            if (uploadResult.Error != null)
+            {
+                _logger.LogError("Cloudinary upload error: {Error}", uploadResult.Error.Message);
+                throw new Exception($"Upload failed: {uploadResult.Error.Message}");
+            }
+
+            // ===== RETURN URL & APPLY TRANSFORMATIONS =====
+            var secureUrl = uploadResult.SecureUrl?.ToString();
+            if (string.IsNullOrWhiteSpace(secureUrl))
+            {
+                var fallbackUrl = uploadResult.Url?.ToString();
+                if (string.IsNullOrWhiteSpace(fallbackUrl))
+                {
+                    _logger.LogError("Cloudinary upload returned no URL. Response: {@UploadResult}", uploadResult);
+                    throw new Exception("Cloudinary upload succeeded but returned no URL");
+                }
+                _logger.LogWarning("Using fallback HTTP URL instead of HTTPS");
+                return fallbackUrl;
+            }
+
+            // Apply transformation for quality optimization
+            secureUrl = AddImageTransformations(secureUrl);
+
+            _logger.LogInformation("Successfully uploaded activity image. URL={Url}", secureUrl);
+            return secureUrl;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading activity image to Cloudinary");
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Add quality and format transformations to image URL for optimization.
     /// Cloudinary will serve optimized version based on browser capabilities.
     /// </summary>
