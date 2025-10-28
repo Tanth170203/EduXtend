@@ -8,8 +8,13 @@ using Microsoft.Extensions.Logging;
 namespace Services.MovementRecords;
 
 /// <summary>
+/// [DEPRECATED] This service is no longer in use.
+/// All functionality has been merged into ComprehensiveAutoScoringService.
+/// This file is kept for reference only and can be safely deleted.
+/// 
 /// Background service to automatically calculate movement scores from activity attendance
 /// </summary>
+[Obsolete("Use ComprehensiveAutoScoringService instead. This service is deprecated and not registered.")]
 public class MovementScoreAutomationService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;

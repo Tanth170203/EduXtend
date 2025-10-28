@@ -93,7 +93,9 @@ namespace WebAPI
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
             builder.Services.AddHostedService<TokenCleanupService>();
-            builder.Services.AddHostedService<MovementScoreAutomationService>();
+            builder.Services.AddHostedService<ComprehensiveAutoScoringService>();
+            // DEPRECATED: MovementScoreAutomationService - functionality merged into ComprehensiveAutoScoringService
+            // builder.Services.AddHostedService<MovementScoreAutomationService>();
 
             // Custom JWT Authentication (bypass library issues)
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
