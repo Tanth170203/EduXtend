@@ -26,4 +26,10 @@ public class AddManualScoreWithCriterionDto
     public string Comments { get; set; } = null!;
 
     public DateTime? AwardedDate { get; set; }
+
+    // Optional trace to activity for dedupe
+    public int? ActivityId { get; set; }
+
+    // Admin who created this score (set by API)
+    public int? CreatedById { get; set; }
 }

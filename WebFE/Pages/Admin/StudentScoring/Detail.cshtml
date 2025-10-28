@@ -1,6 +1,6 @@
 @page
 @using BusinessObject.DTOs.MovementRecord
-@model WebFE.Pages.Admin.MovementReports.DetailModel
+@model WebFE.Pages.Admin.StudentScoring.DetailModel
 @{
     ViewData["Title"] = "Movement Record Detail";
     ViewData["Breadcrumb"] = "Detail";
@@ -15,7 +15,7 @@
             <p class="page-description">Xem chi tiết điểm phong trào của sinh viên</p>
         </div>
         <div>
-            <a href="/Admin/MovementReports" class="btn btn-secondary">
+            <a href="/Admin/StudentScoring" class="btn btn-secondary">
                 <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
                 Quay lại
             </a>
@@ -68,6 +68,8 @@
                                 <th>Tiêu chí</th>
                                 <th>Điểm tối đa</th>
                                 <th>Điểm đạt được</th>
+                                <th>Nguồn</th>
+                                <th>Ghi chú</th>
                                 <th>Ngày cộng điểm</th>
                             </tr>
                         </thead>
@@ -81,39 +83,62 @@
                                     <td>
                                         <strong class="text-success">@detail.Score</strong>
                                     </td>
+                                    <td>@(string.IsNullOrWhiteSpace(detail.ScoreType) ? "Auto" : detail.ScoreType)</td>
+                                    <td>@detail.Note</td>
                                     <td>@detail.AwardedAt.ToString("dd/MM/yyyy HH:mm")</td>
                                 </tr>
                             }
                         </tbody>
-                        <tfoot>
-                            <tr class="table-active">
-                                <td colspan="3" class="text-end"><strong>Tổng cộng:</strong></td>
-                                <td colspan="2"><strong class="fs-5 text-primary">@Model.Record.TotalScore.ToString("F1")</strong></td>
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
 
                 <!-- Score Chart (Group by Criterion Group) -->
                 <div class="mt-4">
                     <h5>Thống kê theo nhóm tiêu chí</h5>
-                    @{
-                        var groupedScores = Model.Record.Details
-                            .GroupBy(d => d.GroupName)
-                            .Select(g => new { GroupName = g.Key, TotalScore = g.Sum(d => d.Score) })
-                            .OrderByDescending(g => g.TotalScore);
-                    }
                     <div class="row">
-                        @foreach (var group in groupedScores)
+                        @if (Model.Record?.CategoryScores != null && Model.Record.CategoryScores.Any())
                         {
-                            <div class="col-md-4 mb-3">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h6 class="card-title">@group.GroupName</h6>
-                                        <p class="card-text fs-4 fw-bold text-primary">@group.TotalScore điểm</p>
+                            @foreach (var category in Model.Record.CategoryScores)
+                            {
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">@category.GroupName</h6>
+                                            <p class="card-text fs-4 fw-bold text-primary">@category.CappedScore điểm</p>
+                                            @if (category.IsCapped)
+                                            {
+                                                <small class="text-muted">
+                                                    <i data-lucide="alert-circle" style="width: 14px; height: 14px;"></i>
+                                                    Đã đạt giới hạn (@category.MaxScore điểm)
+                                                </small>
+                                            }
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            }
+                        }
+                        else
+                        {
+                            @* Fallback: Calculate from details if CategoryScores not available *@
+                            var groupedScores = Model.Record?.Details
+                                ?.GroupBy(d => d.GroupName)
+                                ?.Select(g => new { GroupName = g.Key, TotalScore = g.Sum(d => d.Score) })
+                                ?.OrderByDescending(g => g.TotalScore);
+                            
+                            if (groupedScores != null)
+                            {
+                                foreach (var group in groupedScores)
+                                {
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="card-title">@group.GroupName</h6>
+                                                <p class="card-text fs-4 fw-bold text-primary">@group.TotalScore điểm</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
                         }
                     </div>
                 </div>

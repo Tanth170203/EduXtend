@@ -56,35 +56,23 @@ namespace Repositories.Users
                 }
 
                 // ✅ ĐẢM BẢO USER CÓ ROLE (nếu user từ import có thể thiếu role)
-                if (existingUser.UserRoles == null || !existingUser.UserRoles.Any())
+                if (existingUser.RoleId == 0)
                 {
                     // Reload user với đầy đủ relationships
                     existingUser = await _userRepo.GetByIdAsync(existingUser.Id);
                     
-                    // Nếu vẫn không có role, gán role Student mặc định
-                    if (existingUser.UserRoles == null || !existingUser.UserRoles.Any())
+                    // Nếu vẫn không có role, gán role Student mặc định (RoleId = 2)
+                    if (existingUser.RoleId == 0)
                     {
-                        existingUser.UserRoles.Add(new UserRole
-                        {
-                            UserId = existingUser.Id,
-                            RoleId = 2, // Student
-                            AssignedAt = DateTime.UtcNow
-                        });
+                        existingUser.RoleId = 2; // Student
                     }
                 }
 
-                // ✅ ĐẢM BẢO TẤT CẢ USERROLES CÓ ROLE NAVIGATION PROPERTY
-                if (existingUser.UserRoles != null)
+                // ✅ ĐẢM BẢO ROLE NAVIGATION PROPERTY ĐƯỢC LOAD
+                if (existingUser.Role == null)
                 {
-                    foreach (var userRole in existingUser.UserRoles)
-                    {
-                        if (userRole.Role == null)
-                        {
-                            // Reload user với đầy đủ relationships nếu Role navigation property bị null
-                            existingUser = await _userRepo.GetByIdAsync(existingUser.Id);
-                            break;
-                        }
-                    }
+                    // Reload user với đầy đủ relationships nếu Role navigation property bị null
+                    existingUser = await _userRepo.GetByIdAsync(existingUser.Id);
                 }
             }
 

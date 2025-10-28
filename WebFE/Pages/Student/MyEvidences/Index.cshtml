@@ -169,22 +169,22 @@
     <!-- Table (đồng kiểu Clubs) -->
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
-            <div class="table-responsive">
+                <div class="table-responsive">
                 <table class="table table-striped align-middle mb-0">
                     <thead class="table-light">
-                        <tr>
-                            <th class="px-4" style="width:40%;">Tiêu đề & mô tả</th>
-                            <th>Tiêu chí</th>
-                            <th>Trạng thái</th>
-                            <th class="text-center">Điểm</th>
-                            <th>Ngày nộp</th>
-                            <th class="text-end" style="width:190px;">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (!Model.FilteredEvidences.Any())
-                        {
                             <tr>
+                            <th class="px-4" style="width:40%;">Tiêu đề & mô tả</th>
+                                <th>Tiêu chí</th>
+                                <th>Trạng thái</th>
+                            <th class="text-center">Điểm</th>
+                                <th>Ngày nộp</th>
+                            <th class="text-end" style="width:190px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @if (!Model.FilteredEvidences.Any())
+                            {
+                                <tr>
                                 <td colspan="6" class="text-center text-muted py-5">
                                     <i class="bi bi-inbox" style="font-size:3rem;"></i>
                                     @if (!Model.Evidences.Any())
@@ -196,12 +196,12 @@
                                     {
                                         <div class="mt-3">Không tìm thấy minh chứng phù hợp</div>
                                         <div class="small">Thử thay đổi bộ lọc hoặc <a href="/Student/MyEvidences">xóa bộ lọc</a></div>
-                                    }
-                                </td>
+                                        }
+                                    </td>
                             </tr>
-                        }
-                        else
-                        {
+                                        }
+                                        else
+                                        {
                             @foreach (var evidence in Model.FilteredEvidences)
                             {
                                 var statusBadge = evidence.Status switch
@@ -228,26 +228,26 @@
                                     </td>
                                     <td>
                                         <span class="badge @statusBadge">
-                                            @if (evidence.Status == "Approved")
-                                            {
+                                        @if (evidence.Status == "Approved")
+                                        {
                                                 <i class="bi bi-check-circle me-1"></i>
                                             }
                                             else if (evidence.Status == "Pending")
                                             {
 
                                                 <i class="bi bi-hourglass-split me-1"></i>
-                                            }
-                                            else
-                                            {
+                                        }
+                                        else
+                                        {
 
                                                 <i class="bi bi-x-circle me-1"></i>
-                                            }
+                                        }
                                         @(
                                                                             evidence.Status == "Approved" ? "Đã duyệt" :
                                                                             evidence.Status == "Pending" ? "Chờ duyệt" : "Từ chối"
                                                                             )
                                     </span>
-                                </td>
+                                    </td>
                                 <td class="text-center">
                                 @if (evidence.Status == "Approved")
                                         {
@@ -273,8 +273,8 @@
                                                     <i class="bi bi-eye"></i> Xem
                                                 </a>
                                             }
-                                            @if (evidence.Status == "Pending")
-                                            {
+                                        @if (evidence.Status == "Pending")
+                                        {
                                                 <form method="post" asp-page-handler="Delete" class="d-inline">
                                                     <input type="hidden" name="id" value="@evidence.Id" />
                                                     <button type="submit"
@@ -282,17 +282,17 @@
                                                             onclick="return confirm('Xác nhận xóa minh chứng này?')"
                                                             title="Xóa">
                                                         <i class="bi bi-trash3"></i> Xóa
-                                                    </button>
-                                                </form>
-                                            }
+                                                </button>
+                                            </form>
+                                        }
                                         </div>
                                     </td>
                                 </tr>
                             }
-                        }
-                    </tbody>
-                </table>
-            </div>
+                            }
+                        </tbody>
+                    </table>
+                </div>
         </div>
     </div>
 </section>

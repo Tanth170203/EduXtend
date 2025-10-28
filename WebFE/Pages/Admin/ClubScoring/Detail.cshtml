@@ -1,0 +1,189 @@
+@page
+@model WebFE.Pages.Admin.ClubScoring.DetailModel
+@{
+    ViewData["Title"] = "Chi tiết CLB";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/Admin">Admin</a></li>
+        <li class="breadcrumb-item"><a href="/Admin/ClubScoring">Club Scoring</a></li>
+        <li class="breadcrumb-item active">Chi tiết</li>
+    </ol>
+</nav>
+
+<!-- Page Header -->
+<div class="page-header mb-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">
+                <i data-lucide="trophy" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                @Model.Record?.ClubName
+            </h1>
+            <p class="page-description">Tháng @Model.Month - @Model.Record?.SemesterName</p>
+        </div>
+        <div>
+            <a href="/Admin/ClubScoring?semesterId=@Model.SemesterId&month=@Model.Month" class="btn btn-outline-secondary">
+                <i data-lucide="arrow-left"></i> Quay lại
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Club Info Card -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Tên CLB:</strong>
+                <div>@Model.Record?.ClubName</div>
+            </div>
+            <div class="col-md-6">
+                <strong>Chủ nhiệm:</strong>
+                <div>@Model.Record?.PresidentName (@Model.Record?.PresidentCode)<br /><small class="text-muted">@Model.Record?.PresidentEmail</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer bg-light">
+        <div class="d-flex justify-content-between">
+            <div><strong>Tổng tháng:</strong> <span class="text-primary fs-5">@Model.Record?.TotalScore</span> / 100</div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Summary Card -->
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-info text-white d-flex align-items-center justify-content-center py-3">
+        <i data-lucide="bar-chart-3" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+        <strong>Tổng theo danh mục (SH / SK / PH / Thi / KH)</strong>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <div class="p-3 border rounded text-center">
+                    <div class="text-muted">SH</div>
+                    <div class="fs-5 fw-bold text-primary">@Model.Record?.ClubMeetingScore</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 border rounded text-center">
+                    <div class="text-muted">SK</div>
+                    <div class="fs-5 fw-bold text-primary">@Model.Record?.EventScore</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 border rounded text-center">
+                    <div class="text-muted">PH</div>
+                    <div class="fs-5 fw-bold text-primary">@Model.Record?.CollaborationScore</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 border rounded text-center">
+                    <div class="text-muted">Thi</div>
+                    <div class="fs-5 fw-bold text-primary">@Model.Record?.CompetitionScore</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="p-3 border rounded text-center">
+                    <div class="text-muted">KH</div>
+                    <div class="fs-5 fw-bold text-primary">@Model.Record?.PlanScore</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Score Details Card -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-warning text-dark d-flex align-items-center justify-content-center py-3">
+        <i data-lucide="clipboard-list" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+        <strong>Điểm đã chấm</strong>
+    </div>
+    <div class="card-body">
+        @if (Model.Record?.Details?.Any() == true)
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th><i data-lucide="tag" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Loại</th>
+                            <th><i data-lucide="list" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Tiêu chí</th>
+                            <th><i data-lucide="star" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Điểm</th>
+                            <th><i data-lucide="message-square" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Ghi chú</th>
+                            <th><i data-lucide="user" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Người chấm</th>
+                            <th><i data-lucide="calendar" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Ngày</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.Record.Details)
+                        {
+                            <tr>
+                                <td>
+                                    @if (d.ScoreType == "Auto")
+                                    {
+                                        <span class="badge bg-success">✅ Auto</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">⚠️ Manual</span>
+                                    }
+                                </td>
+                                <td>@d.CriterionTitle</td>
+                                <td><strong class="text-primary">@d.Score</strong></td>
+                                <td>@d.Note</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(d.CreatedByName))
+                                    {
+                                        @d.CreatedByName
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">System</span>
+                                    }
+                                </td>
+                                <td>@d.AwardedAt.ToString("dd/MM HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center text-muted py-5">
+                <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                <div>Chưa có điểm nào</div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add Manual Score Button -->
+<div class="text-end mt-3">
+    <a class="btn btn-success" href="/Admin/ClubScoring/ManualAdd?clubId=@Model.ClubId&semesterId=@Model.SemesterId&month=@Model.Month">
+        <i data-lucide="plus"></i> Thêm điểm thủ công
+    </a>
+</div>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){ if (typeof lucide !== 'undefined') lucide.createIcons(); });
+
+        function updateRangeHint(){
+            const sel = document.getElementById('criterionSelect');
+            const opt = sel.options[sel.selectedIndex];
+            const min = opt.getAttribute('data-min');
+            const max = opt.getAttribute('data-max');
+            const score = document.getElementById('scoreInput');
+            const hint = document.getElementById('rangeHint');
+            if(min && max){
+                score.setAttribute('min', min);
+                score.setAttribute('max', max);
+                hint.innerText = `Range: ${min}-${max} điểm`;
+            }
+        }
+    </script>
+}
+
+

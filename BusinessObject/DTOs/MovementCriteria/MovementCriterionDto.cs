@@ -13,6 +13,7 @@ public class MovementCriterionDto
     public string Title { get; set; } = null!;
     public string? Description { get; set; }
     public int MaxScore { get; set; }
+    public int? MinScore { get; set; }
     public string TargetType { get; set; } = "Student"; // "Student" or "Club"
     public string? DataSource { get; set; }
     public bool IsActive { get; set; } = true;

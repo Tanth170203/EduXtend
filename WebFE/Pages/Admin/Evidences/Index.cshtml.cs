@@ -27,13 +27,14 @@ namespace WebFE.Pages.Admin.Evidences
 
         // Data Properties
         public List<EvidenceDto> Evidences { get; set; } = new();
+        public List<EvidenceDto> AllEvidences { get; set; } = new(); // All evidences for statistics
         public string? CurrentFilter { get; set; }
 
-        // Statistics Properties
-        public int TotalEvidences => Evidences.Count;
-        public int PendingCount => Evidences.Count(e => e.Status == "Pending");
-        public int ApprovedCount => Evidences.Count(e => e.Status == "Approved");
-        public int RejectedCount => Evidences.Count(e => e.Status == "Rejected");
+        // Statistics Properties (based on AllEvidences, not filtered Evidences)
+        public int TotalEvidences => AllEvidences.Count;
+        public int PendingCount => AllEvidences.Count(e => e.Status == "Pending");
+        public int ApprovedCount => AllEvidences.Count(e => e.Status == "Approved");
+        public int RejectedCount => AllEvidences.Count(e => e.Status == "Rejected");
         public double ApprovalRate => TotalEvidences > 0
             ? Math.Round((double)ApprovedCount / TotalEvidences * 100, 1)
             : 0;
@@ -87,6 +88,9 @@ namespace WebFE.Pages.Admin.Evidences
             try
             {
                 using var httpClient = CreateHttpClient();
+                // Load all evidences first for statistics
+                await LoadAllEvidencesAsync(httpClient);
+                // Then load filtered evidences for display
                 await LoadEvidencesAsync(httpClient, CurrentFilter);
             }
             catch (HttpRequestException ex)
@@ -101,6 +105,45 @@ namespace WebFE.Pages.Admin.Evidences
             }
 
             return Page();
+        }
+
+        /// <summary>
+        /// Load all evidences from API for statistics
+        /// </summary>
+        private async Task LoadAllEvidencesAsync(HttpClient httpClient)
+        {
+            try
+            {
+                _logger.LogInformation("Loading all evidences for statistics");
+
+                var response = await httpClient.GetAsync("/api/evidences");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var evidences = JsonSerializer.Deserialize<List<EvidenceDto>>(
+                        content,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
+
+                    if (evidences != null)
+                    {
+                        AllEvidences = evidences.ToList();
+                        _logger.LogInformation("Loaded {Count} total evidences for statistics",
+                            AllEvidences.Count);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to load all evidences for statistics: {StatusCode}",
+                        response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading all evidences for statistics");
+                // Don't throw - statistics can be empty if this fails
+            }
         }
 
         /// <summary>

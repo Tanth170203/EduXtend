@@ -62,10 +62,7 @@ namespace WebAPI.Controllers
 
                 SetAuthCookies(accessToken, refreshToken);
 
-                var roles = user.UserRoles?.Where(r => r?.Role != null)
-                    .Select(r => r.Role.RoleName)
-                    .Where(roleName => !string.IsNullOrEmpty(roleName))
-                    .ToList() ?? new List<string>();
+                var roles = user.Role != null ? new List<string> { user.Role.RoleName } : new List<string>();
                 string redirectUrl = DetermineRedirectUrl(roles);
 
                 _logger.LogInformation("User {Email} logged in successfully with roles: {Roles}", user.Email, string.Join(", ", roles));
@@ -191,7 +188,7 @@ namespace WebAPI.Controllers
                     return NotFound(new { message = "User not found" });
                 }
 
-                var roles = user.UserRoles?.Where(ur => ur.Role != null).Select(ur => ur.Role!.RoleName).ToList() ?? new List<string>();
+                var roles = user.Role != null ? new List<string> { user.Role.RoleName } : new List<string>();
 
                 var student = await _studentRepo.GetByUserIdAsync(userId);
 

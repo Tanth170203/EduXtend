@@ -35,6 +35,20 @@ public class MovementRecordDetailedDto
     public DateTime CreatedAt { get; set; }
     public DateTime? LastUpdated { get; set; }
     public List<MovementRecordDetailItemDto> Details { get; set; } = new();
+    public List<CategoryScoreDto> CategoryScores { get; set; } = new(); // Capped category scores for display
+}
+
+/// <summary>
+/// Category score with capped value
+/// </summary>
+public class CategoryScoreDto
+{
+    public string GroupName { get; set; } = string.Empty;
+    public int GroupId { get; set; }
+    public double ActualScore { get; set; } // Sum of all details in category (uncapped)
+    public double CappedScore { get; set; } // Capped score for display
+    public int MaxScore { get; set; } // Category max score
+    public bool IsCapped => ActualScore > MaxScore;
 }
 
 /// <summary>
@@ -49,6 +63,9 @@ public class MovementRecordDetailItemDto
     public int CriterionMaxScore { get; set; }
     public double Score { get; set; }
     public DateTime AwardedAt { get; set; }
+    public string? ScoreType { get; set; }
+    public string? Note { get; set; }
+    public int? ActivityId { get; set; }
 }
 
 /// <summary>

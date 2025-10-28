@@ -13,5 +13,5 @@ public class Role
     public string? Description { get; set; }
 
     // Navigation properties
-    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public ICollection<User> Users { get; set; } = new List<User>();
 }

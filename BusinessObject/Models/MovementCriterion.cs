@@ -16,6 +16,12 @@ public class MovementCriterion
     public string? Description { get; set; }
 
     public int MaxScore { get; set; }
+    
+    /// <summary>
+    /// Điểm tối thiểu (chỉ dùng cho tiêu chí chấm thủ công có range)
+    /// Null nếu không áp dụng
+    /// </summary>
+    public int? MinScore { get; set; }
 
     // Dùng lại cho rõ ràng
     [Required, MaxLength(20)]

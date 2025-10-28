@@ -1,5 +1,5 @@
 @page
-@model WebFE.Pages.Admin.MovementReports.AddScoreModel
+@model WebFE.Pages.Admin.StudentScoring.AddScoreModel
 @{
     ViewData["Title"] = "Cộng Điểm Phong Trào";
     ViewData["Breadcrumb"] = "Cộng Điểm";
@@ -17,7 +17,7 @@
             <p class="page-description">Thêm điểm phong trào cho sinh viên</p>
         </div>
         <div>
-            <a href="/Admin/MovementReports" class="btn btn-outline-secondary">
+            <a href="/Admin/StudentScoring" class="btn btn-outline-secondary">
                 <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
                 Quay lại
             </a>
@@ -143,11 +143,33 @@
                         <input asp-for="Score" type="number" class="form-control" id="Score" min="0" max="100" step="0.5" placeholder="Nhập điểm (VD: 5, 10, 15)" required>
                         <small class="text-muted d-block mt-2" id="scoreHint">
                             <i data-lucide="info" style="width: 14px; height: 14px;"></i>
-                            Phạm vi: 0 - 100 (sẽ tự động điều chỉnh nếu vượt max danh mục)
+                            Giới hạn tiêu chí được hiển thị theo tiêu chí đã chọn
                         </small>
                     </div>
 
-                    <!-- Comments field removed - not stored in database -->
+                    <!-- Comments (Note) -->
+                    <div class="mb-4">
+                        <label for="Comments" class="form-label fw-semibold">
+                            <i data-lucide="sticky-note" style="width: 16px; height: 16px; margin-right: 6px;"></i>
+                            Ghi chú <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="Comments" name="Comments" rows="3" minlength="10" placeholder="Mô tả lý do cộng điểm, bằng chứng, liên hệ biểu mẫu..."></textarea>
+                        <small class="text-muted d-block mt-2">
+                            Bắt buộc nhập tối thiểu 10 ký tự. Lưu trong chi tiết điểm (Note).
+                        </small>
+                    </div>
+
+                    <!-- Advanced: Optional ActivityId for traceability -->
+                    <div class="mb-4">
+                        <a class="text-decoration-none" data-bs-toggle="collapse" href="#advancedBox" role="button" aria-expanded="false" aria-controls="advancedBox">
+                            <i data-lucide="chevron-down"></i> Tuỳ chọn nâng cao
+                        </a>
+                        <div class="collapse mt-2" id="advancedBox">
+                            <label for="ActivityId" class="form-label fw-semibold">ActivityId (tuỳ chọn)</label>
+                            <input type="number" class="form-control" id="ActivityId" name="ActivityId" placeholder="Nhập ActivityId nếu có (để dedupe/trace)">
+                            <small class="text-muted d-block mt-2">Nếu liên quan đến hoạt động cụ thể, nhập ActivityId để ghi nguồn.</small>
+                        </div>
+                    </div>
 
                     <!-- Info Box -->
                     <div class="alert alert-info bg-info bg-opacity-10 border-0">
@@ -157,12 +179,9 @@
                                 <strong>Lưu ý quan trọng:</strong>
                                 <ul class="mb-0 mt-2 ms-2">
                                     <li>📅 <strong>Ngày thực hiện:</strong> Mặc định là ngày hôm nay</li>
-                                    <li>🎯 <strong>Chọn danh mục:</strong> Chọn danh mục trước, sau đó chọn tiêu chí cụ thể</li>
-                                    <li>🔄 <strong>Cộng dồn:</strong> Các tiêu chí khác nhau trong cùng danh mục sẽ được cộng dồn</li>
-                                    <li>🔄 <strong>Cập nhật:</strong> Cùng tiêu chí sẽ cập nhật điểm thay vì tạo mới</li>
-                                    <li>⚠️ <strong>Tự động điều chỉnh:</strong> Nếu vượt quá giới hạn tiêu chí, điểm sẽ được điều chỉnh về max</li>
-                                    <li>🎓 <strong>Chỉ cho sinh viên:</strong> Chỉ hiển thị danh mục và tiêu chí dành cho sinh viên</li>
-                                    <!-- Comments requirement removed - field not stored in database -->
+                                    <li>🔄 <strong>Cộng dồn:</strong> Cho phép cộng nhiều lần cùng tiêu chí</li>
+                                    <li>⚖️ <strong>Giới hạn:</strong> Theo Max của tiêu chí và của nhóm</li>
+                                    <li>📝 <strong>Ghi chú:</strong> Bắt buộc để audit (hiển thị ở chi tiết)</li>
                                 </ul>
                             </div>
                         </div>
@@ -172,7 +191,7 @@
 
                     <!-- Form Actions -->
                     <div class="d-flex justify-content-between align-items-center">
-                        <a href="/Admin/MovementReports" class="btn btn-outline-secondary">
+                        <a href="/Admin/StudentScoring" class="btn btn-outline-secondary">
                             <i data-lucide="x" style="width: 16px; height: 16px;"></i>
                             Hủy
                         </a>
@@ -241,7 +260,12 @@
                         const option = document.createElement('option');
                         option.value = criterion.id;
                         option.setAttribute('data-max', criterion.maxScore);
-                        option.textContent = `${criterion.title} (Max: ${criterion.maxScore} điểm)`;
+                        if (criterion.minScore !== null && criterion.minScore !== undefined) {
+                            option.setAttribute('data-min', criterion.minScore);
+                            option.textContent = `${criterion.title} (Min: ${criterion.minScore} - Max: ${criterion.maxScore})`;
+                        } else {
+                            option.textContent = `${criterion.title} (Max: ${criterion.maxScore} điểm)`;
+                        }
                         criterionSelect.appendChild(option);
                     });
                     
@@ -277,13 +301,22 @@
             
             if (criterionSelect.value) {
                 const criterionMaxScore = selectedOption.getAttribute('data-max');
-                scoreHint.innerHTML = `<i data-lucide="info" style="width: 14px; height: 14px;"></i> Giới hạn tiêu chí: ${criterionMaxScore} điểm/lần (báo lỗi nếu vượt quá)`;
+                const criterionMinScore = selectedOption.getAttribute('data-min');
+                if (criterionMinScore) {
+                    scoreHint.innerHTML = `<i data-lucide="info" style="width: 14px; height: 14px;"></i> Phạm vi điểm: ${criterionMinScore} - ${criterionMaxScore} điểm/lần`;
+                    document.getElementById('Score').setAttribute('min', criterionMinScore);
+                    document.getElementById('Score').setAttribute('max', criterionMaxScore);
+                } else {
+                    scoreHint.innerHTML = `<i data-lucide="info" style="width: 14px; height: 14px;"></i> Giới hạn tiêu chí: tối đa ${criterionMaxScore} điểm/lần`;
+                    document.getElementById('Score').setAttribute('min', '0');
+                    document.getElementById('Score').setAttribute('max', criterionMaxScore);
+                }
             } else {
                 scoreHint.innerHTML = '<i data-lucide="info" style="width: 14px; height: 14px;"></i> Chọn tiêu chí để xem giới hạn cụ thể';
             }
         }
 
-        // FIXED: Thêm validation ngay trên frontend để tối ưu UX
+        // Validation on frontend
         function validateScore() {
             const criterionSelect = document.getElementById('CriterionId');
             const scoreInput = document.getElementById('Score');
@@ -292,9 +325,14 @@
             if (criterionSelect.value && scoreInput.value) {
                 const selectedOption = criterionSelect.options[criterionSelect.selectedIndex];
                 const criterionMaxScore = parseFloat(selectedOption.getAttribute('data-max'));
+                const criterionMinScore = parseFloat(selectedOption.getAttribute('data-min'));
                 const inputScore = parseFloat(scoreInput.value);
                 
-                if (inputScore > criterionMaxScore) {
+                if (!isNaN(criterionMinScore) && inputScore < criterionMinScore) {
+                    scoreHint.innerHTML = `<i data-lucide="alert-circle" style="width: 14px; height: 14px; color: red;"></i> <span style="color: red;">Lỗi: Điểm nhập (${inputScore}) nhỏ hơn mức tối thiểu (${criterionMinScore})</span>`;
+                    scoreInput.classList.add('is-invalid');
+                    return false;
+                } else if (inputScore > criterionMaxScore) {
                     scoreHint.innerHTML = `<i data-lucide="alert-circle" style="width: 14px; height: 14px; color: red;"></i> <span style="color: red;">Lỗi: Điểm nhập (${inputScore}) vượt quá giới hạn tiêu chí (${criterionMaxScore} điểm)</span>`;
                     scoreInput.classList.add('is-invalid');
                     return false;
@@ -307,7 +345,6 @@
             return true;
         }
 
-        // Add event listener for real-time validation
         document.addEventListener('DOMContentLoaded', function() {
             const scoreInput = document.getElementById('Score');
             if (scoreInput) {
@@ -328,34 +365,15 @@
         transition: all 0.3s ease;
     }
 
-    /* FIXED: CSS cho validation */
     .is-invalid {
         border-color: #dc3545 !important;
         box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
     }
 
-    .validation-error {
-        color: #dc3545;
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
-
-    .validation-success {
-        color: #28a745;
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
-
-    .form-label {
-        margin-bottom: 0.5rem;
-    }
-
-    .alert ul {
-        padding-left: 1rem;
-    }
-
-    .alert li {
-        margin-bottom: 0.5rem;
-    }
+    .validation-error { color: #dc3545; font-size: 0.875rem; margin-top: 0.25rem; }
+    .validation-success { color: #28a745; font-size: 0.875rem; margin-top: 0.25rem; }
+    .form-label { margin-bottom: 0.5rem; }
+    .alert ul { padding-left: 1rem; }
+    .alert li { margin-bottom: 0.5rem; }
 </style>
 

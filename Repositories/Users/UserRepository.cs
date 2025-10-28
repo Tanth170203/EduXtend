@@ -19,24 +19,20 @@ namespace Repositories.Users
         }
 
         public async Task<User?> FindByEmailAsync(string email)
-            => await _db.Users.Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
+            => await _db.Users.Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Email == email);
 
         public async Task<User?> FindByGoogleSubAsync(string googleSub)
-            => await _db.Users.Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
+            => await _db.Users.Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.GoogleSubject == googleSub);
 
         public async Task<User?> GetByIdAsync(int id)
-            => await _db.Users.Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
+            => await _db.Users.Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
         public async Task<User?> GetByIdWithRolesAsync(int id)
             => await _db.Users
-                .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
         public async Task<List<User>> GetAllAsync()
@@ -46,8 +42,7 @@ namespace Repositories.Users
 
         public async Task<List<User>> GetAllWithRolesAsync()
             => await _db.Users
-                .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .OrderByDescending(u => u.CreatedAt)
                 .ToListAsync();
 
@@ -96,29 +91,20 @@ namespace Repositories.Users
 
         public async Task UpdateUserRolesAsync(int userId, List<int> roleIds)
         {
-            // Remove existing roles
-            var existingRoles = await _db.UserRoles
-                .Where(ur => ur.UserId == userId)
-                .ToListAsync();
-            _db.UserRoles.RemoveRange(existingRoles);
-
-            // Add new roles
-            var newRoles = roleIds.Select(roleId => new UserRole
+            // Now each user has only one role, so just update the RoleId
+            var user = await _db.Users.FindAsync(userId);
+            if (user != null && roleIds.Count > 0)
             {
-                UserId = userId,
-                RoleId = roleId
-            }).ToList();
-
-            await _db.UserRoles.AddRangeAsync(newRoles);
-            await _db.SaveChangesAsync();
+                user.RoleId = roleIds[0]; // Take first role only
+                await _db.SaveChangesAsync();
+            }
         }
 
         public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
 
         public async Task<List<User>> GetUsersByEmailsAsync(List<string> emails)
             => await _db.Users
-                .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .Where(u => emails.Contains(u.Email))
                 .ToListAsync();
 

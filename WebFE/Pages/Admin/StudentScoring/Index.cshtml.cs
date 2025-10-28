@@ -7,7 +7,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 
-namespace WebFE.Pages.Admin.MovementReports
+namespace WebFE.Pages.Admin.StudentScoring
 {
     public class IndexModel(
         IHttpClientFactory httpClientFactory,
@@ -23,6 +23,7 @@ namespace WebFE.Pages.Admin.MovementReports
         public List<MovementRecordDto> Records { get; set; } = new();
         public List<SemesterDto> Semesters { get; set; } = new();
         public int? SelectedSemesterId { get; set; }
+        public string? BaseApiUrl => _configuration["ApiSettings:BaseUrl"];
 
         // Statistics Properties
         public int TotalStudents => Records.Count;

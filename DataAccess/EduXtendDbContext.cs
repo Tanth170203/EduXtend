@@ -10,7 +10,6 @@ public class EduXtendContext : DbContext
     // ==== DbSet khai báo bảng ====
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
-    public DbSet<UserRole> UserRoles { get; set; }
     public DbSet<UserToken> UserTokens { get; set; }
     public DbSet<LoggedOutToken> LoggedOutTokens { get; set; }
 
@@ -45,6 +44,10 @@ public class EduXtendContext : DbContext
     public DbSet<MovementCriterion> MovementCriteria { get; set; }
     public DbSet<MovementRecord> MovementRecords { get; set; }
     public DbSet<MovementRecordDetail> MovementRecordDetails { get; set; }
+    
+    // Club Movement Records
+    public DbSet<ClubMovementRecord> ClubMovementRecords { get; set; }
+    public DbSet<ClubMovementRecordDetail> ClubMovementRecordDetails { get; set; }
 
     // Evidence and Awards
     public DbSet<Evidence> Evidences { get; set; }
@@ -63,9 +66,11 @@ public class EduXtendContext : DbContext
         ConfigureIdentityColumns(modelBuilder);
 
         // ==== USER & AUTH ====
-        modelBuilder.Entity<UserRole>()
-            .HasIndex(ur => new { ur.UserId, ur.RoleId })
-            .IsUnique();
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.Role)
+            .WithMany(r => r.Users)
+            .HasForeignKey(u => u.RoleId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<UserToken>()
             .HasOne(ut => ut.User)
@@ -232,9 +237,65 @@ public class EduXtendContext : DbContext
             .HasForeignKey(mr => mr.SemesterId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Allow multiple scores for same criterion (e.g., multiple competitions, multiple volunteer activities)
         modelBuilder.Entity<MovementRecordDetail>()
-            .HasIndex(mrd => new { mrd.MovementRecordId, mrd.CriterionId })
-            .IsUnique();
+            .HasIndex(mrd => new { mrd.MovementRecordId, mrd.CriterionId });
+        
+        // Chống trùng tuyệt đối theo Activity (nếu có ActivityId)
+        modelBuilder.Entity<MovementRecordDetail>()
+            .HasIndex(mrd => new { mrd.MovementRecordId, mrd.CriterionId, mrd.ActivityId });
+
+        modelBuilder.Entity<MovementRecordDetail>()
+            .HasOne(mrd => mrd.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(mrd => mrd.CreatedBy)
+            .OnDelete(DeleteBehavior.SetNull);
+            // Note: Removed .IsUnique() to allow students to receive multiple scores for same criterion
+
+        // ==== CLUB MOVEMENT RECORD ====
+        modelBuilder.Entity<ClubMovementRecord>()
+            .HasIndex(cmr => new { cmr.ClubId, cmr.SemesterId, cmr.Month })
+            .IsUnique(); // Mỗi CLB chỉ có 1 record cho 1 tháng trong 1 kỳ
+
+        modelBuilder.Entity<ClubMovementRecord>()
+            .HasOne(cmr => cmr.Club)
+            .WithMany()
+            .HasForeignKey(cmr => cmr.ClubId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ClubMovementRecord>()
+            .HasOne(cmr => cmr.Semester)
+            .WithMany()
+            .HasForeignKey(cmr => cmr.SemesterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Allow multiple scores for same criterion (CLB can have multiple collaborations, competitions)
+        modelBuilder.Entity<ClubMovementRecordDetail>()
+            .HasIndex(cmrd => new { cmrd.ClubMovementRecordId, cmrd.CriterionId });
+
+        modelBuilder.Entity<ClubMovementRecordDetail>()
+            .HasOne(cmrd => cmrd.ClubMovementRecord)
+            .WithMany(cmr => cmr.Details)
+            .HasForeignKey(cmrd => cmrd.ClubMovementRecordId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ClubMovementRecordDetail>()
+            .HasOne(cmrd => cmrd.Criterion)
+            .WithMany()
+            .HasForeignKey(cmrd => cmrd.CriterionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ClubMovementRecordDetail>()
+            .HasOne(cmrd => cmrd.Activity)
+            .WithMany()
+            .HasForeignKey(cmrd => cmrd.ActivityId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ClubMovementRecordDetail>()
+            .HasOne(cmrd => cmrd.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(cmrd => cmrd.CreatedBy)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // ==== EVIDENCE ====
         modelBuilder.Entity<Evidence>()
@@ -292,7 +353,6 @@ public class EduXtendContext : DbContext
         // Các entity với Id tự tăng
         modelBuilder.Entity<User>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<Role>().Property(e => e.Id).UseIdentityColumn();
-        modelBuilder.Entity<UserRole>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<UserToken>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<LoggedOutToken>().Property(e => e.Id).UseIdentityColumn();
         
@@ -322,6 +382,9 @@ public class EduXtendContext : DbContext
         modelBuilder.Entity<MovementCriterion>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<MovementRecord>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<MovementRecordDetail>().Property(e => e.Id).UseIdentityColumn();
+        
+        modelBuilder.Entity<ClubMovementRecord>().Property(e => e.Id).UseIdentityColumn();
+        modelBuilder.Entity<ClubMovementRecordDetail>().Property(e => e.Id).UseIdentityColumn();
         
         modelBuilder.Entity<Evidence>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<ClubAward>().Property(e => e.Id).UseIdentityColumn();

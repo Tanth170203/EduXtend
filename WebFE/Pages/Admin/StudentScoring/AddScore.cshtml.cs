@@ -7,7 +7,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 
-namespace WebFE.Pages.Admin.MovementReports
+namespace WebFE.Pages.Admin.StudentScoring
 {
     public class AddScoreModel : PageModel
     {
@@ -37,7 +37,11 @@ namespace WebFE.Pages.Admin.MovementReports
         [BindProperty]
         public double Score { get; set; }
 
-        // Comments field removed - not stored in database
+        [BindProperty]
+        public string? Comments { get; set; }
+
+        [BindProperty]
+        public int? ActivityId { get; set; }
 
         public List<StudentDto> Students { get; set; } = new();
         public List<MovementCriterionGroupDto> Groups { get; set; } = new();
@@ -128,21 +132,26 @@ namespace WebFE.Pages.Admin.MovementReports
                 return Page();
             }
 
-            // Comments validation removed - field not stored in database
+            if (string.IsNullOrWhiteSpace(Comments) || Comments.Length < 10)
+            {
+                ErrorMessage = "Ghi chú bắt buộc tối thiểu 10 ký tự.";
+                await ReloadDataAsync();
+                return Page();
+            }
 
             try
             {
                 using var httpClient = CreateHttpClient();
 
-                    var payload = new
-                    {
-                        studentId = StudentId,
-                        categoryId = GroupId, // CategoryId = GroupId
-                        criterionId = CriterionId, // CriterionId để lưu vào MovementRecordDetail
-                        score = Score,
-                        comments = "Manual score addition", // Default comment since field not stored
-                        awardedDate = DateTime.Now // Mặc định là ngày hiện tại
-                    };
+                var payload = new
+                {
+                    studentId = StudentId,
+                    categoryId = GroupId,
+                    criterionId = CriterionId,
+                    score = Score,
+                    comments = Comments,
+                    awardedDate = DateTime.Now
+                };
 
                 var json = JsonSerializer.Serialize(payload);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -157,7 +166,7 @@ namespace WebFE.Pages.Admin.MovementReports
                     _logger.LogInformation("Score added successfully: {Result}", result);
 
                     TempData["SuccessMessage"] = "✅ Đã cộng điểm thành công!";
-                    return RedirectToPage("/Admin/MovementReports/Index");
+                    return RedirectToPage("/Admin/StudentScoring/Index");
                 }
                 else
                 {
@@ -180,7 +189,6 @@ namespace WebFE.Pages.Admin.MovementReports
                 _logger.LogError(ex, "Error adding score");
                 ErrorMessage = $"Đã xảy ra lỗi: {ex.Message}";
                 
-                // FIXED: Giữ lại lựa chọn danh mục và tiêu chí khi có lỗi validation
                 await ReloadDataWithPreservationAsync();
                 
                 return Page();
@@ -258,8 +266,6 @@ namespace WebFE.Pages.Admin.MovementReports
                     }
                 }
                 
-                // FIXED: Giữ lại lựa chọn khi có lỗi validation
-                // Model binding sẽ tự động giữ lại giá trị GroupId và CriterionId
                 _logger.LogInformation("Groups and criteria loaded, preserving GroupId={GroupId}, CriterionId={CriterionId}", GroupId, CriterionId);
             }
             catch (Exception ex)
@@ -289,9 +295,6 @@ namespace WebFE.Pages.Admin.MovementReports
                 using var httpClient = CreateHttpClient();
                 await LoadStudentsAsync(httpClient);
                 await LoadGroupsAndCriteriaAsync(httpClient);
-                
-                // FIXED: Giữ lại lựa chọn danh mục và tiêu chí khi có lỗi
-                // Không cần làm gì thêm vì model binding sẽ giữ lại giá trị
                 _logger.LogInformation("Data reloaded with preservation for GroupId={GroupId}, CriterionId={CriterionId}", GroupId, CriterionId);
             }
             catch (Exception ex)

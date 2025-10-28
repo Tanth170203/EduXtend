@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net;
 using System.Text.Json;
 
-namespace WebFE.Pages.Admin.MovementReports
+namespace WebFE.Pages.Admin.StudentScoring
 {
     public class DetailModel : PageModel
     {

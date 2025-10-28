@@ -37,6 +37,15 @@ public class MovementRecordDetailRepository : IMovementRecordDetailRepository
             .FirstOrDefaultAsync(d => d.MovementRecordId == recordId && d.CriterionId == criterionId);
     }
 
+    public async Task<MovementRecordDetail?> GetByRecordCriterionActivityAsync(int recordId, int criterionId, int? activityId)
+    {
+        return await _context.MovementRecordDetails
+            .Include(d => d.Criterion)
+            .FirstOrDefaultAsync(d => d.MovementRecordId == recordId
+                && d.CriterionId == criterionId
+                && d.ActivityId == activityId);
+    }
+
     public async Task<MovementRecordDetail> CreateAsync(MovementRecordDetail detail)
     {
         _context.MovementRecordDetails.Add(detail);

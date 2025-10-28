@@ -28,7 +28,7 @@ public class UserManagementService : IUserManagementService
             IsActive = u.IsActive,
             CreatedAt = u.CreatedAt,
             LastLoginAt = u.LastLoginAt,
-            Roles = u.UserRoles?.Select(ur => ur.Role?.RoleName ?? "").Where(r => !string.IsNullOrEmpty(r)).ToList() ?? new List<string>()
+            Roles = u.Role != null ? new List<string> { u.Role.RoleName } : new List<string>()
         }).ToList();
     }
 
@@ -45,13 +45,16 @@ public class UserManagementService : IUserManagementService
             IsActive = u.IsActive,
             CreatedAt = u.CreatedAt,
             LastLoginAt = u.LastLoginAt,
-            Roles = u.UserRoles?.Select(ur => new RoleDto
+            Roles = u.Role != null ? new List<RoleDto>
             {
-                Id = ur.Role?.Id ?? 0,
-                RoleName = ur.Role?.RoleName ?? "",
-                Description = ur.Role?.Description
-            }).ToList() ?? new List<RoleDto>(),
-            RoleIds = u.UserRoles?.Select(ur => ur.RoleId).ToList() ?? new List<int>()
+                new RoleDto
+                {
+                    Id = u.Role.Id,
+                    RoleName = u.Role.RoleName,
+                    Description = u.Role.Description
+                }
+            } : new List<RoleDto>(),
+            RoleIds = u.Role != null ? new List<int> { u.RoleId } : new List<int>()
         }).ToList();
     }
 
@@ -71,13 +74,16 @@ public class UserManagementService : IUserManagementService
             IsActive = user.IsActive,
             CreatedAt = user.CreatedAt,
             LastLoginAt = user.LastLoginAt,
-            Roles = user.UserRoles?.Select(ur => new RoleDto
+            Roles = user.Role != null ? new List<RoleDto>
             {
-                Id = ur.Role?.Id ?? 0,
-                RoleName = ur.Role?.RoleName ?? "",
-                Description = ur.Role?.Description
-            }).ToList() ?? new List<RoleDto>(),
-            RoleIds = user.UserRoles?.Select(ur => ur.RoleId).ToList() ?? new List<int>()
+                new RoleDto
+                {
+                    Id = user.Role.Id,
+                    RoleName = user.Role.RoleName,
+                    Description = user.Role.Description
+                }
+            } : new List<RoleDto>(),
+            RoleIds = user.Role != null ? new List<int> { user.RoleId } : new List<int>()
         };
     }
 

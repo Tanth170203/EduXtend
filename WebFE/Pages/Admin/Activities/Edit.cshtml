@@ -96,8 +96,8 @@
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Input.MovementPoint" class="form-label fw-semibold">Movement Points</label>
-                        <input asp-for="Input.MovementPoint" type="number" step="0.5" class="form-control" placeholder="0" />
-                        <div class="form-text">Points awarded for attending</div>
+                        <input asp-for="Input.MovementPoint" type="number" step="0.5" class="form-control" id="MovementPointInput" placeholder="0" />
+                        <div class="form-text" id="MovementPointHint">Points awarded for attending (applies to general events)</div>
                     </div>
                     <div class="col-md-4 d-flex align-items-center">
                         <div class="form-check form-switch">

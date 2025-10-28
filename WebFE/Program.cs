@@ -1,4 +1,9 @@
 using WebFE.Middleware;
+using Microsoft.EntityFrameworkCore;
+using DataAccess;
+using Repositories.ClubMovementRecords;
+using Services.ClubMovementRecords;
+using System.Text.Json;
 
 namespace WebFE
 {
@@ -11,7 +16,20 @@ namespace WebFE
             // Add services to the container.
             builder.Services.AddHttpContextAccessor();
             
-            builder.Services.AddRazorPages();
+            builder.Services.AddRazorPages()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                });
+            
+            // DbContext for server-side Razor Pages that query directly
+            builder.Services.AddDbContext<EduXtendContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            
+            // Club scoring DI (used by Admin/ClubScoring pages)
+            builder.Services.AddScoped<IClubMovementRecordRepository, ClubMovementRecordRepository>();
+            builder.Services.AddScoped<IClubMovementRecordDetailRepository, ClubMovementRecordDetailRepository>();
+            builder.Services.AddScoped<IClubScoringService, ClubScoringService>();
             
             // Note: Pages are protected by JwtAuthenticationMiddleware
             // API endpoints are protected by JWT [Authorize] attributes in WebAPI

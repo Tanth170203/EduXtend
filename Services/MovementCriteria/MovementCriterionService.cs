@@ -158,6 +158,7 @@ public class MovementCriterionService : IMovementCriterionService
             Title = criterion.Title,
             Description = criterion.Description,
             MaxScore = criterion.MaxScore,
+            MinScore = criterion.MinScore,
             TargetType = criterion.TargetType,
             DataSource = criterion.DataSource,
             IsActive = criterion.IsActive

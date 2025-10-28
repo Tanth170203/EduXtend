@@ -20,7 +20,7 @@
         <div>
             <span class="badge bg-warning text-dark fs-6 px-3 py-2">
                 <i data-lucide="clock" style="width: 16px; height: 16px;"></i>
-                @Model.Evidences.Count(e => e.Status == "Pending") chờ duyệt
+                @Model.PendingCount chờ duyệt
             </span>
         </div>
     </div>
@@ -52,7 +52,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1 small">Tổng minh chứng</p>
-                        <h3 class="mb-0 fw-bold">@Model.Evidences.Count</h3>
+                        <h3 class="mb-0 fw-bold">@Model.TotalEvidences</h3>
                         <small class="text-muted">Tất cả trạng thái</small>
                     </div>
                     <div class="rounded-circle bg-primary bg-opacity-10 p-3">
@@ -69,7 +69,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1 small">Chờ duyệt</p>
-                        <h3 class="mb-0 fw-bold text-warning">@Model.Evidences.Count(e => e.Status == "Pending")</h3>
+                        <h3 class="mb-0 fw-bold text-warning">@Model.PendingCount</h3>
                         <small class="text-warning">Cần xem xét</small>
                     </div>
                     <div class="rounded-circle bg-warning bg-opacity-10 p-3">
@@ -86,7 +86,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1 small">Đã duyệt</p>
-                        <h3 class="mb-0 fw-bold text-success">@Model.Evidences.Count(e => e.Status == "Approved")</h3>
+                        <h3 class="mb-0 fw-bold text-success">@Model.ApprovedCount</h3>
                         <small class="text-success">Thành công</small>
                     </div>
                     <div class="rounded-circle bg-success bg-opacity-10 p-3">
@@ -103,7 +103,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1 small">Từ chối</p>
-                        <h3 class="mb-0 fw-bold text-danger">@Model.Evidences.Count(e => e.Status == "Rejected")</h3>
+                        <h3 class="mb-0 fw-bold text-danger">@Model.RejectedCount</h3>
                         <small class="text-danger">Không đạt</small>
                     </div>
                     <div class="rounded-circle bg-danger bg-opacity-10 p-3">
@@ -124,28 +124,28 @@
                     <a class="nav-link @(Model.CurrentFilter == "all" ? "active" : "")" href="?filter=all">
                         <i data-lucide="list" style="width: 16px; height: 16px;"></i>
                         Tất cả
-                        <span class="badge bg-secondary ms-1">@Model.Evidences.Count</span>
+                        <span class="badge bg-secondary ms-1">@Model.TotalEvidences</span>
                     </a>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a class="nav-link @(Model.CurrentFilter == "pending" ? "active" : "")" href="?filter=pending">
                         <i data-lucide="clock" style="width: 16px; height: 16px;"></i>
                         Chờ duyệt
-                        <span class="badge bg-warning ms-1">@Model.Evidences.Count(e => e.Status == "Pending")</span>
+                        <span class="badge bg-warning ms-1">@Model.PendingCount</span>
                     </a>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a class="nav-link @(Model.CurrentFilter == "approved" ? "active" : "")" href="?filter=approved">
                         <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
                         Đã duyệt
-                        <span class="badge bg-success ms-1">@Model.Evidences.Count(e => e.Status == "Approved")</span>
+                        <span class="badge bg-success ms-1">@Model.ApprovedCount</span>
                     </a>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a class="nav-link @(Model.CurrentFilter == "rejected" ? "active" : "")" href="?filter=rejected">
                         <i data-lucide="x-circle" style="width: 16px; height: 16px;"></i>
                         Từ chối
-                        <span class="badge bg-danger ms-1">@Model.Evidences.Count(e => e.Status == "Rejected")</span>
+                        <span class="badge bg-danger ms-1">@Model.RejectedCount</span>
                     </a>
                 </li>
             </ul>
