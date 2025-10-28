@@ -19,5 +19,11 @@ namespace Repositories.Clubs
         Task<Club?> GetManagedClubByUserIdAsync(int userId);
         Task<bool> ToggleRecruitmentAsync(int clubId, bool isOpen);
         Task<int> GetPendingRequestCountAsync(int clubId);
+        Task<bool> IsUserMemberOfClubAsync(int userId, int clubId);
+        Task<List<Club>> GetClubsByUserIdAsync(int userId);
+        Task<List<ClubMember>> GetClubMembersAsync(int clubId);
+        Task<List<ClubDepartment>> GetClubDepartmentsAsync(int clubId);
+        Task<List<ClubAward>> GetClubAwardsAsync(int clubId);
+        Task<string?> GetUserRoleInClubAsync(int userId, int clubId);
     }
 }

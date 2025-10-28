@@ -19,5 +19,7 @@ namespace BusinessObject.DTOs.Club
         public string? Description { get; set; }
         public int MemberCount { get; set; }
         public int ActivityCount { get; set; }
+        public bool IsManager { get; set; }
+        public bool IsMember { get; set; }
     }
 }

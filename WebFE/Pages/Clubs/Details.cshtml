@@ -20,7 +20,89 @@
 
     <!-- Recruitment Status & Apply Button -->
     <div id="applicationStatusContainer">
-        <!-- Will be populated by JavaScript -->
+        @if (Model.IsMember)
+        {
+            <!-- User is already a member -->
+            <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <i data-lucide="check-circle" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                    <strong>You are a member of this club!</strong>
+                </div>
+                <a asp-page="/Clubs/MemberDashboard" asp-route-id="@c.Id" class="btn btn-primary">
+                    <i data-lucide="layout-dashboard" style="width: 16px; height: 16px;"></i>
+                    Member Dashboard
+                </a>
+            </div>
+        }
+        else if (Model.MyJoinRequest != null)
+        {
+            <!-- User has an existing join request -->
+            @if (Model.MyJoinRequest.Status == "Pending")
+            {
+                <div class="alert alert-warning d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <i data-lucide="clock" style="width: 20px; height: 20px;"></i>
+                        <strong>Application Pending</strong>
+                        <span class="ms-2">Your application is being reviewed by club managers.</span>
+                    </div>
+                    <a asp-page="/Clubs/Apply" asp-route-clubId="@c.Id" class="btn btn-outline-warning">
+                        <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+                        View Application
+                    </a>
+                </div>
+            }
+            else if (Model.MyJoinRequest.Status == "Approved")
+            {
+                <div class="alert alert-success d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+                        <strong>You are a member!</strong>
+                        <span class="ms-2">Your application has been approved. Welcome to the club!</span>
+                    </div>
+                    <a asp-page="/Clubs/Apply" asp-route-clubId="@c.Id" class="btn btn-outline-success">
+                        <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+                        View Application
+                    </a>
+                </div>
+            }
+            else if (Model.MyJoinRequest.Status == "Rejected")
+            {
+                <div class="alert alert-danger d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <i data-lucide="x-circle" style="width: 20px; height: 20px;"></i>
+                        <strong>Application Rejected</strong>
+                        <span class="ms-2">Unfortunately, your application was not approved.</span>
+                    </div>
+                    <a asp-page="/Clubs/Apply" asp-route-clubId="@c.Id" class="btn btn-outline-danger">
+                        <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+                        View Details
+                    </a>
+                </div>
+            }
+        }
+        else if (c.IsRecruitmentOpen)
+        {
+            <!-- No existing request and recruitment is open -->
+            <div class="alert alert-success d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <i data-lucide="user-plus" style="width: 20px; height: 20px;"></i>
+                    <strong>Recruitment is OPEN!</strong>
+                    <span class="ms-2">We're looking for passionate members to join our club.</span>
+                </div>
+                <a asp-page="/Clubs/Apply" asp-route-clubId="@c.Id" class="btn btn-success">
+                    <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                    Apply Now
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- Recruitment is closed -->
+            <div class="alert alert-secondary d-flex align-items-center mb-4">
+                <i data-lucide="door-closed" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                <span>Recruitment is currently closed. Check back later for opportunities to join!</span>
+            </div>
+        }
     </div>
 
     <!-- Club Stats -->
@@ -43,23 +125,54 @@
         </div>
     </div>
 
-    <!-- Member Role Distribution -->
-    @if (c.RoleDistribution.Any())
+    <!-- Club Awards -->
+    @if (Model.Awards.Any())
     {
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body">
-                <h5 class="fw-bold mb-3"><i class="bi bi-person-badge"></i> Member Roles</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">
+                        <i data-lucide="trophy" style="width: 20px; height: 20px;"></i> Club Awards
+                    </h5>
+                    <span class="badge bg-warning text-dark">@Model.Awards.Count award@(Model.Awards.Count > 1 ? "s" : "")</span>
+                </div>
                 <div class="row g-3">
-                    @foreach (var role in c.RoleDistribution.OrderByDescending(r => r.Value))
+                    @foreach (var award in Model.Awards.Take(6))
                     {
-                        <div class="col-md-3 col-6">
-                            <div class="p-3 bg-light rounded text-center">
-                                <div class="fw-bold fs-4">@role.Value</div>
-                                <div class="text-muted small">@role.Key</div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-3 p-3 bg-light rounded">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-warning bg-opacity-25 p-2 rounded-circle" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                        <i data-lucide="award" style="width: 24px; height: 24px; color: var(--bs-warning);"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-1">@award.Title</h6>
+                                    @if (!string.IsNullOrWhiteSpace(award.Description))
+                                    {
+                                        <p class="small text-muted mb-2">@award.Description</p>
+                                    }
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <span class="badge bg-light text-dark border small">
+                                            <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
+                                            @award.AwardedAt.ToString("dd MMM yyyy")
+                                        </span>
+                                        @if (!string.IsNullOrWhiteSpace(award.SemesterName))
+                                        {
+                                            <span class="badge bg-primary small">@award.SemesterName</span>
+                                        }
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     }
                 </div>
+                @if (Model.Awards.Count > 6)
+                {
+                    <div class="text-center mt-3">
+                        <small class="text-muted">And @(Model.Awards.Count - 6) more award@(Model.Awards.Count - 6 > 1 ? "s" : "")...</small>
+                    </div>
+                }
             </div>
         </div>
     }
@@ -240,18 +353,54 @@
 
 @section Scripts {
     <script>
-        lucide.createIcons();
+        // Safe Lucide initialization
+        function safeCreateIcons() {
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                try {
+                    lucide.createIcons();
+                    console.log('Lucide icons created successfully');
+                } catch (e) {
+                    console.error('Error creating Lucide icons:', e);
+                }
+            } else {
+                console.log('Lucide not ready, retrying...');
+                setTimeout(safeCreateIcons, 100);
+            }
+        }
 
         const clubId = @c.Id;
         const isRecruitmentOpen = @c.IsRecruitmentOpen.ToString().ToLower();
 
         // Check application status on page load
         document.addEventListener('DOMContentLoaded', async () => {
-            await loadApplicationStatus();
-        });
+            // Initialize icons when DOM is ready
+            safeCreateIcons();
+            
+            // Reinitialize after a delay to catch any late-rendered elements
+            setTimeout(safeCreateIcons, 300);
+            setTimeout(safeCreateIcons, 1000);
+            // Check for application submitted notification
+            const applicationSubmitted = sessionStorage.getItem('applicationSubmitted');
+            if (applicationSubmitted) {
+                try {
+                    const data = JSON.parse(applicationSubmitted);
+            if (typeof success === 'function') {
+                success(data.title, data.message, 5000);
+            }
+            sessionStorage.removeItem('applicationSubmitted');
+        } catch (e) {
+            console.error('Error parsing application submitted notification:', e);
+        }
+    }
+    
+    // Don't load via JavaScript - server-side already handles it
+    // await loadApplicationStatus();
+});
 
         async function loadApplicationStatus() {
             const container = document.getElementById('applicationStatusContainer');
+            console.log('Loading application status for clubId:', clubId);
+            console.log('isRecruitmentOpen:', isRecruitmentOpen);
 
             try {
                 // Try to get user's existing request
@@ -260,23 +409,33 @@
                     credentials: 'include'
                 });
 
+                console.log('API response status:', response.status);
+
                 if (response.ok) {
                     // User has an existing request
                     const request = await response.json();
+                    console.log('User has existing request:', request);
                     container.innerHTML = getRequestStatusHtml(request);
                 } else if (response.status === 404) {
                     // No existing request - show apply button or closed message
+                    console.log('No existing request found - showing apply button');
                     container.innerHTML = getApplyButtonHtml();
                 } else if (response.status === 401) {
                     // User not logged in - show recruitment status only
+                    console.log('User not authenticated');
                     container.innerHTML = getRecruitmentStatusHtml();
+                } else {
+                    // Other status codes - show recruitment status
+                    console.warn('Unexpected status code:', response.status);
+                    container.innerHTML = getApplyButtonHtml();
                 }
             } catch (error) {
                 console.error('Error loading application status:', error);
-                container.innerHTML = getRecruitmentStatusHtml();
+                // Always show something even if there's an error
+                container.innerHTML = getApplyButtonHtml();
             }
 
-            lucide.createIcons();
+            safeCreateIcons();
         }
 
         function getRequestStatusHtml(request) {

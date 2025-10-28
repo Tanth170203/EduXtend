@@ -1,0 +1,793 @@
+@page "{id:int}"
+@model WebFE.Pages.Clubs.MemberDashboardModel
+@{
+    Layout = null;
+    ViewData["Title"] = $"{Model.Club?.Name} - Member Dashboard";
+    var section = Model.Section ?? "overview";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WebFE.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="~/lib/lucide/lucide.min.js" defer></script>
+</head>
+<body class="admin-body">
+    <!-- Sidebar -->
+    <div class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <div class="d-flex align-items-center gap-2">
+                <div class="sidebar-logo" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                    E
+                </div>
+                <div class="sidebar-title">
+                    <div class="sidebar-brand">EduXtend</div>
+                    <div class="sidebar-subtitle">@(Model.Club?.Name ?? "Club")</div>
+                </div>
+            </div>
+            <button class="sidebar-toggle d-lg-none" onclick="toggleSidebar()">
+                <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-content">
+            <nav class="sidebar-nav">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">OVERVIEW</div>
+                    <a class="sidebar-link @(section == "overview" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=overview">
+                        <i data-lucide="layout-dashboard" style="width: 20px; height: 20px;"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">CLUB INFO</div>
+                    <a class="sidebar-link @(section == "members" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=members">
+                        <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                        <span>Members</span>
+                        <span class="badge bg-primary ms-auto">@Model.Members.Count</span>
+                    </a>
+                    <a class="sidebar-link @(section == "departments" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=departments">
+                        <i data-lucide="folder" style="width: 20px; height: 20px;"></i>
+                        <span>Departments</span>
+                        <span class="badge bg-primary ms-auto">@Model.Departments.Count</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">ACTIVITIES</div>
+                    <a class="sidebar-link @(section == "activities" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=activities">
+                        <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
+                        <span>All Activities</span>
+                        <span class="badge bg-success ms-auto">@Model.Activities.Count</span>
+                    </a>
+                    <a class="sidebar-link @(section == "awards" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=awards">
+                        <i data-lucide="trophy" style="width: 20px; height: 20px;"></i>
+                        <span>Awards</span>
+                        <span class="badge bg-warning text-dark ms-auto">@Model.Awards.Count</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">MORE</div>
+                    <a class="sidebar-link @(section == "finance" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=finance">
+                        <i data-lucide="dollar-sign" style="width: 20px; height: 20px;"></i>
+                        <span>Finance</span>
+                        <span class="badge bg-warning text-dark ms-auto">Soon</span>
+                    </a>
+                    <a class="sidebar-link @(section == "score" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=score">
+                        <i data-lucide="trophy" style="width: 20px; height: 20px;"></i>
+                        <span>Club Score</span>
+                    </a>
+                    <a class="sidebar-link @(section == "ideas" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=ideas">
+                        <i data-lucide="lightbulb" style="width: 20px; height: 20px;"></i>
+                        <span>Idea Proposals</span>
+                        <span class="badge bg-warning text-dark ms-auto">Soon</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+        
+        <div class="sidebar-footer">
+            <a class="sidebar-link" href="/">
+                <i data-lucide="home" style="width: 20px; height: 20px;"></i>
+                <span>Back to Home</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="admin-main">
+        <!-- Top Header -->
+        <header class="admin-header">
+            <div class="admin-header-left">
+                <button class="sidebar-toggle-btn d-lg-none" onclick="toggleSidebar()">
+                    <i data-lucide="menu" style="width: 24px; height: 24px;"></i>
+                </button>
+                <button class="sidebar-toggle-btn d-none d-lg-flex" onclick="toggleSidebarCollapse()">
+                    <i data-lucide="panel-left" style="width: 20px; height: 20px;"></i>
+                </button>
+                <div class="admin-breadcrumb">
+                    <span class="breadcrumb-item">@(Model.Club?.Name ?? "Club")</span>
+                    @if (section != "overview")
+                    {
+                        <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+                        <span class="breadcrumb-item active">
+                            @switch (section)
+                            {
+                                case "members": <text>Members</text>; break;
+                                case "departments": <text>Departments</text>; break;
+                                case "activities": <text>Activities</text>; break;
+                                case "awards": <text>Awards</text>; break;
+                                case "finance": <text>Finance</text>; break;
+                                case "score": <text>Club Score</text>; break;
+                                case "ideas": <text>Ideas</text>; break;
+                            }
+                        </span>
+                    }
+                </div>
+            </div>
+            
+            <div class="admin-header-right">
+                <!-- Notification Bell -->
+                <div class="header-icon-btn" onclick="toggleNotificationCenter()">
+                    <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+                    <div class="notification-badge"></div>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="dropdown">
+                    <button class="user-menu-btn" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img id="memberDashboardUserAvatar" src="" alt="Avatar" class="user-avatar" />
+                        <div class="user-info d-none d-md-block">
+                            <div class="user-name" id="memberDashboardUserName">@User.Identity?.Name</div>
+                            <div class="user-role">Member</div>
+                        </div>
+                        <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end admin-dropdown-menu" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" href="/Profile">
+                                <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                                <span>Profile</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/Settings">
+                                <i data-lucide="settings" style="width: 16px; height: 16px;"></i>
+                                <span>Settings</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" /></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="#" onclick="logout(); return false;">
+                                <i data-lucide="log-out" style="width: 16px; height: 16px;"></i>
+                                <span>Logout</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="admin-content">
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @switch (section)
+            {
+                case "overview":
+                    <!-- Dashboard Overview -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <p class="text-muted small mb-1">Members</p>
+                                            <h3 class="mb-0">@Model.Club?.MemberCount</h3>
+                                        </div>
+                                        <div class="p-2 bg-primary bg-opacity-10 rounded">
+                                            <i data-lucide="users" style="width: 24px; height: 24px; color: var(--bs-primary);"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <p class="text-muted small mb-1">Activities</p>
+                                            <h3 class="mb-0">@Model.Club?.ActivityCount</h3>
+                                        </div>
+                                        <div class="p-2 bg-success bg-opacity-10 rounded">
+                                            <i data-lucide="calendar" style="width: 24px; height: 24px; color: var(--bs-success);"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <p class="text-muted small mb-1">Departments</p>
+                                            <h3 class="mb-0">@Model.Club?.DepartmentCount</h3>
+                                        </div>
+                                        <div class="p-2 bg-warning bg-opacity-10 rounded">
+                                            <i data-lucide="folder" style="width: 24px; height: 24px; color: var(--bs-warning);"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <p class="text-muted small mb-1">Awards</p>
+                                            <h3 class="mb-0">@Model.Club?.AwardCount</h3>
+                                        </div>
+                                        <div class="p-2 bg-info bg-opacity-10 rounded">
+                                            <i data-lucide="trophy" style="width: 24px; height: 24px; color: var(--bs-info);"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Club Info Card -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <img src="@(Model.Club?.LogoUrl ?? "/img/club-placeholder.png")" 
+                                         alt="@Model.Club?.Name" 
+                                         class="img-fluid rounded shadow-sm"
+                                         style="width: 100%; height: 200px; object-fit: cover;" />
+                                </div>
+                                <div class="col-md-9">
+                                    <h4 class="fw-bold mb-2">@Model.Club?.Name</h4>
+                                    <p class="text-muted mb-3">@Model.Club?.SubName</p>
+                                    <p class="mb-3">@Model.Club?.Description</p>
+                                    <div class="d-flex gap-3 flex-wrap">
+                                        <span class="badge bg-primary px-3 py-2">@Model.Club?.CategoryName</span>
+                                        <span class="badge @(Model.Club?.IsActive == true ? "bg-success" : "bg-secondary") px-3 py-2">
+                                            @(Model.Club?.IsActive == true ? "Active" : "Inactive")
+                                        </span>
+                                        <span class="badge @(Model.Club?.IsRecruitmentOpen == true ? "bg-success" : "bg-secondary") px-3 py-2">
+                                            @(Model.Club?.IsRecruitmentOpen == true ? "Recruiting" : "Recruitment Closed")
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Links -->
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="/Clubs/MemberDashboard/@Model.Id?section=members" class="card border-0 shadow-sm text-decoration-none hover-lift">
+                                <div class="card-body text-center">
+                                    <i data-lucide="users" style="width: 48px; height: 48px; color: var(--bs-primary);"></i>
+                                    <h6 class="mt-3 mb-0">Members</h6>
+                                    <p class="text-muted small">@Model.Members.Count members</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/Clubs/MemberDashboard/@Model.Id?section=activities" class="card border-0 shadow-sm text-decoration-none hover-lift">
+                                <div class="card-body text-center">
+                                    <i data-lucide="calendar" style="width: 48px; height: 48px; color: var(--bs-success);"></i>
+                                    <h6 class="mt-3 mb-0">Activities</h6>
+                                    <p class="text-muted small">@Model.Activities.Count activities</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/Clubs/MemberDashboard/@Model.Id?section=departments" class="card border-0 shadow-sm text-decoration-none hover-lift">
+                                <div class="card-body text-center">
+                                    <i data-lucide="folder" style="width: 48px; height: 48px; color: var(--bs-info);"></i>
+                                    <h6 class="mt-3 mb-0">Departments</h6>
+                                    <p class="text-muted small">@Model.Departments.Count departments</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/Clubs/MemberDashboard/@Model.Id?section=awards" class="card border-0 shadow-sm text-decoration-none hover-lift">
+                                <div class="card-body text-center">
+                                    <i data-lucide="trophy" style="width: 48px; height: 48px; color: var(--bs-warning);"></i>
+                                    <h6 class="mt-3 mb-0">Awards</h6>
+                                    <p class="text-muted small">@Model.Awards.Count awards</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    break;
+
+                case "members":
+                    <!-- Members List -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                                Club Members (@Model.Members.Count)
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            @if (Model.Members.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Member</th>
+                                                <th>Student Code</th>
+                                                <th>Email</th>
+                                                <th>Role</th>
+                                                <th>Department</th>
+                                                <th>Joined</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var member in Model.Members)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <img src="@(string.IsNullOrEmpty(member.AvatarUrl) ? "/img/default-avatar.png" : member.AvatarUrl)" 
+                                                                 alt="@member.StudentName" 
+                                                                 style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
+                                                            <strong>@member.StudentName</strong>
+                                                        </div>
+                                                    </td>
+                                                    <td>@member.StudentCode</td>
+                                                    <td class="small">@member.Email</td>
+                                                    <td>
+                                                        <span class="badge bg-@(member.RoleInClub == "President" ? "danger" : member.RoleInClub == "VicePresident" ? "warning" : "secondary")">
+                                                            @member.RoleInClub
+                                                        </span>
+                                                    </td>
+                                                    <td>@(member.DepartmentName ?? "—")</td>
+                                                    <td class="small">@member.JoinedAt.ToString("dd MMM yyyy")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-5 text-muted">
+                                    <i data-lucide="users" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+                                    <p class="mt-2">No members found</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    break;
+
+                case "departments":
+                    <!-- Departments -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i data-lucide="folder" style="width: 20px; height: 20px;"></i>
+                                Departments (@Model.Departments.Count)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Departments.Any())
+                            {
+                                <div class="row g-3">
+                                    @foreach (var dept in Model.Departments)
+                                    {
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card border h-100">
+                                                <div class="card-body">
+                                                    <h6 class="fw-bold">
+                                                        <i data-lucide="folder" style="width: 18px; height: 18px;"></i>
+                                                        @dept.Name
+                                                    </h6>
+                                                    @if (!string.IsNullOrWhiteSpace(dept.Description))
+                                                    {
+                                                        <p class="small text-muted mb-2">@dept.Description</p>
+                                                    }
+                                                    <span class="badge bg-primary">
+                                                        <i data-lucide="users" style="width: 14px; height: 14px;"></i>
+                                                        @dept.MemberCount members
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4 text-muted">
+                                    <i data-lucide="folder" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+                                    <p class="mt-2">No departments yet</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    break;
+
+                case "activities":
+                    <!-- Activities -->
+                    <div class="mb-3">
+                        <h5 class="text-muted">
+                            <i class="bi bi-calendar-event"></i> Found <strong>@Model.Activities.Count</strong> 
+                            activit@(Model.Activities.Count != 1 ? "ies" : "y")
+                        </h5>
+                    </div>
+
+                    <div class="row g-4">
+                        @if (Model.Activities.Any())
+                        {
+                            foreach (var activity in Model.Activities)
+                            {
+                                var statusBadgeClass = activity.Status switch
+                                {
+                                    "Approved" => "bg-success",
+                                    "PendingApproval" => "bg-warning text-dark",
+                                    "Completed" => "bg-secondary",
+                                    "Rejected" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+
+                                var now = DateTime.Now;
+                                var isEnded = activity.EndTime < now;
+                                var isOngoing = activity.StartTime <= now && now <= activity.EndTime;
+
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="card h-100 shadow-sm border-0 @(isEnded ? "opacity-75" : "")">
+                                        <!-- Activity Image -->
+                                        @if (!string.IsNullOrWhiteSpace(activity.ImageUrl))
+                                        {
+                                            <img src="@activity.ImageUrl" 
+                                                 class="card-img-top" 
+                                                 style="height: 200px; object-fit: cover;"
+                                                 alt="@activity.Title"
+                                                 onerror="this.style.display='none'">
+                                        }
+                                        else
+                                        {
+                                            <div class="card-img-top bg-gradient-primary d-flex align-items-center justify-content-center" 
+                                                 style="height: 200px;">
+                                                <i class="bi bi-calendar-event text-white" style="font-size: 3rem;"></i>
+                                            </div>
+                                        }
+                                        
+                                        <!-- Activity Header -->
+                                        <div class="card-header bg-white border-0 pt-3">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <span class="badge @statusBadgeClass">@activity.Status</span>
+                                                <span class="badge bg-info">@activity.Type</span>
+                                            </div>
+                                            
+                                            @if (!activity.IsPublic)
+                                            {
+                                                <div class="mb-2">
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="bi bi-lock"></i> Members Only
+                                                    </span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="mb-2">
+                                                    <span class="badge bg-primary">
+                                                        <i class="bi bi-globe"></i> Public
+                                                    </span>
+                                                </div>
+                                            }
+
+                                            <h5 class="card-title fw-bold mb-2">@activity.Title</h5>
+                                            
+                                            @if (!string.IsNullOrWhiteSpace(activity.ClubName))
+                                            {
+                                                <p class="text-muted small mb-0">
+                                                    <i class="bi bi-people"></i> @activity.ClubName
+                                                </p>
+                                            }
+                                        </div>
+
+                                        <!-- Activity Body -->
+                                        <div class="card-body">
+                                            @if (!string.IsNullOrWhiteSpace(activity.Description))
+                                            {
+                                                <p class="text-muted small mb-3" style="max-height: 60px; overflow: hidden; text-overflow: ellipsis;">
+                                                    @(activity.Description.Length > 100 ? activity.Description.Substring(0, 100) + "..." : activity.Description)
+                                                </p>
+                                            }
+
+                                            <div class="d-flex flex-column gap-2 small text-muted">
+                                                <div>
+                                                    <i class="bi bi-calendar3"></i>
+                                                    @activity.StartTime.ToString("ddd, MMM dd, yyyy")
+                                                </div>
+                                                <div>
+                                                    <i class="bi bi-clock"></i>
+                                                    @activity.StartTime.ToString("HH:mm") - @activity.EndTime.ToString("HH:mm")
+                                                </div>
+                                                @if (!string.IsNullOrWhiteSpace(activity.Location))
+                                                {
+                                                    <div>
+                                                        <i class="bi bi-geo-alt"></i>
+                                                        @activity.Location
+                                                    </div>
+                                                }
+                                                <div class="text-success fw-bold">
+                                                    <i class="bi bi-award"></i>
+                                                    +@activity.MovementPoint points
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Activity Footer -->
+                                        <div class="card-footer bg-transparent border-0 pb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-person-check"></i> 
+                                                    @activity.CurrentParticipants@(activity.MaxParticipants.HasValue ? $"/{activity.MaxParticipants}" : "") registered
+                                                </small>
+                                                @if (activity.IsFull)
+                                                {
+                                                    <span class="badge bg-danger">Full</span>
+                                                }
+                                            </div>
+
+                                            <div class="d-grid">
+                                                <a href="/Activities/Details/@activity.Id" class="btn btn-primary">
+                                                    <i class="bi bi-info-circle"></i> View Details
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="col-12">
+                                <div class="alert alert-info text-center" role="alert">
+                                    <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+                                    <h5>No activities found</h5>
+                                    <p class="mb-0">Your club hasn't organized any activities yet.</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    break;
+
+                case "awards":
+                    <!-- Awards -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i data-lucide="trophy" style="width: 20px; height: 20px;"></i>
+                                Club Awards (@Model.Awards.Count)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Awards.Any())
+                            {
+                                <div class="row g-3">
+                                    @foreach (var award in Model.Awards)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="card border h-100">
+                                                <div class="card-body">
+                                                    <div class="d-flex align-items-start gap-3">
+                                                        <div class="flex-shrink-0">
+                                                            <div class="bg-warning bg-opacity-25 p-3 rounded-circle">
+                                                                <i data-lucide="award" style="width: 28px; height: 28px; color: var(--bs-warning);"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="fw-bold mb-2">@award.Title</h6>
+                                                            @if (!string.IsNullOrWhiteSpace(award.Description))
+                                                            {
+                                                                <p class="small text-muted mb-2">@award.Description</p>
+                                                            }
+                                                            <div class="d-flex gap-2 flex-wrap">
+                                                                <span class="badge bg-light text-dark border small">
+                                                                    <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
+                                                                    @award.AwardedAt.ToString("dd MMM yyyy")
+                                                                </span>
+                                                                @if (!string.IsNullOrWhiteSpace(award.SemesterName))
+                                                                {
+                                                                    <span class="badge bg-primary small">@award.SemesterName</span>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-5 text-muted">
+                                    <i data-lucide="trophy" style="width: 64px; height: 64px; opacity: 0.3;"></i>
+                                    <h5 class="mt-3">No Awards Yet</h5>
+                                    <p>This club hasn't received any awards yet.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    break;
+
+                case "finance":
+                    <!-- Finance Placeholder -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <i data-lucide="dollar-sign" style="width: 64px; height: 64px; color: #ccc;"></i>
+                            <h4 class="mt-3 mb-2">Finance Management</h4>
+                            <p class="text-muted mb-4">Track club income, expenses, and budget</p>
+                            <button class="btn btn-outline-primary" disabled>
+                                <i data-lucide="construction" style="width: 16px; height: 16px;"></i> Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                    break;
+
+                case "score":
+                    <!-- Score -->
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <i data-lucide="users" style="width: 32px; height: 32px;"></i>
+                                    <h3 class="mt-2 mb-0">@Model.Club?.MemberCount</h3>
+                                    <small>Members</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <i data-lucide="calendar" style="width: 32px; height: 32px;"></i>
+                                    <h3 class="mt-2 mb-0">@Model.Club?.ActivityCount</h3>
+                                    <small>Activities</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-dark border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <i data-lucide="folder" style="width: 32px; height: 32px;"></i>
+                                    <h3 class="mt-2 mb-0">@Model.Club?.DepartmentCount</h3>
+                                    <small>Departments</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <i data-lucide="award" style="width: 32px; height: 32px;"></i>
+                                    <h3 class="mt-2 mb-0">@Model.Club?.AwardCount</h3>
+                                    <small>Awards</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info mt-4">
+                        <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                        <strong>Note:</strong> Detailed scoring system and rankings coming soon!
+                    </div>
+                    break;
+
+                case "ideas":
+                    <!-- Ideas Placeholder -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <i data-lucide="lightbulb" style="width: 64px; height: 64px; color: #ccc;"></i>
+                            <h4 class="mt-3 mb-2">Activity Idea Proposals</h4>
+                            <p class="text-muted mb-4">Submit and vote on new activity ideas</p>
+                            <button class="btn btn-outline-primary" disabled>
+                                <i data-lucide="construction" style="width: 16px; height: 16px;"></i> Coming Soon
+                            </button>
+                        </div>
+                    </div>
+                    break;
+            }
+        </div>
+    </div>
+    
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+    <script>
+        async function updateMemberDashboardAuthUI() {
+            const user = await getUser();
+            if (user && user.avatar) {
+                document.getElementById('memberDashboardUserAvatar').src = user.avatar;
+            }
+            if (user && user.name) {
+                document.getElementById('memberDashboardUserName').textContent = user.name;
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('show');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        function toggleSidebarCollapse() {
+            document.body.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+        }
+
+        // Restore sidebar state
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            document.body.classList.add('sidebar-collapsed');
+        }
+
+        function toggleNotificationCenter() {
+            // TODO: Implement notification center
+            console.log('Notification center clicked');
+        }
+
+        // Logout function từ auth.js sẽ được dùng
+
+        // Initialize Lucide icons
+        function initLucide() {
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                try {
+                    lucide.createIcons();
+                    console.log('Lucide icons created successfully');
+                } catch (e) {
+                    console.error('Error creating Lucide icons:', e);
+                }
+            } else {
+                console.log('Lucide not ready, retrying...');
+                setTimeout(initLucide, 50);
+            }
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await updateMemberDashboardAuthUI();
+            initLucide();
+            setTimeout(initLucide, 300);
+            setTimeout(initLucide, 1000);
+        });
+        
+        // Initialize icons immediately
+        initLucide();
+    </script>
+
+    <style>
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</body>
+</html>
+

@@ -1,4 +1,5 @@
 ﻿using BusinessObject.DTOs.Club;
+using BusinessObject.DTOs.JoinRequest;
 using Repositories.Clubs;
 using System;
 using System.Collections.Generic;
@@ -13,13 +14,19 @@ namespace Services.Clubs
         private readonly IClubRepository _repo;
         public ClubService(IClubRepository repo) => _repo = repo;
 
-        public async Task<List<ClubListItemDto>> GetAllClubsAsync()
+        public async Task<List<ClubListItemDto>> GetAllClubsAsync(int? userId = null)
         {
             var clubs = await _repo.GetAllAsync();
             var result = new List<ClubListItemDto>();
 
             foreach (var c in clubs)
             {
+                bool isMember = false;
+                if (userId.HasValue)
+                {
+                    isMember = await _repo.IsUserMemberOfClubAsync(userId.Value, c.Id);
+                }
+
                 result.Add(new ClubListItemDto
                 {
                     Id = c.Id,
@@ -32,20 +39,27 @@ namespace Services.Clubs
                     FoundedDate = c.FoundedDate,
                     Description = c.Description,
                     MemberCount = await _repo.GetMemberCountAsync(c.Id),
-                    ActivityCount = await _repo.GetActivityCountAsync(c.Id)
+                    ActivityCount = await _repo.GetActivityCountAsync(c.Id),
+                    IsMember = isMember
                 });
             }
 
             return result;
         }
 
-        public async Task<List<ClubListItemDto>> SearchClubsAsync(string? searchTerm, string? categoryName, bool? isActive)
+        public async Task<List<ClubListItemDto>> SearchClubsAsync(string? searchTerm, string? categoryName, bool? isActive, int? userId = null)
         {
             var clubs = await _repo.SearchClubsAsync(searchTerm, categoryName, isActive);
             var result = new List<ClubListItemDto>();
 
             foreach (var c in clubs)
             {
+                bool isMember = false;
+                if (userId.HasValue)
+                {
+                    isMember = await _repo.IsUserMemberOfClubAsync(userId.Value, c.Id);
+                }
+
                 result.Add(new ClubListItemDto
                 {
                     Id = c.Id,
@@ -58,7 +72,8 @@ namespace Services.Clubs
                     FoundedDate = c.FoundedDate,
                     Description = c.Description,
                     MemberCount = await _repo.GetMemberCountAsync(c.Id),
-                    ActivityCount = await _repo.GetActivityCountAsync(c.Id)
+                    ActivityCount = await _repo.GetActivityCountAsync(c.Id),
+                    IsMember = isMember
                 });
             }
 
@@ -129,6 +144,87 @@ namespace Services.Clubs
                 IsRecruitmentOpen = club.IsRecruitmentOpen,
                 PendingRequestCount = pendingCount
             };
+        }
+
+        public async Task<bool> IsUserMemberOfClubAsync(int userId, int clubId)
+        {
+            return await _repo.IsUserMemberOfClubAsync(userId, clubId);
+        }
+
+        public async Task<List<ClubListItemDto>> GetClubsByUserIdAsync(int userId)
+        {
+            var clubs = await _repo.GetClubsByUserIdAsync(userId);
+            var result = new List<ClubListItemDto>();
+
+            foreach (var c in clubs)
+            {
+                var role = await _repo.GetUserRoleInClubAsync(userId, c.Id);
+                var isManager = role == "Manager"; // Chỉ Manager, không phải President
+
+                result.Add(new ClubListItemDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    SubName = c.SubName,
+                    LogoUrl = c.LogoUrl,
+                    CategoryName = c.Category.Name,
+                    IsActive = c.IsActive,
+                    IsRecruitmentOpen = c.IsRecruitmentOpen,
+                    FoundedDate = c.FoundedDate,
+                    Description = c.Description,
+                    MemberCount = await _repo.GetMemberCountAsync(c.Id),
+                    ActivityCount = await _repo.GetActivityCountAsync(c.Id),
+                    IsManager = isManager
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<List<ClubMemberDto>> GetClubMembersAsync(int clubId)
+        {
+            var members = await _repo.GetClubMembersAsync(clubId);
+            return members.Select(m => new ClubMemberDto
+            {
+                Id = m.Id,
+                StudentId = m.StudentId,
+                StudentName = m.Student.User.FullName ?? "Unknown",
+                StudentCode = m.Student.StudentCode,
+                Email = m.Student.User.Email ?? "",
+                AvatarUrl = m.Student.User.AvatarUrl,
+                RoleInClub = m.RoleInClub,
+                DepartmentId = m.DepartmentId,
+                DepartmentName = m.Department?.Name,
+                JoinedAt = m.JoinedAt,
+                IsActive = m.IsActive
+            }).ToList();
+        }
+
+        public async Task<List<DepartmentDto>> GetClubDepartmentsAsync(int clubId)
+        {
+            var departments = await _repo.GetClubDepartmentsAsync(clubId);
+            return departments.Select(d => new DepartmentDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Description = d.Description,
+                MemberCount = d.Members.Count(m => m.IsActive)
+            }).ToList();
+        }
+
+        public async Task<List<ClubAwardDto>> GetClubAwardsAsync(int clubId)
+        {
+            var awards = await _repo.GetClubAwardsAsync(clubId);
+            return awards.Select(a => new ClubAwardDto
+            {
+                Id = a.Id,
+                ClubId = a.ClubId,
+                Title = a.Title,
+                Description = a.Description,
+                SemesterId = a.SemesterId,
+                SemesterName = a.Semester?.Name,
+                AwardedAt = a.AwardedAt
+            }).ToList();
         }
     }
 }

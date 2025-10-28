@@ -43,14 +43,8 @@ namespace WebFE.Pages
                     {
                         return Redirect("/Admin/Dashboard");
                     }
-                    else if (roles.Contains("ClubManager"))
-                    {
-                        return Redirect("/ClubManager");
-                    }
-                    else
-                    {
-                        return Redirect("/Index");
-                    }
+                    // All other roles (ClubManager, ClubMember, Student) go to Home
+                    return Redirect("/Index");
                 }
                 catch
                 {

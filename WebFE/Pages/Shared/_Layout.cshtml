@@ -56,7 +56,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item d-flex align-items-center gap-2" href="/MyClubs">
+                                    <a class="dropdown-item d-flex align-items-center gap-2" asp-page="/Clubs/MyClubs">
                                         <i data-lucide="users-2" style="width: 16px; height: 16px;"></i>
                                         <span>My Clubs</span>
                                     </a>
@@ -102,12 +102,6 @@
                                         <a class="dropdown-item d-flex align-items-center gap-2" href="/Student/Profile">
                                             <i data-lucide="user" style="width: 16px; height: 16px;"></i>
                                             <span>Profile</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="/MyClubs">
-                                            <i data-lucide="users" style="width: 16px; height: 16px;"></i>
-                                            <span>My Clubs</span>
                                         </a>
                                     </li>
                                     <li>
@@ -192,8 +186,15 @@
     <script src="~/js/auth.js" asp-append-version="true"></script>
     <script src="~/js/notifications.js" asp-append-version="true"></script>
     <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
+        // Initialize Lucide Icons - wait for it to load
+        function initLucide() {
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            } else {
+                setTimeout(initLucide, 50);
+            }
+        }
+        initLucide();
 
         // Check authentication status and update UI
         document.addEventListener('DOMContentLoaded', function() {

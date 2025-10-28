@@ -26,7 +26,7 @@ namespace WebFE.Pages.Clubs
 
         public async Task OnGetAsync()
         {
-            var client = _http.CreateClient("ApiClient");
+            var client = CreateAuthenticatedClient();
             
             // Load categories for dropdown
             Categories = await client.GetFromJsonAsync<List<string>>("api/club/categories") ?? new();
@@ -61,5 +61,29 @@ namespace WebFE.Pages.Clubs
                 ? Url.Content(fallback)
                 : (Uri.IsWellFormedUriString(url, UriKind.Absolute) ? url :
                     (url!.StartsWith("/") ? url : "/" + url));
+
+        private HttpClient CreateAuthenticatedClient()
+        {
+            var handler = new System.Net.Http.HttpClientHandler
+            {
+                UseCookies = true,
+                CookieContainer = new System.Net.CookieContainer(),
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+
+            // Forward all cookies from the current request to the API
+            foreach (var cookie in Request.Cookies)
+            {
+                handler.CookieContainer.Add(new Uri("https://localhost:5001"), new System.Net.Cookie(cookie.Key, cookie.Value));
+            }
+
+            var client = new HttpClient(handler)
+            {
+                BaseAddress = new Uri("https://localhost:5001")
+            };
+            client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            
+            return client;
+        }
     }
 }

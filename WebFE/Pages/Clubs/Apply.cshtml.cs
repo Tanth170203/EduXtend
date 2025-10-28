@@ -49,6 +49,14 @@ namespace WebFE.Pages.Clubs
 
         public async Task<IActionResult> OnGetAsync(int clubId)
         {
+            // Validate clubId
+            if (clubId <= 0)
+            {
+                _logger.LogWarning("Invalid clubId: {ClubId}", clubId);
+                TempData["ErrorMessage"] = "Invalid club ID";
+                return RedirectToPage("/Clubs/Active");
+            }
+
             ClubId = clubId;
 
             try
@@ -56,9 +64,11 @@ namespace WebFE.Pages.Clubs
                 using var httpClient = CreateHttpClient();
 
                 // Get club details
+                _logger.LogInformation("Fetching club details for club {ClubId}", clubId);
                 var clubResponse = await httpClient.GetAsync($"/api/club/{clubId}");
                 if (!clubResponse.IsSuccessStatusCode)
                 {
+                    _logger.LogWarning("Failed to fetch club details. Status: {StatusCode}", clubResponse.StatusCode);
                     return RedirectToPage("/Clubs/Index");
                 }
 
@@ -70,13 +80,16 @@ namespace WebFE.Pages.Clubs
 
                 if (club == null)
                 {
+                    _logger.LogWarning("Club data is null for club {ClubId}", clubId);
                     return RedirectToPage("/Clubs/Index");
                 }
 
                 ClubName = club.Name;
                 ClubLogoUrl = club.LogoUrl;
+                _logger.LogInformation("Club details loaded: {ClubName}", ClubName);
 
                 // Get recruitment status
+                _logger.LogInformation("Fetching recruitment status for club {ClubId}", clubId);
                 var statusResponse = await httpClient.GetAsync($"/api/club/{clubId}/recruitment-status");
                 if (statusResponse.IsSuccessStatusCode)
                 {
@@ -87,9 +100,16 @@ namespace WebFE.Pages.Clubs
                     });
 
                     IsRecruitmentOpen = status?.IsRecruitmentOpen ?? false;
+                    _logger.LogInformation("Recruitment status: {IsOpen}", IsRecruitmentOpen);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to fetch recruitment status. Status: {StatusCode}", statusResponse.StatusCode);
+                    IsRecruitmentOpen = false;
                 }
 
                 // Check if user has existing request
+                _logger.LogInformation("Checking for existing request for club {ClubId}", clubId);
                 var requestResponse = await httpClient.GetAsync($"/api/joinrequest/my-request/{clubId}");
                 if (requestResponse.IsSuccessStatusCode)
                 {
@@ -99,10 +119,12 @@ namespace WebFE.Pages.Clubs
                         PropertyNameCaseInsensitive = true
                     });
                     CanApply = false; // Has existing request
+                    _logger.LogInformation("User has existing request: {Status}", ExistingRequest?.Status);
                 }
-                else
+                else if (requestResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    // Check if user can apply
+                    _logger.LogInformation("No existing request found");
+                    // No existing request, check if user can apply
                     var canApplyResponse = await httpClient.GetAsync($"/api/joinrequest/can-apply/{clubId}");
                     if (canApplyResponse.IsSuccessStatusCode)
                     {
@@ -113,10 +135,23 @@ namespace WebFE.Pages.Clubs
                         });
 
                         CanApply = canApplyResult?["canApply"] ?? false;
+                        _logger.LogInformation("CanApply result: {CanApply}", CanApply);
                     }
+                    else
+                    {
+                        _logger.LogWarning("Failed to check can-apply status. Status: {StatusCode}", canApplyResponse.StatusCode);
+                        // If recruitment is open and no existing request, allow apply
+                        CanApply = IsRecruitmentOpen;
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Error checking existing request. Status: {StatusCode}", requestResponse.StatusCode);
+                    CanApply = IsRecruitmentOpen;
                 }
 
                 // Get departments
+                _logger.LogInformation("Fetching departments for club {ClubId}", clubId);
                 var deptResponse = await httpClient.GetAsync($"/api/joinrequest/club/{clubId}/departments");
                 if (deptResponse.IsSuccessStatusCode)
                 {
@@ -127,13 +162,23 @@ namespace WebFE.Pages.Clubs
                     });
 
                     Departments = departments ?? new List<DepartmentDto>();
+                    _logger.LogInformation("Loaded {Count} departments", Departments.Count);
                 }
+                else
+                {
+                    _logger.LogWarning("Failed to fetch departments. Status: {StatusCode}", deptResponse.StatusCode);
+                    Departments = new List<DepartmentDto>();
+                }
+
+                _logger.LogInformation("Apply page loaded. CanApply: {CanApply}, IsRecruitmentOpen: {IsOpen}, HasExistingRequest: {HasRequest}", 
+                    CanApply, IsRecruitmentOpen, ExistingRequest != null);
 
                 return Page();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading apply page for club {ClubId}", clubId);
+                TempData["ErrorMessage"] = "An error occurred while loading the application page. Please try again later.";
                 return RedirectToPage("/Clubs/Index");
             }
         }

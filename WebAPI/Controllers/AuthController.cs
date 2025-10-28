@@ -401,13 +401,8 @@ namespace WebAPI.Controllers
             if (roles.Contains("Admin"))
                 return "/Admin/Dashboard";
             
-            if (roles.Contains("ClubManager"))
-                return "/ClubManager";
-            
-            if (roles.Contains("ClubMember"))
-                return "/Club/MyClubs";
-            
-            return "/Index"; // Default for Student
+            // All other roles (ClubManager, ClubMember, Student) go to Home
+            return "/Index";
         }
 
         #endregion

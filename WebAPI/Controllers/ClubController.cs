@@ -22,7 +22,8 @@ public class ClubController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetAll()
     {
-        var data = await _service.GetAllClubsAsync();
+        var userId = GetCurrentUserId();
+        var data = await _service.GetAllClubsAsync(userId);
         return Ok(data);
     }
 
@@ -34,7 +35,8 @@ public class ClubController : ControllerBase
         [FromQuery] string? categoryName, 
         [FromQuery] bool? isActive)
     {
-        var data = await _service.SearchClubsAsync(searchTerm, categoryName, isActive);
+        var userId = GetCurrentUserId();
+        var data = await _service.SearchClubsAsync(searchTerm, categoryName, isActive, userId);
         return Ok(data);
     }
 
@@ -130,5 +132,111 @@ public class ClubController : ControllerBase
             _logger.LogError(ex, "Error getting recruitment status for club {ClubId}", clubId);
             return StatusCode(500, new { message = "Failed to retrieve recruitment status" });
         }
+    }
+
+    // GET api/club/{clubId}/is-member
+    [HttpGet("{clubId:int}/is-member")]
+    [Authorize]
+    public async Task<IActionResult> IsUserMemberOfClub(int clubId)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user ID" });
+            }
+
+            var isMember = await _service.IsUserMemberOfClubAsync(userId, clubId);
+            return Ok(new { isMember });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking if user is member of club {ClubId}", clubId);
+            return StatusCode(500, new { message = "Failed to check membership status" });
+        }
+    }
+
+    // GET api/club/my-clubs
+    [HttpGet("my-clubs")]
+    [Authorize]
+    public async Task<IActionResult> GetMyClubs()
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user ID" });
+            }
+
+            var clubs = await _service.GetClubsByUserIdAsync(userId);
+            return Ok(clubs);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting clubs for user");
+            return StatusCode(500, new { message = "Failed to retrieve clubs" });
+        }
+    }
+
+    // GET api/club/{clubId}/members
+    [HttpGet("{clubId:int}/members")]
+    [Authorize]
+    public async Task<IActionResult> GetClubMembers(int clubId)
+    {
+        try
+        {
+            var members = await _service.GetClubMembersAsync(clubId);
+            return Ok(members);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting members for club {ClubId}", clubId);
+            return StatusCode(500, new { message = "Failed to retrieve members" });
+        }
+    }
+
+    // GET api/club/{clubId}/departments
+    [HttpGet("{clubId:int}/departments")]
+    [Authorize]
+    public async Task<IActionResult> GetClubDepartments(int clubId)
+    {
+        try
+        {
+            var departments = await _service.GetClubDepartmentsAsync(clubId);
+            return Ok(departments);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting departments for club {ClubId}", clubId);
+            return StatusCode(500, new { message = "Failed to retrieve departments" });
+        }
+    }
+
+    // GET api/club/{clubId}/awards
+    [HttpGet("{clubId:int}/awards")]
+    public async Task<IActionResult> GetClubAwards(int clubId)
+    {
+        try
+        {
+            var awards = await _service.GetClubAwardsAsync(clubId);
+            return Ok(awards);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting awards for club {ClubId}", clubId);
+            return StatusCode(500, new { message = "Failed to retrieve awards" });
+        }
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdClaim != null && int.TryParse(userIdClaim, out var id))
+        {
+            return id;
+        }
+        return null;
     }
 }
