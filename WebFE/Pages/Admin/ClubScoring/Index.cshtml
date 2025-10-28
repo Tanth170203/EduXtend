@@ -1,0 +1,234 @@
+@page
+@model WebFE.Pages.Admin.ClubScoring.IndexModel
+@{
+    ViewData["Title"] = "Chấm điểm CLB";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/Admin">Admin</a></li>
+        <li class="breadcrumb-item active">Club Scoring</li>
+    </ol>
+</nav>
+
+<!-- Page Header -->
+<div class="page-header mb-3">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+            <h1 class="page-title">
+                <i data-lucide="trophy" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                Chấm điểm CLB
+            </h1>
+            <p class="page-description">Danh sách điểm CLB theo tháng</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success" onclick="window.open('@Model.ExportUrl', '_blank')">
+                <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                Xuất Excel
+            </button>
+            <a class="btn btn-primary" href="#" onclick="window.print(); return false;">
+                <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
+                In báo cáo
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Card -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-light d-flex align-items-center justify-content-center py-3">
+        <i data-lucide="filter" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+        <strong>Bộ lọc</strong>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">
+                    <i data-lucide="calendar" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+                    <strong>Kỳ học</strong>
+                </label>
+                <select class="form-select" name="semesterId" asp-for="SelectedSemesterId">
+                    @foreach (var s in Model.Semesters)
+                    {
+                        <option value="@s.Id" selected="@(Model.SelectedSemesterId == s.Id)">@s.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i data-lucide="calendar-days" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
+                    <strong>Tháng</strong>
+                </label>
+                <select class="form-select" name="month" asp-for="SelectedMonth">
+                    @foreach (var mo in Model.MonthOptions)
+                    {
+                        <option value="@mo.Month" selected="@(Model.SelectedMonth == mo.Month)">@mo.Display</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="search"></i> Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mt-3">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted">
+                            <i data-lucide="users" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
+                            Tổng CLB
+                        </div>
+                        <div class="fs-3 fw-bold text-primary">@Model.TotalClubs</div>
+                    </div>
+                    <i data-lucide="users" style="width: 32px; height: 32px; color: #0d6efd;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted">
+                            <i data-lucide="check-circle" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
+                            Đã chấm
+                        </div>
+                        <div class="fs-3 fw-bold text-success">@Model.ScoredClubs</div>
+                    </div>
+                    <i data-lucide="check-circle" style="width: 32px; height: 32px; color: #198754;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted">
+                            <i data-lucide="clock" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
+                            Chưa chấm
+                        </div>
+                        <div class="fs-3 fw-bold text-warning">@Model.UnscoredClubs</div>
+                    </div>
+                    <i data-lucide="clock" style="width: 32px; height: 32px; color: #ffc107;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top 5 Chart -->
+<div class="card border-0 shadow-sm mt-3">
+    <div class="card-header bg-info text-white d-flex align-items-center justify-content-center py-3">
+        <i data-lucide="trending-up" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+        <strong>TOP 5 CLB THÁNG @Model.SelectedMonth</strong>
+    </div>
+    <div class="card-body">
+        @if (Model.Top5.Any())
+        {
+            <div class="vstack gap-2">
+                @foreach (var t in Model.Top5)
+                {
+                    var pct = (int)Math.Round(t.TotalScore);
+                    <div>
+                        <div class="d-flex justify-content-between">
+                            <div><strong>@t.ClubName</strong></div>
+                            <div class="text-primary fw-bold">@t.TotalScore.ToString("0") điểm</div>
+                        </div>
+                        <div class="progress" style="height:10px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width:@pct%"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center text-muted py-3">
+                <i data-lucide="inbox" style="width: 32px; height: 32px; margin-bottom: 0.5rem;"></i>
+                <div>Chưa có dữ liệu</div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Clubs Table -->
+<div class="card border-0 shadow-sm mt-3">
+    <div class="card-header bg-warning text-dark d-flex align-items-center justify-content-center py-3">
+        <i data-lucide="table" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
+        <strong>Danh sách CLB</strong>
+    </div>
+    <div class="card-body">
+        @if (Model.ClubScores?.Any() == true)
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th><i data-lucide="hash" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>#</th>
+                            <th><i data-lucide="users" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>CLB</th>
+                            <th><i data-lucide="calendar" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>SH</th>
+                            <th><i data-lucide="calendar-days" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>SK</th>
+                            <th><i data-lucide="handshake" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>PH</th>
+                            <th><i data-lucide="trophy" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Thi</th>
+                            <th><i data-lucide="clipboard" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>KH</th>
+                            <th><i data-lucide="star" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Tổng</th>
+                            <th><i data-lucide="eye" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.ClubScores.Count; i++)
+                        {
+                            var r = Model.ClubScores[i];
+                            <tr>
+                                <td><span class="badge bg-secondary">@(i + 1)</span></td>
+                                <td><strong>@r.ClubName</strong></td>
+                                <td><span class="badge bg-info">@r.ClubMeetingScore</span></td>
+                                <td><span class="badge bg-info">@r.EventScore</span></td>
+                                <td><span class="badge bg-info">@r.CollaborationScore</span></td>
+                                <td><span class="badge bg-info">@r.CompetitionScore</span></td>
+                                <td><span class="badge bg-info">@r.PlanScore</span></td>
+                                <td><strong class="text-primary fs-5">@r.TotalScore</strong></td>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       asp-page="Detail"
+                                       asp-route-clubId="@r.ClubId"
+                                       asp-route-semesterId="@Model.SelectedSemesterId"
+                                       asp-route-month="@Model.SelectedMonth">
+                                        <i data-lucide="external-link"></i> Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center text-muted py-5">
+                <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
+                <div>Chưa có dữ liệu</div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){ if (typeof lucide !== 'undefined') lucide.createIcons(); });
+    </script>
+}
+

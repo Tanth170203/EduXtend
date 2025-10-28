@@ -242,16 +242,13 @@ namespace Services.UserImport
                         .Select(r => r.Trim())
                         .ToList();
 
-                    foreach (var roleName in roleNames)
+                    // Take only the first role (since user can have only one role now)
+                    var firstRoleName = roleNames.FirstOrDefault();
+                    if (firstRoleName != null)
                     {
-                        if (roleMapping.TryGetValue(roleName, out int roleId))
+                        if (roleMapping.TryGetValue(firstRoleName, out int roleId))
                         {
-                            newUser.UserRoles.Add(new UserRole
-                            {
-                                User = newUser,
-                                RoleId = roleId,
-                                AssignedAt = DateTime.UtcNow
-                            });
+                            newUser.RoleId = roleId;
                         }
                         else
                         {
@@ -259,8 +256,9 @@ namespace Services.UserImport
                             {
                                 RowNumber = rowNumber,
                                 Email = userRow.Email,
-                                ErrorMessage = $"Role '{roleName}' does not exist in the system"
+                                ErrorMessage = $"Role '{firstRoleName}' does not exist in the system"
                             });
+                            continue; // Skip this user
                         }
                     }
                 }
@@ -269,12 +267,7 @@ namespace Services.UserImport
                     // Assign default Student role if no role specified
                     if (roleMapping.TryGetValue("Student", out int studentRoleId))
                     {
-                        newUser.UserRoles.Add(new UserRole
-                        {
-                            User = newUser,
-                            RoleId = studentRoleId,
-                            AssignedAt = DateTime.UtcNow
-                        });
+                        newUser.RoleId = studentRoleId;
                     }
                 }
 

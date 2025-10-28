@@ -83,8 +83,7 @@ namespace Services.GGLogin
         {
             var token = await _context.UserTokens
                 .Include(t => t.User)
-                    .ThenInclude(u => u.UserRoles)
-                        .ThenInclude(ur => ur.Role)
+                    .ThenInclude(u => u.Role)
                 .FirstOrDefaultAsync(t => t.RefreshToken == refreshToken
                     && !t.Revoked
                     && t.ExpiryDate > DateTime.UtcNow);
@@ -124,16 +123,10 @@ namespace Services.GGLogin
                 claims.Add(new Claim("avatar", user.AvatarUrl));
             }
 
-            // ✅ THÊM NULL CHECK để tránh NullReferenceException
-            if (user.UserRoles != null)
+            // Add role claim
+            if (user.Role != null && !string.IsNullOrEmpty(user.Role.RoleName))
             {
-                foreach (var userRole in user.UserRoles)
-                {
-                    if (userRole?.Role != null && !string.IsNullOrEmpty(userRole.Role.RoleName))
-                    {
-                        claims.Add(new Claim(ClaimTypes.Role, userRole.Role.RoleName));
-                    }
-                }
+                claims.Add(new Claim(ClaimTypes.Role, user.Role.RoleName));
             }
 
             // ✅ Thêm StudentId vào claims nếu user là Student

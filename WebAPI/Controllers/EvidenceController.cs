@@ -83,6 +83,25 @@ public class EvidenceController : ControllerBase
     }
 
     /// <summary>
+    /// Get pending evidences count for statistics (Admin only)
+    /// </summary>
+    [HttpGet("stats/pending-count")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<Dictionary<string, int>>> GetPendingCount()
+    {
+        try
+        {
+            var count = await _service.CountPendingAsync();
+            return Ok(new Dictionary<string, int> { { "count", count } });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving pending evidences count");
+            return StatusCode(500, new { message = "Error retrieving pending evidences count." });
+        }
+    }
+
+    /// <summary>
     /// Get evidences by status (Admin only)
     /// </summary>
     [HttpGet("status/{status}")]
@@ -144,9 +163,19 @@ public class EvidenceController : ControllerBase
                     _logger.LogInformation("Uploaded for student {StudentId} ({StudentCode}): {Url}",
                         dto.StudentId, studentCode, dto.FilePath);
                 }
+                catch (ArgumentException argEx)
+                {
+                    _logger.LogError(argEx, "File validation error for student {StudentId}", dto.StudentId);
+                    return BadRequest(new { message = $"File validation failed: {argEx.Message}" });
+                }
+                catch (InvalidOperationException opEx)
+                {
+                    _logger.LogError(opEx, "Upload operation error for student {StudentId}", dto.StudentId);
+                    return BadRequest(new { message = $"Upload failed: {opEx.Message}" });
+                }
                 catch (Exception uploadEx)
                 {
-                    _logger.LogError(uploadEx, "Error uploading file to Cloudinary for student {StudentId}", dto.StudentId);
+                    _logger.LogError(uploadEx, "Unexpected error uploading file to Cloudinary for student {StudentId}", dto.StudentId);
                     return BadRequest(new { message = $"File upload failed: {uploadEx.Message}" });
                 }
             }
@@ -208,7 +237,26 @@ public class EvidenceController : ControllerBase
             }
 
             // ===== UPLOAD NEW FILE =====
-            var rawUrl = await _cloudinaryService.UploadEvidenceFileAsync(file, studentCode);
+            string rawUrl;
+            try
+            {
+                rawUrl = await _cloudinaryService.UploadEvidenceFileAsync(file, studentCode);
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "File validation error for Evidence {EvidenceId}", id);
+                return BadRequest(new { message = $"File validation failed: {argEx.Message}" });
+            }
+            catch (InvalidOperationException opEx)
+            {
+                _logger.LogError(opEx, "Upload operation error for Evidence {EvidenceId}", id);
+                return BadRequest(new { message = $"Upload failed: {opEx.Message}" });
+            }
+            catch (Exception uploadEx)
+            {
+                _logger.LogError(uploadEx, "Unexpected error uploading file for Evidence {EvidenceId}", id);
+                return BadRequest(new { message = $"File upload failed: {uploadEx.Message}" });
+            }
 
             var updateDto = new UpdateEvidenceDto
             {

@@ -74,7 +74,6 @@
                                     <th>Tiêu chí</th>
                                     <th class="text-center">Điểm tối đa</th>
                                     <th class="text-center">Điểm đạt</th>
-                                    <th class="text-center">Tỷ lệ</th>
                                     <th>Ngày cộng điểm</th>
                                 </tr>
                             </thead>
@@ -87,7 +86,6 @@
                                         <td><span class="badge bg-secondary">@d.GroupName</span></td>
                                         <td class="fw-semibold">@d.CriterionTitle</td>
                                         <td class="text-center">@d.CriterionMaxScore</td>
-                                        <td class="text-center"><span class="fw-semibold text-@b">@d.Score</span></td>
                                         <td class="text-center">
                                             <div class="progress" style="height:16px; width:110px; margin:0 auto;">
                                                 <div class="progress-bar bg-@b" style="width:@p%" role="progressbar"></div>
@@ -98,12 +96,6 @@
                                     </tr>
                                 }
                             </tbody>
-                            <tfoot>
-                                <tr class="table-active">
-                                    <td colspan="3" class="text-end"><strong>Tổng cộng:</strong></td>
-                                    <td colspan="3"><strong class="fs-5 text-primary">@Model.Record.TotalScore.ToString("F1") điểm</strong></td>
-                                </tr>
-                            </tfoot>
                         </table>
                     </div>
 

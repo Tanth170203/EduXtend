@@ -4,6 +4,7 @@ using Repositories.MovementRecords;
 using Repositories.Students;
 using Repositories.Semesters;
 using Repositories.MovementCriteria;
+using Microsoft.AspNetCore.Http;
 
 namespace Services.MovementRecords;
 
@@ -15,6 +16,7 @@ public class MovementRecordService : IMovementRecordService
     private readonly ISemesterRepository _semesterRepository;
     private readonly IMovementCriterionRepository _criterionRepository;
     private readonly IMovementCriterionGroupRepository _criterionGroupRepository;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public MovementRecordService(
         IMovementRecordRepository recordRepository,
@@ -22,7 +24,8 @@ public class MovementRecordService : IMovementRecordService
         IStudentRepository studentRepository,
         ISemesterRepository semesterRepository,
         IMovementCriterionRepository criterionRepository,
-        IMovementCriterionGroupRepository criterionGroupRepository)
+        IMovementCriterionGroupRepository criterionGroupRepository,
+        IHttpContextAccessor httpContextAccessor)
     {
         _recordRepository = recordRepository;
         _detailRepository = detailRepository;
@@ -30,6 +33,7 @@ public class MovementRecordService : IMovementRecordService
         _semesterRepository = semesterRepository;
         _criterionRepository = criterionRepository;
         _criterionGroupRepository = criterionGroupRepository;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<IEnumerable<MovementRecordDto>> GetAllAsync()
@@ -59,7 +63,7 @@ public class MovementRecordService : IMovementRecordService
     public async Task<MovementRecordDetailedDto?> GetDetailedByIdAsync(int id)
     {
         var record = await _recordRepository.GetByIdWithDetailsAsync(id);
-        return record != null ? MapToDetailedDto(record) : null;
+        return record != null ? await MapToDetailedDtoAsync(record) : null;
     }
 
     public async Task<MovementRecordDto?> GetByStudentAndSemesterAsync(int studentId, int semesterId)
@@ -154,130 +158,64 @@ public class MovementRecordService : IMovementRecordService
         if (record == null)
             return;
 
-        var details = record.Details.ToList();
-        var adjustments = new Dictionary<int, (double oldScore, double newScore, string reason)>();
+        var details = record.Details.Where(d => d.Criterion != null).ToList();
+        
+        // Get all criterion groups (categories) with their max scores
+        var allGroups = await _criterionGroupRepository.GetAllAsync();
+        var categoryMap = allGroups.ToDictionary(g => g.Id, g => g.MaxScore);
 
-        // Get all criteria grouped by category
-        var allCriteria = await _criterionRepository.GetAllAsync();
-        var criteriaByCategory = new Dictionary<string, List<int>>();
-        
-        // Simple category mapping (assuming criterion titles contain category info)
-        var category1Criteria = allCriteria.Where(c => c.Title.Contains("tuyên dương") || c.Title.Contains("Olympic") || c.Title.Contains("thi") || c.Title.Contains("ACM") || c.Title.Contains("CPC")).Select(c => c.Id).ToList();
-        var category2Criteria = allCriteria.Where(c => c.Title.Contains("sự kiện") || c.Title.Contains("CLB") || c.Title.Contains("hoạt động")).Select(c => c.Id).ToList();
-        var category3Criteria = allCriteria.Where(c => c.Title.Contains("hành vi") || c.Title.Contains("từ thiện") || c.Title.Contains("tình nguyện")).Select(c => c.Id).ToList();
-        var category4Criteria = allCriteria.Where(c => c.Title.Contains("lớp trưởng") || c.Title.Contains("BCH") || c.Title.Contains("công tác")).Select(c => c.Id).ToList();
+        // Group details by category (GroupId)
+        var detailsByCategory = details
+            .Where(d => d.Criterion != null)
+            .GroupBy(d => d.Criterion!.GroupId)
+            .ToList();
 
-        // Calculate per-category totals
-        var cat1Total = details.Where(d => category1Criteria.Contains(d.CriterionId)).Sum(d => d.Score);
-        var cat2Total = details.Where(d => category2Criteria.Contains(d.CriterionId)).Sum(d => d.Score);
-        var cat3Total = details.Where(d => category3Criteria.Contains(d.CriterionId)).Sum(d => d.Score);
-        var cat4Total = details.Where(d => category4Criteria.Contains(d.CriterionId)).Sum(d => d.Score);
+        // Calculate total score with category caps applied (for display)
+        // BUT do NOT modify individual detail scores
+        double cappedTotal = 0;
 
-        // Apply category caps - CAP TO MAX instead of scaling down
-        // If category exceeds max, set to max (not scale down)
-        if (cat1Total > 35)
+        foreach (var categoryGroup in detailsByCategory)
         {
-            Console.WriteLine($"[CapAndAdjust] Category 1 total {cat1Total} > 35, capping to 35");
-            // Find the highest scoring detail in category 1 and cap it
-            var cat1Details = details.Where(d => category1Criteria.Contains(d.CriterionId)).OrderByDescending(d => d.Score).ToList();
-            if (cat1Details.Any())
+            var categoryId = categoryGroup.Key;
+            if (!categoryMap.TryGetValue(categoryId, out var categoryMax))
             {
-                var excess = cat1Total - 35;
-                var highestDetail = cat1Details.First();
-                highestDetail.Score = Math.Max(0, highestDetail.Score - excess);
-                Console.WriteLine($"[CapAndAdjust] Reduced highest detail from {highestDetail.Score + excess} to {highestDetail.Score}");
+                // If no max defined, use actual total
+                cappedTotal += categoryGroup.Sum(d => d.Score);
+                continue;
             }
-        }
-        
-        if (cat2Total > 50)
-        {
-            Console.WriteLine($"[CapAndAdjust] Category 2 total {cat2Total} > 50, capping to 50");
-            var cat2Details = details.Where(d => category2Criteria.Contains(d.CriterionId)).OrderByDescending(d => d.Score).ToList();
-            if (cat2Details.Any())
+
+            var categoryTotal = categoryGroup.Sum(d => d.Score);
+            
+            // Apply cap to category total (for calculation only, not modifying details)
+            var cappedCategoryTotal = Math.Min(categoryTotal, categoryMax);
+            cappedTotal += cappedCategoryTotal;
+
+            if (categoryTotal > categoryMax)
             {
-                var excess = cat2Total - 50;
-                var highestDetail = cat2Details.First();
-                highestDetail.Score = Math.Max(0, highestDetail.Score - excess);
-                Console.WriteLine($"[CapAndAdjust] Reduced highest detail from {highestDetail.Score + excess} to {highestDetail.Score}");
-            }
-        }
-        
-        if (cat3Total > 25)
-        {
-            Console.WriteLine($"[CapAndAdjust] Category 3 total {cat3Total} > 25, capping to 25");
-            var cat3Details = details.Where(d => category3Criteria.Contains(d.CriterionId)).OrderByDescending(d => d.Score).ToList();
-            if (cat3Details.Any())
-            {
-                var excess = cat3Total - 25;
-                var highestDetail = cat3Details.First();
-                highestDetail.Score = Math.Max(0, highestDetail.Score - excess);
-                Console.WriteLine($"[CapAndAdjust] Reduced highest detail from {highestDetail.Score + excess} to {highestDetail.Score}");
-            }
-        }
-        
-        if (cat4Total > 30)
-        {
-            Console.WriteLine($"[CapAndAdjust] Category 4 total {cat4Total} > 30, capping to 30");
-            var cat4Details = details.Where(d => category4Criteria.Contains(d.CriterionId)).OrderByDescending(d => d.Score).ToList();
-            if (cat4Details.Any())
-            {
-                var excess = cat4Total - 30;
-                var highestDetail = cat4Details.First();
-                highestDetail.Score = Math.Max(0, highestDetail.Score - excess);
-                Console.WriteLine($"[CapAndAdjust] Reduced highest detail from {highestDetail.Score + excess} to {highestDetail.Score}");
+                Console.WriteLine($"[CapAndAdjust] Category {categoryId} total {categoryTotal} > {categoryMax}, capped to {categoryMax} (details unchanged)");
             }
         }
 
-        // Update details with adjusted scores (already done above)
-        // No need for additional scaling since we already capped to max
-
-        // Calculate new total
-        var newTotal = details.Sum(d => d.Score);
+        // Calculate uncapped total (sum of all details as-is)
+        var uncappedTotal = details.Sum(d => d.Score);
         
-        Console.WriteLine($"[CapAndAdjust] RecordId={recordId}, NewTotal={newTotal}");
+        // Apply overall cap of 140
+        var finalCappedTotal = Math.Min(cappedTotal, 140);
         
-        // Apply total cap
-        bool needsDetailUpdate = false;
+        Console.WriteLine($"[CapAndAdjust] RecordId={recordId}, UncappedTotal={uncappedTotal}, CappedTotal={finalCappedTotal}");
         
-        if (newTotal > 140)
+        // Update record.TotalScore with capped value (but keep details unchanged)
+        if (record != null)
         {
-            double totalScaleFactor = 140.0 / newTotal;
-            foreach (var detail in details)
+            var roundedTotal = Math.Round(finalCappedTotal, 1);
+            if (record.TotalScore != roundedTotal)
             {
-                detail.Score = Math.Round(detail.Score * totalScaleFactor, 1);
-                await _detailRepository.UpdateAsync(detail);
-            }
-            record.TotalScore = 140;
-            needsDetailUpdate = true;
-            Console.WriteLine($"[CapAndAdjust] Total > 140, capped to 140, scaled all details");
-        }
-        else if (newTotal < 60)
-        {
-            // For manual scoring, we should still keep the score even if < 60
-            // The < 60 rule may be for final evaluation, not for tracking
-            record.TotalScore = Math.Round(newTotal, 1);
-            Console.WriteLine($"[CapAndAdjust] Total < 60, keeping actual score: {record.TotalScore}");
-        }
-        else
-        {
-            record.TotalScore = Math.Round(newTotal, 1);
-            Console.WriteLine($"[CapAndAdjust] Total in range [60-140]: {record.TotalScore}");
-        }
-
-        // Update details if any adjustments were made
-        if (adjustments.Any() && !needsDetailUpdate)
-        {
-            foreach (var detail in details)
-            {
-                if (adjustments.ContainsKey(detail.Id))
-                {
-                    await _detailRepository.UpdateAsync(detail);
-                }
+                record.TotalScore = roundedTotal;
+                record.LastUpdated = DateTime.UtcNow;
+                await _recordRepository.UpdateAsync(record);
+                Console.WriteLine($"[CapAndAdjust] Updated record.TotalScore to {roundedTotal} (details unchanged)");
             }
         }
-
-        record.LastUpdated = DateTime.UtcNow;
-        await _recordRepository.UpdateAsync(record);
     }
 
     public async Task<MovementRecordDto> AdjustScoreAsync(int id, AdjustScoreDto dto)
@@ -335,7 +273,7 @@ public class MovementRecordService : IMovementRecordService
 
     public async Task<MovementRecordDto> AddScoreFromEvidenceAsync(int studentId, int criterionId, double points)
     {
-        // Get current semester (you may need to adjust this logic)
+        // Get current semester
         var currentSemester = await _semesterRepository.GetCurrentSemesterAsync();
         if (currentSemester == null)
             throw new InvalidOperationException("No active semester found");
@@ -353,15 +291,37 @@ public class MovementRecordService : IMovementRecordService
             record = await _recordRepository.GetByStudentAndSemesterAsync(studentId, currentSemester.Id);
         }
 
-        // Add score
-        var addScoreDto = new AddScoreDto
+        // Validate criterion exists
+        var criterion = await _criterionRepository.GetByIdAsync(criterionId);
+        if (criterion == null)
+            throw new KeyNotFoundException($"Criterion with ID {criterionId} not found");
+
+        // Validate score doesn't exceed max
+        if (points > criterion.MaxScore)
+            throw new ArgumentException($"Score {points} exceeds maximum allowed {criterion.MaxScore} for this criterion");
+
+        // Create detail directly - allow multiple evidences for same criterion (accumulate points)
+        var detail = new MovementRecordDetail
         {
             MovementRecordId = record!.Id,
             CriterionId = criterionId,
-            Score = points
+            Score = points,
+            ScoreType = "Auto", // Evidence-based scoring is considered Auto
+            AwardedAt = DateTime.UtcNow
         };
 
-        return await AddScoreAsync(addScoreDto);
+        await _detailRepository.CreateAsync(detail);
+
+        // Update total score
+        var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
+        record.TotalScore = Math.Min(totalScore, 140); // Cap at 140
+        await _recordRepository.UpdateAsync(record);
+
+        // Apply category-level caps and adjustments per Decision 414
+        await CapAndAdjustScoresAsync(record.Id);
+
+        var result = await _recordRepository.GetByIdWithDetailsAsync(record.Id);
+        return MapToDto(result!);
     }
 
     public async Task<MovementRecordDto> AddScoreFromAttendanceAsync(int studentId, int criterionId, double points)
@@ -576,8 +536,72 @@ public class MovementRecordService : IMovementRecordService
         };
     }
 
-    private static MovementRecordDetailedDto MapToDetailedDto(MovementRecord record)
+    private async Task<MovementRecordDetailedDto> MapToDetailedDtoAsync(MovementRecord record)
     {
+        var details = record.Details?.Select(d => new MovementRecordDetailItemDto
+        {
+            Id = d.Id,
+            CriterionId = d.CriterionId,
+            CriterionTitle = d.Criterion?.Title,
+            GroupName = d.Criterion?.Group?.Name,
+            CriterionMaxScore = d.Criterion?.MaxScore ?? 0,
+            Score = d.Score,
+            AwardedAt = d.AwardedAt,
+            ScoreType = string.IsNullOrWhiteSpace(d.ScoreType) ? "Auto" : d.ScoreType,
+            Note = d.Note,
+            ActivityId = d.ActivityId
+        }).ToList() ?? new List<MovementRecordDetailItemDto>();
+
+        // Calculate category scores with caps
+        var categoryScores = new List<CategoryScoreDto>();
+        var allGroups = await _criterionGroupRepository.GetAllAsync();
+        var categoryMap = allGroups.ToDictionary(g => g.Id, g => new { g.Name, g.MaxScore });
+
+        // Get GroupId from actual record details
+        var detailsByGroup = details
+            .Where(d => !string.IsNullOrEmpty(d.GroupName))
+            .GroupBy(d => {
+                // Find the corresponding detail in record to get GroupId
+                var recordDetail = record.Details?.FirstOrDefault(d2 => d2.Id == d.Id);
+                var groupId = recordDetail?.Criterion?.GroupId ?? 0;
+                return new { 
+                    GroupName = d.GroupName!, 
+                    GroupId = groupId
+                };
+            })
+            .ToList();
+
+        foreach (var group in detailsByGroup)
+        {
+            var actualScore = group.Sum(d => d.Score);
+            var groupId = group.Key.GroupId;
+            
+            if (categoryMap.TryGetValue(groupId, out var groupInfo))
+            {
+                var cappedScore = Math.Min(actualScore, groupInfo.MaxScore);
+                categoryScores.Add(new CategoryScoreDto
+                {
+                    GroupName = group.Key.GroupName,
+                    GroupId = groupId,
+                    ActualScore = actualScore,
+                    CappedScore = cappedScore,
+                    MaxScore = groupInfo.MaxScore
+                });
+            }
+            else
+            {
+                // If group not found in map, use actual score
+                categoryScores.Add(new CategoryScoreDto
+                {
+                    GroupName = group.Key.GroupName,
+                    GroupId = groupId,
+                    ActualScore = actualScore,
+                    CappedScore = actualScore,
+                    MaxScore = 0
+                });
+            }
+        }
+
         return new MovementRecordDetailedDto
         {
             Id = record.Id,
@@ -589,16 +613,8 @@ public class MovementRecordService : IMovementRecordService
             TotalScore = record.TotalScore,
             CreatedAt = record.CreatedAt,
             LastUpdated = record.LastUpdated,
-            Details = record.Details?.Select(d => new MovementRecordDetailItemDto
-            {
-                Id = d.Id,
-                CriterionId = d.CriterionId,
-                CriterionTitle = d.Criterion?.Title,
-                GroupName = d.Criterion?.Group?.Name,
-                CriterionMaxScore = d.Criterion?.MaxScore ?? 0,
-                Score = d.Score,
-                AwardedAt = d.AwardedAt
-            }).ToList() ?? new List<MovementRecordDetailItemDto>()
+            Details = details,
+            CategoryScores = categoryScores.OrderByDescending(c => c.CappedScore).ToList()
         };
     }
 
@@ -634,94 +650,106 @@ public class MovementRecordService : IMovementRecordService
         if (criterion.GroupId != dto.CategoryId)
             throw new ArgumentException($"Criterion {dto.CriterionId} does not belong to category {dto.CategoryId}");
 
-        // FIXED: Validate theo Criterion (tiêu chí con) thay vì Category (nhóm)
-        // Theo quy định: mỗi tiêu chí có giới hạn riêng
-        // Ví dụ: Olympic 10 điểm/lần → có thể cộng nhiều lần, mỗi lần tối đa 10 điểm
-        // Ví dụ: Tuyên dương 2 điểm/lần → có thể cộng nhiều lần, mỗi lần tối đa 2 điểm
-        
         var criterionMax = criterion.MaxScore; // Giới hạn của tiêu chí cụ thể
         var currentCriterionTotal = await GetCurrentCriterionTotalAsync(record!.Id, dto.CriterionId);
 
-        // FIXED: Validate và báo lỗi nếu vượt quá giới hạn
-        // 1. Điểm tiêu chí con: Báo lỗi nếu vượt quá MaxScore
-        // 2. Điểm nhóm: Báo lỗi nếu vượt quá MaxScore
-        
-        Console.WriteLine($"[AddManualScoreWithCriterion] Criterion {dto.CriterionId}: Current total = {currentCriterionTotal}, Adding = {dto.Score}, Criterion max = {criterionMax}");
-        
-        // 1. VALIDATE: Điểm tiêu chí con không được vượt quá MaxScore
         if (dto.Score > criterionMax)
         {
             throw new ArgumentException($"Điểm nhập ({dto.Score}) vượt quá giới hạn tiêu chí ({criterionMax} điểm). Vui lòng nhập lại.");
         }
-        
-        // 2. VALIDATE: Kiểm tra điểm nhóm
+
+        // Check category max for logging/notification, but allow exceeding (will be auto-adjusted)
         var category = await _criterionGroupRepository.GetByIdAsync(dto.CategoryId);
         if (category != null)
         {
             var categoryMax = category.MaxScore;
             var currentCategoryTotal = await GetCurrentCategoryTotalAsync(record!.Id, dto.CategoryId);
             var newCategoryTotal = currentCategoryTotal + dto.Score;
-            
-            Console.WriteLine($"[AddManualScoreWithCriterion] Category {dto.CategoryId}: Current = {currentCategoryTotal}, Adding = {dto.Score}, New total = {newCategoryTotal}, Category max = {categoryMax}");
-            
             if (newCategoryTotal > categoryMax)
             {
-                throw new ArgumentException($"Điểm nhập sẽ làm tổng nhóm vượt quá giới hạn ({categoryMax} điểm). Hiện tại: {currentCategoryTotal} điểm, nhập thêm: {dto.Score} điểm = {newCategoryTotal} điểm > {categoryMax} điểm. Vui lòng nhập lại.");
+                Console.WriteLine($"[AddManualScoreWithCriterion] Warning: Category {dto.CategoryId} will exceed max ({categoryMax}). Current: {currentCategoryTotal}, Adding: {dto.Score}, New Total: {newCategoryTotal}. Will auto-adjust after adding.");
             }
         }
 
-        // ALWAYS CREATE NEW DETAIL - Cộng dồn nhiều lần theo quy định
-        // Theo quy định: có thể cộng nhiều lần cho cùng loại tiêu chí
-        // Ví dụ: Tuyên dương 2 lần = 2 x 2 = 4 điểm
-        // Ví dụ: Tham gia Olympic 2 lần = 2 x 10 = 20 điểm
-        // Ví dụ: Tham gia Robocon 2 lần = 2 x 10 = 20 điểm
-        
+        // Resolve CreatedBy from HttpContext if available
+        int? createdBy = dto.CreatedById;
+        if (createdBy == null)
+        {
+            try
+            {
+                var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (int.TryParse(userIdClaim, out var uid)) createdBy = uid;
+            }
+            catch { /* ignore */ }
+        }
+
+        // Dedupe by (record, criterion, activityId) if ActivityId provided
+        if (dto.ActivityId.HasValue)
+        {
+            var existing = await _detailRepository.GetByRecordCriterionActivityAsync(record.Id, dto.CriterionId, dto.ActivityId.Value);
+            if (existing != null)
+            {
+                existing.Score = dto.Score;
+                existing.AwardedAt = dto.AwardedDate ?? DateTime.UtcNow;
+                existing.ScoreType = "Manual";
+                existing.CreatedBy = createdBy;
+                existing.Note = dto.Comments;
+                await _detailRepository.UpdateAsync(existing);
+
+                var totalExisting = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
+                record.TotalScore = Math.Min(totalExisting, 140);
+                record.LastUpdated = DateTime.UtcNow;
+                await _recordRepository.UpdateAsync(record);
+
+                var res1 = await _recordRepository.GetByIdWithDetailsAsync(record.Id);
+                var dtoRes1 = MapToDto(res1!);
+                dtoRes1.Message = "Updated existing detail by ActivityId";
+                return dtoRes1;
+            }
+        }
+
         var detail = new MovementRecordDetail
         {
             MovementRecordId = record.Id,
             CriterionId = dto.CriterionId,
             Score = dto.Score,
-            AwardedAt = dto.AwardedDate ?? DateTime.UtcNow
+            AwardedAt = dto.AwardedDate ?? DateTime.UtcNow,
+            ScoreType = "Manual",
+            CreatedBy = createdBy,
+            Note = dto.Comments,
+            ActivityId = dto.ActivityId
         };
 
         await _detailRepository.CreateAsync(detail);
         Console.WriteLine($"[AddManualScoreWithCriterion] Created new detail for criterion {dto.CriterionId} - Score: {dto.Score}");
 
-        // Update total score
         var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
         record.TotalScore = Math.Min(totalScore, 140); // Cap at 140
         record.LastUpdated = DateTime.UtcNow;
         
-        Console.WriteLine($"[AddManualScoreWithCriterion] Before cap: TotalScore = {totalScore}, Record.TotalScore = {record.TotalScore}");
-        
         await _recordRepository.UpdateAsync(record);
 
-        // DISABLED: Không áp dụng category-level caps để cho phép cộng dồn thực sự
-        // await CapAndAdjustScoresAsync(record.Id);
-        Console.WriteLine($"[AddManualScoreWithCriterion] Skipping category caps to allow real accumulation");
+        // Apply category-level caps and adjustments per Decision 414
+        // This will automatically adjust scores if category totals exceed limits
+        await CapAndAdjustScoresAsync(record.Id);
 
-        // Reload to get updated score (no capping applied)
         var result = await _recordRepository.GetByIdWithDetailsAsync(record.Id);
-        
-        Console.WriteLine($"[AddManualScoreWithCriterion] After update: Result.TotalScore = {result?.TotalScore}");
-        
         var resultDto = MapToDto(result!);
         
-        // Add message to indicate new creation (always create new for accumulation)
-        resultDto.Message = "Created new detail for criterion (accumulated)";
-        
-        // Add info about score adjustments
-        var finalCriterionTotal = await GetCurrentCriterionTotalAsync(record.Id, dto.CriterionId);
+        // Check if adjustment was made and add message
         var finalCategoryTotal = await GetCurrentCategoryTotalAsync(record.Id, dto.CategoryId);
-        
-        resultDto.Message += $" (Criterion total: {finalCriterionTotal}, Category total: {finalCategoryTotal})";
-        
-        // Add specific adjustment messages if score was adjusted
-        var originalScore = dto.Score; // This would need to be tracked from the original input
-        // For now, just show the final totals
+        if (category != null && finalCategoryTotal >= category.MaxScore)
+        {
+            resultDto.Message = $"Đã cộng điểm. Nhóm đã đạt giới hạn ({category.MaxScore} điểm) và đã được tự động điều chỉnh.";
+        }
+        else
+        {
+            resultDto.Message = "Đã cộng điểm thành công";
+        }
         
         return resultDto;
     }
 }
+
 
 

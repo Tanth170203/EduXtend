@@ -104,19 +104,14 @@
                 </div>
                 
                 <div class="sidebar-section">
-                    <div class="sidebar-section-title">EVALUATION</div>
-                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Criteria") == true ? "active" : "")" href="/Admin/Criteria">
-                        <i data-lucide="list-checks" style="width: 20px; height: 20px;"></i>
-                        <span>Criteria</span>
+                    <div class="sidebar-section-title">SCORING</div>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/StudentScoring") == true ? "active" : "")" href="/Admin/StudentScoring">
+                        <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
+                        <span>Student Scoring</span>
                     </a>
-                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Evidences") == true ? "active" : "")" href="/Admin/Evidences">
-                        <i data-lucide="file-check" style="width: 20px; height: 20px;"></i>
-                        <span>Evidences</span>
-                        <span class="badge badge-warning ms-auto" style="font-size: 0.75rem;">Review</span>
-                    </a>
-                    <a class="sidebar-link" href="/Admin/Evaluations">
-                        <i data-lucide="star" style="width: 20px; height: 20px;"></i>
-                        <span>Evaluations</span>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/ClubScoring") == true ? "active" : "")" href="/Admin/ClubScoring">
+                        <i data-lucide="users-2" style="width: 20px; height: 20px;"></i>
+                        <span>Club Scoring</span>
                     </a>
                 </div>
                 

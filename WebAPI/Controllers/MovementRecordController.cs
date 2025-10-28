@@ -2,6 +2,7 @@ using BusinessObject.DTOs.MovementRecord;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.MovementRecords;
+using System.Security.Claims;
 
 namespace WebAPI.Controllers;
 
@@ -250,6 +251,13 @@ public class MovementRecordController : ControllerBase
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            // Get current user ID from claims
+            var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            {
+                dto.CreatedById = userId;
+            }
 
             var record = await _service.AddManualScoreWithCriterionAsync(dto);
             return Ok(record);

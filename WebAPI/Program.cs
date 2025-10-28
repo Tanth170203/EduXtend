@@ -26,10 +26,12 @@ using Services.MovementRecords;
 using Services.UserImport;
 using Services.JoinRequests;
 using Services.Interviews;
+using Repositories.ClubMovementRecords;
+using Services.ClubMovementRecords;
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
-
+using Microsoft.OpenApi.Models;
 
 namespace WebAPI
 {
@@ -41,9 +43,7 @@ namespace WebAPI
 
             // DbContext
             builder.Services.AddDbContext<EduXtendContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            // Add services to the container.
-
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Options
             builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
@@ -66,6 +66,8 @@ namespace WebAPI
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
             builder.Services.AddScoped<IJoinRequestRepository, JoinRequestRepository>();
             builder.Services.AddScoped<IInterviewRepository, InterviewRepository>();
+            builder.Services.AddScoped<IClubMovementRecordRepository, ClubMovementRecordRepository>();
+            builder.Services.AddScoped<IClubMovementRecordDetailRepository, ClubMovementRecordDetailRepository>();
 
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -86,14 +88,14 @@ namespace WebAPI
             builder.Services.AddScoped<IJoinRequestService, JoinRequestService>();
             builder.Services.AddScoped<IInterviewService, InterviewService>();
             builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
-
+            builder.Services.AddScoped<IClubScoringService, ClubScoringService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
             builder.Services.AddHostedService<TokenCleanupService>();
-            builder.Services.AddHostedService<MovementScoreAutomationService>();
-
-
+            builder.Services.AddHostedService<ComprehensiveAutoScoringService>();
+            // DEPRECATED: MovementScoreAutomationService - functionality merged into ComprehensiveAutoScoringService
+            // builder.Services.AddHostedService<MovementScoreAutomationService>();
 
             // Custom JWT Authentication (bypass library issues)
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -101,47 +103,34 @@ namespace WebAPI
             builder.Services.AddAuthentication("CustomJWT")
                 .AddScheme<AuthenticationSchemeOptions, CustomJwtAuthenticationHandler>("CustomJWT", options => { });
 
-
-            //builder.Services.AddAuthorization(options =>
-            //{
-            //    // Role-based policies
-            //    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-            //    options.AddPolicy("StudentOnly", policy => policy.RequireRole("Student"));
-            //    options.AddPolicy("ClubManagerOnly", policy => policy.RequireRole("ClubManager"));
-            //    options.AddPolicy("ClubMemberOnly", policy => policy.RequireRole("ClubMember"));
-                
-            //    // Combined policies
-            //    options.AddPolicy("ClubManagement", policy => 
-            //        policy.RequireRole("Admin", "ClubManager"));
-            //    options.AddPolicy("ClubAccess", policy => 
-            //        policy.RequireRole("Admin", "ClubManager", "ClubMember"));
-            //    options.AddPolicy("AllUsers", policy => 
-            //        policy.RequireRole("Admin", "Student", "ClubManager", "ClubMember"));
-            //});
-            
+            // Controllers & API
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            builder.Services.AddHttpContextAccessor();
+            
+            // Swagger/OpenAPI
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
-                options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "EduXtend API", Version = "v1" });
+                
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
-                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Type = SecuritySchemeType.Http,
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
-                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    In = ParameterLocation.Header,
                     Description = "JWT Authorization header using the Bearer scheme. Enter your token in the text input below."
                 });
 
-                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
                     {
-                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                        new OpenApiSecurityScheme
                         {
-                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            Reference = new OpenApiReference
                             {
-                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Type = ReferenceType.SecurityScheme,
                                 Id = "Bearer"
                             }
                         },
@@ -153,27 +142,35 @@ namespace WebAPI
                 options.OperationFilter<WebAPI.Swagger.FileUploadOperationFilter>();
             });
 
+            // CORS - FIX LOGIN ISSUE
             builder.Services.AddCors(opt =>
             {
                 opt.AddPolicy("react", p =>
                     p.WithOrigins(
                         "http://localhost:3000",    // WebFE HTTP
-                        "https://localhost:3001",  // WebFE HTTPS
-                        "http://localhost:5000",   // Backend HTTP
-                        "https://localhost:5001",  // Backend HTTPS
-                        "http://localhost:5173"    // React dev server
+                        "https://localhost:3001",   // WebFE HTTPS
+                        "http://localhost:5000",    // Backend HTTP
+                        "https://localhost:5001",   // Backend HTTPS
+                        "http://localhost:5173",    // React dev server
+                        "https://localhost:44315"   // WebFE HTTPS (IIS Express)
                     )
-                     .AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials());
             });
 
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            // Always enable Swagger (dev and prod) and host at /swagger
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "EduXtend API V1");
+                c.RoutePrefix = "swagger"; // so UI is at /swagger
+            });
+            
+            // CORS - Must be before Authentication
             app.UseCors("react");
 
             app.UseHttpsRedirection();
@@ -182,14 +179,11 @@ namespace WebAPI
             app.UseStaticFiles();
 
             // Custom middleware (order matters!)
-            // app.UseAutoRefreshToken();  // DISABLED: Let frontend handle token refresh
-            
             app.UseAuthentication();     // Validate JWT and set User principal
             
             app.UseTokenBlacklist();    // Check if token is blacklisted
             
             app.UseAuthorization();      // Check policies and roles
-
 
             app.MapControllers();
 

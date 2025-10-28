@@ -59,21 +59,12 @@ namespace Repositories.Students
             if (studentRoleId == 0)
                 return new List<User>();
 
-            var usersWithStudentRole = await _db.UserRoles
-                .Where(ur => ur.RoleId == studentRoleId)
-                .Select(ur => ur.UserId)
-                .ToListAsync();
-
             var usersWithStudentRecord = await _db.Students
                 .Select(s => s.UserId)
                 .ToListAsync();
 
-            var usersWithoutStudentInfo = usersWithStudentRole
-                .Except(usersWithStudentRecord)
-                .ToList();
-
             return await _db.Users
-                .Where(u => usersWithoutStudentInfo.Contains(u.Id))
+                .Where(u => u.RoleId == studentRoleId && !usersWithStudentRecord.Contains(u.Id))
                 .ToListAsync();
         }
 

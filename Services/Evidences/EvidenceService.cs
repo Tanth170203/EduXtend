@@ -4,6 +4,7 @@ using Repositories.Evidences;
 using Repositories.Students;
 using Repositories.MovementCriteria;
 using Services.MovementRecords;
+using Microsoft.Extensions.Logging;
 
 namespace Services.Evidences;
 
@@ -13,17 +14,20 @@ public class EvidenceService : IEvidenceService
     private readonly IStudentRepository _studentRepository;
     private readonly IMovementCriterionRepository _criterionRepository;
     private readonly IMovementRecordService _movementRecordService;
+    private readonly ILogger<EvidenceService> _logger;
 
     public EvidenceService(
         IEvidenceRepository evidenceRepository,
         IStudentRepository studentRepository,
         IMovementCriterionRepository criterionRepository,
-        IMovementRecordService movementRecordService)
+        IMovementRecordService movementRecordService,
+        ILogger<EvidenceService> logger)
     {
         _evidenceRepository = evidenceRepository;
         _studentRepository = studentRepository;
         _criterionRepository = criterionRepository;
         _movementRecordService = movementRecordService;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<EvidenceDto>> GetAllAsync()
@@ -139,17 +143,38 @@ public class EvidenceService : IEvidenceService
         {
             try
             {
+                _logger.LogInformation(
+                    "Adding score from evidence: EvidenceId={EvidenceId}, StudentId={StudentId}, CriterionId={CriterionId}, Points={Points}",
+                    id, existing.StudentId, existing.CriterionId.Value, dto.Points);
+
                 await _movementRecordService.AddScoreFromEvidenceAsync(
                     existing.StudentId,
                     existing.CriterionId.Value,
                     dto.Points
                 );
+
+                _logger.LogInformation(
+                    "Successfully added score from evidence: EvidenceId={EvidenceId}, StudentId={StudentId}, Points={Points}",
+                    id, existing.StudentId, dto.Points);
             }
             catch (Exception ex)
             {
-                // Log error but don't fail the review
-                Console.WriteLine($"Failed to add score to movement record: {ex.Message}");
+                // Log error with full details
+                _logger.LogError(ex,
+                    "Failed to add score to movement record: EvidenceId={EvidenceId}, StudentId={StudentId}, CriterionId={CriterionId}, Points={Points}, Error={Error}",
+                    id, existing.StudentId, existing.CriterionId.Value, dto.Points, ex.Message);
+
+                // Optionally re-throw if you want to fail the review on scoring error
+                // For now, we'll log but not fail the review to allow manual fixes
+                throw new InvalidOperationException(
+                    $"Không thể cộng điểm vào hồ sơ phong trào: {ex.Message}. Evidence đã được duyệt nhưng điểm chưa được cộng. Vui lòng kiểm tra và cộng điểm thủ công nếu cần.", ex);
             }
+        }
+        else if (dto.Status == "Approved" && dto.Points > 0 && !existing.CriterionId.HasValue)
+        {
+            _logger.LogWarning(
+                "Evidence approved with points but no CriterionId: EvidenceId={EvidenceId}, Points={Points}",
+                id, dto.Points);
         }
 
         var result = await _evidenceRepository.GetByIdWithDetailsAsync(updated.Id);

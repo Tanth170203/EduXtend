@@ -1,9 +1,9 @@
 @page
 @using BusinessObject.DTOs.MovementRecord
-@model WebFE.Pages.Admin.MovementReports.IndexModel
+@model WebFE.Pages.Admin.StudentScoring.IndexModel
 @{
-    ViewData["Title"] = "Movement Reports";
-    ViewData["Breadcrumb"] = "Movement Reports";
+    ViewData["Title"] = "Student Scoring";
+    ViewData["Breadcrumb"] = "Student Scoring";
     Layout = "~/Pages/Shared/_AdminLayout.cshtml";
 }
 
@@ -11,11 +11,11 @@
 <div class="page-header">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
-            <h1 class="page-title">
-                <i data-lucide="bar-chart-3" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                Báo cáo Điểm Phong trào
-            </h1>
-            <p class="page-description">Quản lý và xem báo cáo điểm phong trào sinh viên theo học kỳ</p>
+                <h1 class="page-title">
+                    <i data-lucide="users" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                    Chấm Điểm Sinh Viên
+                </h1>
+                <p class="page-description">Quản lý và chấm điểm phong trào cho sinh viên</p>
         </div>
         <div class="d-flex gap-2">
             <button type="button" class="btn btn-success" onclick="exportToExcel()">
@@ -26,7 +26,7 @@
                 <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
                 In báo cáo
             </button>
-            <a href="/Admin/MovementReports/AddScore" class="btn btn-warning">
+            <a href="/Admin/StudentScoring/AddScore" class="btn btn-warning">
                 <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
                 ➕ Cộng Điểm
             </a>
@@ -267,12 +267,12 @@
                                 </td>
                                 <td class="text-center pe-4">
                                     <div class="btn-group btn-group-sm">
-                                        <a href="/Admin/MovementReports/Detail?id=@record.Id"
+                                        <a href="/Admin/StudentScoring/Detail?id=@record.Id"
                                            class="btn btn-outline-primary"
                                            title="Xem chi tiết">
                                             <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
                                         </a>
-                                        <a href="/Admin/MovementReports/AddScore?studentId=@record.StudentId&studentName=@Uri.EscapeDataString(record.StudentName)&studentCode=@record.StudentCode"
+                                        <a href="/Admin/StudentScoring/AddScore?studentId=@record.StudentId&studentName=@Uri.EscapeDataString(record.StudentName)&studentCode=@record.StudentCode"
                                            class="btn btn-outline-warning"
                                            title="Cộng điểm">
                                             <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i>
@@ -341,30 +341,23 @@
                     lucide.createIcons();
                 }
 
-                // Search functionality
                 const searchInput = document.getElementById('searchInput');
                 if (searchInput) {
                     searchInput.addEventListener('input', function() {
                         filterTable();
                     });
-                } else {
-                    console.warn('Search input not found');
                 }
 
-                // Sort functionality
                 const sortSelect = document.getElementById('sortSelect');
                 if (sortSelect) {
                     sortSelect.addEventListener('change', function() {
                         sortTable(this.value);
                     });
-                } else {
-                    console.warn('Sort select not found');
                 }
 
-                // Initialize default sort
                 sortTable('score-desc');
             } catch (error) {
-                console.error('Error initializing MovementReports page:', error);
+                console.error('Error initializing StudentScoring page:', error);
             }
         });
 
@@ -416,7 +409,6 @@
                 }
             });
 
-            // Clear tbody and re-append sorted rows
             tbody.innerHTML = '';
             rows.forEach(row => tbody.appendChild(row));
         }
@@ -432,8 +424,21 @@
             sortTable('score-desc');
         }
 
-        function exportToExcel() {
-            alert('Chức năng xuất Excel đang được phát triển!');
+        async function exportToExcel() {
+            try {
+                const semesterSelect = document.getElementById('semesterSelect');
+                const semesterId = semesterSelect ? semesterSelect.value : '';
+                if (!semesterId) {
+                    alert('Vui lòng chọn học kỳ trước khi xuất Excel.');
+                    return;
+                }
+                const baseUrl = '@(Model.BaseApiUrl ?? "https://localhost:5001")';
+                const url = `${baseUrl}/api/reports/student-semester?semesterId=${encodeURIComponent(semesterId)}`;
+                window.location.href = url;
+            } catch (e) {
+                console.error('Export error', e);
+                alert('Không thể xuất Excel.');
+            }
         }
 
         function printReport() {

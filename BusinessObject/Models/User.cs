@@ -25,8 +25,11 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
 
+    // Role relationship (1 user = 1 role)
+    public int RoleId { get; set; }
+    public Role Role { get; set; } = null!;
+
     // Navigation properties
-    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<ActivityRegistration> ActivityRegistrations { get; set; } = new List<ActivityRegistration>();
     public ICollection<ActivityAttendance> Attendances { get; set; } = new List<ActivityAttendance>();
     public ICollection<Notification> Notifications { get; set; } = new List<Notification>();

@@ -97,21 +97,22 @@ public class UserManagementController : ControllerBase
     }
 
     /// <summary>
-    /// Update user roles
+    /// Update user role (single role per user)
     /// </summary>
-    [HttpPut("{id}/roles")]
-    public async Task<IActionResult> UpdateRoles(int id, [FromBody] UpdateUserRolesDto dto)
+    [HttpPut("{id}/role")]
+    public async Task<IActionResult> UpdateRole(int id, [FromBody] UpdateUserRoleRequest request)
     {
         try
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (id != dto.UserId)
+            if (id != request.UserId)
                 return BadRequest(new { message = "User ID mismatch" });
 
-            await _userService.UpdateUserRolesAsync(id, dto.RoleIds);
-            return Ok(new { message = "User roles updated successfully" });
+            // UpdateUserRolesAsync now takes a list but uses only the first role
+            await _userService.UpdateUserRolesAsync(id, new List<int> { request.RoleId });
+            return Ok(new { message = "User role updated successfully" });
         }
         catch (KeyNotFoundException ex)
         {
@@ -123,8 +124,15 @@ public class UserManagementController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Error updating user roles", error = ex.Message });
+            return StatusCode(500, new { message = "Error updating user role", error = ex.Message });
         }
+    }
+
+    // Simple DTO for role update
+    public class UpdateUserRoleRequest
+    {
+        public int UserId { get; set; }
+        public int RoleId { get; set; }
     }
 
     /// <summary>
