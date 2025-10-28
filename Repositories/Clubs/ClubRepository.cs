@@ -1,4 +1,4 @@
-﻿using BusinessObject.Models;
+using BusinessObject.Models;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -113,5 +113,86 @@ namespace Repositories.Clubs
             => await _ctx.JoinRequests
                 .Where(jr => jr.ClubId == clubId && jr.Status == "Pending")
                 .CountAsync();
+
+        public async Task<bool> IsUserMemberOfClubAsync(int userId, int clubId)
+        {
+            // First get student from userId
+            var student = await _ctx.Students
+                .FirstOrDefaultAsync(s => s.UserId == userId);
+            
+            if (student == null) return false;
+
+            // Check if student is an active member of the club
+            return await _ctx.ClubMembers
+                .AnyAsync(cm => cm.StudentId == student.Id && cm.ClubId == clubId && cm.IsActive);
+        }
+
+        public async Task<List<Club>> GetClubsByUserIdAsync(int userId)
+        {
+            // First get student from userId
+            var student = await _ctx.Students
+                .FirstOrDefaultAsync(s => s.UserId == userId);
+            
+            if (student == null) return new List<Club>();
+
+            // Get all clubs where student is an active member
+            return await _ctx.ClubMembers
+                .AsNoTracking()
+                .Where(cm => cm.StudentId == student.Id && cm.IsActive)
+                .Include(cm => cm.Club)
+                    .ThenInclude(c => c.Category)
+                .Select(cm => cm.Club)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+        }
+
+        public async Task<string?> GetUserRoleInClubAsync(int userId, int clubId)
+        {
+            var student = await _ctx.Students
+                .FirstOrDefaultAsync(s => s.UserId == userId);
+            
+            if (student == null) return null;
+
+            var member = await _ctx.ClubMembers
+                .AsNoTracking()
+                .Where(cm => cm.StudentId == student.Id && cm.ClubId == clubId && cm.IsActive)
+                .FirstOrDefaultAsync();
+
+            return member?.RoleInClub;
+        }
+
+        public async Task<List<ClubMember>> GetClubMembersAsync(int clubId)
+        {
+            return await _ctx.ClubMembers
+                .AsNoTracking()
+                .Where(cm => cm.ClubId == clubId && cm.IsActive)
+                .Include(cm => cm.Student)
+                    .ThenInclude(s => s.User)
+                .Include(cm => cm.Department)
+                .OrderBy(cm => cm.RoleInClub)
+                .ThenBy(cm => cm.Student.User.FullName)
+                .ToListAsync();
+        }
+
+        public async Task<List<ClubDepartment>> GetClubDepartmentsAsync(int clubId)
+        {
+            return await _ctx.ClubDepartments
+                .AsNoTracking()
+                .Where(cd => cd.ClubId == clubId)
+                .Include(cd => cd.Members.Where(m => m.IsActive))
+                .OrderBy(cd => cd.Name)
+                .ToListAsync();
+        }
+
+        public async Task<List<ClubAward>> GetClubAwardsAsync(int clubId)
+        {
+            return await _ctx.ClubAwards
+                .AsNoTracking()
+                .Where(ca => ca.ClubId == clubId)
+                .Include(ca => ca.Semester)
+                .OrderByDescending(ca => ca.AwardedAt)
+                .ToListAsync();
+        }
     }
 }
+
