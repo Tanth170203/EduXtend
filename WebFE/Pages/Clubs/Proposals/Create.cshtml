@@ -1,0 +1,118 @@
+@page
+@model WebFE.Pages.Clubs.Proposals.CreateModel
+@{
+    ViewData["Title"] = "Create Proposal";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="~/lib/lucide/lucide.min.js" defer></script>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Header -->
+                <div class="mb-4">
+                    <a href="/Clubs/MemberDashboard/@Model.ClubId?section=proposals" class="btn btn-outline-secondary btn-sm mb-3">
+                        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back to Proposals
+                    </a>
+                    <h2 class="fw-bold">
+                        <i data-lucide="lightbulb" style="width: 32px; height: 32px;"></i> Create New Proposal
+                    </h2>
+                    <p class="text-muted">Submit your idea for @Model.ClubName</p>
+                </div>
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <!-- Create Form -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <form method="post">
+                            <input type="hidden" asp-for="ClubId" />
+
+                            <div class="mb-4">
+                                <label asp-for="Title" class="form-label fw-semibold">
+                                    Proposal Title <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Title" class="form-control form-control-lg" 
+                                       placeholder="Enter a clear and concise title" 
+                                       maxlength="200" required />
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                                <div class="form-text">Maximum 200 characters</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="Description" class="form-label fw-semibold">
+                                    Description
+                                </label>
+                                <textarea asp-for="Description" class="form-control" 
+                                          rows="8" 
+                                          placeholder="Describe your proposal in detail. What is it about? Why is it important? What are the benefits?" 
+                                          maxlength="2000"></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                                <div class="form-text">Maximum 2000 characters (Optional)</div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                                <strong>Note:</strong> Once submitted, club members can vote on your proposal. 
+                                You can edit it before voting closes.
+                            </div>
+
+                            <div class="d-flex gap-2 justify-content-end">
+                                <a href="/Clubs/MemberDashboard/@Model.ClubId?section=proposals" class="btn btn-secondary">
+                                    <i data-lucide="x" style="width: 16px; height: 16px;"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i data-lucide="send" style="width: 16px; height: 16px;"></i> Submit Proposal
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <script>
+        // Initialize Lucide icons
+        function initLucide() {
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                try {
+                    lucide.createIcons();
+                } catch (e) {
+                    console.error('Error creating Lucide icons:', e);
+                }
+            } else {
+                setTimeout(initLucide, 50);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initLucide();
+            setTimeout(initLucide, 300);
+        });
+        
+        initLucide();
+    </script>
+</body>
+</html>
+
