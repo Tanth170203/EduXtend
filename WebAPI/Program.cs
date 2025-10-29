@@ -28,6 +28,8 @@ using Services.JoinRequests;
 using Services.Interviews;
 using Repositories.ClubMovementRecords;
 using Services.ClubMovementRecords;
+using Repositories.Proposals;
+using Services.Proposals;
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
@@ -68,6 +70,8 @@ namespace WebAPI
             builder.Services.AddScoped<IInterviewRepository, InterviewRepository>();
             builder.Services.AddScoped<IClubMovementRecordRepository, ClubMovementRecordRepository>();
             builder.Services.AddScoped<IClubMovementRecordDetailRepository, ClubMovementRecordDetailRepository>();
+            builder.Services.AddScoped<IProposalRepository, ProposalRepository>();
+            builder.Services.AddScoped<IProposalVoteRepository, ProposalVoteRepository>();
 
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -89,6 +93,7 @@ namespace WebAPI
             builder.Services.AddScoped<IInterviewService, InterviewService>();
             builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
             builder.Services.AddScoped<IClubScoringService, ClubScoringService>();
+            builder.Services.AddScoped<IProposalService, ProposalService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
