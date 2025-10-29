@@ -103,7 +103,7 @@
                     <tr>
                         <th>Full Name</th>
                         <th>Email</th>
-                        <th>Current Roles</th>
+                        <th>Current Role</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -133,7 +133,7 @@
                             <td>
                                 <button type="button" class="btn btn-sm btn-outline-primary" 
                                         onclick="editRoles(@user.Id, '@user.FullName', '@string.Join(",", user.RoleIds)')">
-                                    <i class="bi bi-person-gear me-1"></i> Manage Roles
+                                    <i class="bi bi-person-gear me-1"></i> Manage Role
                                 </button>
                             </td>
                         </tr>
@@ -149,17 +149,17 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Manage Roles for <span id="userName"></span></h5>
+                <h5 class="modal-title">Manage Role for <span id="userName"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" asp-page-handler="UpdateRoles">
                 <div class="modal-body">
                     <input type="hidden" name="userId" id="userId" />
-                    <p class="mb-3">Select roles for this user:</p>
+                    <p class="mb-3">Select a role for this user:</p>
                     @foreach (var role in Model.AllRoles)
                     {
                         <div class="form-check mb-2">
-                            <input class="form-check-input role-checkbox" type="checkbox" 
+                            <input class="form-check-input role-radio" type="radio" 
                                    name="roleIds" value="@role.Id" id="role_@role.Id">
                             <label class="form-check-label" for="role_@role.Id">
                                 <strong>@role.RoleName</strong>
@@ -173,7 +173,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Update Roles</button>
+                    <button type="submit" class="btn btn-primary">Update Role</button>
                 </div>
             </form>
         </div>
@@ -197,16 +197,16 @@
             document.getElementById('userId').value = userId;
             document.getElementById('userName').textContent = userName;
             
-            // Uncheck all
-            document.querySelectorAll('.role-checkbox').forEach(cb => cb.checked = false);
+            // Uncheck all radio buttons
+            document.querySelectorAll('.role-radio').forEach(rb => rb.checked = false);
             
-            // Check current roles
+            // Check current role (only one)
             if (roleIdsStr) {
                 const roleIds = roleIdsStr.split(',').map(id => parseInt(id));
-                roleIds.forEach(roleId => {
-                    const checkbox = document.getElementById('role_' + roleId);
-                    if (checkbox) checkbox.checked = true;
-                });
+                if (roleIds.length > 0) {
+                    const radio = document.getElementById('role_' + roleIds[0]);
+                    if (radio) radio.checked = true;
+                }
             }
             
             new bootstrap.Modal(document.getElementById('editRolesModal')).show();
