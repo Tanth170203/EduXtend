@@ -74,15 +74,23 @@ public class IndexModel : PageModel
 
         try
         {
-            var dto = new { UserId = userId, RoleIds = roleIds?.ToList() ?? new List<int>() };
+            // Take only the first role since users can only have one role now
+            var roleId = roleIds?.FirstOrDefault() ?? 0;
+            if (roleId == 0)
+            {
+                TempData["ErrorMessage"] = "Please select a role";
+                return RedirectToPage();
+            }
+
+            var dto = new { UserId = userId, RoleId = roleId };
             var json = JsonSerializer.Serialize(dto);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await client.PutAsync($"/api/user-management/{userId}/roles", content);
+            var response = await client.PutAsync($"/api/user-management/{userId}/role", content);
             if (response.IsSuccessStatusCode)
-                TempData["SuccessMessage"] = "User roles updated successfully";
+                TempData["SuccessMessage"] = "User role updated successfully";
             else
-                TempData["ErrorMessage"] = "Failed to update roles";
+                TempData["ErrorMessage"] = "Failed to update role";
         }
         catch (Exception ex)
         {
