@@ -158,10 +158,7 @@
                                     <small class="text-muted">Nhấn để xem trước</small>
                                 </div>
                             </div>
-                            <a href="@previewUrl" class="btn btn-info btn-sm" target="_blank" rel="noopener">
-                                <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
-                                Xem
-                            </a>
+                            <!-- Removed preview button as info is already shown in index page -->
                         </div>
                     }
                     else
@@ -192,7 +189,7 @@
                         @* Status Selection *@
                         <div class="mb-3">
                             <label asp-for="Input.Status" class="form-label fw-bold">Trạng thái <span class="text-danger">*</span></label>
-                            <select asp-for="Input.Status" class="form-select form-select-lg" required>
+                            <select asp-for="Input.Status" class="form-select form-select-lg" required onchange="togglePointsFieldOnChange(this)">
                                 <option value="">-- Chọn trạng thái --</option>
                                 <option value="Approved">✅ Duyệt (Approved)</option>
                                 <option value="Rejected">❌ Từ chối (Rejected)</option>
@@ -345,24 +342,114 @@ else
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+        function safeCreateLucideIcons() {
+            try {
+                if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                    lucide.createIcons(lucide.icons || {});
+                }
+            } catch (e) {
+                console.warn('Lucide initialization failed:', e);
             }
+        }
+
+        // Global function to toggle points field
+        function togglePointsFieldOnChange(selectElement) {
+            console.log('✅ togglePointsFieldOnChange called with value:', selectElement.value);
+            const pointsField = document.getElementById('pointsField');
+            if (!pointsField) {
+                console.warn('⚠️ pointsField element not found');
+                return;
+            }
+            
+            if (selectElement.value === 'Approved') {
+                console.log('  → Showing points field');
+                pointsField.style.display = 'block';
+                // Focus on the points input after showing
+                setTimeout(() => {
+                    const pointsInput = document.getElementById('Input_Points');
+                    if (pointsInput) pointsInput.focus();
+                }, 100);
+            } else {
+                console.log('  → Hiding points field');
+                pointsField.style.display = 'none';
+                const pointsInput = document.getElementById('Input_Points');
+                if (pointsInput) pointsInput.value = '0';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔷 DOMContentLoaded event fired');
+            
+            // Initialize Lucide icons safely
+            safeCreateLucideIcons();
 
             const statusSelect = document.getElementById('Input_Status');
             const pointsField = document.getElementById('pointsField');
 
-            if (statusSelect) {
-                statusSelect.addEventListener('change', function() {
-                    if (this.value === 'Approved') {
-                        pointsField.style.display = 'block';
-                    } else {
-                        pointsField.style.display = 'none';
-                        const pointsInput = document.getElementById('Input_Points');
-                        if (pointsInput) pointsInput.value = '0';
+            if (!statusSelect) {
+                console.warn('⚠️ statusSelect (Input_Status) not found');
+                return;
+            }
+            
+            if (!pointsField) {
+                console.warn('⚠️ pointsField element not found');
+                return;
+            }
+
+            console.log('✅ Both statusSelect and pointsField found');
+            
+            // Function to toggle points field visibility
+            function togglePointsField() {
+                console.log('🔷 togglePointsField called');
+                console.log('  - Current status value: "' + statusSelect.value + '"');
+                
+                if (statusSelect.value === 'Approved') {
+                    console.log('  - Status is "Approved", showing points field');
+                    pointsField.style.display = 'block';
+                } else {
+                    console.log('  - Status is NOT "Approved", hiding points field');
+                    pointsField.style.display = 'none';
+                    const pointsInput = document.getElementById('Input_Points');
+                    if (pointsInput) {
+                        console.log('  - Resetting points input to 0');
+                        pointsInput.value = '0';
                     }
-                });
+                }
+            }
+
+            // Handle status select change event
+            statusSelect.addEventListener('change', function() {
+                console.log('✅ Status select changed to:', this.value);
+                togglePointsField();
+            });
+
+            // Check initial state on page load
+            console.log('🔷 Checking initial status value on page load:', statusSelect.value);
+            if (statusSelect.value === 'Approved') {
+                console.log('  - Initial status is "Approved", showing points field');
+                togglePointsField();
+            } else if (statusSelect.value) {
+                console.log('  - Initial status is "' + statusSelect.value + '", hiding points field');
+                pointsField.style.display = 'none';
+            } else {
+                console.log('  - No initial status selected, keeping points field hidden');
+                pointsField.style.display = 'none';
+            }
+
+            console.log('✅ Points field visibility script initialized successfully');
+        });
+
+        // Fallback: also check and initialize when window loads
+        window.addEventListener('load', function() {
+            console.log('🔷 Window load event fired - double checking points field state');
+            safeCreateLucideIcons();
+            const statusSelect = document.getElementById('Input_Status');
+            if (statusSelect && statusSelect.value === 'Approved') {
+                console.log('  → Forcing points field to show');
+                const pointsField = document.getElementById('pointsField');
+                if (pointsField) {
+                    pointsField.style.display = 'block';
+                }
             }
         });
     </script>

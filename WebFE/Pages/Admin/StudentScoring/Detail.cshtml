@@ -19,6 +19,13 @@
                 <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
                 Quay lại
             </a>
+            @if (Model.Record != null)
+            {
+                <a href="/Admin/StudentScoring/AddScore?studentId=@Model.Record.StudentId&studentName=@Uri.EscapeDataString(Model.Record.StudentName ?? string.Empty)&studentCode=@Model.Record.StudentCode" class="btn btn-warning ms-2">
+                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                    ➕ Cộng Điểm
+                </a>
+            }
         </div>
     </div>
 </div>
@@ -46,7 +53,7 @@
                 </div>
                 <div class="col-md-3">
                     <strong>Tổng điểm:</strong>
-                    <p class="fs-4 fw-bold text-primary">@Model.Record.TotalScore.ToString("F1") / 140</p>
+                    <p class="fs-4 fw-bold text-primary">@Model.Record.TotalScore.ToString("F1") / 100</p>
                 </div>
             </div>
         </div>
@@ -163,11 +170,9 @@ else
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-        });
+        function safeLucide(){ if(window.lucide && typeof lucide.createIcons==='function'){ try{ lucide.createIcons(lucide.icons||{});}catch{}} }
+        document.addEventListener('DOMContentLoaded', safeLucide);
+        window.addEventListener('load', safeLucide);
     </script>
 }
 

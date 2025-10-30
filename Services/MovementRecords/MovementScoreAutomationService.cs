@@ -93,7 +93,7 @@ public class MovementScoreAutomationService : BackgroundService
                 db.MovementRecordDetails.Add(detail);
 
                 var newTotal = rec.Details.Sum(d => d.Score) + scoreToAdd;
-                rec.TotalScore = Math.Min(newTotal, 140);
+                rec.TotalScore = Math.Min(newTotal, 100);
                 rec.LastUpdated = DateTime.UtcNow;
             }
         }
@@ -153,7 +153,7 @@ public class MovementScoreAutomationService : BackgroundService
                 });
 
                 var newTotal = rec.Details.Sum(d => d.Score) + scoreToAdd;
-                rec.TotalScore = Math.Min(newTotal, 140);
+                rec.TotalScore = Math.Min(newTotal, 100);
                 rec.LastUpdated = DateTime.UtcNow;
             }
         }
@@ -332,12 +332,12 @@ public class MovementScoreAutomationService : BackgroundService
                     };
                     dbContext.MovementRecordDetails.Add(detail);
 
-                    // Recalculate total score (sum all details, cap at 140)
+                    // Recalculate total score (sum all details, cap at 100)
                     var totalScore = await dbContext.MovementRecordDetails
                         .Where(d => d.MovementRecordId == record.Id)
                         .SumAsync(d => d.Score);
 
-                    record.TotalScore = Math.Min(totalScore, 140); // Cap at 140 total
+                    record.TotalScore = Math.Min(totalScore, 100); // Cap at 100 total
                     record.LastUpdated = DateTime.UtcNow;
 
                     _logger.LogInformation(
@@ -842,7 +842,7 @@ public class MovementScoreCalculationService : IMovementScoreCalculationService
                 return;
 
             var totalScore = record.Details.Sum(d => d.Score);
-            record.TotalScore = Math.Min(totalScore, 140); // Cap at 140
+            record.TotalScore = Math.Min(totalScore, 100); // Cap at 100
             record.LastUpdated = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();

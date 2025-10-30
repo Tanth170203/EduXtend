@@ -211,11 +211,9 @@
         // All criteria data from server
         const allCriteria = @Html.Raw(Json.Serialize(Model.AllCriteria));
 
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-        });
+        function safeCreateLucide(){ if(window.lucide && typeof lucide.createIcons==='function'){ try{ lucide.createIcons(lucide.icons||{});}catch{}} }
+        document.addEventListener('DOMContentLoaded', safeCreateLucide);
+        window.addEventListener('load', safeCreateLucide);
 
         function updateStudentDisplay() {
             const studentSelect = document.getElementById('StudentId');
@@ -235,9 +233,7 @@
                 studentInfoBox.classList.add('d-none');
             }
 
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+            safeCreateLucide();
         }
 
         function updateCriteriaDropdown() {
@@ -289,9 +285,7 @@
                 scoreHint.innerHTML = '<i data-lucide="info" style="width: 14px; height: 14px;"></i> Phạm vi: 0 - 100 (báo lỗi nếu vượt quá giới hạn tiêu chí hoặc nhóm)';
             }
 
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
+            safeCreateLucide();
         }
 
         function updateScoreHint() {

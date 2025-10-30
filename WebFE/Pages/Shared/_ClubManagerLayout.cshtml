@@ -189,8 +189,26 @@
     <script src="~/js/notifications.js" asp-append-version="true"></script>
     <script src="~/js/admin-dashboard.js" asp-append-version="true"></script>
     <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
+        // Initialize Lucide Icons (robust)
+        (function initLucideIcons() {
+            function run() {
+                if (window.lucide && typeof lucide.createIcons === 'function') {
+                    try { lucide.createIcons(lucide.icons || {}); } catch {}
+                }
+            }
+            // Run now, on DOM ready, and after a short delay
+            run();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', run);
+            } else {
+                setTimeout(run, 100);
+            }
+            // Re-run when DOM changes (e.g., partial updates)
+            try {
+                const observer = new MutationObserver(() => run());
+                observer.observe(document.body, { childList: true, subtree: true });
+            } catch {}
+        })();
 
         // Check authentication status and update UI
         document.addEventListener('DOMContentLoaded', async function() {

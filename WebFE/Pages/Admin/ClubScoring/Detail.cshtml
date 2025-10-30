@@ -28,6 +28,10 @@
             <a href="/Admin/ClubScoring?semesterId=@Model.SemesterId&month=@Model.Month" class="btn btn-outline-secondary">
                 <i data-lucide="arrow-left"></i> Quay lại
             </a>
+            <a class="btn btn-warning ms-2" href="/Admin/ClubScoring/ManualAdd?clubId=@Model.ClubId&semesterId=@Model.SemesterId&month=@Model.Month">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                ➕ Cộng Điểm
+            </a>
         </div>
     </div>
 </div>
@@ -160,12 +164,6 @@
     </div>
 </div>
 
-<!-- Add Manual Score Button -->
-<div class="text-end mt-3">
-    <a class="btn btn-success" href="/Admin/ClubScoring/ManualAdd?clubId=@Model.ClubId&semesterId=@Model.SemesterId&month=@Model.Month">
-        <i data-lucide="plus"></i> Thêm điểm thủ công
-    </a>
-</div>
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function(){ if (typeof lucide !== 'undefined') lucide.createIcons(); });

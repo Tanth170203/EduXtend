@@ -108,7 +108,7 @@
                         {
                             @foreach (var record in Model.Summary.Records.OrderByDescending(r => r.SemesterId))
                             {
-                                var percent = (record.TotalScore / 140.0) * 100.0;
+                                var percent = (record.TotalScore / 100.0) * 100.0;
                                 var cls = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
                                 var eval = percent >= 80 ? "Xuất sắc" : percent >= 60 ? "Khá" : "Cần cố gắng";
                                 <tr>
@@ -116,7 +116,7 @@
                                     <td>
                                         <div class="d-flex flex-column">
                                             <span class="fw-bold text-@cls">@record.TotalScore.ToString("F1")</span>
-                                            <small class="text-muted">/ 140</small>
+                                            <small class="text-muted">/ 100</small>
                                         </div>
                                     </td>
                                     <td><span class="badge bg-info">@record.DetailCount tiêu chí</span></td>
@@ -142,7 +142,7 @@
             <div class="row">
                 @foreach (var record in Model.Summary.Records.OrderBy(r => r.SemesterId))
                 {
-                    var percent = (record.TotalScore / 140.0) * 100.0;
+                    var percent = (record.TotalScore / 100.0) * 100.0;
                     var progressClass = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
                     <div class="col-md-4 mb-3">
                         <div class="card border-0 shadow-sm h-100">
@@ -154,7 +154,7 @@
                                 <div class="progress" style="height: 16px;">
                                     <div class="progress-bar bg-@progressClass" style="width:@percent%" role="progressbar"></div>
                                 </div>
-                                <small class="text-muted d-block mt-2">Tổng điểm: @record.TotalScore.ToString("F1") / 140</small>
+                                <small class="text-muted d-block mt-2">Tổng điểm: @record.TotalScore.ToString("F1") / 100</small>
                             </div>
                         </div>
                     </div>

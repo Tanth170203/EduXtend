@@ -129,41 +129,6 @@
     </div>
 </div>
 
-<!-- Top 5 Chart -->
-<div class="card border-0 shadow-sm mt-3">
-    <div class="card-header bg-info text-white d-flex align-items-center justify-content-center py-3">
-        <i data-lucide="trending-up" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
-        <strong>TOP 5 CLB THÁNG @Model.SelectedMonth</strong>
-    </div>
-    <div class="card-body">
-        @if (Model.Top5.Any())
-        {
-            <div class="vstack gap-2">
-                @foreach (var t in Model.Top5)
-                {
-                    var pct = (int)Math.Round(t.TotalScore);
-                    <div>
-                        <div class="d-flex justify-content-between">
-                            <div><strong>@t.ClubName</strong></div>
-                            <div class="text-primary fw-bold">@t.TotalScore.ToString("0") điểm</div>
-                        </div>
-                        <div class="progress" style="height:10px;">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width:@pct%"></div>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="text-center text-muted py-3">
-                <i data-lucide="inbox" style="width: 32px; height: 32px; margin-bottom: 0.5rem;"></i>
-                <div>Chưa có dữ liệu</div>
-            </div>
-        }
-    </div>
-</div>
-
 <!-- Clubs Table -->
 <div class="card border-0 shadow-sm mt-3">
     <div class="card-header bg-warning text-dark d-flex align-items-center justify-content-center py-3">

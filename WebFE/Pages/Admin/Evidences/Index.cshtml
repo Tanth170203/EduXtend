@@ -436,10 +436,19 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+        function safeCreateLucideIcons() {
+            try {
+                if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                    // Some builds require an explicit icons bag; fall back to empty object
+                    lucide.createIcons(lucide.icons || {});
+                }
+            } catch (e) {
+                console.warn('Lucide initialization failed:', e);
             }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            safeCreateLucideIcons();
 
             // Search functionality
             const searchInput = document.getElementById('searchInput');
@@ -486,11 +495,12 @@
                         document.getElementById('viewFilePathContainer').style.display = 'none';
                     }
 
-                    if (typeof lucide !== 'undefined') {
-                        lucide.createIcons();
-                    }
+                    safeCreateLucideIcons();
                 });
             }
         });
+
+        // Also run after full load as a fallback
+        window.addEventListener('load', safeCreateLucideIcons);
     </script>
 }

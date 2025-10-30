@@ -138,7 +138,7 @@ public class MovementRecordService : IMovementRecordService
 
         // Update total score
         var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(dto.MovementRecordId);
-        record.TotalScore = Math.Min(totalScore, 140); // Cap at 140 as per regulations
+        record.TotalScore = Math.Min(totalScore, 100); // Cap at 100 per Decision 414
         await _recordRepository.UpdateAsync(record);
 
         // Apply category-level caps and adjustments per Decision 414
@@ -199,8 +199,8 @@ public class MovementRecordService : IMovementRecordService
         // Calculate uncapped total (sum of all details as-is)
         var uncappedTotal = details.Sum(d => d.Score);
         
-        // Apply overall cap of 140
-        var finalCappedTotal = Math.Min(cappedTotal, 140);
+        // Apply overall cap of 100
+        var finalCappedTotal = Math.Min(cappedTotal, 100);
         
         Console.WriteLine($"[CapAndAdjust] RecordId={recordId}, UncappedTotal={uncappedTotal}, CappedTotal={finalCappedTotal}");
         
@@ -314,7 +314,7 @@ public class MovementRecordService : IMovementRecordService
 
         // Update total score
         var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
-        record.TotalScore = Math.Min(totalScore, 140); // Cap at 140
+        record.TotalScore = Math.Min(totalScore, 100); // Cap at 100
         await _recordRepository.UpdateAsync(record);
 
         // Apply category-level caps and adjustments per Decision 414
@@ -412,7 +412,7 @@ public class MovementRecordService : IMovementRecordService
 
         // Update total score
         var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
-        record.TotalScore = Math.Min(totalScore, 140); // Cap at 140
+        record.TotalScore = Math.Min(totalScore, 100); // Cap at 100
         record.LastUpdated = DateTime.UtcNow;
         
         // Log for debugging
@@ -697,7 +697,7 @@ public class MovementRecordService : IMovementRecordService
                 await _detailRepository.UpdateAsync(existing);
 
                 var totalExisting = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
-                record.TotalScore = Math.Min(totalExisting, 140);
+                record.TotalScore = Math.Min(totalExisting, 100);
                 record.LastUpdated = DateTime.UtcNow;
                 await _recordRepository.UpdateAsync(record);
 
@@ -724,7 +724,7 @@ public class MovementRecordService : IMovementRecordService
         Console.WriteLine($"[AddManualScoreWithCriterion] Created new detail for criterion {dto.CriterionId} - Score: {dto.Score}");
 
         var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
-        record.TotalScore = Math.Min(totalScore, 140); // Cap at 140
+        record.TotalScore = Math.Min(totalScore, 100); // Cap at 100
         record.LastUpdated = DateTime.UtcNow;
         
         await _recordRepository.UpdateAsync(record);

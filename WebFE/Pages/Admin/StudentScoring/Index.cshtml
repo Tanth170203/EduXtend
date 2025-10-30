@@ -26,10 +26,6 @@
                 <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
                 In báo cáo
             </button>
-            <a href="/Admin/StudentScoring/AddScore" class="btn btn-warning">
-                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                ➕ Cộng Điểm
-            </a>
         </div>
     </div>
 </div>
@@ -83,7 +79,7 @@
                         <h3 class="mb-0 fw-bold text-success">
                             @(Model.Records.Any() ? Model.Records.Average(r => r.TotalScore).ToString("F1") : "0")
                         </h3>
-                        <small class="text-muted">/ 140 điểm</small>
+                        <small class="text-muted">/ 100 điểm</small>
                     </div>
                     <div class="rounded-circle bg-success bg-opacity-10 p-3">
                         <i data-lucide="trending-up" style="width: 32px; height: 32px; color: #198754;"></i>
@@ -257,25 +253,20 @@
                                 <td class="text-center">
                                     <div class="score-display">
                                         <strong class="fs-5 text-@scoreClass">@record.TotalScore.ToString("F1")</strong>
-                                        <small class="text-muted d-block">/140</small>
+                                        <small class="text-muted d-block">/100</small>
                                     </div>
                                 </td>
                                 <td class="text-center">
                                     <small class="text-muted">
-                                        @(record.LastUpdated?.ToString("dd/MM/yy") ?? record.CreatedAt.ToString("dd/MM/yy"))
+                                        @(record.LastUpdated?.ToString("dd/MM/yyyy") ?? record.CreatedAt.ToString("dd/MM/yyyy"))
                                     </small>
                                 </td>
                                 <td class="text-center pe-4">
                                     <div class="btn-group btn-group-sm">
                                         <a href="/Admin/StudentScoring/Detail?id=@record.Id"
-                                           class="btn btn-outline-primary"
-                                           title="Xem chi tiết">
-                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
-                                        </a>
-                                        <a href="/Admin/StudentScoring/AddScore?studentId=@record.StudentId&studentName=@Uri.EscapeDataString(record.StudentName)&studentCode=@record.StudentCode"
-                                           class="btn btn-outline-warning"
-                                           title="Cộng điểm">
-                                            <i data-lucide="plus-circle" style="width: 14px; height: 14px;"></i>
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="Chi tiết">
+                                            <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Chi tiết
                                         </a>
                                     </div>
                                 </td>
@@ -335,114 +326,64 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
+        (function(){ if (window.lucide && typeof lucide.createIcons==='function'){ try{ lucide.createIcons(lucide.icons||{});}catch{}} })();
 
-                const searchInput = document.getElementById('searchInput');
-                if (searchInput) {
-                    searchInput.addEventListener('input', function() {
-                        filterTable();
-                    });
-                }
+        const table = document.getElementById('recordsTable');
+        const tbody = table ? table.querySelector('tbody') : null;
+        const searchInput = document.getElementById('searchInput');
+        const sortSelect = document.getElementById('sortSelect');
 
-                const sortSelect = document.getElementById('sortSelect');
-                if (sortSelect) {
-                    sortSelect.addEventListener('change', function() {
-                        sortTable(this.value);
-                    });
-                }
+        function getRowData(tr){
+            const tds = tr.querySelectorAll('td');
+            const name = (tds[2]?.innerText || '').trim().toLowerCase();
+            const code = (tds[3]?.innerText || '').trim().toLowerCase();
+            const scoreText = (tds[4]?.querySelector('strong')?.innerText || '0').replace(',', '.');
+            const score = parseFloat(scoreText) || 0;
+            return { tr, name, code, score };
+        }
 
-                sortTable('score-desc');
-            } catch (error) {
-                console.error('Error initializing StudentScoring page:', error);
-            }
-        });
-
-        function filterTable() {
-            const searchInput = document.getElementById('searchInput');
-            if (!searchInput) return;
-            
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const rows = document.querySelectorAll('#recordsTable tbody tr');
-
-            rows.forEach(row => {
-                const studentName = row.cells[2]?.textContent?.toLowerCase() || '';
-                const studentCode = row.cells[3]?.textContent?.toLowerCase() || '';
-
-                if (searchTerm === '' || studentName.includes(searchTerm) || studentCode.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
+        function filterRows(){
+            if (!tbody) return;
+            const term = (searchInput?.value || '').trim().toLowerCase();
+            [...tbody.querySelectorAll('tr')].forEach(tr => {
+                const { name, code } = getRowData(tr);
+                const visible = !term || name.includes(term) || code.includes(term);
+                tr.style.display = visible ? '' : 'none';
             });
         }
 
-        function sortTable(criteria) {
-            const tbody = document.querySelector('#recordsTable tbody');
+        function sortRows(){
             if (!tbody) return;
-            
-            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const mode = sortSelect?.value || 'score-desc';
+            const rows = [...tbody.querySelectorAll('tr')].map(getRowData);
 
             rows.sort((a, b) => {
-                switch(criteria) {
+                switch(mode){
+                    case 'score-asc': return a.score - b.score;
+                    case 'name-asc': return a.name.localeCompare(b.name);
+                    case 'name-desc': return b.name.localeCompare(a.name);
                     case 'score-desc':
-                        const scoreA = parseFloat(a.cells[4]?.textContent?.trim() || '0');
-                        const scoreB = parseFloat(b.cells[4]?.textContent?.trim() || '0');
-                        return scoreB - scoreA;
-                    case 'score-asc':
-                        const scoreA2 = parseFloat(a.cells[4]?.textContent?.trim() || '0');
-                        const scoreB2 = parseFloat(b.cells[4]?.textContent?.trim() || '0');
-                        return scoreA2 - scoreB2;
-                    case 'name-asc':
-                        const nameA = a.cells[2]?.textContent?.trim() || '';
-                        const nameB = b.cells[2]?.textContent?.trim() || '';
-                        return nameA.localeCompare(nameB);
-                    case 'name-desc':
-                        const nameA2 = a.cells[2]?.textContent?.trim() || '';
-                        const nameB2 = b.cells[2]?.textContent?.trim() || '';
-                        return nameB2.localeCompare(nameA2);
-                    default:
-                        return 0;
+                    default: return b.score - a.score;
                 }
             });
-
-            tbody.innerHTML = '';
-            rows.forEach(row => tbody.appendChild(row));
+            rows.forEach(r => tbody.appendChild(r.tr));
         }
 
-        function resetFilters() {
-            const searchInput = document.getElementById('searchInput');
-            const sortSelect = document.getElementById('sortSelect');
-            
+        function resetFilters(){
             if (searchInput) searchInput.value = '';
             if (sortSelect) sortSelect.value = 'score-desc';
-            
-            filterTable();
-            sortTable('score-desc');
+            filterRows();
+            sortRows();
         }
 
-        async function exportToExcel() {
-            try {
-                const semesterSelect = document.getElementById('semesterSelect');
-                const semesterId = semesterSelect ? semesterSelect.value : '';
-                if (!semesterId) {
-                    alert('Vui lòng chọn học kỳ trước khi xuất Excel.');
-                    return;
-                }
-                const baseUrl = '@(Model.BaseApiUrl ?? "https://localhost:5001")';
-                const url = `${baseUrl}/api/reports/student-semester?semesterId=${encodeURIComponent(semesterId)}`;
-                window.location.href = url;
-            } catch (e) {
-                console.error('Export error', e);
-                alert('Không thể xuất Excel.');
-            }
-        }
+        // Bind events
+        if (searchInput) searchInput.addEventListener('input', filterRows);
+        if (sortSelect) sortSelect.addEventListener('change', () => { sortRows(); filterRows(); });
 
-        function printReport() {
-            window.print();
-        }
+        // Expose reset for header button
+        window.resetFilters = resetFilters;
+
+        // Initial run
+        document.addEventListener('DOMContentLoaded', () => { sortRows(); filterRows(); });
     </script>
 }

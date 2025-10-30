@@ -182,7 +182,8 @@
 
 @section Scripts {
     <script>
-        lucide.createIcons();
+        (function(){ if(window.lucide && typeof lucide.createIcons==='function'){ try{ lucide.createIcons(lucide.icons||{});}catch{}} })();
+        document.addEventListener('DOMContentLoaded', function(){ if(window.lucide && typeof lucide.createIcons==='function'){ try{ lucide.createIcons(lucide.icons||{});}catch{}}});
 
         document.getElementById('searchInput').addEventListener('keyup', function() {
             const searchValue = this.value.toLowerCase();
@@ -210,7 +211,6 @@
             }
             
             new bootstrap.Modal(document.getElementById('editRolesModal')).show();
-            lucide.createIcons();
         }
     </script>
 }
