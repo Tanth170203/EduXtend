@@ -90,9 +90,9 @@ public class ManualAddModel : PageModel
             return Page();
         }
 
-        if (string.IsNullOrWhiteSpace(Input.Note) || Input.Note.Length < 10)
+        if (Input.Note.Length < 10)
         {
-            ErrorMessage = "Ghi chú bắt buộc tối thiểu 10 ký tự.";
+            ErrorMessage = "Note must be at least 10 characters long.";
             await ReloadDataWithPreservationAsync();
             return Page();
         }
@@ -123,7 +123,7 @@ public class ManualAddModel : PageModel
                 var result = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation("Club score added successfully: {Result}", result);
 
-                TempData["SuccessMessage"] = "✅ Đã cộng điểm thành công!";
+                TempData["SuccessMessage"] = "✅ Score added successfully!";
                 return RedirectToPage("Detail", new { clubId = Input.ClubId, semesterId = Input.SemesterId, month = Input.Month });
             }
             else
@@ -133,9 +133,9 @@ public class ManualAddModel : PageModel
 
                 ErrorMessage = response.StatusCode switch
                 {
-                    HttpStatusCode.NotFound => "Không tìm thấy CLB hoặc tiêu chí.",
-                    HttpStatusCode.BadRequest => "Điểm vượt quá giới hạn cho phép hoặc dữ liệu không hợp lệ.",
-                    _ => $"Không thể cộng điểm: {errorContent}"
+                    HttpStatusCode.NotFound => "Club or criterion not found.",
+                    HttpStatusCode.BadRequest => "Score exceeds allowed limit or data is invalid.",
+                    _ => $"Unable to add score: {errorContent}"
                 };
 
                 await ReloadDataWithPreservationAsync();
@@ -145,7 +145,7 @@ public class ManualAddModel : PageModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error adding club score");
-            ErrorMessage = $"Đã xảy ra lỗi: {ex.Message}";
+            ErrorMessage = $"An error occurred: {ex.Message}";
             await ReloadDataWithPreservationAsync();
             return Page();
         }
@@ -232,5 +232,3 @@ public class ManualAddModel : PageModel
         public int MaxScore { get; set; }
     }
 }
-
-

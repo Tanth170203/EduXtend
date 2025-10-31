@@ -102,17 +102,90 @@ public class ReportsController : ControllerBase
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
     }
 
+    //[HttpGet("student-semester")]
+    //public async Task<IActionResult> ExportStudentSemester([FromQuery] int semesterId)
+    //{
+    //    var sem = await _context.Semesters.FindAsync(semesterId);
+    //    if (sem == null) return NotFound("Semester not found");
+
+    //    var records = await _context.MovementRecords
+    //        .Include(r => r.Student)
+    //        .Include(r => r.Details)
+    //            .ThenInclude(d => d.Criterion)
+    //                .ThenInclude(c => c.Group)
+    //        .Where(r => r.SemesterId == semesterId)
+    //        .OrderByDescending(r => r.TotalScore)
+    //        .ToListAsync();
+
+    //    using var wb = new XLWorkbook();
+    //    var ws = wb.Worksheets.Add($"SV_{sem.Name}");
+
+    //    // Header
+    //    ws.Cell(1, 1).Value = "STT";
+    //    ws.Cell(1, 2).Value = "Mã SV";
+    //    ws.Cell(1, 3).Value = "Họ tên";
+    //    ws.Cell(1, 4).Value = "Tổng điểm";
+    //    ws.Cell(1, 5).Value = "Nhóm";
+    //    ws.Cell(1, 6).Value = "Tiêu chí";
+    //    ws.Cell(1, 7).Value = "Max/tiêu chí";
+    //    ws.Cell(1, 8).Value = "Điểm";
+    //    ws.Cell(1, 9).Value = "Nguồn";
+    //    ws.Cell(1, 10).Value = "Ghi chú";
+    //    ws.Cell(1, 11).Value = "ActivityId";
+    //    ws.Cell(1, 12).Value = "Ngày cộng";
+    //    ws.Row(1).Style.Font.SetBold();
+
+    //    int row = 2;
+    //    int idx = 1;
+    //    foreach (var r in records)
+    //    {
+    //        if (r.Details == null || r.Details.Count == 0)
+    //        {
+    //            ws.Cell(row, 1).Value = idx++;
+    //            ws.Cell(row, 2).Value = r.Student?.StudentCode;
+    //            ws.Cell(row, 3).Value = r.Student?.FullName;
+    //            ws.Cell(row, 4).Value = r.TotalScore;
+    //            row++;
+    //            continue;
+    //        }
+
+    //        foreach (var d in r.Details.OrderByDescending(d => d.AwardedAt))
+    //        {
+    //            ws.Cell(row, 1).Value = idx;
+    //            ws.Cell(row, 2).Value = r.Student?.StudentCode;
+    //            ws.Cell(row, 3).Value = r.Student?.FullName;
+    //            ws.Cell(row, 4).Value = r.TotalScore;
+    //            ws.Cell(row, 5).Value = d.Criterion?.Group?.Name;
+    //            ws.Cell(row, 6).Value = d.Criterion?.Title;
+    //            ws.Cell(row, 7).Value = d.Criterion?.MaxScore ?? 0;
+    //            ws.Cell(row, 8).Value = d.Score;
+    //            ws.Cell(row, 9).Value = string.IsNullOrWhiteSpace(d.ScoreType) ? "Auto" : d.ScoreType;
+    //            ws.Cell(row, 10).Value = d.Note;
+    //            ws.Cell(row, 11).Value = d.ActivityId;
+    //            ws.Cell(row, 12).Value = d.AwardedAt;
+    //            row++;
+    //        }
+    //        idx++;
+    //    }
+
+    //    // Autosize
+    //    ws.Columns().AdjustToContents();
+
+    //    using var ms = new MemoryStream();
+    //    wb.SaveAs(ms);
+    //    var bytes = ms.ToArray();
+    //    var fileName = $"BaoCao_SinhVien_{sem.Name}.xlsx";
+    //    return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    //}
     [HttpGet("student-semester")]
     public async Task<IActionResult> ExportStudentSemester([FromQuery] int semesterId)
     {
         var sem = await _context.Semesters.FindAsync(semesterId);
         if (sem == null) return NotFound("Semester not found");
 
+        // 1. Cập nhật Truy vấn: Chỉ cần include Student, không cần Details
         var records = await _context.MovementRecords
             .Include(r => r.Student)
-            .Include(r => r.Details)
-                .ThenInclude(d => d.Criterion)
-                    .ThenInclude(c => c.Group)
             .Where(r => r.SemesterId == semesterId)
             .OrderByDescending(r => r.TotalScore)
             .ToListAsync();
@@ -120,51 +193,26 @@ public class ReportsController : ControllerBase
         using var wb = new XLWorkbook();
         var ws = wb.Worksheets.Add($"SV_{sem.Name}");
 
-        // Header
+        // 2. Cập nhật Header: Chỉ giữ thông tin tổng hợp
         ws.Cell(1, 1).Value = "STT";
         ws.Cell(1, 2).Value = "Mã SV";
         ws.Cell(1, 3).Value = "Họ tên";
         ws.Cell(1, 4).Value = "Tổng điểm";
-        ws.Cell(1, 5).Value = "Nhóm";
-        ws.Cell(1, 6).Value = "Tiêu chí";
-        ws.Cell(1, 7).Value = "Max/tiêu chí";
-        ws.Cell(1, 8).Value = "Điểm";
-        ws.Cell(1, 9).Value = "Nguồn";
-        ws.Cell(1, 10).Value = "Ghi chú";
-        ws.Cell(1, 11).Value = "ActivityId";
-        ws.Cell(1, 12).Value = "Ngày cộng";
         ws.Row(1).Style.Font.SetBold();
 
         int row = 2;
         int idx = 1;
+
+        // 3. Cập nhật Logic Ghi Dữ Liệu: Chỉ lặp qua MovementRecord (r)
         foreach (var r in records)
         {
-            if (r.Details == null || r.Details.Count == 0)
-            {
-                ws.Cell(row, 1).Value = idx++;
-                ws.Cell(row, 2).Value = r.Student?.StudentCode;
-                ws.Cell(row, 3).Value = r.Student?.FullName;
-                ws.Cell(row, 4).Value = r.TotalScore;
-                row++;
-                continue;
-            }
+            // Ghi dữ liệu của MovementRecord vào một dòng duy nhất
+            ws.Cell(row, 1).Value = idx;
+            ws.Cell(row, 2).Value = r.Student?.StudentCode;
+            ws.Cell(row, 3).Value = r.Student?.FullName;
+            ws.Cell(row, 4).Value = r.TotalScore;
 
-            foreach (var d in r.Details.OrderByDescending(d => d.AwardedAt))
-            {
-                ws.Cell(row, 1).Value = idx;
-                ws.Cell(row, 2).Value = r.Student?.StudentCode;
-                ws.Cell(row, 3).Value = r.Student?.FullName;
-                ws.Cell(row, 4).Value = r.TotalScore;
-                ws.Cell(row, 5).Value = d.Criterion?.Group?.Name;
-                ws.Cell(row, 6).Value = d.Criterion?.Title;
-                ws.Cell(row, 7).Value = d.Criterion?.MaxScore ?? 0;
-                ws.Cell(row, 8).Value = d.Score;
-                ws.Cell(row, 9).Value = string.IsNullOrWhiteSpace(d.ScoreType) ? "Auto" : d.ScoreType;
-                ws.Cell(row, 10).Value = d.Note;
-                ws.Cell(row, 11).Value = d.ActivityId;
-                ws.Cell(row, 12).Value = d.AwardedAt;
-                row++;
-            }
+            row++;
             idx++;
         }
 
@@ -175,6 +223,8 @@ public class ReportsController : ControllerBase
         wb.SaveAs(ms);
         var bytes = ms.ToArray();
         var fileName = $"BaoCao_SinhVien_{sem.Name}.xlsx";
+
+        // Trả về file
         return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
     }
 }

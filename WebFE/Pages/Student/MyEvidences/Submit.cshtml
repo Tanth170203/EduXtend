@@ -1,7 +1,7 @@
 ﻿@page
 @model WebFE.Pages.Student.MyEvidences.SubmitModel
 @{
-    ViewData["Title"] = "Nộp minh chứng";
+    ViewData["Title"] = "Submit Evidence";
     Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
@@ -9,11 +9,11 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-            <h1 class="fw-bold mb-1">Nộp minh chứng</h1>
-            <p class="text-muted mb-0">Gửi minh chứng cho hoạt động/tiêu chí phong trào bạn đã tham gia</p>
+            <h1 class="fw-bold mb-1">Submit Evidence</h1>
+            <p class="text-muted mb-0">Send evidence for the activity/criterion you participated in</p>
         </div>
         <a asp-page="/Student/MyEvidences/Index" class="btn btn-outline-secondary rounded-pill">
-            <i class="bi bi-arrow-left"></i> Quay lại danh sách
+            <i class="bi bi-arrow-left"></i> Back to list
         </a>
     </div>
 
@@ -36,53 +36,53 @@
     <!-- Form -->
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white border-0 pt-4">
-            <h5 class="mb-0 fw-semibold"><i class="bi bi-upload me-1"></i> Thông tin minh chứng</h5>
-            <small class="text-muted">Điền thông tin và tải tệp minh chứng.</small>
+            <h5 class="mb-0 fw-semibold"><i class="bi bi-upload me-1"></i> Evidence information</h5>
+            <small class="text-muted">Fill in the details and upload the evidence file.</small>
         </div>
 
         <div class="card-body pt-0">
             <form method="post" enctype="multipart/form-data" id="evidenceForm">
-                <!-- Tiêu đề -->
+                <!-- Title -->
                 <div class="mb-3">
-                    <label asp-for="Input.Title" class="form-label fw-semibold">Tiêu đề <span class="text-danger">*</span></label>
-                    <input asp-for="Input.Title" class="form-control" placeholder="VD: Tham gia Ngày hội Open Day 2025" required />
+                    <label asp-for="Input.Title" class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+                    <input asp-for="Input.Title" class="form-control" placeholder="E.g.: Participated in Open Day 2025" required />
                     <span asp-validation-for="Input.Title" class="text-danger"></span>
                 </div>
 
-                <!-- Mô tả -->
+                <!-- Description -->
                 <div class="mb-3">
-                    <label asp-for="Input.Description" class="form-label fw-semibold">Mô tả chi tiết</label>
-                    <textarea asp-for="Input.Description" class="form-control" rows="4" placeholder="Mô tả hoạt động, vai trò, kết quả..."></textarea>
+                    <label asp-for="Input.Description" class="form-label fw-semibold">Detailed description</label>
+                    <textarea asp-for="Input.Description" class="form-control" rows="4" placeholder="Describe the activity, your role, results..."></textarea>
                     <div class="d-flex justify-content-between">
-                        <small class="text-muted">Không bắt buộc nhưng giúp duyệt nhanh hơn</small>
-                        <small class="text-muted"><span id="descCount">0</span>/1000 ký tự</small>
+                        <small class="text-muted">Optional but helps faster approval</small>
+                        <small class="text-muted"><span id="descCount">0</span>/1000 characters</small>
                     </div>
                 </div>
 
-                <!-- Tiêu chí -->
+                <!-- Criterion -->
                 <div class="mb-3">
-                    <label asp-for="Input.CriterionId" class="form-label fw-semibold">Tiêu chí phong trào</label>
+                    <label asp-for="Input.CriterionId" class="form-label fw-semibold">Activity criterion</label>
                     <select asp-for="Input.CriterionId" class="form-select">
-                        <option value="">-- Chọn tiêu chí phù hợp (không bắt buộc) --</option>
+                        <option value="">-- Select a matching criterion (optional) --</option>
                         @foreach (var c in Model.Criteria)
                         {
-                            <option value="@c.Id">@c.Title (0-@c.MaxScore điểm)</option>
+                            <option value="@c.Id">@c.Title (0-@c.MaxScore points)</option>
                         }
                     </select>
                     <span asp-validation-for="Input.CriterionId" class="text-danger"></span>
                     <div class="form-text">
                         <i class="bi bi-info-circle"></i>
-                        Chọn tiêu chí phù hợp với minh chứng của bạn để admin dễ dàng duyệt và cộng điểm.
+                        Choose the criterion that best matches your evidence to make it easier for admins to review and award points.
                     </div>
                 </div>
 
                 <!-- File upload -->
                 <div class="mb-3">
-                    <label asp-for="Input.File" class="form-label fw-semibold">Tệp minh chứng</label>
+                    <label asp-for="Input.File" class="form-label fw-semibold">Evidence file</label>
                     <div id="dropzone" class="border rounded-3 p-4 text-center bg-light-subtle">
                         <i class="bi bi-cloud-upload" style="font-size:2rem;"></i>
-                        <p class="mb-1">Kéo thả tệp vào đây hoặc nhấn để chọn</p>
-                        <small class="text-muted">Định dạng: JPG, PNG, PDF, DOC, DOCX (Tối đa 10MB)</small>
+                        <p class="mb-1">Drag & drop files here or click to choose</p>
+                        <small class="text-muted">Formats: JPG, PNG, PDF, DOC, DOCX (Max 10MB)</small>
                         <input asp-for="Input.File" type="file" class="form-control d-none"
                                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" id="fileInput" />
                     </div>
@@ -92,33 +92,33 @@
                         <div class="alert alert-success d-flex align-items-center mb-0" role="alert">
                             <i class="bi bi-file-earmark-text me-2"></i>
                             <div>
-                                <div class="fw-semibold">Tệp đã chọn: <span id="fileName"></span></div>
-                                <small class="text-muted">Kích thước: <span id="fileSize"></span></small>
+                                <div class="fw-semibold">Selected file: <span id="fileName"></span></div>
+                                <small class="text-muted">Size: <span id="fileSize"></span></small>
                             </div>
                             <button class="btn btn-sm btn-outline-secondary ms-auto" type="button" id="changeFileBtn">
-                                <i class="bi bi-arrow-repeat"></i> Đổi tệp
+                                <i class="bi bi-arrow-repeat"></i> Change file
                             </button>
                         </div>
                     </div>
                     <span asp-validation-for="Input.File" class="text-danger"></span>
                 </div>
 
-                <!-- Ghi chú -->
+                <!-- Note -->
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-1"></i>
-                    <strong>Lưu ý:</strong> Sau khi nộp, minh chứng sẽ được CTSV kiểm duyệt. Theo dõi trạng thái trong mục <em>“Minh chứng của tôi”</em>.
+                    <strong>Note:</strong> After submission, the evidence will be reviewed by the Student Affairs Office. Track the status in <em>“My Evidences”</em>.
                 </div>
 
                 <!-- Actions -->
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary rounded-pill" id="submitBtn">
-                        <i class="bi bi-check2-circle"></i> <span id="submitText">Nộp minh chứng</span>
+                        <i class="bi bi-check2-circle"></i> <span id="submitText">Submit Evidence</span>
                         <span class="spinner-border spinner-border-sm ms-2" role="status" id="loadingSpinner" style="display:none;">
-                            <span class="visually-hidden">Đang tải...</span>
+                            <span class="visually-hidden">Loading...</span>
                         </span>
                     </button>
                     <a asp-page="/Student/MyEvidences/Index" class="btn btn-outline-secondary rounded-pill">
-                        <i class="bi bi-x-circle"></i> Hủy
+                        <i class="bi bi-x-circle"></i> Cancel
                     </a>
                 </div>
             </form>
@@ -153,8 +153,8 @@
         const changeBtn=document.getElementById('changeFileBtn');
         const maxSize=10*1024*1024, allowed=['.jpg','.jpeg','.png','.pdf','.doc','.docx'];
         const fmt=n=>{if(n===0)return'0 B';const k=1024,u=['B','KB','MB','GB'];const i=Math.floor(Math.log(n)/Math.log(k));return (n/Math.pow(k,i)).toFixed(2)+' '+u[i];};
-        const valid=(f)=>{const ext=(f.name.match(/\.[^.]+$/)?.[0]||'').toLowerCase(); if(!allowed.includes(ext)){alert('Định dạng không hợp lệ.'); return false;}
-                           if(f.size>maxSize){alert('Kích thước vượt quá 10MB.'); return false;} return true;};
+        const valid=(f)=>{const ext=(f.name.match(/\.[^.]+$/)?.[0]||'').toLowerCase(); if(!allowed.includes(ext)){alert('Invalid file format.'); return false;}
+                           if(f.size>maxSize){alert('File size exceeds 10MB.'); return false;} return true;};
         const show=(f)=>{fn.textContent=f.name; fs.textContent=fmt(f.size); pv.style.display='block';};
 
         dz.addEventListener('click',()=>fi.click());
@@ -167,6 +167,6 @@
         // Submit spinner
         const form=document.getElementById('evidenceForm');
         const btn=document.getElementById('submitBtn'), text=document.getElementById('submitText'), sp=document.getElementById('loadingSpinner');
-        form.addEventListener('submit',()=>{ btn.disabled=true; text.textContent='Đang tải...'; sp.style.display='inline-block'; });
+        form.addEventListener('submit',()=>{ btn.disabled=true; text.textContent='Uploading...'; sp.style.display='inline-block'; });
     </script>
 }

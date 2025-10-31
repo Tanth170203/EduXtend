@@ -167,7 +167,7 @@ public class EvidenceService : IEvidenceService
                 // Optionally re-throw if you want to fail the review on scoring error
                 // For now, we'll log but not fail the review to allow manual fixes
                 throw new InvalidOperationException(
-                    $"Không thể cộng điểm vào hồ sơ phong trào: {ex.Message}. Evidence đã được duyệt nhưng điểm chưa được cộng. Vui lòng kiểm tra và cộng điểm thủ công nếu cần.", ex);
+                    $"Could not add score to movement record: {ex.Message}. Evidence has been approved but the score was not added. Please check and manually add the score if necessary.", ex);
             }
         }
         else if (dto.Status == "Approved" && dto.Points > 0 && !existing.CriterionId.HasValue)

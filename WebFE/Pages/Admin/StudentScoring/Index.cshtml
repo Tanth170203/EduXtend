@@ -11,20 +11,20 @@
 <div class="page-header">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
-                <h1 class="page-title">
-                    <i data-lucide="users" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                    Chấm Điểm Sinh Viên
-                </h1>
-                <p class="page-description">Quản lý và chấm điểm phong trào cho sinh viên</p>
+            <h1 class="page-title">
+                <i data-lucide="users" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
+                Student Scoring
+            </h1>
+            <p class="page-description">Manage and score student activities</p>
         </div>
         <div class="d-flex gap-2">
             <button type="button" class="btn btn-success" onclick="exportToExcel()">
                 <i data-lucide="download" style="width: 16px; height: 16px;"></i>
-                Xuất Excel
+                Export to Excel
             </button>
             <button type="button" class="btn btn-primary" onclick="printReport()">
                 <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
-                In báo cáo
+                Print Report
             </button>
         </div>
     </div>
@@ -55,11 +55,11 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Tổng sinh viên</p>
+                        <p class="text-muted mb-1 small">Total students</p>
                         <h3 class="mb-0 fw-bold">@Model.Records.Count</h3>
                         <small class="text-success">
                             <i data-lucide="trending-up" style="width: 12px; height: 12px;"></i>
-                            @(Model.SelectedSemesterId.HasValue ? "Trong học kỳ" : "Tất cả học kỳ")
+                            @(Model.SelectedSemesterId.HasValue ? "In selected semester" : "All semesters")
                         </small>
                     </div>
                     <div class="rounded-circle bg-primary bg-opacity-10 p-3">
@@ -75,11 +75,11 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Điểm trung bình</p>
+                        <p class="text-muted mb-1 small">Average score</p>
                         <h3 class="mb-0 fw-bold text-success">
                             @(Model.Records.Any() ? Model.Records.Average(r => r.TotalScore).ToString("F1") : "0")
                         </h3>
-                        <small class="text-muted">/ 100 điểm</small>
+                        <small class="text-muted">/ 100 points</small>
                     </div>
                     <div class="rounded-circle bg-success bg-opacity-10 p-3">
                         <i data-lucide="trending-up" style="width: 32px; height: 32px; color: #198754;"></i>
@@ -94,7 +94,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Điểm cao nhất</p>
+                        <p class="text-muted mb-1 small">Highest score</p>
                         <h3 class="mb-0 fw-bold text-warning">
                             @(Model.Records.Any() ? Model.Records.Max(r => r.TotalScore).ToString("F1") : "0")
                         </h3>
@@ -113,7 +113,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Xuất sắc (≥80)</p>
+                        <p class="text-muted mb-1 small">Excellent (≥80)</p>
                         <h3 class="mb-0 fw-bold text-info">
                             @Model.Records.Count(r => r.TotalScore >= 80)
                         </h3>
@@ -137,10 +137,10 @@
             <div class="col-md-4">
                 <label for="semesterSelect" class="form-label fw-semibold">
                     <i data-lucide="filter" style="width: 14px; height: 14px;"></i>
-                    Lọc theo học kỳ
+                    Filter by semester
                 </label>
                 <select class="form-select" id="semesterSelect" name="semesterId" onchange="this.form.submit()">
-                    <option value="">📚 Tất cả học kỳ</option>
+                    <option value="">📚 All semesters</option>
                     @foreach (var semester in Model.Semesters)
                     {
                         <option value="@semester.Id" selected="@(Model.SelectedSemesterId == semester.Id)">
@@ -154,17 +154,17 @@
             <div class="col-md-3">
                 <label class="form-label fw-semibold">
                     <i data-lucide="search" style="width: 14px; height: 14px;"></i>
-                    Tìm kiếm
+                    Search
                 </label>
-                <input type="text" class="form-control" id="searchInput" placeholder="Tên hoặc mã SV...">
+                <input type="text" class="form-control" id="searchInput" placeholder="Name or student code...">
             </div>
             <div class="col-md-3">
-                <label class="form-label fw-semibold">Sắp xếp</label>
+                <label class="form-label fw-semibold">Sort</label>
                 <select class="form-select" id="sortSelect">
-                    <option value="score-desc">Điểm cao → thấp</option>
-                    <option value="score-asc">Điểm thấp → cao</option>
-                    <option value="name-asc">Tên A → Z</option>
-                    <option value="name-desc">Tên Z → A</option>
+                    <option value="score-desc">Score high → low</option>
+                    <option value="score-asc">Score low → high</option>
+                    <option value="name-asc">Name A → Z</option>
+                    <option value="name-desc">Name Z → A</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -183,9 +183,9 @@
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-semibold">
                 <i data-lucide="list" style="width: 18px; height: 18px;"></i>
-                Danh sách điểm phong trào
+                Activity Scoring List
             </h5>
-            <span class="badge bg-primary">@Model.Records.Count sinh viên</span>
+            <span class="badge bg-primary">@(Model.Records.Count) students</span>
         </div>
     </div>
     <div class="card-body p-0">
@@ -196,12 +196,12 @@
                     <thead class="table-light">
                         <tr>
                             <th class="ps-4" style="width: 60px;">#</th>
-                            <th style="width: 80px;">Xếp hạng</th>
-                            <th>Sinh viên</th>
-                            <th>Mã SV</th>
-                            <th class="text-center">Tổng điểm</th>
-                            <th class="text-center">Cập nhật</th>
-                            <th class="text-center pe-4">Thao tác</th>
+                            <th style="width: 80px;">Rank</th>
+                            <th>Student</th>
+                            <th>Student Code</th>
+                            <th class="text-center">Total Score</th>
+                            <th class="text-center">Last Updated</th>
+                            <th class="text-center pe-4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -220,7 +220,7 @@
                             }
 
                             var scoreClass = record.TotalScore >= 80 ? "success" : record.TotalScore >= 60 ? "warning" : "danger";
-                            var evaluation = record.TotalScore >= 80 ? "Xuất sắc" : record.TotalScore >= 60 ? "Khá" : "Cần cố gắng";
+                            var evaluation = record.TotalScore >= 80 ? "Excellent" : record.TotalScore >= 60 ? "Good" : "Needs Improvement";
                             var medalIcon = displayRank == 1 ? "🥇" : displayRank == 2 ? "🥈" : displayRank == 3 ? "🥉" : "";
 
                             <tr class="record-row">
@@ -265,8 +265,8 @@
                                     <div class="btn-group btn-group-sm">
                                         <a href="/Admin/StudentScoring/Detail?id=@record.Id"
                                            class="btn btn-sm btn-outline-primary"
-                                           title="Chi tiết">
-                                            <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Chi tiết
+                                           title="Details">
+                                            <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Details
                                         </a>
                                     </div>
                                 </td>
@@ -281,9 +281,9 @@
         {
             <div class="text-center py-5">
                 <i data-lucide="inbox" style="width: 64px; height: 64px; color: #9ca3af;"></i>
-                <p class="text-muted mt-3 mb-0">Chưa có dữ liệu điểm phong trào</p>
+                <p class="text-muted mt-3 mb-0">No activity scoring data yet</p>
                 <p class="text-muted">
-                    @(Model.SelectedSemesterId.HasValue ? "Không có sinh viên nào trong học kỳ này" : "Hệ thống chưa có dữ liệu")
+                    @(Model.SelectedSemesterId.HasValue ? "No students found in this semester" : "The system has no data yet")
                 </p>
             </div>
         }
@@ -385,5 +385,27 @@
 
         // Initial run
         document.addEventListener('DOMContentLoaded', () => { sortRows(); filterRows(); });
+
+        //Export
+        async function exportToExcel() {
+            try {
+                const semesterSelect = document.getElementById('semesterSelect');
+                const semesterId = semesterSelect ? semesterSelect.value : '';
+                if (!semesterId) {
+                    alert('Please select a semester before exporting to Excel.');
+                    return;
+                }
+                const baseUrl = '@(Model.BaseApiUrl ?? "https://localhost:5001")';
+                const url = `${baseUrl}/api/reports/student-semester?semesterId=${encodeURIComponent(semesterId)}`;
+                window.location.href = url;
+            } catch (e) {
+                console.error('Export error', e);
+                alert('Unable to export Excel.');
+            }
+        }
+
+        function printReport() {
+            window.print();
+        }
     </script>
 }

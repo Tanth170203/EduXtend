@@ -1,7 +1,7 @@
 @page
 @model WebFE.Pages.Admin.ClubScoring.IndexModel
 @{
-    ViewData["Title"] = "Chấm điểm CLB";
+    ViewData["Title"] = "Club Scoring";
     Layout = "~/Pages/Shared/_AdminLayout.cshtml";
 }
 
@@ -19,18 +19,18 @@
         <div>
             <h1 class="page-title">
                 <i data-lucide="trophy" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                Chấm điểm CLB
+                Club Scoring
             </h1>
-            <p class="page-description">Danh sách điểm CLB theo tháng</p>
+            <p class="page-description">List of club scores by month</p>
         </div>
         <div class="d-flex gap-2">
             <button type="button" class="btn btn-success" onclick="window.open('@Model.ExportUrl', '_blank')">
                 <i data-lucide="download" style="width: 16px; height: 16px;"></i>
-                Xuất Excel
+                Export Excel
             </button>
             <a class="btn btn-primary" href="#" onclick="window.print(); return false;">
                 <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
-                In báo cáo
+                Print Report
             </a>
         </div>
     </div>
@@ -40,14 +40,14 @@
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-light d-flex align-items-center justify-content-center py-3">
         <i data-lucide="filter" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
-        <strong>Bộ lọc</strong>
+        <strong>Filter</strong>
     </div>
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label class="form-label">
                     <i data-lucide="calendar" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
-                    <strong>Kỳ học</strong>
+                    <strong>Semester</strong>
                 </label>
                 <select class="form-select" name="semesterId" asp-for="SelectedSemesterId">
                     @foreach (var s in Model.Semesters)
@@ -59,7 +59,7 @@
             <div class="col-md-3">
                 <label class="form-label">
                     <i data-lucide="calendar-days" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
-                    <strong>Tháng</strong>
+                    <strong>Month</strong>
                 </label>
                 <select class="form-select" name="month" asp-for="SelectedMonth">
                     @foreach (var mo in Model.MonthOptions)
@@ -70,7 +70,7 @@
             </div>
             <div class="col-md-3">
                 <button type="submit" class="btn btn-primary">
-                    <i data-lucide="search"></i> Lọc
+                    <i data-lucide="search"></i> Filter
                 </button>
             </div>
         </form>
@@ -86,7 +86,7 @@
                     <div>
                         <div class="text-muted">
                             <i data-lucide="users" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
-                            Tổng CLB
+                            Total Clubs
                         </div>
                         <div class="fs-3 fw-bold text-primary">@Model.TotalClubs</div>
                     </div>
@@ -102,7 +102,7 @@
                     <div>
                         <div class="text-muted">
                             <i data-lucide="check-circle" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
-                            Đã chấm
+                            Scored
                         </div>
                         <div class="fs-3 fw-bold text-success">@Model.ScoredClubs</div>
                     </div>
@@ -118,7 +118,7 @@
                     <div>
                         <div class="text-muted">
                             <i data-lucide="clock" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
-                            Chưa chấm
+                            Not Scored
                         </div>
                         <div class="fs-3 fw-bold text-warning">@Model.UnscoredClubs</div>
                     </div>
@@ -133,7 +133,7 @@
 <div class="card border-0 shadow-sm mt-3">
     <div class="card-header bg-warning text-dark d-flex align-items-center justify-content-center py-3">
         <i data-lucide="table" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
-        <strong>Danh sách CLB</strong>
+        <strong>Club List</strong>
     </div>
     <div class="card-body">
         @if (Model.ClubScores?.Any() == true)
@@ -143,14 +143,14 @@
                     <thead>
                         <tr>
                             <th><i data-lucide="hash" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>#</th>
-                            <th><i data-lucide="users" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>CLB</th>
-                            <th><i data-lucide="calendar" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>SH</th>
-                            <th><i data-lucide="calendar-days" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>SK</th>
-                            <th><i data-lucide="handshake" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>PH</th>
-                            <th><i data-lucide="trophy" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Thi</th>
-                            <th><i data-lucide="clipboard" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>KH</th>
-                            <th><i data-lucide="star" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Tổng</th>
-                            <th><i data-lucide="eye" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Thao tác</th>
+                            <th><i data-lucide="users" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Club</th>
+                            <th><i data-lucide="calendar" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Meetings</th>
+                            <th><i data-lucide="calendar-days" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Events</th>
+                            <th><i data-lucide="handshake" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Collaborations</th>
+                            <th><i data-lucide="trophy" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Competitions</th>
+                            <th><i data-lucide="clipboard" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Plans</th>
+                            <th><i data-lucide="star" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Total</th>
+                            <th><i data-lucide="eye" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -172,7 +172,7 @@
                                        asp-route-clubId="@r.ClubId"
                                        asp-route-semesterId="@Model.SelectedSemesterId"
                                        asp-route-month="@Model.SelectedMonth">
-                                        <i data-lucide="external-link"></i> Chi tiết
+                                        <i data-lucide="external-link"></i> Details
                                     </a>
                                 </td>
                             </tr>
@@ -185,7 +185,7 @@
         {
             <div class="text-center text-muted py-5">
                 <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
-                <div>Chưa có dữ liệu</div>
+                <div>No data available</div>
             </div>
         }
     </div>
@@ -196,4 +196,3 @@
         document.addEventListener('DOMContentLoaded', function(){ if (typeof lucide !== 'undefined') lucide.createIcons(); });
     </script>
 }
-

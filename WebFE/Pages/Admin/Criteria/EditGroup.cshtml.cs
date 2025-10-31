@@ -76,7 +76,7 @@ namespace WebFE.Pages.Admin.Criteria
         {
             if (id <= 0)
             {
-                ErrorMessage = "ID không hợp lệ.";
+                ErrorMessage = "Invalid ID.";
                 return RedirectToPage("./Index");
             }
 
@@ -104,14 +104,14 @@ namespace WebFE.Pages.Admin.Criteria
                 }
                 else
                 {
-                    ErrorMessage = "Không tìm thấy nhóm tiêu chí.";
+                    ErrorMessage = "Criterion group not found.";
                     return RedirectToPage("./Index");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading criterion group");
-                ErrorMessage = "Đã xảy ra lỗi khi tải dữ liệu.";
+                ErrorMessage = "An error occurred while loading data.";
                 return RedirectToPage("./Index");
             }
 
@@ -122,19 +122,19 @@ namespace WebFE.Pages.Admin.Criteria
         {
             if (!ModelState.IsValid)
             {
-                ErrorMessage = "Thông tin không hợp lệ.";
+                ErrorMessage = "Invalid input.";
                 return Page();
             }
 
             if (string.IsNullOrWhiteSpace(Name))
             {
-                ErrorMessage = "Tên nhóm tiêu chí không được để trống.";
+                ErrorMessage = "Group name must not be empty.";
                 return Page();
             }
 
             if (MaxScore <= 0)
             {
-                ErrorMessage = "Điểm tối đa phải lớn hơn 0.";
+                ErrorMessage = "Max score must be greater than 0.";
                 return Page();
             }
 
@@ -160,24 +160,23 @@ namespace WebFE.Pages.Admin.Criteria
 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "✅ Đã cập nhật nhóm tiêu chí thành công!";
+                    SuccessMessage = "✅ Criterion group updated successfully!";
                     return RedirectToPage("./Index");
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogError("Update failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = $"Không thể cập nhật nhóm tiêu chí: {errorContent}";
+                    ErrorMessage = $"Unable to update criterion group: {errorContent}";
                     return Page();
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating criterion group");
-                ErrorMessage = $"Đã xảy ra lỗi: {ex.Message}";
+                ErrorMessage = $"An error occurred: {ex.Message}";
                 return Page();
             }
         }
     }
 }
-

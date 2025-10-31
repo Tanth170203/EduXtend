@@ -18,7 +18,7 @@
             <div>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-2">
-                        <li class="breadcrumb-item"><a href="/Admin/Criteria">Tiêu chí</a></li>
+                        <li class="breadcrumb-item"><a href="/Admin/Criteria">Criteria</a></li>
                         <li class="breadcrumb-item active">@Model.GroupDetail.Name</li>
                     </ol>
                 </nav>
@@ -31,11 +31,11 @@
             <div class="d-flex gap-2">
                 <a href="/Admin/Criteria" class="btn btn-outline-secondary">
                     <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
-                    Quay lại
+                    Back
                 </a>
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCriterionModal">
                     <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                    Thêm tiêu chí
+                    Add Criterion
                 </button>
             </div>
         </div>
@@ -64,19 +64,19 @@
         <div class="col-lg-8">
             <div class="content-card">
                 <div class="content-card-header">
-                    <h5 class="content-card-title">Thông tin nhóm</h5>
+                    <h5 class="content-card-title">Group information</h5>
                 </div>
                 <div class="content-card-body">
                     <div class="row g-4">
                         <div class="col-md-6">
                             <div class="info-item">
-                                <label class="info-label">Tên nhóm</label>
+                                <label class="info-label">Group name</label>
                                 <div class="info-value">@Model.GroupDetail.Name</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="info-item">
-                                <label class="info-label">Đối tượng áp dụng</label>
+                                <label class="info-label">Target</label>
                                 <div class="info-value">
                                     <span class="badge @(Model.GroupDetail.TargetType == "Student" ? "bg-success" : "bg-primary")">
                                         @(Model.GroupDetail.TargetType == "Student" ? "Student" : "Club")
@@ -86,24 +86,25 @@
                         </div>
                         <div class="col-md-6">
                             <div class="info-item">
-                                <label class="info-label">Điểm tối đa</label>
-                                <div class="info-value">@Model.GroupDetail.MaxScore điểm</div>
+                                <label class="info-label">Max score</label>
+                                <div class="info-value">@Model.GroupDetail.MaxScore points</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="info-item">
-                                <label class="info-label">Số lượng tiêu chí</label>
-                                <div class="info-value">@Model.GroupDetail.Criteria.Count tiêu chí</div>
+                                <label class="info-label">Number of criteria</label>
+                                <div class="info-value">@Model.GroupDetail.Criteria.Count criteria</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="col-lg-4">
             <div class="content-card">
                 <div class="content-card-header">
-                    <h5 class="content-card-title">Tổng quan</h5>
+                    <h5 class="content-card-title">Overview</h5>
                 </div>
                 <div class="content-card-body">
                     <div class="stats-list">
@@ -113,7 +114,7 @@
                             </div>
                             <div class="stats-list-content">
                                 <div class="stats-list-value">@Model.GroupDetail.Criteria.Count(c => c.IsActive)</div>
-                                <div class="stats-list-label">Đang hoạt động</div>
+                                <div class="stats-list-label">Active</div>
                             </div>
                         </div>
                         <div class="stats-list-item">
@@ -122,7 +123,7 @@
                             </div>
                             <div class="stats-list-content">
                                 <div class="stats-list-value">@Model.GroupDetail.Criteria.Count(c => !c.IsActive)</div>
-                                <div class="stats-list-label">Vô hiệu hóa</div>
+                                <div class="stats-list-label">Inactive</div>
                             </div>
                         </div>
                         <div class="stats-list-item">
@@ -131,7 +132,7 @@
                             </div>
                             <div class="stats-list-content">
                                 <div class="stats-list-value">@Model.GroupDetail.Criteria.Sum(c => c.MaxScore)</div>
-                                <div class="stats-list-label">Tổng điểm tiêu chí</div>
+                                <div class="stats-list-label">Total criteria points</div>
                             </div>
                         </div>
                     </div>
@@ -145,8 +146,8 @@
         <div class="content-card-header">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div>
-                    <h5 class="content-card-title mb-1">Danh sách tiêu chí</h5>
-                    <p class="text-muted mb-0">Quản lý các tiêu chí cụ thể trong nhóm này</p>
+                    <h5 class="content-card-title mb-1">Criteria list</h5>
+                    <p class="text-muted mb-0">Manage the specific criteria inside this group</p>
                 </div>
             </div>
         </div>
@@ -158,11 +159,11 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 5%;">ID</th>
-                                <th style="width: 30%;">Tiêu đề</th>
-                                <th style="width: 20%;">Nguồn dữ liệu</th>
-                                <th style="width: 10%;">Điểm tối đa</th>
-                                <th style="width: 10%;">Trạng thái</th>
-                                <th style="width: 15%;" class="text-end">Thao tác</th>
+                                <th style="width: 30%;">Title</th>
+                                <th style="width: 20%;">Data source</th>
+                                <th style="width: 10%;">Max score</th>
+                                <th style="width: 10%;">Status</th>
+                                <th style="width: 15%;" class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -190,21 +191,21 @@
                                         }
                                     </td>
                                     <td>
-                                        <span class="badge bg-primary">@criterion.MaxScore điểm</span>
+                                        <span class="badge bg-primary">@criterion.MaxScore points</span>
                                     </td>
                                     <td>
                                         @if (criterion.IsActive)
                                         {
                                             <span class="badge bg-success">
                                                 <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
-                                                Hoạt động
+                                                Active
                                             </span>
                                         }
                                         else
                                         {
                                             <span class="badge bg-secondary">
                                                 <i data-lucide="pause-circle" style="width: 12px; height: 12px;"></i>
-                                                Vô hiệu
+                                                Inactive
                                             </span>
                                         }
                                     </td>
@@ -216,7 +217,7 @@
                                                 <i data-lucide="@(criterion.IsActive ? "pause" : "play")" style="width: 14px; height: 14px;"></i>
                                             </button>
                                         </form>
-                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-criterion" 
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-edit-criterion"
                                                 data-bs-toggle="modal" data-bs-target="#editCriterionModal"
                                                 data-criterion-id="@criterion.Id"
                                                 data-criterion-title="@criterion.Title"
@@ -228,7 +229,7 @@
                                                 title="Edit">
                                             <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete-criterion" 
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete-criterion"
                                                 data-bs-toggle="modal" data-bs-target="#deleteCriterionModal"
                                                 data-criterion-id="@criterion.Id"
                                                 data-criterion-title="@criterion.Title"
@@ -248,11 +249,11 @@
                     <div class="empty-state-icon mb-3">
                         <i data-lucide="list-x" style="width: 64px; height: 64px; color: #9ca3af;"></i>
                     </div>
-                    <h4 class="empty-state-title">Chưa có tiêu chí nào</h4>
-                    <p class="empty-state-description">Bắt đầu bằng cách thêm tiêu chí đầu tiên vào nhóm này</p>
+                    <h4 class="empty-state-title">No criteria yet</h4>
+                    <p class="empty-state-description">Start by adding the first criterion to this group</p>
                     <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addCriterionModal">
                         <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                        Thêm tiêu chí đầu tiên
+                        Add first criterion
                     </button>
                 </div>
             }
@@ -266,7 +267,7 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="addCriterionModalLabel">
                         <i data-lucide="plus-circle" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                        Thêm tiêu chí mới
+                        Add new criterion
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -291,7 +292,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="addDataSource" class="form-label">Nguồn dữ liệu</label>
+                                    <label for="addDataSource" class="form-label">Data source</label>
                                     <input type="text" class="form-control" id="addDataSource" name="DataSource" placeholder="ActivityAttendance, ClubMembership...">
                                 </div>
                             </div>
@@ -299,15 +300,15 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="IsActive" value="true" checked id="addIsActive">
                             <label class="form-check-label" for="addIsActive">
-                                Kích hoạt ngay sau khi tạo
+                                Activate immediately after creation
                             </label>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
                             <i data-lucide="save" style="width: 16px; height: 16px;"></i>
-                            Thêm tiêu chí
+                            Add criterion
                         </button>
                     </div>
                 </form>
@@ -322,7 +323,7 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="editCriterionModalLabel">
                         <i data-lucide="edit-3" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                        Chỉnh sửa tiêu chí
+                        Edit criterion
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -336,7 +337,7 @@
                             <input type="text" class="form-control" id="editTitle" name="Title" required>
                         </div>
                         <div class="mb-3">
-                            <label for="editDescription" class="form-label">Mô tả</label>
+                            <label for="editDescription" class="form-label">Description</label>
                             <textarea class="form-control" id="editDescription" name="Description" rows="3"></textarea>
                         </div>
                         <div class="row">
@@ -348,7 +349,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="editDataSource" class="form-label">Nguồn dữ liệu</label>
+                                    <label for="editDataSource" class="form-label">Data source</label>
                                     <input type="text" class="form-control" id="editDataSource" name="DataSource">
                                 </div>
                             </div>
@@ -356,15 +357,15 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="editIsActive">
                             <label class="form-check-label" for="editIsActive">
-                                Tiêu chí đang hoạt động
+                                Criterion is active
                             </label>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
                             <i data-lucide="save" style="width: 16px; height: 16px;"></i>
-                            Cập nhật
+                            Update
                         </button>
                     </div>
                 </form>
@@ -377,22 +378,22 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="deleteCriterionModalLabel">Xác nhận xóa tiêu chí</h5>
+                    <h5 class="modal-title" id="deleteCriterionModalLabel">Confirm delete criterion</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="text-center">
                         <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: #ef4444; margin-bottom: 1rem;"></i>
-                        <p>Bạn có chắc chắn muốn xóa tiêu chí <strong class="criterion-title-to-delete"></strong>?</p>
-                        <p class="text-muted small">Hành động này không thể hoàn tác.</p>
+                        <p>Are you sure you want to delete the criterion <strong class="criterion-title-to-delete"></strong>?</p>
+                        <p class="text-muted small">This action cannot be undone.</p>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <form method="post" asp-page-handler="DeleteCriterion" style="display: inline;">
                         <input type="hidden" name="GroupId" value="@Model.GroupDetail.Id">
                         <input type="hidden" name="Id" id="deleteCriterionId">
-                        <button type="submit" class="btn btn-danger">Xóa tiêu chí</button>
+                        <button type="submit" class="btn btn-danger">Delete criterion</button>
                     </form>
                 </div>
             </div>
@@ -406,7 +407,7 @@
                 if (typeof lucide !== 'undefined') {
                     lucide.createIcons();
                 }
-                
+
                 // Edit criterion
                 document.querySelectorAll('.btn-edit-criterion').forEach(btn => {
                     btn.addEventListener('click', function() {
@@ -419,7 +420,7 @@
                         document.getElementById('editIsActive').checked = this.dataset.criterionIsActive === 'true';
                     });
                 });
-                
+
                 // Delete criterion
                 document.querySelectorAll('.btn-delete-criterion').forEach(btn => {
                     btn.addEventListener('click', function() {
@@ -433,5 +434,5 @@
 }
 else
 {
-    <div class="alert alert-danger">Không tìm thấy nhóm tiêu chí.</div>
+    <div class="alert alert-danger">Criterion group not found.</div>
 }

@@ -25,12 +25,12 @@
         <div>
             <h1 class="page-title">
                 <i data-lucide="file-check" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                Duyệt Minh chứng
+                Review Evidence
             </h1>
             <p class="page-description">
                 @if (Model.Evidence != null)
                 {
-                    <text>@Model.Evidence.Title - Sinh viên: @Model.Evidence.StudentName (@Model.Evidence.StudentCode)</text>
+                    <text>@Model.Evidence.Title - Student: @Model.Evidence.StudentName (@Model.Evidence.StudentCode)</text>
                 }
             </p>
         </div>
@@ -70,7 +70,7 @@
                 <div class="card-header bg-light border-bottom py-3">
                     <h5 class="mb-0">
                         <i data-lucide="file-text" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                        Thông tin chung
+                        General information
                     </h5>
                 </div>
                 <div class="card-body">
@@ -79,7 +79,7 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-muted small mb-1">
                                 <i data-lucide="user" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 0.3rem;"></i>
-                                Sinh viên
+                                Student
                             </label>
                             <p class="fw-bold mb-0">@Model.Evidence.StudentName</p>
                             <small class="text-muted">@Model.Evidence.StudentCode</small>
@@ -87,7 +87,7 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-muted small mb-1">
                                 <i data-lucide="calendar" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 0.3rem;"></i>
-                                Ngày nộp
+                                Submitted
                             </label>
                             <p class="fw-bold mb-0">@Model.Evidence.SubmittedAt.ToString("dd/MM/yyyy")</p>
                             <small class="text-muted">@Model.Evidence.SubmittedAt.ToString("HH:mm")</small>
@@ -95,7 +95,7 @@
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-muted small mb-1">
                                 <i data-lucide="target" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 0.3rem;"></i>
-                                Tiêu chí
+                                Criterion
                             </label>
                             @if (!string.IsNullOrEmpty(Model.Evidence.CriterionTitle))
                             {
@@ -103,19 +103,19 @@
                                     <span class="badge bg-info">@Model.Evidence.CriterionTitle</span>
                                     @if (Model.Evidence.CriterionMaxScore > 0)
                                     {
-                                        <small class="text-muted ms-2">(Max: @Model.Evidence.CriterionMaxScore đ)</small>
+                                        <small class="text-muted ms-2">(Max: @Model.Evidence.CriterionMaxScore pts)</small>
                                     }
                                 </div>
                             }
                             else
                             {
-                                <p class="text-muted mb-0">Chưa chọn</p>
+                                <p class="text-muted mb-0">Not selected</p>
                             }
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label text-muted small mb-1">
                                 <i data-lucide="file" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 0.3rem;"></i>
-                                Tiêu đề
+                                Title
                             </label>
                             <p class="fw-bold mb-0 text-truncate" title="@Model.Evidence.Title">@Model.Evidence.Title</p>
                         </div>
@@ -130,7 +130,7 @@
                     <div class="card-header bg-light border-bottom py-3">
                         <h5 class="mb-0">
                             <i data-lucide="file-text" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                            Mô tả chi tiết
+                            Detailed description
                         </h5>
                     </div>
                     <div class="card-body">
@@ -144,7 +144,7 @@
                 <div class="card-header bg-light border-bottom py-3">
                     <h5 class="mb-0">
                         <i data-lucide="paperclip" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                        Tệp minh chứng
+                        Evidence file
                     </h5>
                 </div>
                 <div class="card-body">
@@ -155,17 +155,17 @@
                                 <i data-lucide="file" style="width: 32px; height: 32px; color: #0dcaf0;"></i>
                                 <div>
                                     <p class="mb-0 fw-bold">Cloudinary URL</p>
-                                    <small class="text-muted">Nhấn để xem trước</small>
+                                    <small class="text-muted">Click to preview</small>
                                 </div>
                             </div>
-                            <!-- Removed preview button as info is already shown in index page -->
+                            <!-- Preview button intentionally omitted since index page already shows preview info -->
                         </div>
                     }
                     else
                     {
                         <div class="text-center py-4 text-muted">
                             <i data-lucide="x-circle" style="width: 48px; height: 48px; opacity: 0.5;"></i>
-                            <p class="mt-2 mb-0">Không có file</p>
+                            <p class="mt-2 mb-0">No file</p>
                         </div>
                     }
                 </div>
@@ -178,7 +178,7 @@
                 <div class="card-header bg-success text-white py-3">
                     <h5 class="mb-0">
                         <i data-lucide="check-circle" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                        Duyệt minh chứng
+                        Review evidence
                     </h5>
                 </div>
 
@@ -188,11 +188,11 @@
 
                         @* Status Selection *@
                         <div class="mb-3">
-                            <label asp-for="Input.Status" class="form-label fw-bold">Trạng thái <span class="text-danger">*</span></label>
+                            <label asp-for="Input.Status" class="form-label fw-bold">Status <span class="text-danger">*</span></label>
                             <select asp-for="Input.Status" class="form-select form-select-lg" required onchange="togglePointsFieldOnChange(this)">
-                                <option value="">-- Chọn trạng thái --</option>
-                                <option value="Approved">✅ Duyệt (Approved)</option>
-                                <option value="Rejected">❌ Từ chối (Rejected)</option>
+                                <option value="">-- Select status --</option>
+                                <option value="Approved">✅ Approve (Approved)</option>
+                                <option value="Rejected">❌ Reject (Rejected)</option>
                             </select>
                             <span asp-validation-for="Input.Status" class="text-danger small"></span>
                         </div>
@@ -204,71 +204,71 @@
                         }
 
                         <div class="mb-3" id="pointsField" style="display: none;">
-                            <label class="form-label fw-bold">Điểm cộng</label>
+                            <label class="form-label fw-bold">Awarded points</label>
 
                             @if (maxScore > 0)
                             {
                                 <div class="alert alert-info mb-2">
                                     <small class="mb-0">
                                         <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"></i>
-                                        <strong>Tiêu chí:</strong> @Model.Evidence.CriterionTitle<br />
-                                        <strong>Phạm vi:</strong> 0 - @maxScore điểm
+                                        <strong>Criterion:</strong> @Model.Evidence.CriterionTitle<br />
+                                        <strong>Range:</strong> 0 - @maxScore pts
                                     </small>
                                 </div>
                             }
 
                             @if (maxScore > 0)
                             {
-                                <input type="number" 
+                                <input type="number"
                                        id="Input_Points"
-                                       name="Input.Points" 
+                                       name="Input.Points"
                                        value="@pointsValue"
-                                       step="0.5" 
+                                       step="0.5"
                                        min="0"
                                        max="@maxScore"
-                                       class="form-control form-control-lg" 
-                                       placeholder="Nhập điểm" />
+                                       class="form-control form-control-lg"
+                                       placeholder="Enter points" />
                             }
                             else
                             {
-                                <input type="number" 
+                                <input type="number"
                                        id="Input_Points"
-                                       name="Input.Points" 
+                                       name="Input.Points"
                                        value="@pointsValue"
-                                       step="0.5" 
+                                       step="0.5"
                                        min="0"
-                                       class="form-control form-control-lg" 
-                                       placeholder="Nhập điểm" />
+                                       class="form-control form-control-lg"
+                                       placeholder="Enter points" />
                             }
                             <span asp-validation-for="Input.Points" class="text-danger small"></span>
                         </div>
 
                         @* Comment Field *@
                         <div class="mb-3">
-                            <label asp-for="Input.Comment" class="form-label fw-bold">Nhận xét/Ghi chú</label>
-                            <textarea asp-for="Input.Comment" 
-                                      class="form-control" 
-                                      rows="3" 
-                                      placeholder="Nhập nhận xét (tùy chọn)"></textarea>
-                            <small class="text-muted">Tối đa 255 ký tự</small>
+                            <label asp-for="Input.Comment" class="form-label fw-bold">Reviewer comment / Note</label>
+                            <textarea asp-for="Input.Comment"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Enter comment (optional)"></textarea>
+                            <small class="text-muted">Up to 255 characters</small>
                             <span asp-validation-for="Input.Comment" class="text-danger small"></span>
                         </div>
 
                         @* Info Alert *@
                         <div class="alert alert-warning mb-3">
                             <i data-lucide="alert-triangle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                            <small><strong>Lưu ý:</strong> Sinh viên sẽ nhận thông báo sau duyệt.</small>
+                            <small><strong>Note:</strong> The student will receive a notification after review.</small>
                         </div>
 
                         @* Buttons *@
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success btn-lg">
                                 <i data-lucide="check" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                                Xác nhận duyệt
+                                Confirm review
                             </button>
                             <a asp-page="/Admin/Evidences/Index" class="btn btn-outline-secondary">
                                 <i data-lucide="x" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                                Quay lại
+                                Back to list
                             </a>
                         </div>
                     </form>
@@ -281,8 +281,8 @@ else
 {
     <div class="alert alert-info text-center py-5">
         <i data-lucide="inbox" style="width: 48px; height: 48px; display: inline-block; margin-bottom: 1rem; color: #0dcaf0;"></i>
-        <p class="mb-0">Không thể tải thông tin minh chứng.</p>
-        <a href="/Admin/Evidences" class="btn btn-info mt-3">Quay lại danh sách</a>
+        <p class="mb-0">Unable to load evidence data.</p>
+        <a href="/Admin/Evidences" class="btn btn-info mt-3">Back to list</a>
     </div>
 }
 
@@ -354,13 +354,13 @@ else
 
         // Global function to toggle points field
         function togglePointsFieldOnChange(selectElement) {
-            console.log('✅ togglePointsFieldOnChange called with value:', selectElement.value);
+            console.log('togglePointsFieldOnChange called with value:', selectElement.value);
             const pointsField = document.getElementById('pointsField');
             if (!pointsField) {
-                console.warn('⚠️ pointsField element not found');
+                console.warn('pointsField element not found');
                 return;
             }
-            
+
             if (selectElement.value === 'Approved') {
                 console.log('  → Showing points field');
                 pointsField.style.display = 'block';
@@ -378,8 +378,8 @@ else
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🔷 DOMContentLoaded event fired');
-            
+            console.log('DOMContentLoaded event fired');
+
             // Initialize Lucide icons safely
             safeCreateLucideIcons();
 
@@ -387,22 +387,22 @@ else
             const pointsField = document.getElementById('pointsField');
 
             if (!statusSelect) {
-                console.warn('⚠️ statusSelect (Input_Status) not found');
-                return;
-            }
-            
-            if (!pointsField) {
-                console.warn('⚠️ pointsField element not found');
+                console.warn('statusSelect (Input_Status) not found');
                 return;
             }
 
-            console.log('✅ Both statusSelect and pointsField found');
-            
+            if (!pointsField) {
+                console.warn('pointsField element not found');
+                return;
+            }
+
+            console.log('Both statusSelect and pointsField found');
+
             // Function to toggle points field visibility
             function togglePointsField() {
-                console.log('🔷 togglePointsField called');
+                console.log('togglePointsField called');
                 console.log('  - Current status value: "' + statusSelect.value + '"');
-                
+
                 if (statusSelect.value === 'Approved') {
                     console.log('  - Status is "Approved", showing points field');
                     pointsField.style.display = 'block';
@@ -419,12 +419,12 @@ else
 
             // Handle status select change event
             statusSelect.addEventListener('change', function() {
-                console.log('✅ Status select changed to:', this.value);
+                console.log('Status select changed to:', this.value);
                 togglePointsField();
             });
 
             // Check initial state on page load
-            console.log('🔷 Checking initial status value on page load:', statusSelect.value);
+            console.log('Checking initial status value on page load:', statusSelect.value);
             if (statusSelect.value === 'Approved') {
                 console.log('  - Initial status is "Approved", showing points field');
                 togglePointsField();
@@ -436,12 +436,12 @@ else
                 pointsField.style.display = 'none';
             }
 
-            console.log('✅ Points field visibility script initialized successfully');
+            console.log('Points field visibility script initialized successfully');
         });
 
         // Fallback: also check and initialize when window loads
         window.addEventListener('load', function() {
-            console.log('🔷 Window load event fired - double checking points field state');
+            console.log('Window load event fired - double checking points field state');
             safeCreateLucideIcons();
             const statusSelect = document.getElementById('Input_Status');
             if (statusSelect && statusSelect.value === 'Approved') {

@@ -15,13 +15,13 @@
 <div class="page-header">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
-            <h1 class="page-title">Quản lý tiêu chí đánh giá</h1>
-            <p class="page-description">Quản lý các tiêu chí và nhóm tiêu chí đánh giá sinh hoạt</p>
+            <h1 class="page-title">Evaluation Criteria Management</h1>
+            <p class="page-description">Manage criteria and criterion groups used for activity evaluation</p>
         </div>
         <div class="d-flex gap-2">
             <a href="/Admin/Criteria/AddGroup" class="btn btn-primary d-flex align-items-center gap-2">
                 <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                Thêm nhóm tiêu chí
+                Add Criterion Group
             </a>
         </div>
     </div>
@@ -50,53 +50,53 @@
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Tổng nhóm tiêu chí</p>
+                <p class="stat-card-title">Total Criterion Groups</p>
             </div>
             <div class="stat-card-icon blue">
                 <i data-lucide="folder" style="width: 24px; height: 24px;"></i>
             </div>
         </div>
         <div class="stat-card-value">@Model.CriterionGroups.Count</div>
-        <p class="text-muted small mb-0">Tất cả nhóm tiêu chí</p>
+        <p class="text-muted small mb-0">All groups</p>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Dành cho Sinh viên</p>
+                <p class="stat-card-title">For Students</p>
             </div>
             <div class="stat-card-icon green">
                 <i data-lucide="user-check" style="width: 24px; height: 24px;"></i>
             </div>
         </div>
         <div class="stat-card-value">@Model.CriterionGroups.Count(g => g.TargetType == "Student")</div>
-        <p class="text-muted small mb-0">Nhóm tiêu chí sinh viên</p>
+        <p class="text-muted small mb-0">Student criterion groups</p>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Dành cho CLB</p>
+                <p class="stat-card-title">For Clubs</p>
             </div>
             <div class="stat-card-icon purple">
                 <i data-lucide="users-2" style="width: 24px; height: 24px;"></i>
             </div>
         </div>
         <div class="stat-card-value">@Model.CriterionGroups.Count(g => g.TargetType == "Club")</div>
-        <p class="text-muted small mb-0">Nhóm tiêu chí CLB</p>
+        <p class="text-muted small mb-0">Club criterion groups</p>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Tổng tiêu chí</p>
+                <p class="stat-card-title">Total Criteria</p>
             </div>
             <div class="stat-card-icon orange">
                 <i data-lucide="list-checks" style="width: 24px; height: 24px;"></i>
             </div>
         </div>
         <div class="stat-card-value">@Model.CriterionGroups.Sum(g => g.CriteriaCount)</div>
-        <p class="text-muted small mb-0">Tất cả tiêu chí</p>
+        <p class="text-muted small mb-0">All criteria</p>
     </div>
 </div>
 
@@ -107,19 +107,19 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="all-tab" data-bs-toggle="pill" data-bs-target="#all" type="button" role="tab">
                     <i data-lucide="list" style="width: 16px; height: 16px;"></i>
-                    Tất cả
+                    All
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="student-tab" data-bs-toggle="pill" data-bs-target="#student" type="button" role="tab">
                     <i data-lucide="user-check" style="width: 16px; height: 16px;"></i>
-                    Sinh viên
+                    Students
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="club-tab" data-bs-toggle="pill" data-bs-target="#club" type="button" role="tab">
                     <i data-lucide="users-2" style="width: 16px; height: 16px;"></i>
-                    CLB
+                    Clubs
                 </button>
             </li>
         </ul>
@@ -149,21 +149,21 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="deleteGroupModalLabel">Xác nhận xóa nhóm tiêu chí</h5>
+                <h5 class="modal-title" id="deleteGroupModalLabel">Confirm Delete Criterion Group</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="text-center">
                     <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: #ef4444; margin-bottom: 1rem;"></i>
-                    <p>Bạn có chắc chắn muốn xóa nhóm <strong class="group-name-to-delete"></strong>?</p>
-                    <p class="text-muted small">Hành động này không thể hoàn tác. Tất cả tiêu chí trong nhóm cũng sẽ bị xóa.</p>
+                    <p>Are you sure you want to delete the group <strong class="group-name-to-delete"></strong>?</p>
+                    <p class="text-muted small">This action cannot be undone. All criteria in the group will also be deleted.</p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form method="post" asp-page-handler="DeleteGroup" style="display: inline;">
                     <input type="hidden" name="Id" id="deleteId">
-                    <button type="submit" class="btn btn-danger">Xóa nhóm</button>
+                    <button type="submit" class="btn btn-danger">Delete Group</button>
                 </form>
             </div>
         </div>
@@ -177,14 +177,14 @@
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
-            
+
             // Delete button click (only keep delete modal handler)
             document.querySelectorAll('[data-group-id]').forEach(btn => {
                 if (btn.classList.contains('btn-delete')) {
                     btn.addEventListener('click', function() {
                         const name = this.dataset.groupName;
                         const id = this.dataset.groupId;
-                        
+
                         document.querySelector('.group-name-to-delete').textContent = name;
                         document.getElementById('deleteId').value = id;
                     });
@@ -202,4 +202,3 @@
         });
     </script>
 }
-

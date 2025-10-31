@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/WebFE.styles.css" asp-append-version="true" />
-    <!-- Bootstrap Icons (local) -->
-    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" />
-    <!-- Lucide Icons (local) -->
-    <script src="~/lib/lucide/lucide.min.js" defer></script>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -105,6 +105,10 @@
                 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">SCORING</div>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Criteria") == true ? "active" : "")" href="/Admin/Criteria">
+                        <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
+                        <span>Movement Criteria</span>
+                    </a>
                     <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/StudentScoring") == true ? "active" : "")" href="/Admin/StudentScoring">
                         <i data-lucide="user-check" style="width: 20px; height: 20px;"></i>
                         <span>Student Scoring</span>
@@ -248,14 +252,14 @@
                     try { lucide.createIcons(); } catch {}
                 }
             }
-            // Run now, on DOM ready, and after a short delay
+            Run now, on DOM ready, and after a short delay
             run();
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', run);
             } else {
                 setTimeout(run, 100);
             }
-            // Re-run when DOM changes (e.g., partial updates)
+            Re-run when DOM changes (e.g., partial updates)
             try {
                 const observer = new MutationObserver(() => run());
                 observer.observe(document.body, { childList: true, subtree: true });
