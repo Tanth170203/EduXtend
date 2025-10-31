@@ -13,14 +13,14 @@
         <div>
             <h1 class="page-title">
                 <i data-lucide="file-check" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                Quản lý Minh chứng
+                Evidence Management
             </h1>
-            <p class="page-description">Xem và duyệt minh chứng phong trào của sinh viên</p>
+            <p class="page-description">View and review student activity evidences</p>
         </div>
         <div>
             <span class="badge bg-warning text-dark fs-6 px-3 py-2">
                 <i data-lucide="clock" style="width: 16px; height: 16px;"></i>
-                @Model.PendingCount chờ duyệt
+                @Model.PendingCount pending
             </span>
         </div>
     </div>
@@ -51,9 +51,9 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Tổng minh chứng</p>
+                        <p class="text-muted mb-1 small">Total evidences</p>
                         <h3 class="mb-0 fw-bold">@Model.TotalEvidences</h3>
-                        <small class="text-muted">Tất cả trạng thái</small>
+                        <small class="text-muted">All statuses</small>
                     </div>
                     <div class="rounded-circle bg-primary bg-opacity-10 p-3">
                         <i data-lucide="file-text" style="width: 32px; height: 32px; color: #0d6efd;"></i>
@@ -68,9 +68,9 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Chờ duyệt</p>
+                        <p class="text-muted mb-1 small">Pending</p>
                         <h3 class="mb-0 fw-bold text-warning">@Model.PendingCount</h3>
-                        <small class="text-warning">Cần xem xét</small>
+                        <small class="text-warning">Needs review</small>
                     </div>
                     <div class="rounded-circle bg-warning bg-opacity-10 p-3">
                         <i data-lucide="clock" style="width: 32px; height: 32px; color: #ffc107;"></i>
@@ -85,9 +85,9 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Đã duyệt</p>
+                        <p class="text-muted mb-1 small">Approved</p>
                         <h3 class="mb-0 fw-bold text-success">@Model.ApprovedCount</h3>
-                        <small class="text-success">Thành công</small>
+                        <small class="text-success">Successful</small>
                     </div>
                     <div class="rounded-circle bg-success bg-opacity-10 p-3">
                         <i data-lucide="check-circle" style="width: 32px; height: 32px; color: #198754;"></i>
@@ -102,9 +102,9 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Từ chối</p>
+                        <p class="text-muted mb-1 small">Rejected</p>
                         <h3 class="mb-0 fw-bold text-danger">@Model.RejectedCount</h3>
-                        <small class="text-danger">Không đạt</small>
+                        <small class="text-danger">Not accepted</small>
                     </div>
                     <div class="rounded-circle bg-danger bg-opacity-10 p-3">
                         <i data-lucide="x-circle" style="width: 32px; height: 32px; color: #dc3545;"></i>
@@ -123,28 +123,28 @@
                 <li class="nav-item" role="presentation">
                     <a class="nav-link @(Model.CurrentFilter == "all" ? "active" : "")" href="?filter=all">
                         <i data-lucide="list" style="width: 16px; height: 16px;"></i>
-                        Tất cả
+                        All
                         <span class="badge bg-secondary ms-1">@Model.TotalEvidences</span>
                     </a>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a class="nav-link @(Model.CurrentFilter == "pending" ? "active" : "")" href="?filter=pending">
                         <i data-lucide="clock" style="width: 16px; height: 16px;"></i>
-                        Chờ duyệt
+                        Pending
                         <span class="badge bg-warning ms-1">@Model.PendingCount</span>
                     </a>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a class="nav-link @(Model.CurrentFilter == "approved" ? "active" : "")" href="?filter=approved">
                         <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
-                        Đã duyệt
+                        Approved
                         <span class="badge bg-success ms-1">@Model.ApprovedCount</span>
                     </a>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a class="nav-link @(Model.CurrentFilter == "rejected" ? "active" : "")" href="?filter=rejected">
                         <i data-lucide="x-circle" style="width: 16px; height: 16px;"></i>
-                        Từ chối
+                        Rejected
                         <span class="badge bg-danger ms-1">@Model.RejectedCount</span>
                     </a>
                 </li>
@@ -154,7 +154,7 @@
                 <span class="input-group-text bg-white">
                     <i data-lucide="search" style="width: 16px; height: 16px;"></i>
                 </span>
-                <input type="text" class="form-control" id="searchInput" placeholder="Tìm sinh viên...">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search student...">
             </div>
         </div>
     </div>
@@ -165,7 +165,7 @@
     <div class="card-header bg-white py-3">
         <h5 class="mb-0 fw-semibold">
             <i data-lucide="folder" style="width: 18px; height: 18px;"></i>
-            Danh sách minh chứng
+            Evidence List
         </h5>
     </div>
     <div class="card-body p-0">
@@ -176,14 +176,14 @@
                     <thead class="table-light">
                         <tr>
                             <th class="ps-4" style="width: 50px;">#</th>
-                            <th>Sinh viên</th>
-                            <th>Tiêu đề minh chứng</th>
-                            <th>Tiêu chí</th>
-                            <th class="text-center">Trạng thái</th>
-                            <th class="text-center">Điểm</th>
-                            <th class="text-center">Ngày nộp</th>
+                            <th>Student</th>
+                            <th>Evidence title</th>
+                            <th>Criterion</th>
+                            <th class="text-center">Status</th>
+                            <th class="text-center">Points</th>
+                            <th class="text-center">Submitted</th>
                             <th class="text-center">File</th>
-                            <th class="text-center pe-4">Thao tác</th>
+                            <th class="text-center pe-4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -233,21 +233,21 @@
                                     {
                                         <span class="badge bg-warning px-3 py-2">
                                             <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
-                                            Chờ duyệt
+                                            Pending
                                         </span>
                                     }
                                     else if (evidence.Status == "Approved")
                                     {
                                         <span class="badge bg-success px-3 py-2">
                                             <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
-                                            Đã duyệt
+                                            Approved
                                         </span>
                                     }
                                     else
                                     {
                                         <span class="badge bg-danger px-3 py-2">
                                             <i data-lucide="x-circle" style="width: 12px; height: 12px;"></i>
-                                            Từ chối
+                                            Rejected
                                         </span>
                                     }
                                 </td>
@@ -284,10 +284,10 @@
                                     @if (evidence.Status == "Pending")
                                     {
                                         <a href="/Admin/Evidences/Review?id=@evidence.Id"
-                                                class="btn btn-sm btn-primary"
-                                                title="Duyệt minh chứng">
+                                           class="btn btn-sm btn-primary"
+                                           title="Review evidence">
                                             <i data-lucide="check-square" style="width: 14px; height: 14px;"></i>
-                                            Duyệt
+                                            Review
                                         </a>
                                     }
                                     else
@@ -305,7 +305,7 @@
                                                 data-reviewed-at="@evidence.ReviewedAt?.ToString("dd/MM/yyyy HH:mm")"
                                                 data-file-path="@evidence.FilePath">
                                             <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
-                                            Xem
+                                            View
                                         </button>
                                     }
                                 </td>
@@ -320,9 +320,9 @@
         {
             <div class="text-center py-5">
                 <i data-lucide="inbox" style="width: 64px; height: 64px; color: #9ca3af;"></i>
-                <p class="text-muted mt-3 mb-0">Không có minh chứng nào</p>
+                <p class="text-muted mt-3 mb-0">No evidences found</p>
                 <p class="text-muted">
-                    @(Model.CurrentFilter == "pending" ? "Không có minh chứng chờ duyệt" : "Hệ thống chưa có dữ liệu")
+                    @(Model.CurrentFilter == "pending" ? "No pending evidences" : "The system has no data yet")
                 </p>
             </div>
         }
@@ -336,29 +336,29 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="viewModalLabel">
                     <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
-                    Chi tiết minh chứng
+                    Evidence details
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-3 text-muted">Thông tin chung</h6>
+                        <h6 class="card-subtitle mb-3 text-muted">General information</h6>
                         <div class="row">
                             <div class="col-md-6 mb-2">
-                                <strong>Sinh viên:</strong>
+                                <strong>Student:</strong>
                                 <p id="viewStudentName"></p>
                             </div>
                             <div class="col-md-6 mb-2">
-                                <strong>Tiêu đề:</strong>
+                                <strong>Title:</strong>
                                 <p id="viewEvidenceTitle"></p>
                             </div>
                             <div class="col-md-6 mb-2">
-                                <strong>Trạng thái:</strong>
+                                <strong>Status:</strong>
                                 <p id="viewStatus"></p>
                             </div>
                             <div class="col-md-6 mb-2">
-                                <strong>Điểm:</strong>
+                                <strong>Points:</strong>
                                 <p id="viewPoints"></p>
                             </div>
                         </div>
@@ -367,17 +367,17 @@
 
                 <div class="card">
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-3 text-muted">Thông tin duyệt</h6>
+                        <h6 class="card-subtitle mb-3 text-muted">Review information</h6>
                         <div class="mb-2">
-                            <strong>Người duyệt:</strong>
+                            <strong>Reviewer:</strong>
                             <p id="viewReviewerName"></p>
                         </div>
                         <div class="mb-2">
-                            <strong>Thời gian duyệt:</strong>
+                            <strong>Reviewed at:</strong>
                             <p id="viewReviewedAt"></p>
                         </div>
                         <div class="mb-2">
-                            <strong>Ghi chú:</strong>
+                            <strong>Comment:</strong>
                             <p id="viewReviewerComment"></p>
                         </div>
                     </div>
@@ -386,12 +386,12 @@
                 <div id="viewFilePathContainer" style="display: none;">
                     <a href="#" id="viewFilePathLink" target="_blank" class="btn btn-primary mt-3">
                         <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
-                        Xem file đính kèm (Tab mới)
+                        View attached file (new tab)
                     </a>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -436,10 +436,19 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+        function safeCreateLucideIcons() {
+            try {
+                if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                    // Some builds require an explicit icons bag; fall back to empty object
+                    lucide.createIcons(lucide.icons || {});
+                }
+            } catch (e) {
+                console.warn('Lucide initialization failed:', e);
             }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            safeCreateLucideIcons();
 
             // Search functionality
             const searchInput = document.getElementById('searchInput');
@@ -473,10 +482,10 @@
                     document.getElementById('viewStatus').innerHTML = '<span class="badge bg-' +
                         (button.getAttribute('data-status') === 'Approved' ? 'success' : 'danger') + '">' +
                         button.getAttribute('data-status') + '</span>';
-                    document.getElementById('viewPoints').textContent = button.getAttribute('data-points') + ' điểm';
+                    document.getElementById('viewPoints').textContent = button.getAttribute('data-points') + ' points';
                     document.getElementById('viewReviewerName').textContent = button.getAttribute('data-reviewer-name') || '-';
                     document.getElementById('viewReviewedAt').textContent = button.getAttribute('data-reviewed-at') || '-';
-                    document.getElementById('viewReviewerComment').textContent = button.getAttribute('data-reviewer-comment') || 'Không có ghi chú';
+                    document.getElementById('viewReviewerComment').textContent = button.getAttribute('data-reviewer-comment') || 'No comment';
 
                     var filePath = button.getAttribute('data-file-path');
                     if (filePath) {
@@ -486,11 +495,12 @@
                         document.getElementById('viewFilePathContainer').style.display = 'none';
                     }
 
-                    if (typeof lucide !== 'undefined') {
-                        lucide.createIcons();
-                    }
+                    safeCreateLucideIcons();
                 });
             }
         });
+
+        // Also run after full load as a fallback
+        window.addEventListener('load', safeCreateLucideIcons);
     </script>
 }

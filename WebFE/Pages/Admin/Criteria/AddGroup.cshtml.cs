@@ -78,19 +78,19 @@ namespace WebFE.Pages.Admin.Criteria
         {
             if (!ModelState.IsValid)
             {
-                ErrorMessage = "Thông tin không hợp lệ.";
+                ErrorMessage = "Invalid input data.";
                 return Page();
             }
 
             if (string.IsNullOrWhiteSpace(Name))
             {
-                ErrorMessage = "Tên nhóm tiêu chí không được để trống.";
+                ErrorMessage = "Criterion group name must not be empty.";
                 return Page();
             }
 
             if (MaxScore <= 0)
             {
-                ErrorMessage = "Điểm tối đa phải lớn hơn 0.";
+                ErrorMessage = "Max score must be greater than 0.";
                 return Page();
             }
 
@@ -115,24 +115,23 @@ namespace WebFE.Pages.Admin.Criteria
 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "✅ Đã tạo nhóm tiêu chí thành công!";
+                    SuccessMessage = "✅ Criterion group created successfully!";
                     return RedirectToPage("./Index");
                 }
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogError("Create failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
-                    ErrorMessage = $"Không thể tạo nhóm tiêu chí: {errorContent}";
+                    ErrorMessage = $"Unable to create criterion group: {errorContent}";
                     return Page();
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating criterion group");
-                ErrorMessage = $"Đã xảy ra lỗi: {ex.Message}";
+                ErrorMessage = $"An error occurred: {ex.Message}";
                 return Page();
             }
         }
     }
 }
-

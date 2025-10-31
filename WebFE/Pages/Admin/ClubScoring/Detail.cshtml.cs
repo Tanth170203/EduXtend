@@ -94,7 +94,7 @@ public class DetailModel : PageModel
         // basic validation
         if (Input.CriterionId <= 0 || Input.Score <= 0 || string.IsNullOrWhiteSpace(Input.Note))
         {
-            ModelState.AddModelError(string.Empty, "Thiếu thông tin cần thiết");
+            ModelState.AddModelError(string.Empty, "Missing required information");
             await OnGetAsync(Input.ClubId, Input.SemesterId, Input.Month);
             return Page();
         }

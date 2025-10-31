@@ -298,12 +298,12 @@ public class ComprehensiveAutoScoringService : BackgroundService
                     };
                     dbContext.MovementRecordDetails.Add(detail);
 
-                    // Recalculate total score (sum all details, cap at 140)
+                    // Recalculate total score (sum all details, cap at 100)
                     var totalScore = await dbContext.MovementRecordDetails
                         .Where(d => d.MovementRecordId == record.Id)
                         .SumAsync(d => d.Score);
 
-                    record.TotalScore = Math.Min(totalScore, 140); // Cap at 140 total
+                    record.TotalScore = Math.Min(totalScore, 100); // Cap at 100 total
                     record.LastUpdated = DateTime.UtcNow;
 
                     _logger.LogInformation(
@@ -895,7 +895,7 @@ public class ComprehensiveAutoScoringService : BackgroundService
             foreach (var record in records)
             {
                 var totalScore = record.Details.Sum(d => d.Score);
-                record.TotalScore = Math.Min(totalScore, 140); // Cap at 140 as per Decision 414
+                record.TotalScore = Math.Min(totalScore, 100); // Cap at 100 as per Decision 414
                 record.LastUpdated = DateTime.UtcNow;
             }
 

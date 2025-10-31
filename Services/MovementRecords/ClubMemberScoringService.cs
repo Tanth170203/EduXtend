@@ -172,7 +172,7 @@ public class ClubMemberScoringService : IClubMemberScoringService
 
             // Update record total
             var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
-            record.TotalScore = Math.Min(totalScore, 140);
+            record.TotalScore = Math.Min(totalScore, 100);
             record.LastUpdated = DateTime.UtcNow;
             await _recordRepository.UpdateAsync(record);
 

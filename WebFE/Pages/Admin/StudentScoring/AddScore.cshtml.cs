@@ -110,7 +110,7 @@ namespace WebFE.Pages.Admin.StudentScoring
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading add score page");
-                ErrorMessage = "Đã xảy ra lỗi khi tải trang. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred while loading the page. Please try again.";
             }
 
             return Page();
@@ -120,21 +120,21 @@ namespace WebFE.Pages.Admin.StudentScoring
         {
             if (!ModelState.IsValid)
             {
-                ErrorMessage = "Thông tin không hợp lệ.";
+                ErrorMessage = "Invalid information.";
                 await ReloadDataAsync();
                 return Page();
             }
 
             if (StudentId <= 0 || GroupId <= 0 || CriterionId <= 0 || Score < 0)
             {
-                ErrorMessage = "Vui lòng điền đầy đủ thông tin.";
+                ErrorMessage = "Please provide all required information.";
                 await ReloadDataAsync();
                 return Page();
             }
 
             if (string.IsNullOrWhiteSpace(Comments) || Comments.Length < 10)
             {
-                ErrorMessage = "Ghi chú bắt buộc tối thiểu 10 ký tự.";
+                ErrorMessage = "Comments are required and must be at least 10 characters.";
                 await ReloadDataAsync();
                 return Page();
             }
@@ -165,7 +165,7 @@ namespace WebFE.Pages.Admin.StudentScoring
                     var result = await response.Content.ReadAsStringAsync();
                     _logger.LogInformation("Score added successfully: {Result}", result);
 
-                    TempData["SuccessMessage"] = "✅ Đã cộng điểm thành công!";
+                    TempData["SuccessMessage"] = "✅ Score added successfully!";
                     return RedirectToPage("/Admin/StudentScoring/Index");
                 }
                 else
@@ -175,9 +175,9 @@ namespace WebFE.Pages.Admin.StudentScoring
 
                     ErrorMessage = response.StatusCode switch
                     {
-                        HttpStatusCode.NotFound => "Không tìm thấy sinh viên hoặc tiêu chí.",
-                        HttpStatusCode.BadRequest => "Điểm vượt quá giới hạn cho phép hoặc dữ liệu không hợp lệ.",
-                        _ => $"Không thể cộng điểm: {errorContent}"
+                        HttpStatusCode.NotFound => "Student or criterion not found.",
+                        HttpStatusCode.BadRequest => "Score exceeds allowed limit or data is invalid.",
+                        _ => $"Unable to add score: {errorContent}"
                     };
 
                     await ReloadDataAsync();
@@ -187,10 +187,10 @@ namespace WebFE.Pages.Admin.StudentScoring
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding score");
-                ErrorMessage = $"Đã xảy ra lỗi: {ex.Message}";
-                
+                ErrorMessage = $"An error occurred: {ex.Message}";
+
                 await ReloadDataWithPreservationAsync();
-                
+
                 return Page();
             }
         }
@@ -265,7 +265,7 @@ namespace WebFE.Pages.Admin.StudentScoring
                         _logger.LogInformation("Loaded {Count} student criteria", AllCriteria.Count);
                     }
                 }
-                
+
                 _logger.LogInformation("Groups and criteria loaded, preserving GroupId={GroupId}, CriterionId={CriterionId}", GroupId, CriterionId);
             }
             catch (Exception ex)
@@ -312,4 +312,3 @@ namespace WebFE.Pages.Admin.StudentScoring
         public string? StudentCode { get; set; }
     }
 }
-

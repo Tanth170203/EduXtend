@@ -66,7 +66,7 @@ namespace WebFE.Pages.Admin.Evidences
         {
             if (id <= 0)
             {
-                TempData["ErrorMessage"] = "❌ ID không hợp lệ.";
+                TempData["ErrorMessage"] = "❌ Invalid ID.";
                 return RedirectToPage("./Index");
             }
 
@@ -92,17 +92,17 @@ namespace WebFE.Pages.Admin.Evidences
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    TempData["ErrorMessage"] = "❌ Không tìm thấy minh chứng.";
+                    TempData["ErrorMessage"] = "❌ Evidence not found.";
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "❌ Không thể tải minh chứng. Vui lòng thử lại.";
+                    TempData["ErrorMessage"] = "❌ Unable to load evidence. Please try again.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading evidence {Id}", id);
-                TempData["ErrorMessage"] = "❌ Đã xảy ra lỗi. Vui lòng thử lại.";
+                TempData["ErrorMessage"] = "❌ An error occurred. Please try again.";
             }
 
             return RedirectToPage("./Index");
@@ -119,21 +119,34 @@ namespace WebFE.Pages.Admin.Evidences
                 return Page();
             }
 
+            // Ensure we have fresh Evidence data (CriterionId, MaxScore, etc.)
+            Evidence = await LoadEvidenceAsync(Input.Id);
+
             // ===== VALIDATE STATUS =====
-            if (string.IsNullOrWhiteSpace(Input.Status) || 
+            if (string.IsNullOrWhiteSpace(Input.Status) ||
                 (Input.Status != "Approved" && Input.Status != "Rejected"))
             {
-                ErrorMessage = "❌ Trạng thái duyệt không hợp lệ.";
+                ErrorMessage = "❌ Invalid review status.";
                 await OnGetAsync(Input.Id);
                 return Page();
             }
 
             // ===== VALIDATE POINTS =====
-            if (Input.Status == "Approved" && Input.Points < 0)
+            if (Input.Status == "Approved")
             {
-                ErrorMessage = "❌ Điểm không được âm.";
-                await OnGetAsync(Input.Id);
-                return Page();
+                if (Input.Points < 0)
+                {
+                    ErrorMessage = "❌ Points cannot be negative.";
+                    await OnGetAsync(Input.Id);
+                    return Page();
+                }
+
+                if (Input.Points <= 0)
+                {
+                    ErrorMessage = "❌ Please enter points > 0 when approving.";
+                    await OnGetAsync(Input.Id);
+                    return Page();
+                }
             }
 
             // ===== VALIDATE POINTS WITHIN CRITERION RANGE =====
@@ -141,10 +154,18 @@ namespace WebFE.Pages.Admin.Evidences
             {
                 if (Input.Points > Evidence.CriterionMaxScore)
                 {
-                    ErrorMessage = $"❌ Điểm không được vượt quá {Evidence.CriterionMaxScore} (tối đa cho tiêu chí \"{Evidence.CriterionTitle}\")";
+                    ErrorMessage = $"❌ Points cannot exceed {Evidence.CriterionMaxScore} (max for criterion \"{Evidence.CriterionTitle}\")";
                     await OnGetAsync(Input.Id);
                     return Page();
                 }
+            }
+
+            // ===== WARN IF NO CRITERION TO APPLY POINTS =====
+            if (Input.Status == "Approved" && Input.Points > 0 && (Evidence == null || Evidence.CriterionId == null))
+            {
+                ErrorMessage = "⚠️ Evidence is not linked to a criterion so points cannot be awarded automatically. Please attach a criterion or approve with zero points.";
+                await OnGetAsync(Input.Id);
+                return Page();
             }
 
             try
@@ -155,10 +176,13 @@ namespace WebFE.Pages.Admin.Evidences
                 // ===== VALIDATE ReviewedById (FRONTEND CHECK) =====
                 if (reviewedById <= 0)
                 {
-                    ErrorMessage = "❌ Lỗi: Không thể xác định người duyệt. Vui lòng logout và login lại để cập nhật JWT token.";
+                    ErrorMessage = "❌ Error: Unable to determine reviewer. Please check the JWT token. If the issue persists, log out and log back in.";
+                    _logger.LogError("ReviewedById validation failed: ReviewedById={ReviewedById}", reviewedById);
                     await OnGetAsync(Input.Id);
                     return Page();
                 }
+
+                _logger.LogInformation("✅ ReviewedById validated successfully: {ReviewedById}", reviewedById);
 
                 // ===== BUILD REVIEW DTO =====
                 var reviewDto = new ReviewEvidenceDto
@@ -170,25 +194,28 @@ namespace WebFE.Pages.Admin.Evidences
                     ReviewedById = reviewedById
                 };
 
+                _logger.LogInformation("📤 Built ReviewEvidenceDto: Id={Id}, Status={Status}, Points={Points}, ReviewedById={ReviewedById}",
+                    reviewDto.Id, reviewDto.Status, reviewDto.Points, reviewDto.ReviewedById);
+
                 var json = JsonSerializer.Serialize(reviewDto);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // ===== SEND REVIEW REQUEST =====
                 using var httpClient = CreateHttpClient();
                 _logger.LogInformation(
-                    "Sending review request: EvidenceId={EvidenceId}, Status={Status}, Points={Points}, ReviewedById={ReviewedById}",
-                    Input.Id, Input.Status, reviewDto.Points, reviewedById);
+                    "📤 Sending review request to API: POST /api/evidences/{EvidenceId}/review with ReviewedById={ReviewedById}",
+                    Input.Id, reviewedById);
 
                 var response = await httpClient.PostAsync($"/api/evidences/{Input.Id}/review", content);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var statusText = Input.Status == "Approved" ? "duyệt" : "từ chối";
-                    SuccessMessage = $"✅ Đã {statusText} minh chứng thành công!";
+                    var statusText = Input.Status == "Approved" ? "approved" : "rejected";
+                    SuccessMessage = $"✅ Evidence {statusText} successfully!";
 
                     if (Input.Status == "Approved" && Input.Points > 0)
                     {
-                        SuccessMessage += $" Cộng {Input.Points} điểm vào hồ sơ sinh viên.";
+                        SuccessMessage += $" Awarded {Input.Points} points to the student's record.";
                     }
 
                     _logger.LogInformation("Evidence {EvidenceId} reviewed successfully as {Status}", Input.Id, Input.Status);
@@ -203,21 +230,43 @@ namespace WebFE.Pages.Admin.Evidences
 
                     ErrorMessage = response.StatusCode switch
                     {
-                        HttpStatusCode.NotFound => "❌ Không tìm thấy minh chứng cần duyệt.",
-                        HttpStatusCode.BadRequest => "❌ Thông tin duyệt không hợp lệ. Chi tiết: " + errorContent,
-                        HttpStatusCode.Conflict => "❌ Minh chứng đã được duyệt trước đó.",
-                        _ => $"❌ Không thể duyệt minh chứng. (Lỗi: {response.StatusCode})"
+                        HttpStatusCode.NotFound => "❌ Evidence to review not found.",
+                        HttpStatusCode.BadRequest => "❌ Invalid review data. Details: " + errorContent,
+                        HttpStatusCode.Conflict => "❌ Evidence has already been reviewed.",
+                        _ => $"❌ Unable to review evidence. (Error: {response.StatusCode})"
                     };
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error reviewing evidence {EvidenceId}", Input.Id);
-                ErrorMessage = $"❌ Đã xảy ra lỗi: {ex.Message}";
+                ErrorMessage = $"❌ An error occurred: {ex.Message}";
             }
 
             await OnGetAsync(Input.Id);
             return Page();
+        }
+
+        private async Task<EvidenceDto?> LoadEvidenceAsync(int id)
+        {
+            try
+            {
+                using var httpClient = CreateHttpClient();
+                var response = await httpClient.GetAsync($"/api/evidences/{id}");
+                if (!response.IsSuccessStatusCode) return null;
+
+                var content = await response.Content.ReadAsStringAsync();
+                var evidence = JsonSerializer.Deserialize<EvidenceDto>(
+                    content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+                return evidence;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading evidence {Id} in LoadEvidenceAsync", id);
+                return null;
+            }
         }
 
         /// <summary>
@@ -227,43 +276,68 @@ namespace WebFE.Pages.Admin.Evidences
         {
             try
             {
-                // ✅ Try to get UserId from JWT claims first
+                // ===== METHOD 1: Get UserId from HttpContext.User claims =====
+                // This is the most reliable method - claims should be set by middleware
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (userIdClaim != null && int.TryParse(userIdClaim, out var userId))
+                if (!string.IsNullOrWhiteSpace(userIdClaim) && int.TryParse(userIdClaim, out var userId) && userId > 0)
                 {
-                    _logger.LogInformation("Got UserId from JWT claim: {UserId}", userId);
+                    _logger.LogInformation("✅ Got UserId from HttpContext.User claims: {UserId}", userId);
                     return userId;
                 }
 
-                // ⚠️ Fallback: try to read JWT token from cookie if claims not available
+                _logger.LogWarning("⚠️ UserId claim not found in HttpContext.User. Trying fallback method...");
+
+                // ===== METHOD 2: Fallback - Parse JWT token from AccessToken cookie =====
                 if (Request.Cookies.TryGetValue("AccessToken", out var token))
                 {
-                    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-                    if (handler.CanReadToken(token))
+                    _logger.LogInformation("Found AccessToken cookie, attempting to parse JWT...");
+
+                    try
                     {
+                        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+
+                        if (!handler.CanReadToken(token))
+                        {
+                            _logger.LogWarning("⚠️ AccessToken cookie is not a valid JWT token");
+                            return 0;
+                        }
+
                         var jwt = handler.ReadJwtToken(token);
 
                         // Log all claims for debugging
-                        _logger.LogInformation("JWT Claims from cookie: {Claims}",
-                            string.Join(", ", jwt.Claims.Select(c => $"{c.Type}={c.Value}")));
+                        var claimsList = jwt.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+                        _logger.LogInformation("JWT Claims from cookie: {Claims}", string.Join("; ", claimsList));
 
                         // Try to get UserId from token
-                        var userIdFromToken = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-                        if (userIdFromToken != null && int.TryParse(userIdFromToken, out var userIdFromJwt))
+                        var userIdFromToken = jwt.Claims
+                            .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?
+                            .Value;
+
+                        if (userIdFromToken != null && int.TryParse(userIdFromToken, out var userIdFromJwt) && userIdFromJwt > 0)
                         {
-                            _logger.LogInformation("Got UserId from JWT token cookie: {UserId}", userIdFromJwt);
+                            _logger.LogInformation("✅ Got UserId from JWT token cookie: {UserId}", userIdFromJwt);
                             return userIdFromJwt;
                         }
+
+                        _logger.LogWarning("⚠️ NameIdentifier claim not found in JWT token from cookie");
+                    }
+                    catch (Exception jwtEx)
+                    {
+                        _logger.LogError(jwtEx, "❌ Error parsing JWT token from cookie");
                     }
                 }
+                else
+                {
+                    _logger.LogWarning("⚠️ No AccessToken cookie found");
+                }
 
-                _logger.LogWarning("Could not determine UserId from any source (claims or cookie)");
-                return 0; // Return 0 to indicate failure
+                _logger.LogError("❌ Could not determine UserId from any source");
+                return 0; // Return 0 to indicate failure - this will trigger API validation error
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting current UserId");
-                return 0; // Return 0 on error
+                _logger.LogError(ex, "❌ Unexpected error in GetCurrentUserId");
+                return 0;
             }
         }
     }
