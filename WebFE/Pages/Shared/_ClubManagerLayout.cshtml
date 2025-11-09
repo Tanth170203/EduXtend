@@ -73,6 +73,26 @@
                 </div>
                 
                 <div class="sidebar-section">
+                    <div class="sidebar-section-title">FINANCIAL</div>
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/Financial/Dashboard") ? "active" : "")" href="/ClubManager/Financial/Dashboard">
+                        <i data-lucide="pie-chart" style="width: 20px; height: 20px;"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/Financial/Transactions") ? "active" : "")" href="/ClubManager/Financial/Transactions">
+                        <i data-lucide="receipt" style="width: 20px; height: 20px;"></i>
+                        <span>Transactions</span>
+                    </a>
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/Financial/MemberFunds") ? "active" : "")" href="/ClubManager/Financial/MemberFunds">
+                        <i data-lucide="wallet" style="width: 20px; height: 20px;"></i>
+                        <span>Member Funds</span>
+                    </a>
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/Financial/Reports") ? "active" : "")" href="/ClubManager/Financial/Reports">
+                        <i data-lucide="file-bar-chart" style="width: 20px; height: 20px;"></i>
+                        <span>Reports</span>
+                    </a>
+                </div>
+                
+                <div class="sidebar-section">
                     <div class="sidebar-section-title">CONTENT</div>
                     <a class="sidebar-link @(current.StartsWith("/ClubManager/Proposals") ? "active" : "")" href="/ClubManager/Proposals">
                         <i data-lucide="lightbulb" style="width: 20px; height: 20px;"></i>
@@ -189,24 +209,11 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/auth.js" asp-append-version="true"></script>
-    <script src="~/js/notifications.js" asp-append-version="true"></script>
-    <script src="~/js/admin-dashboard.js" asp-append-version="true"></script>
+
     <script>
-        // Initialize Lucide Icons (robust)
-        (function initLucideIcons() {
-            function run() {
-                if (window.lucide && typeof lucide.createIcons === 'function') {
-                    try { lucide.createIcons(lucide.icons || {}); } catch {}
-                }
-            }
-            // Run now, on DOM ready, and after a short delay
-            run();
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', run);
-            } else {
-                setTimeout(run, 100);
-            }
+
+        lucide.createIcons();
+
             // Re-run when DOM changes (e.g., partial updates)
             try {
                 const observer = new MutationObserver(() => run());
