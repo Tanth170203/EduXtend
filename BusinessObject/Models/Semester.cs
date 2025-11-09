@@ -16,4 +16,6 @@ public class Semester
     // Navigation properties
     public ICollection<MovementRecord> MovementRecords { get; set; } = new List<MovementRecord>();
     public ICollection<ClubAward> ClubAwards { get; set; } = new List<ClubAward>();
+    public ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
+    public ICollection<FundCollectionRequest> FundCollectionRequests { get; set; } = new List<FundCollectionRequest>();
 }

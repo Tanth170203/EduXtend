@@ -1,0 +1,423 @@
+@page
+@model WebFE.Pages.ClubManager.Financial.DashboardModel
+@{
+    ViewData["Title"] = "Financial Dashboard";
+    ViewData["Breadcrumb"] = "Financial Dashboard";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Financial Dashboard</h1>
+        <p class="admin-page-subtitle">Overview of club finances</p>
+    </div>
+</div>
+
+<!-- Financial Summary Cards -->
+<div class="row g-4 mb-4">
+    <!-- Total Income -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                            <i data-lucide="trending-up" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <span class="badge bg-success bg-opacity-10 text-success">+12.5%</span>
+                    </div>
+                </div>
+                <h6 class="text-muted mb-2">Total Income</h6>
+                <h3 class="mb-0" id="totalIncome">-</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Expenses -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                            <i data-lucide="trending-down" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <span class="badge bg-danger bg-opacity-10 text-danger">-8.3%</span>
+                    </div>
+                </div>
+                <h6 class="text-muted mb-2">Total Expenses</h6>
+                <h3 class="mb-0" id="totalExpenses">-</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Balance -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon bg-info bg-opacity-10 text-info">
+                            <i data-lucide="wallet" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <span class="badge bg-info bg-opacity-10 text-info">Current</span>
+                    </div>
+                </div>
+                <h6 class="text-muted mb-2">Balance</h6>
+                <h3 class="mb-0" id="balance">-</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Funds -->
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                            <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <span class="badge bg-primary bg-opacity-10 text-primary">4/5</span>
+                    </div>
+                </div>
+                <h6 class="text-muted mb-2">Member Funds</h6>
+                <h3 class="mb-0" id="memberFunds">-</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Quick Actions</h5>
+        <p class="text-muted small mb-4">Manage your club finances</p>
+        <div class="row g-3">
+            <div class="col-md-3 col-sm-6">
+                <a href="/ClubManager/Financial/Transactions?action=income" class="btn btn-primary w-100">
+                    <i data-lucide="arrow-up-right" class="me-2" style="width: 16px; height: 16px;"></i>
+                    Record Income
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="/ClubManager/Financial/Transactions?action=expense" class="btn btn-outline-secondary w-100">
+                    <i data-lucide="arrow-down-left" class="me-2" style="width: 16px; height: 16px;"></i>
+                    Record Expense
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="/ClubManager/Financial/MemberFunds" class="btn btn-outline-secondary w-100">
+                    <i data-lucide="send" class="me-2" style="width: 16px; height: 16px;"></i>
+                    Collect Funds
+                </a>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <a href="/ClubManager/Financial/Reports" class="btn btn-outline-secondary w-100">
+                    <i data-lucide="download" class="me-2" style="width: 16px; height: 16px;"></i>
+                    Export Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-4">
+    <!-- Income vs Expenses Chart -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="card-title mb-1">Income vs Expenses</h5>
+                        <p class="text-muted small mb-0">Monthly comparison</p>
+                    </div>
+                    <div style="width: 120px;">
+                        <select class="form-select form-select-sm" id="chartYearFilter">
+                            <!-- Years will be populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="incomeExpensesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income Sources Chart -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Income Sources</h5>
+                <p class="text-muted small mb-4">Distribution by category</p>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="incomeSourcesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const CLUB_ID = @Model.ClubId;
+        const API_BASE = 'https://localhost:5001/api';
+
+        let incomeExpensesChart = null;
+        let incomeSourcesChart = null;
+
+        // Load all data on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            populateYearFilter();
+            await loadFinancialOverview();
+            await loadIncomeExpenseChart();
+            await loadIncomeSources();
+            lucide.createIcons();
+        });
+
+        // Populate year filter (5 years back to 2 years forward)
+        function populateYearFilter() {
+            const currentYear = new Date().getFullYear();
+            const yearFilter = document.getElementById('chartYearFilter');
+            
+            for (let year = currentYear + 2; year >= currentYear - 5; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (year === currentYear) {
+                    option.selected = true;
+                }
+                yearFilter.appendChild(option);
+            }
+
+            // Add event listener for year change
+            yearFilter.addEventListener('change', async (e) => {
+                await loadIncomeExpenseChart(parseInt(e.target.value));
+            });
+        }
+
+        // Load financial overview from new API
+        async function loadFinancialOverview() {
+            try {
+                console.log('🔍 Fetching financial data for CLUB_ID:', CLUB_ID);
+                console.log('🔗 API URL:', `${API_BASE}/FinancialDashboard/club/${CLUB_ID}`);
+                
+                const response = await fetch(`${API_BASE}/FinancialDashboard/club/${CLUB_ID}`, {
+                    credentials: 'include'
+                });
+                
+                console.log('📡 Response status:', response.status, response.statusText);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Financial Overview:', data);
+                    console.log('  - Total Income:', data.totalIncome);
+                    console.log('  - Total Expenses:', data.totalExpenses);
+                    console.log('  - Balance:', data.balance);
+                    console.log('  - Member Funds:', data.memberFunds);
+                    console.log('  - Semester:', data.semesterId, data.semesterName);
+                    
+                    // Update cards with real data
+                    document.getElementById('totalIncome').textContent = formatCurrency(data.totalIncome || 0);
+                    document.getElementById('totalExpenses').textContent = formatCurrency(data.totalExpenses || 0);
+                    document.getElementById('balance').textContent = formatCurrency(data.balance || 0);
+                    document.getElementById('memberFunds').textContent = formatCurrency(data.memberFunds || 0);
+                    
+                    // Update growth rate badges
+                    updateGrowthBadge(document.querySelector('.col-md-6:nth-child(1) .badge'), data.incomeGrowthRate);
+                    updateGrowthBadge(document.querySelector('.col-md-6:nth-child(2) .badge'), data.expenseGrowthRate);
+                } else {
+                    console.error('❌ Failed to load overview:', response.status, response.statusText);
+                    const errorText = await response.text();
+                    console.error('Error details:', errorText);
+                }
+            } catch (error) {
+                console.error('❌ Error loading financial overview:', error);
+            }
+        }
+
+        // Load income vs expenses chart
+        async function loadIncomeExpenseChart(year = null) {
+            try {
+                const yearParam = year ? `?year=${year}` : '';
+                const response = await fetch(`${API_BASE}/FinancialDashboard/club/${CLUB_ID}/chart${yearParam}`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Chart Data:', data);
+                    
+                    const ctx = document.getElementById('incomeExpensesChart').getContext('2d');
+                    
+                    if (incomeExpensesChart) {
+                        incomeExpensesChart.destroy();
+                    }
+                    
+                    incomeExpensesChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.labels || [],
+                            datasets: [
+                                {
+                                    label: 'Income',
+                                    data: data.incomeData || [],
+                                    backgroundColor: '#003d7a',
+                                    borderRadius: 6
+                                },
+                                {
+                                    label: 'Expenses',
+                                    data: data.expenseData || [],
+                                    backgroundColor: '#dc3545',
+                                    borderRadius: 6
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toLocaleString() + ' ₫';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    console.error('Failed to load chart data:', response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error('Error loading chart data:', error);
+            }
+        }
+
+        // Load income sources
+        async function loadIncomeSources() {
+            try {
+                const response = await fetch(`${API_BASE}/FinancialDashboard/club/${CLUB_ID}/income-sources`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Income Sources:', data);
+                    
+                    const ctx = document.getElementById('incomeSourcesChart').getContext('2d');
+                    
+                    if (incomeSourcesChart) {
+                        incomeSourcesChart.destroy();
+                    }
+                    
+                    if (data && data.length > 0) {
+                        const labels = data.map(s => `${s.category} (${s.percentage}%)`);
+                        const amounts = data.map(s => s.amount);
+                        const colors = ['#003d7a', '#0ea5e9', '#14b8a6', '#f59e0b', '#10b981', '#8b5cf6'];
+                        
+                        incomeSourcesChart = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    data: amounts,
+                                    backgroundColor: colors.slice(0, data.length),
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom'
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                return context.label + ': ' + formatCurrency(context.raw);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        // Show empty state
+                        incomeSourcesChart = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['No Data'],
+                                datasets: [{
+                                    data: [1],
+                                    backgroundColor: ['#e5e7eb'],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    }
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    console.error('Failed to load income sources:', response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error('Error loading income sources:', error);
+            }
+        }
+
+        // Update growth badge color and text
+        function updateGrowthBadge(element, rate) {
+            if (!element) return;
+            
+            const isPositive = rate >= 0;
+            const badgeClass = isPositive ? 'bg-success text-success' : 'bg-danger text-danger';
+            const sign = isPositive ? '+' : '';
+            
+            element.className = `badge ${badgeClass} bg-opacity-10`;
+            element.textContent = `${sign}${rate.toFixed(1)}%`;
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'decimal' }).format(amount) + ' ₫';
+        }
+    </script>
+}
+
+<style>
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+

@@ -4,6 +4,7 @@ using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(EduXtendContext))]
-    partial class EduXtendContextModelSnapshot : ModelSnapshot
+    [Migration("20251107091416_AddFundCollectionTables")]
+    partial class AddFundCollectionTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -756,9 +759,6 @@ namespace DataAccess.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<int>("SemesterId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -779,8 +779,6 @@ namespace DataAccess.Migrations
                     b.HasIndex("DueDate");
 
                     b.HasIndex("ClubId", "Status");
-
-                    b.HasIndex("SemesterId", "Status");
 
                     b.ToTable("FundCollectionRequests");
                 });
@@ -1208,9 +1206,6 @@ namespace DataAccess.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int?>("SemesterId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1248,8 +1243,6 @@ namespace DataAccess.Migrations
                     b.HasIndex("Type");
 
                     b.HasIndex("ClubId", "TransactionDate");
-
-                    b.HasIndex("SemesterId", "Type", "Status");
 
                     b.ToTable("PaymentTransactions");
                 });
@@ -1936,17 +1929,9 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BusinessObject.Models.Semester", "Semester")
-                        .WithMany("FundCollectionRequests")
-                        .HasForeignKey("SemesterId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Club");
 
                     b.Navigation("CreatedBy");
-
-                    b.Navigation("Semester");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Interview", b =>
@@ -2115,11 +2100,6 @@ namespace DataAccess.Migrations
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("BusinessObject.Models.Semester", "Semester")
-                        .WithMany("PaymentTransactions")
-                        .HasForeignKey("SemesterId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("BusinessObject.Models.Student", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
@@ -2130,8 +2110,6 @@ namespace DataAccess.Migrations
                     b.Navigation("Club");
 
                     b.Navigation("CreatedBy");
-
-                    b.Navigation("Semester");
 
                     b.Navigation("Student");
                 });
@@ -2339,11 +2317,7 @@ namespace DataAccess.Migrations
                 {
                     b.Navigation("ClubAwards");
 
-                    b.Navigation("FundCollectionRequests");
-
                     b.Navigation("MovementRecords");
-
-                    b.Navigation("PaymentTransactions");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Student", b =>

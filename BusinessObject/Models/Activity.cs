@@ -62,4 +62,5 @@ public class Activity
     public ICollection<ActivityAttendance> Attendances { get; set; } = new List<ActivityAttendance>();
     public ICollection<ActivityFeedback> Feedbacks { get; set; } = new List<ActivityFeedback>();
     public ICollection<Evidence> Evidences { get; set; } = new List<Evidence>();
+    public ICollection<ActivitySchedule> Schedules { get; set; } = new List<ActivitySchedule>();
 }

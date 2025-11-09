@@ -269,7 +269,7 @@ public class CloudinaryService : ICloudinaryService
             
             return url.Insert(insertPos, transformations);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // If transformation fails, return original URL
             return url;
@@ -395,9 +395,9 @@ public class CloudinaryService : ICloudinaryService
             
             return joined;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // Log parse error
+            // Parse error - return null for invalid URL
             return null;
         }
     }

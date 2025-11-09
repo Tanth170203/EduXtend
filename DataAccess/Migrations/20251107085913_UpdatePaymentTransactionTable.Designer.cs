@@ -4,6 +4,7 @@ using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(EduXtendContext))]
-    partial class EduXtendContextModelSnapshot : ModelSnapshot
+    [Migration("20251107085913_UpdatePaymentTransactionTable")]
+    partial class UpdatePaymentTransactionTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -654,137 +657,6 @@ namespace DataAccess.Migrations
                     b.ToTable("Evidences");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.FundCollectionPayment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("ClubMemberId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ConfirmedById")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("FundCollectionRequestId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("LastReminderAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("PaymentTransactionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReminderCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClubMemberId");
-
-                    b.HasIndex("ConfirmedById");
-
-                    b.HasIndex("PaymentTransactionId");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("FundCollectionRequestId", "ClubMemberId")
-                        .IsUnique();
-
-                    b.ToTable("FundCollectionPayments");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.FundCollectionRequest", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("AmountPerMember")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("ClubId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CreatedById")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("PaymentMethods")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("SemesterId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("DueDate");
-
-                    b.HasIndex("ClubId", "Status");
-
-                    b.HasIndex("SemesterId", "Status");
-
-                    b.ToTable("FundCollectionRequests");
-                });
-
             modelBuilder.Entity("BusinessObject.Models.Interview", b =>
                 {
                     b.Property<int>("Id")
@@ -1208,9 +1080,6 @@ namespace DataAccess.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int?>("SemesterId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1248,8 +1117,6 @@ namespace DataAccess.Migrations
                     b.HasIndex("Type");
 
                     b.HasIndex("ClubId", "TransactionDate");
-
-                    b.HasIndex("SemesterId", "Type", "Status");
 
                     b.ToTable("PaymentTransactions");
                 });
@@ -1889,66 +1756,6 @@ namespace DataAccess.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.FundCollectionPayment", b =>
-                {
-                    b.HasOne("BusinessObject.Models.ClubMember", "ClubMember")
-                        .WithMany()
-                        .HasForeignKey("ClubMemberId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.User", "ConfirmedBy")
-                        .WithMany()
-                        .HasForeignKey("ConfirmedById")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("BusinessObject.Models.FundCollectionRequest", "FundCollectionRequest")
-                        .WithMany("Payments")
-                        .HasForeignKey("FundCollectionRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.PaymentTransaction", "PaymentTransaction")
-                        .WithMany()
-                        .HasForeignKey("PaymentTransactionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("ClubMember");
-
-                    b.Navigation("ConfirmedBy");
-
-                    b.Navigation("FundCollectionRequest");
-
-                    b.Navigation("PaymentTransaction");
-                });
-
-            modelBuilder.Entity("BusinessObject.Models.FundCollectionRequest", b =>
-                {
-                    b.HasOne("BusinessObject.Models.Club", "Club")
-                        .WithMany()
-                        .HasForeignKey("ClubId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Models.Semester", "Semester")
-                        .WithMany("FundCollectionRequests")
-                        .HasForeignKey("SemesterId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Club");
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("Semester");
-                });
-
             modelBuilder.Entity("BusinessObject.Models.Interview", b =>
                 {
                     b.HasOne("BusinessObject.Models.User", "CreatedBy")
@@ -2115,11 +1922,6 @@ namespace DataAccess.Migrations
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("BusinessObject.Models.Semester", "Semester")
-                        .WithMany("PaymentTransactions")
-                        .HasForeignKey("SemesterId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("BusinessObject.Models.Student", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
@@ -2130,8 +1932,6 @@ namespace DataAccess.Migrations
                     b.Navigation("Club");
 
                     b.Navigation("CreatedBy");
-
-                    b.Navigation("Semester");
 
                     b.Navigation("Student");
                 });
@@ -2298,11 +2098,6 @@ namespace DataAccess.Migrations
                     b.Navigation("Details");
                 });
 
-            modelBuilder.Entity("BusinessObject.Models.FundCollectionRequest", b =>
-                {
-                    b.Navigation("Payments");
-                });
-
             modelBuilder.Entity("BusinessObject.Models.Major", b =>
                 {
                     b.Navigation("Students");
@@ -2339,11 +2134,7 @@ namespace DataAccess.Migrations
                 {
                     b.Navigation("ClubAwards");
 
-                    b.Navigation("FundCollectionRequests");
-
                     b.Navigation("MovementRecords");
-
-                    b.Navigation("PaymentTransactions");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Student", b =>
