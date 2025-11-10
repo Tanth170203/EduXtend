@@ -106,6 +106,8 @@ namespace WebAPI
             builder.Services.AddScoped<IProposalService, ProposalService>();
             builder.Services.AddScoped<IFundCollectionService, FundCollectionService>();
             builder.Services.AddScoped<IFinancialDashboardService, FinancialDashboardService>();
+            builder.Services.AddScoped<Repositories.News.INewsRepository, Repositories.News.NewsRepository>();
+            builder.Services.AddScoped<Services.News.INewsService, Services.News.NewsService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
