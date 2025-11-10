@@ -9,7 +9,6 @@ public class SystemNews
     [Required, MaxLength(200)]
     public string Title { get; set; } = null!;
     
-    [MaxLength(1000)]
     public string? Content { get; set; }
     
     public string? ImageUrl { get; set; }

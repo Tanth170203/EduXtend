@@ -65,6 +65,10 @@
                         <i data-lucide="users" style="width: 20px; height: 20px;"></i>
                         <span>Classes</span>
                     </a>
+                    <a class="sidebar-link" href="/Admin/SystemNews">
+                        <i data-lucide="newspaper" style="width: 20px; height: 20px;"></i>
+                        <span>System News</span>
+                    </a>
                 </div>
                 
                 <div class="sidebar-section">
@@ -121,10 +125,6 @@
                 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">SETTINGS</div>
-                    <a class="sidebar-link" href="/Admin/SystemNews">
-                        <i data-lucide="newspaper" style="width: 20px; height: 20px;"></i>
-                        <span>System News</span>
-                    </a>
                     <a class="sidebar-link" href="/Admin/Settings">
                         <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
                         <span>Configuration</span>
@@ -181,7 +181,7 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end admin-dropdown-menu" aria-labelledby="userDropdown">
                         <li>
-                            <a class="dropdown-item" href="/Profile">
+                            <a class="dropdown-item" href="/Student/Profile">
                                 <i data-lucide="user" style="width: 16px; height: 16px;"></i>
                                 <span>Profile</span>
                             </a>
@@ -290,11 +290,14 @@
 
         async function updateAdminAuthUI() {
             const user = await getUser();
-            if (user && user.avatar) {
-                document.getElementById('adminUserAvatar').src = user.avatar;
+            const avatarEl = document.getElementById('adminUserAvatar');
+            const nameEl = document.getElementById('adminUserName');
+            const fallbackAvatar = '/images/default-avatar.png';
+            if (avatarEl) {
+                avatarEl.src = (user && user.avatar) ? user.avatar : fallbackAvatar;
             }
-            if (user && user.name) {
-                document.getElementById('adminUserName').textContent = user.name;
+            if (nameEl && user && user.name) {
+                nameEl.textContent = user.name;
             }
         }
 
