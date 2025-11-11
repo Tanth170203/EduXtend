@@ -42,6 +42,7 @@ public class ClubMovementRecordDetailDto
     public int CriterionId { get; set; }
     public string CriterionTitle { get; set; } = string.Empty;
     public string GroupName { get; set; } = string.Empty;
+    public int CriterionMaxScore { get; set; }
     public int? ActivityId { get; set; }
     public string? ActivityTitle { get; set; }
     public double Score { get; set; }
@@ -85,6 +86,20 @@ public class ClubCategoryScoreDto
     public double CurrentScore { get; set; }
     public double MaxScore { get; set; }
     public bool IsMax => CurrentScore >= MaxScore;
+}
+
+/// <summary>
+/// Summary statistics for a club
+/// </summary>
+public class ClubMovementSummaryDto
+{
+    public int ClubId { get; set; }
+    public string ClubName { get; set; } = string.Empty;
+    public int TotalRecords { get; set; }
+    public double AverageScore { get; set; }
+    public double HighestScore { get; set; }
+    public double LowestScore { get; set; }
+    public List<ClubMovementRecordDto> Records { get; set; } = new();
 }
 
 

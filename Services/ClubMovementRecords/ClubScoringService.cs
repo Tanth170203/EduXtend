@@ -52,6 +52,27 @@ public class ClubScoringService : IClubScoringService
         return dtos;
     }
 
+    public async Task<List<ClubMovementRecordDto>> GetAllByClubAsync(int clubId)
+    {
+        var records = await _recordRepo.GetAllByClubAsync(clubId);
+        var dtos = new List<ClubMovementRecordDto>();
+
+        foreach (var record in records)
+        {
+            dtos.Add(await MapToDto(record));
+        }
+
+        return dtos;
+    }
+
+    public async Task<ClubMovementRecordDto?> GetByIdAsync(int id)
+    {
+        var record = await _recordRepo.GetByIdAsync(id);
+        if (record == null) return null;
+
+        return await MapToDto(record);
+    }
+
     // Services/ClubMovementRecords/ClubScoringService.cs
 
     public async Task<ClubMovementRecordDto> AddManualScoreAsync(AddClubManualScoreDto dto)
@@ -332,22 +353,27 @@ public class ClubScoringService : IClubScoringService
         };
 
         // Map details
-        dto.Details = record.Details.Select(d => new ClubMovementRecordDetailDto
-        {
-            Id = d.Id,
-            ClubMovementRecordId = d.ClubMovementRecordId,
-            CriterionId = d.CriterionId,
-            CriterionTitle = d.Criterion.Title,
-            GroupName = d.Criterion.Group.Name,
-            ActivityId = d.ActivityId,
-            ActivityTitle = d.Activity?.Title,
-            Score = d.Score,
-            ScoreType = d.ScoreType,
-            Note = d.Note,
-            CreatedBy = d.CreatedBy,
-            CreatedByName = d.CreatedByUser?.FullName,
-            AwardedAt = d.AwardedAt
-        }).OrderByDescending(d => d.AwardedAt).ToList();
+        dto.Details = record.Details
+            .Where(d => d.Criterion != null) // Filter out null criteria
+            .Select(d => new ClubMovementRecordDetailDto
+            {
+                Id = d.Id,
+                ClubMovementRecordId = d.ClubMovementRecordId,
+                CriterionId = d.CriterionId,
+                CriterionTitle = d.Criterion!.Title,
+                GroupName = d.Criterion.Group?.Name ?? "Unknown",
+                CriterionMaxScore = d.Criterion.MaxScore,
+                ActivityId = d.ActivityId,
+                ActivityTitle = d.Activity?.Title,
+                Score = d.Score,
+                ScoreType = d.ScoreType,
+                Note = d.Note,
+                CreatedBy = d.CreatedBy,
+                CreatedByName = d.CreatedByUser?.FullName,
+                AwardedAt = d.AwardedAt
+            })
+            .OrderByDescending(d => d.AwardedAt)
+            .ToList();
 
         return dto;
     }
