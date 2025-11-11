@@ -65,6 +65,47 @@ public class ClubMovementRecordController : ControllerBase
     }
 
     /// <summary>
+    /// Get all club movement records for a club
+    /// </summary>
+    [HttpGet("club/{clubId}")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<ClubMovementRecordDto>>> GetAllByClub(int clubId)
+    {
+        try
+        {
+            var records = await _service.GetAllByClubAsync(clubId);
+            return Ok(records);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving club movement records for club {ClubId}", clubId);
+            return StatusCode(500, new { message = "Error retrieving club movement record list." });
+        }
+    }
+
+    /// <summary>
+    /// Get club movement record by ID (with details)
+    /// </summary>
+    [HttpGet("id/{id}")]
+    [Authorize]
+    public async Task<ActionResult<ClubMovementRecordDto>> GetById(int id)
+    {
+        try
+        {
+            var record = await _service.GetByIdAsync(id);
+            if (record == null)
+                return NotFound(new { message = $"Club movement record not found with ID {id}." });
+
+            return Ok(record);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving club movement record {Id}", id);
+            return StatusCode(500, new { message = "Error retrieving club movement record." });
+        }
+    }
+
+    /// <summary>
     /// Add manual score for club (Admin only)
     /// </summary>
     [HttpPost("add-manual-score")]

@@ -87,10 +87,7 @@
                                         <td class="fw-semibold">@d.CriterionTitle</td>
                                         <td class="text-center">@d.CriterionMaxScore</td>
                                         <td class="text-center">
-                                            <div class="progress" style="height:16px; width:110px; margin:0 auto;">
-                                                <div class="progress-bar bg-@b" style="width:@p%" role="progressbar"></div>
-                                            </div>
-                                            <small class="text-muted">@p.ToString("F0")%</small>
+                                            <div class="fw-semibold">@d.Score.ToString("F1")</div>
                                         </td>
                                         <td>@d.AwardedAt.ToString("dd/MM/yyyy")</td>
                                     </tr>

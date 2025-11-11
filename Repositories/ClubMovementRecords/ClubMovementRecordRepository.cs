@@ -16,6 +16,7 @@ public class ClubMovementRecordRepository : IClubMovementRecordRepository
     public async Task<ClubMovementRecord?> GetByClubMonthAsync(int clubId, int semesterId, int month)
     {
         return await _context.ClubMovementRecords
+            .AsSplitQuery()
             .Include(cmr => cmr.Club)
             .Include(cmr => cmr.Semester)
             .Include(cmr => cmr.Details)
@@ -43,6 +44,25 @@ public class ClubMovementRecordRepository : IClubMovementRecordRepository
             .ToListAsync();
     }
 
+    public async Task<List<ClubMovementRecord>> GetAllByClubAsync(int clubId)
+    {
+        return await _context.ClubMovementRecords
+            .AsSplitQuery()
+            .Include(cmr => cmr.Club)
+            .Include(cmr => cmr.Semester)
+            .Include(cmr => cmr.Details)
+                .ThenInclude(d => d.Criterion)
+                    .ThenInclude(c => c.Group)
+            .Include(cmr => cmr.Details)
+                .ThenInclude(d => d.Activity)
+            .Include(cmr => cmr.Details)
+                .ThenInclude(d => d.CreatedByUser)
+            .Where(cmr => cmr.ClubId == clubId)
+            .OrderByDescending(cmr => cmr.Semester.StartDate)
+            .ThenBy(cmr => cmr.Month)
+            .ToListAsync();
+    }
+
     public async Task<List<ClubMovementRecord>> GetAllByMonthAsync(int semesterId, int month)
     {
         return await _context.ClubMovementRecords
@@ -56,6 +76,7 @@ public class ClubMovementRecordRepository : IClubMovementRecordRepository
     public async Task<ClubMovementRecord?> GetByIdAsync(int id)
     {
         return await _context.ClubMovementRecords
+            .AsSplitQuery()
             .Include(cmr => cmr.Club)
             .Include(cmr => cmr.Semester)
             .Include(cmr => cmr.Details)
