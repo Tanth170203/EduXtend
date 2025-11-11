@@ -17,7 +17,7 @@ namespace DataAccess.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.8")
+                .HasAnnotation("ProductVersion", "9.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -197,6 +197,83 @@ namespace DataAccess.Migrations
                         .IsUnique();
 
                     b.ToTable("ActivityRegistrations");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ActivitySchedule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActivityId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId", "Order");
+
+                    b.ToTable("ActivitySchedules");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ActivityScheduleAssignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActivityScheduleId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResponsibleName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Role")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityScheduleId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivityScheduleAssignments");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Club", b =>
@@ -575,6 +652,137 @@ namespace DataAccess.Migrations
                     b.HasIndex("StudentId");
 
                     b.ToTable("Evidences");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.FundCollectionPayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ClubMemberId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ConfirmedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FundCollectionRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastReminderAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("PaymentTransactionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReminderCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClubMemberId");
+
+                    b.HasIndex("ConfirmedById");
+
+                    b.HasIndex("PaymentTransactionId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("FundCollectionRequestId", "ClubMemberId")
+                        .IsUnique();
+
+                    b.ToTable("FundCollectionPayments");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.FundCollectionRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AmountPerMember")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("ClubId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PaymentMethods")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SemesterId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DueDate");
+
+                    b.HasIndex("ClubId", "Status");
+
+                    b.HasIndex("SemesterId", "Status");
+
+                    b.ToTable("FundCollectionRequests");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Interview", b =>
@@ -964,37 +1172,84 @@ namespace DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("ActivityId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("Category")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int>("ClubId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("CreatedById")
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Method")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ReceiptUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("SemesterId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<DateTime>("TransactionDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClubId");
+                    b.HasIndex("ActivityId");
 
                     b.HasIndex("CreatedById");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("Type");
+
+                    b.HasIndex("ClubId", "TransactionDate");
+
+                    b.HasIndex("SemesterId", "Type", "Status");
 
                     b.ToTable("PaymentTransactions");
                 });
@@ -1440,6 +1695,35 @@ namespace DataAccess.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.ActivitySchedule", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Activity", "Activity")
+                        .WithMany("Schedules")
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Activity");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ActivityScheduleAssignment", b =>
+                {
+                    b.HasOne("BusinessObject.Models.ActivitySchedule", "ActivitySchedule")
+                        .WithMany("Assignments")
+                        .HasForeignKey("ActivityScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ActivitySchedule");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Club", b =>
                 {
                     b.HasOne("BusinessObject.Models.ClubCategory", "Category")
@@ -1605,6 +1889,66 @@ namespace DataAccess.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.FundCollectionPayment", b =>
+                {
+                    b.HasOne("BusinessObject.Models.ClubMember", "ClubMember")
+                        .WithMany()
+                        .HasForeignKey("ClubMemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "ConfirmedBy")
+                        .WithMany()
+                        .HasForeignKey("ConfirmedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BusinessObject.Models.FundCollectionRequest", "FundCollectionRequest")
+                        .WithMany("Payments")
+                        .HasForeignKey("FundCollectionRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.PaymentTransaction", "PaymentTransaction")
+                        .WithMany()
+                        .HasForeignKey("PaymentTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ClubMember");
+
+                    b.Navigation("ConfirmedBy");
+
+                    b.Navigation("FundCollectionRequest");
+
+                    b.Navigation("PaymentTransaction");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.FundCollectionRequest", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Club", "Club")
+                        .WithMany()
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.Semester", "Semester")
+                        .WithMany("FundCollectionRequests")
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Club");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Semester");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Interview", b =>
                 {
                     b.HasOne("BusinessObject.Models.User", "CreatedBy")
@@ -1755,10 +2099,15 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Models.PaymentTransaction", b =>
                 {
+                    b.HasOne("BusinessObject.Models.Activity", "Activity")
+                        .WithMany()
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BusinessObject.Models.Club", "Club")
                         .WithMany("Transactions")
                         .HasForeignKey("ClubId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("BusinessObject.Models.User", "CreatedBy")
@@ -1766,9 +2115,25 @@ namespace DataAccess.Migrations
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("BusinessObject.Models.Semester", "Semester")
+                        .WithMany("PaymentTransactions")
+                        .HasForeignKey("SemesterId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("BusinessObject.Models.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Activity");
+
                     b.Navigation("Club");
 
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("Semester");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Plan", b =>
@@ -1888,6 +2253,13 @@ namespace DataAccess.Migrations
                     b.Navigation("Feedbacks");
 
                     b.Navigation("Registrations");
+
+                    b.Navigation("Schedules");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ActivitySchedule", b =>
+                {
+                    b.Navigation("Assignments");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Club", b =>
@@ -1926,6 +2298,11 @@ namespace DataAccess.Migrations
                     b.Navigation("Details");
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.FundCollectionRequest", b =>
+                {
+                    b.Navigation("Payments");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.Major", b =>
                 {
                     b.Navigation("Students");
@@ -1962,7 +2339,11 @@ namespace DataAccess.Migrations
                 {
                     b.Navigation("ClubAwards");
 
+                    b.Navigation("FundCollectionRequests");
+
                     b.Navigation("MovementRecords");
+
+                    b.Navigation("PaymentTransactions");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Student", b =>

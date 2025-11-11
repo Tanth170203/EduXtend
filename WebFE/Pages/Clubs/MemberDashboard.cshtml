@@ -80,16 +80,15 @@
                     <a class="sidebar-link @(section == "finance" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=finance">
                         <i data-lucide="dollar-sign" style="width: 20px; height: 20px;"></i>
                         <span>Finance</span>
-                        <span class="badge bg-warning text-dark ms-auto">Soon</span>
                     </a>
                     <a class="sidebar-link @(section == "score" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=score">
                         <i data-lucide="trophy" style="width: 20px; height: 20px;"></i>
                         <span>Club Score</span>
                     </a>
-                    <a class="sidebar-link @(section == "ideas" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=ideas">
+                    <a class="sidebar-link @(section == "proposals" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=proposals">
                         <i data-lucide="lightbulb" style="width: 20px; height: 20px;"></i>
-                        <span>Idea Proposals</span>
-                        <span class="badge bg-warning text-dark ms-auto">Soon</span>
+                        <span>Proposals</span>
+                        <span class="badge bg-primary ms-auto">@Model.Proposals.Count</span>
                     </a>
                 </div>
             </nav>
@@ -128,7 +127,7 @@
                                 case "awards": <text>Awards</text>; break;
                                 case "finance": <text>Finance</text>; break;
                                 case "score": <text>Club Score</text>; break;
-                                case "ideas": <text>Ideas</text>; break;
+                                case "proposals": <text>Proposals</text>; break;
                             }
                         </span>
                     }
@@ -641,15 +640,321 @@
                     break;
 
                 case "finance":
-                    <!-- Finance Placeholder -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body text-center py-5">
-                            <i data-lucide="dollar-sign" style="width: 64px; height: 64px; color: #ccc;"></i>
-                            <h4 class="mt-3 mb-2">Finance Management</h4>
-                            <p class="text-muted mb-4">Track club income, expenses, and budget</p>
-                            <button class="btn btn-outline-primary" disabled>
-                                <i data-lucide="construction" style="width: 16px; height: 16px;"></i> Coming Soon
+                    <!-- Club Payments Section -->
+                    
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-tabs mb-4" id="paymentTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active d-flex align-items-center gap-2" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                                <i data-lucide="layout-dashboard" style="width: 16px; height: 16px;"></i>
+                                Payment Overview
                             </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link d-flex align-items-center gap-2" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                                <i data-lucide="clock" style="width: 16px; height: 16px;"></i>
+                                Pending Payments
+                                <span class="badge bg-danger" id="pendingPaymentsBadge" style="display: none;">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link d-flex align-items-center gap-2" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                                <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+                                Payment History
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="paymentTabContent">
+                        <!-- Payment Overview Tab -->
+                        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                            <!-- Statistics Cards -->
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-3">
+                                    <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #dc3545 !important;">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="text-muted mb-0 small">Pending Payment</h6>
+                                                <i data-lucide="wallet" style="width: 20px; height: 20px; color: #dc3545;"></i>
+                                            </div>
+                                            <h3 class="mb-2 fw-bold" id="pendingPaymentAmount">-</h3>
+                                            <p class="text-muted small mb-0" id="pendingPaymentCount">Loading...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #28a745 !important;">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="text-muted mb-0 small">Total Paid (2024)</h6>
+                                                <i data-lucide="check-circle" style="width: 20px; height: 20px; color: #28a745;"></i>
+                                            </div>
+                                            <h3 class="mb-2 fw-bold" id="totalPaidAmount">-</h3>
+                                            <p class="text-muted small mb-0" id="totalPaidCount">Loading...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #fd7e14 !important;">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="text-muted mb-0 small">Overdue Payments</h6>
+                                                <i data-lucide="alert-circle" style="width: 20px; height: 20px; color: #fd7e14;"></i>
+                                            </div>
+                                            <h3 class="mb-2 fw-bold" id="overduePaymentCount">-</h3>
+                                            <p class="text-muted small mb-0" id="overduePaymentText">Loading...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #007bff !important;">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="text-muted mb-0 small">Total Contribution</h6>
+                                                <i data-lucide="trending-up" style="width: 20px; height: 20px; color: #007bff;"></i>
+                                            </div>
+                                            <h3 class="mb-2 fw-bold" id="totalContributionAmount">-</h3>
+                                            <p class="text-muted small mb-0">Lifetime contribution</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Upcoming Payments Preview -->
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white border-0">
+                                    <h5 class="mb-0">Upcoming Payments</h5>
+                                    <p class="text-muted small mb-0">Payments that require your attention</p>
+                                </div>
+                                <div class="card-body" id="upcomingPaymentsContainer">
+                                    <div class="text-center py-4">
+                                        <i data-lucide="loader" class="spin" style="width: 32px; height: 32px;"></i>
+                                        <p class="text-muted mt-2">Loading payments...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recent Transactions Preview -->
+                            <div class="card border-0 shadow-sm mt-4">
+                                <div class="card-header bg-white border-0">
+                                    <h5 class="mb-0">Recent Transactions</h5>
+                                    <p class="text-muted small mb-0">Your latest payment activities</p>
+                                </div>
+                                <div class="card-body" id="recentTransactionsContainer">
+                                    <div class="text-center py-4">
+                                        <i data-lucide="loader" class="spin" style="width: 32px; height: 32px;"></i>
+                                        <p class="text-muted mt-2">Loading transactions...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pending Payments Tab -->
+                        <div class="tab-pane fade" id="pending" role="tabpanel">
+                            <div class="alert alert-danger d-flex align-items-center mb-4" role="alert" id="overdueAlert" style="display: none;">
+                                <i data-lucide="alert-circle" style="width: 20px; height: 20px;" class="me-2"></i>
+                                <div>You have <strong id="overdueAlertCount">0</strong> overdue payment(s)</div>
+                            </div>
+
+                            <h5 class="mb-3">Pending Payments</h5>
+                            <p class="text-muted small mb-4">Complete these payments before the deadline</p>
+                            
+                            <div id="pendingPaymentsList">
+                                <div class="text-center py-4">
+                                    <i data-lucide="loader" class="spin" style="width: 32px; height: 32px;"></i>
+                                    <p class="text-muted mt-2">Loading pending payments...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment History Tab -->
+                        <div class="tab-pane fade" id="history" role="tabpanel">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white border-0">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <h5 class="mb-0">Payment History</h5>
+                                            <p class="text-muted small mb-0">All your completed transactions</p>
+                                        </div>
+                                        <button class="btn btn-outline-primary">
+                                            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                                            Export Report
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Search and Filters -->
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white">
+                                                    <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                                                </span>
+                                                <input type="text" class="form-control" placeholder="Search by purpose or transaction ID...">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white">
+                                                    <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                                                </span>
+                                                <select class="form-select">
+                                                    <option selected>All Status</option>
+                                                    <option>Completed</option>
+                                                    <option>Pending</option>
+                                                    <option>Failed</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <select class="form-select">
+                                                <option selected>2024</option>
+                                                <option>2023</option>
+                                                <option>2022</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Purpose</th>
+                                                    <th>Transaction ID</th>
+                                                    <th>Method</th>
+                                                    <th class="text-end">Amount</th>
+                                                    <th>Status</th>
+                                                    <th class="text-center">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>12/15/2023</td>
+                                                    <td>
+                                                        <div>
+                                                            <strong>Q4 2023 Membership Fee</strong>
+                                                            <br>
+                                                            <small class="text-muted">Tech Innovation Club</small>
+                                                        </div>
+                                                    </td>
+                                                    <td><code>TXN2023120001</code></td>
+                                                    <td>
+                                                        <i data-lucide="building" style="width: 14px; height: 14px;"></i>
+                                                        Bank Transfer
+                                                    </td>
+                                                    <td class="text-end fw-bold">50.000 ₫</td>
+                                                    <td>
+                                                        <span class="badge bg-success">
+                                                            <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
+                                                            Completed
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-outline-primary me-1">
+                                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-secondary">
+                                                            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>11/20/2023</td>
+                                                    <td>
+                                                        <div>
+                                                            <strong>Hackathon Registration Fee</strong>
+                                                            <br>
+                                                            <small class="text-muted">Tech Innovation Club</small>
+                                                        </div>
+                                                    </td>
+                                                    <td><code>TXN2023110002</code></td>
+                                                    <td>
+                                                        <i data-lucide="smartphone" style="width: 14px; height: 14px;"></i>
+                                                        E-Wallet
+                                                    </td>
+                                                    <td class="text-end fw-bold">100.000 ₫</td>
+                                                    <td>
+                                                        <span class="badge bg-success">
+                                                            <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
+                                                            Completed
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-outline-primary me-1">
+                                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-secondary">
+                                                            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>9/10/2023</td>
+                                                    <td>
+                                                        <div>
+                                                            <strong>Q3 2023 Membership Fee</strong>
+                                                            <br>
+                                                            <small class="text-muted">Tech Innovation Club</small>
+                                                        </div>
+                                                    </td>
+                                                    <td><code>CASH2023090001</code></td>
+                                                    <td>
+                                                        <i data-lucide="dollar-sign" style="width: 14px; height: 14px;"></i>
+                                                        Cash
+                                                    </td>
+                                                    <td class="text-end fw-bold">50.000 ₫</td>
+                                                    <td>
+                                                        <span class="badge bg-success">
+                                                            <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
+                                                            Completed
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-outline-primary me-1">
+                                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-secondary">
+                                                            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>7/5/2023</td>
+                                                    <td>
+                                                        <div>
+                                                            <strong>Summer Camp Contribution</strong>
+                                                            <br>
+                                                            <small class="text-muted">Tech Innovation Club</small>
+                                                        </div>
+                                                    </td>
+                                                    <td><code>TXN2023070003</code></td>
+                                                    <td>
+                                                        <i data-lucide="building" style="width: 14px; height: 14px;"></i>
+                                                        Bank Transfer
+                                                    </td>
+                                                    <td class="text-end fw-bold">200.000 ₫</td>
+                                                    <td>
+                                                        <span class="badge bg-success">
+                                                            <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
+                                                            Completed
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-outline-primary me-1">
+                                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-secondary">
+                                                            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     break;
@@ -700,18 +1005,98 @@
                     </div>
                     break;
 
-                case "ideas":
-                    <!-- Ideas Placeholder -->
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body text-center py-5">
-                            <i data-lucide="lightbulb" style="width: 64px; height: 64px; color: #ccc;"></i>
-                            <h4 class="mt-3 mb-2">Activity Idea Proposals</h4>
-                            <p class="text-muted mb-4">Submit and vote on new activity ideas</p>
-                            <button class="btn btn-outline-primary" disabled>
-                                <i data-lucide="construction" style="width: 16px; height: 16px;"></i> Coming Soon
-                            </button>
-                        </div>
+                case "proposals":
+                    <!-- Proposals Section -->
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i data-lucide="lightbulb" style="width: 20px; height: 20px;"></i>
+                            Proposals (@Model.Proposals.Count)
+                        </h5>
+                        <a href="/Clubs/Proposals/Create?clubId=@Model.Id" class="btn btn-primary">
+                            <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Create Proposal
+                        </a>
                     </div>
+
+                    @if (Model.Proposals.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var proposal in Model.Proposals)
+                            {
+                                var statusClass = proposal.Status switch
+                                {
+                                    "PendingVote" => "bg-warning text-dark",
+                                    "ApprovedByClub" => "bg-success",
+                                    "Rejected" => "bg-danger",
+                                    _ => "bg-secondary"
+                                };
+
+                                <div class="col-12">
+                                    <div class="card border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="fw-bold mb-0">@proposal.Title</h6>
+                                                <span class="badge @statusClass">@proposal.Status</span>
+                                            </div>
+                                            
+                                            @if (!string.IsNullOrWhiteSpace(proposal.Description))
+                                            {
+                                                <p class="text-muted small mb-3">
+                                                    @(proposal.Description.Length > 150 ? proposal.Description.Substring(0, 150) + "..." : proposal.Description)
+                                                </p>
+                                            }
+                                            
+                                            <div class="d-flex gap-3 align-items-center mb-3">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                                                    <span class="small text-muted">@proposal.CreatedByName</span>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                                    <span class="small text-muted">@proposal.CreatedAt.ToString("dd MMM yyyy")</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex gap-3 align-items-center">
+                                                <div class="badge bg-success bg-opacity-10 text-success px-3 py-2">
+                                                    <i data-lucide="thumbs-up" style="width: 14px; height: 14px;"></i>
+                                                    @proposal.AgreeCount Agree
+                                                </div>
+                                                <div class="badge bg-danger bg-opacity-10 text-danger px-3 py-2">
+                                                    <i data-lucide="thumbs-down" style="width: 14px; height: 14px;"></i>
+                                                    @proposal.DisagreeCount Disagree
+                                                </div>
+                                                @if (proposal.CurrentUserVote != null)
+                                                {
+                                                    <span class="badge bg-info ms-auto">
+                                                        You voted: @(proposal.CurrentUserVote == true ? "Agree" : "Disagree")
+                                                    </span>
+                                                }
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <a href="/Clubs/Proposals/Detail/@proposal.Id" class="btn btn-sm btn-outline-primary">
+                                                    <i data-lucide="eye" style="width: 14px; height: 14px;"></i> View Details
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center py-5">
+                                <i data-lucide="lightbulb" style="width: 64px; height: 64px; color: #ccc;"></i>
+                                <h5 class="mt-3 mb-2">No Proposals Yet</h5>
+                                <p class="text-muted mb-4">Be the first to create a proposal for your club!</p>
+                                <a href="/Clubs/Proposals/Create?clubId=@Model.Id" class="btn btn-primary">
+                                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Create First Proposal
+                                </a>
+                            </div>
+                        </div>
+                    }
                     break;
             }
         </div>
@@ -719,6 +1104,68 @@
     
     <!-- Overlay for mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Pay Now Modal -->
+    <div class="modal fade" id="payNowModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Complete Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="payNowForm">
+                    <input type="hidden" id="paymentIdToPay">
+                    <input type="hidden" id="paymentMethodAvailable">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Request</label>
+                            <input type="text" class="form-control" id="paymentRequestTitle" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Amount to Pay</label>
+                            <input type="text" class="form-control" id="paymentAmountToPay" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Due Date</label>
+                            <input type="text" class="form-control" id="paymentDueDate" readonly>
+                        </div>
+
+                        <div class="mb-3" id="paymentMethodSelection">
+                            <label for="selectedPaymentMethod" class="form-label">Payment Method <span class="text-danger">*</span></label>
+                            <select class="form-select" id="selectedPaymentMethod" required>
+                                <option value="">Select method...</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                            </select>
+                            <div class="form-text">
+                                <strong>Cash:</strong> Submit request, manager will confirm after you pay<br>
+                                <strong>Bank Transfer:</strong> Upload receipt for verification
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="paymentNotesMember" class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="paymentNotesMember" rows="2" maxlength="500" placeholder="Add any notes..."></textarea>
+                        </div>
+
+                        <div class="alert alert-info small mb-0">
+                            <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                            <span id="paymentInfoText">Your payment will be recorded and pending confirmation.</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                            Submit Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -756,6 +1203,380 @@
 
         // Logout function từ auth.js sẽ được dùng
 
+        // Finance - Payment Data
+        const CLUB_ID = @Model.Id;
+        const API_BASE = 'https://localhost:5001/api';
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { 
+                style: 'currency', 
+                currency: 'VND' 
+            }).format(amount).replace('₫', '₫');
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('vi-VN');
+        }
+
+        function getDaysOverdue(dueDate) {
+            const now = new Date();
+            const due = new Date(dueDate);
+            const diff = Math.floor((now - due) / (1000 * 60 * 60 * 24));
+            return diff > 0 ? diff : 0;
+        }
+
+        function getStatusBadge(status, dueDate) {
+            const daysOverdue = getDaysOverdue(dueDate);
+            if (status === 'paid' || status === 'confirmed') {
+                return '<span class="badge bg-success">Paid</span>';
+            } else if (status === 'unconfirmed') {
+                return '<span class="badge bg-danger">Unconfirmed (Cash)</span>';
+            } else if (status === 'pending') {
+                if (daysOverdue > 0) {
+                    return '<span class="badge bg-danger">Overdue</span>';
+                } else {
+                    return '<span class="badge bg-warning text-dark">Pending</span>';
+                }
+            } else {
+                return `<span class="badge bg-secondary">${status}</span>`;
+            }
+        }
+
+        async function loadMyPayments() {
+            try {
+                const response = await fetch(`${API_BASE}/FundCollection/club/${CLUB_ID}/my-payments`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load payments');
+                }
+
+                const payments = await response.json();
+                console.log('Loaded payments:', payments);
+                
+                // Store payments globally for modal access
+                allPayments = payments;
+
+                // Calculate statistics - separate pending and unconfirmed
+                const pendingPayments = payments.filter(p => p.status === 'pending' || p.status === 'unconfirmed');
+                const unconfirmedPayments = payments.filter(p => p.status === 'unconfirmed');
+                const paidPayments = payments.filter(p => p.status === 'paid' || p.status === 'confirmed');
+                const overduePayments = pendingPayments.filter(p => getDaysOverdue(p.fundCollectionRequest.dueDate) > 0);
+
+                const pendingAmount = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
+                const paidAmount = paidPayments.reduce((sum, p) => sum + p.amount, 0);
+                const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+
+                // Update statistics cards
+                document.getElementById('pendingPaymentAmount').textContent = formatCurrency(pendingAmount);
+                const pendingText = unconfirmedPayments.length > 0 
+                    ? `${pendingPayments.length} payment(s) (${unconfirmedPayments.length} unconfirmed)`
+                    : `${pendingPayments.length} payment(s) pending`;
+                document.getElementById('pendingPaymentCount').textContent = pendingText;
+
+                const currentYear = new Date().getFullYear();
+                const paidThisYear = paidPayments.filter(p => new Date(p.paidAt).getFullYear() === currentYear);
+                const paidThisYearAmount = paidThisYear.reduce((sum, p) => sum + p.amount, 0);
+                document.getElementById('totalPaidAmount').textContent = formatCurrency(paidThisYearAmount);
+                document.getElementById('totalPaidCount').textContent = `${paidThisYear.length} completed`;
+
+                document.getElementById('overduePaymentCount').textContent = overduePayments.length;
+                document.getElementById('overduePaymentText').textContent = overduePayments.length > 0 ? 'Require immediate action' : 'No overdue payments';
+
+                document.getElementById('totalContributionAmount').textContent = formatCurrency(paidAmount);
+
+                // Update badge
+                if (pendingPayments.length > 0) {
+                    document.getElementById('pendingPaymentsBadge').textContent = pendingPayments.length;
+                    document.getElementById('pendingPaymentsBadge').style.display = '';
+                }
+
+                // Update overdue alert
+                if (overduePayments.length > 0) {
+                    document.getElementById('overdueAlertCount').textContent = overduePayments.length;
+                    document.getElementById('overdueAlert').style.display = '';
+                }
+
+                // Render upcoming payments (top 3 pending)
+                renderUpcomingPayments(pendingPayments.slice(0, 3));
+
+                // Render recent transactions (top 5 paid)
+                renderRecentTransactions(paidPayments.slice(0, 5));
+
+                // Render all pending payments
+                renderPendingPayments(pendingPayments);
+
+                // Re-init Lucide icons
+                setTimeout(() => initLucide(), 100);
+            } catch (error) {
+                console.error('Error loading payments:', error);
+                document.getElementById('upcomingPaymentsContainer').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i data-lucide="alert-circle"></i>
+                        Failed to load payments. Please refresh the page.
+                    </div>
+                `;
+            }
+        }
+
+        function renderUpcomingPayments(payments) {
+            const container = document.getElementById('upcomingPaymentsContainer');
+            
+            if (payments.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i data-lucide="check-circle" style="width: 48px; height: 48px; color: #28a745;"></i>
+                        <p class="text-muted mt-3 mb-0">No pending payments</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <div class="row g-3">
+                    ${payments.map(payment => {
+                        const daysOverdue = getDaysOverdue(payment.fundCollectionRequest.dueDate);
+                        const isOverdue = daysOverdue > 0;
+                        return `
+                            <div class="col-12">
+                                <div class="card border${isOverdue ? ' border-danger' : ''}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <h6 class="fw-bold mb-1">${payment.fundCollectionRequest.title}</h6>
+                                                ${getStatusBadge(payment.status, payment.fundCollectionRequest.dueDate)}
+                                            </div>
+                                            <h5 class="mb-0 text-primary">${formatCurrency(payment.amount)}</h5>
+                                        </div>
+                                        <p class="text-muted small mb-2">${payment.fundCollectionRequest.description || ''}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="${isOverdue ? 'text-danger' : 'text-muted'}">
+                                                <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                                                Due: ${formatDate(payment.fundCollectionRequest.dueDate)}${isOverdue ? ` • <strong>${daysOverdue} days overdue</strong>` : ''}
+                                            </small>
+                                            <button class="btn btn-${isOverdue ? 'danger' : 'primary'} btn-sm" onclick="payNow(${payment.id})">
+                                                <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i>
+                                                Pay Now
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        function renderRecentTransactions(payments) {
+            const container = document.getElementById('recentTransactionsContainer');
+            
+            if (payments.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i data-lucide="inbox" style="width: 48px; height: 48px; color: #6c757d;"></i>
+                        <p class="text-muted mt-3 mb-0">No transactions yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = `
+                <div class="list-group list-group-flush">
+                    ${payments.map(payment => `
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-success bg-opacity-10 p-2 rounded">
+                                    <i data-lucide="check-circle" style="width: 20px; height: 20px; color: #28a745;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">${payment.fundCollectionRequest.title}</h6>
+                                    <small class="text-muted">${formatDate(payment.paidAt)} • ${payment.paymentMethod || 'N/A'}</small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <h6 class="mb-0">${formatCurrency(payment.amount)}</h6>
+                                ${getStatusBadge(payment.status, payment.fundCollectionRequest.dueDate)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        function renderPendingPayments(payments) {
+            const container = document.getElementById('pendingPaymentsList');
+            
+            if (payments.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i data-lucide="check-circle" style="width: 64px; height: 64px; color: #28a745;"></i>
+                        <h5 class="mt-3">All caught up!</h5>
+                        <p class="text-muted">You have no pending payments</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = payments.map(payment => {
+                const daysOverdue = getDaysOverdue(payment.fundCollectionRequest.dueDate);
+                const isOverdue = daysOverdue > 0;
+                const progress = isOverdue ? 100 : 50;
+                const progressColor = isOverdue ? 'danger' : 'primary';
+
+                return `
+                    <div class="card border-0 shadow-sm mb-3${isOverdue ? ' border-danger' : ''}"${isOverdue ? ' style="background-color: #fff5f5;"' : ''}>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-2">${payment.fundCollectionRequest.title}</h5>
+                                    ${getStatusBadge(payment.status, payment.fundCollectionRequest.dueDate)}
+                                </div>
+                                <h4 class="mb-0 text-primary">${formatCurrency(payment.amount)}</h4>
+                            </div>
+                            
+                            <p class="text-muted mb-3">${payment.fundCollectionRequest.description || 'No description'}</p>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted">
+                                        <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                                        Deadline: ${formatDate(payment.fundCollectionRequest.dueDate)}
+                                    </small>
+                                    ${isOverdue ? `<small class="text-danger fw-bold">${daysOverdue} days overdue</small>` : '<small class="text-muted">Upcoming</small>'}
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-${progressColor}" role="progressbar" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Amount</small>
+                                    <strong>${formatCurrency(payment.amount)}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Created</small>
+                                    <strong>${formatDate(payment.createdAt)}</strong>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-${isOverdue ? 'danger' : 'primary'} w-100" onclick="payNow(${payment.id})">
+                                <i data-lucide="credit-card" style="width: 16px; height: 16px;"></i>
+                                Pay Now
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        // Store all payments for modal access
+        let allPayments = [];
+
+        function payNow(paymentId) {
+            const payment = allPayments.find(p => p.id === paymentId);
+            if (!payment) {
+                alert('Payment not found');
+                return;
+            }
+
+            // Set modal values
+            document.getElementById('paymentIdToPay').value = paymentId;
+            document.getElementById('paymentRequestTitle').value = payment.fundCollectionRequest.title;
+            document.getElementById('paymentAmountToPay').value = formatCurrency(payment.amount);
+            document.getElementById('paymentDueDate').value = formatDate(payment.fundCollectionRequest.dueDate);
+            
+            const availableMethods = payment.fundCollectionRequest.paymentMethods || 'All';
+            document.getElementById('paymentMethodAvailable').value = availableMethods;
+
+            const methodSelection = document.getElementById('paymentMethodSelection');
+            const selectedMethodDropdown = document.getElementById('selectedPaymentMethod');
+
+            if (availableMethods === 'All') {
+                // Show dropdown for method selection
+                methodSelection.style.display = 'block';
+                selectedMethodDropdown.value = '';
+                selectedMethodDropdown.required = true;
+                document.getElementById('paymentInfoText').textContent = 'Choose your preferred payment method.';
+            } else {
+                // Hide dropdown, use fixed method
+                methodSelection.style.display = 'none';
+                selectedMethodDropdown.value = availableMethods;
+                selectedMethodDropdown.required = false;
+                
+                if (availableMethods === 'Cash') {
+                    document.getElementById('paymentInfoText').textContent = 'Payment method: Cash. Submit this request and pay to your club manager. They will confirm after receiving payment.';
+                } else if (availableMethods === 'Bank Transfer') {
+                    document.getElementById('paymentInfoText').textContent = 'Payment method: Bank Transfer. Transfer money and submit this request. Upload receipt for faster verification.';
+                }
+            }
+
+            // Open modal
+            new bootstrap.Modal(document.getElementById('payNowModal')).show();
+        }
+
+        // Handle Pay Now Form Submission
+        document.getElementById('payNowForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            const paymentId = document.getElementById('paymentIdToPay').value;
+            const availableMethods = document.getElementById('paymentMethodAvailable').value;
+            const selectedMethod = availableMethods === 'All' 
+                ? document.getElementById('selectedPaymentMethod').value 
+                : availableMethods;
+            const notes = document.getElementById('paymentNotesMember').value;
+
+            // Determine transaction status based on payment method
+            const status = selectedMethod === 'Cash' ? 'unconfirmed' : 'pending';
+
+            const dto = {
+                paymentId: parseInt(paymentId),
+                paymentMethod: selectedMethod,
+                notes: notes,
+                status: status
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/FundCollection/payment/${paymentId}/member-pay`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(dto)
+                });
+
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('payNowModal')).hide();
+                    
+                    if (selectedMethod === 'Cash') {
+                        alert('✅ Payment request submitted! Please pay to your club manager. They will confirm after receiving payment.');
+                    } else {
+                        alert('✅ Payment submitted! Please complete the bank transfer. Your payment is pending verification.');
+                    }
+                    
+                    // Reload payments
+                    await loadMyPayments();
+                } else {
+                    const error = await response.json();
+                    alert(`❌ Error: ${error.message || error.title || 'Failed to submit payment'}`);
+                }
+            } catch (error) {
+                console.error('Error submitting payment:', error);
+                alert('❌ An error occurred. Please try again.');
+            }
+        });
+
         // Initialize Lucide icons
         function initLucide() {
             if (typeof lucide !== 'undefined' && lucide.createIcons) {
@@ -774,6 +1595,14 @@
         // Initialize on load
         document.addEventListener('DOMContentLoaded', async () => {
             await updateMemberDashboardAuthUI();
+            
+            // Load finance data if on finance section
+            const urlParams = new URLSearchParams(window.location.search);
+            const section = urlParams.get('section');
+            if (section === 'finance') {
+                await loadMyPayments();
+            }
+            
             initLucide();
             setTimeout(initLucide, 300);
             setTimeout(initLucide, 1000);

@@ -40,7 +40,7 @@ namespace DataAccess.Migrations
                 END
             ");
 
-            // Alter TokenHash column if needed
+            // Alter TokenHash column if needed: normalize data, drop dependent index, alter, recreate unique index
             migrationBuilder.Sql(@"
                 IF EXISTS (
                     SELECT 1 FROM sys.columns 
@@ -49,7 +49,60 @@ namespace DataAccess.Migrations
                     AND max_length = 4000
                 )
                 BEGIN
+                    -- Normalize TokenHash to 64-char hex (prefer hashing TokenFull when available)
+                    IF EXISTS (
+                        SELECT 1 FROM sys.columns 
+                        WHERE object_id = OBJECT_ID('LoggedOutTokens')
+                        AND name = 'TokenFull'
+                    )
+                    BEGIN
+                        DECLARE @sql NVARCHAR(MAX) = N'
+UPDATE LoggedOutTokens
+SET TokenHash = LOWER(CONVERT(VARCHAR(64), HASHBYTES(''SHA2_256'', COALESCE(NULLIF(TokenFull, ''''), TokenHash)), 2))
+WHERE TokenHash IS NULL
+   OR LEN(TokenHash) <> 64
+   OR TokenHash LIKE ''%[^0-9A-Fa-f]%'';
+';
+                        EXEC sp_executesql @sql;
+                    END
+                    ELSE
+                    BEGIN
+                        UPDATE LoggedOutTokens
+                        SET TokenHash = LOWER(CONVERT(VARCHAR(64), HASHBYTES('SHA2_256', TokenHash), 2))
+                        WHERE TokenHash IS NULL
+                           OR LEN(TokenHash) <> 64
+                           OR TokenHash LIKE '%[^0-9A-Fa-f]%';
+                    END
+
+                    -- Remove duplicate TokenHash rows, keep lowest Id
+                    ;WITH Duplicates AS (
+                        SELECT Id,
+                               ROW_NUMBER() OVER (PARTITION BY TokenHash ORDER BY Id) AS rn
+                        FROM LoggedOutTokens
+                    )
+                    DELETE FROM Duplicates WHERE rn > 1;
+
+                    IF EXISTS (
+                        SELECT 1 
+                        FROM sys.indexes 
+                        WHERE name = 'IX_LoggedOutTokens_TokenHash' 
+                        AND object_id = OBJECT_ID('LoggedOutTokens')
+                    )
+                    BEGIN
+                        DROP INDEX IX_LoggedOutTokens_TokenHash ON LoggedOutTokens;
+                    END
+
                     ALTER TABLE LoggedOutTokens ALTER COLUMN TokenHash nvarchar(64) NOT NULL;
+
+                    IF NOT EXISTS (
+                        SELECT 1 
+                        FROM sys.indexes 
+                        WHERE name = 'IX_LoggedOutTokens_TokenHash' 
+                        AND object_id = OBJECT_ID('LoggedOutTokens')
+                    )
+                    BEGIN
+                        CREATE UNIQUE INDEX IX_LoggedOutTokens_TokenHash ON LoggedOutTokens(TokenHash);
+                    END
                 END
             ");
 
@@ -63,6 +116,22 @@ namespace DataAccess.Migrations
                 BEGIN
                     CREATE INDEX IX_Users_RoleId ON Users(RoleId);
                 END
+            ");
+
+            // Ensure Users.RoleId values are valid before adding FK
+            migrationBuilder.Sql(@"
+                -- Seed a default role if Roles is empty
+                IF NOT EXISTS (SELECT 1 FROM Roles)
+                BEGIN
+                    INSERT INTO Roles(RoleName, Description) VALUES ('User', 'Default role');
+                END
+
+                DECLARE @defaultRoleId INT = (SELECT TOP 1 Id FROM Roles ORDER BY Id);
+
+                -- Fix invalid RoleId values (e.g., 0) to point to an existing role
+                UPDATE Users
+                SET RoleId = @defaultRoleId
+                WHERE RoleId NOT IN (SELECT Id FROM Roles);
             ");
 
             // Create non-unique index for performance

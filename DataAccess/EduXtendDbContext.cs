@@ -30,14 +30,18 @@ public class EduXtendContext : DbContext
     public DbSet<ActivityRegistration> ActivityRegistrations { get; set; }
     public DbSet<ActivityAttendance> ActivityAttendances { get; set; }
     public DbSet<ActivityFeedback> ActivityFeedbacks { get; set; }
+    public DbSet<ActivitySchedule> ActivitySchedules { get; set; }
+    public DbSet<ActivityScheduleAssignment> ActivityScheduleAssignments { get; set; }
 
     // Plan and Proposal
     public DbSet<Plan> Plans { get; set; }
     public DbSet<Proposal> Proposals { get; set; }
     public DbSet<ProposalVote> ProposalVotes { get; set; }
 
-    // Payment
+    // Payment and Fund Collection
     public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+    public DbSet<FundCollectionRequest> FundCollectionRequests { get; set; }
+    public DbSet<FundCollectionPayment> FundCollectionPayments { get; set; }
 
     // Movement Criteria
     public DbSet<MovementCriterionGroup> MovementCriterionGroups { get; set; }
@@ -180,6 +184,30 @@ public class EduXtendContext : DbContext
             .WithMany()
             .HasForeignKey(af => af.UserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // ==== ACTIVITY SCHEDULE ====
+        // ActivitySchedule
+        modelBuilder.Entity<ActivitySchedule>()
+            .HasOne(s => s.Activity)
+            .WithMany(a => a.Schedules)
+            .HasForeignKey(s => s.ActivityId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ActivitySchedule>()
+            .HasIndex(s => new { s.ActivityId, s.Order });
+
+        // ActivityScheduleAssignment
+        modelBuilder.Entity<ActivityScheduleAssignment>()
+            .HasOne(a => a.ActivitySchedule)
+            .WithMany(s => s.Assignments)
+            .HasForeignKey(a => a.ActivityScheduleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ActivityScheduleAssignment>()
+            .HasOne(a => a.User)
+            .WithMany()
+            .HasForeignKey(a => a.UserId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // ==== STUDENT ====
         // User ↔ Student 1-1
@@ -339,10 +367,108 @@ public class EduXtendContext : DbContext
 
         // ==== PAYMENT TRANSACTION ====
         modelBuilder.Entity<PaymentTransaction>()
+            .HasOne(pt => pt.Club)
+            .WithMany(c => c.Transactions)
+            .HasForeignKey(pt => pt.ClubId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PaymentTransaction>()
             .HasOne(pt => pt.CreatedBy)
             .WithMany()
             .HasForeignKey(pt => pt.CreatedById)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PaymentTransaction>()
+            .HasOne(pt => pt.Student)
+            .WithMany()
+            .HasForeignKey(pt => pt.StudentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PaymentTransaction>()
+            .HasOne(pt => pt.Activity)
+            .WithMany()
+            .HasForeignKey(pt => pt.ActivityId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PaymentTransaction>()
+            .HasOne(pt => pt.Semester)
+            .WithMany(s => s.PaymentTransactions)
+            .HasForeignKey(pt => pt.SemesterId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<PaymentTransaction>()
+            .HasIndex(pt => new { pt.ClubId, pt.TransactionDate });
+
+        modelBuilder.Entity<PaymentTransaction>()
+            .HasIndex(pt => new { pt.SemesterId, pt.Type, pt.Status });
+
+        modelBuilder.Entity<PaymentTransaction>()
+            .HasIndex(pt => pt.Status);
+
+        modelBuilder.Entity<PaymentTransaction>()
+            .HasIndex(pt => pt.Type);
+
+        // ==== FUND COLLECTION ====
+        // FundCollectionRequest
+        modelBuilder.Entity<FundCollectionRequest>()
+            .HasOne(r => r.Club)
+            .WithMany()
+            .HasForeignKey(r => r.ClubId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<FundCollectionRequest>()
+            .HasOne(r => r.CreatedBy)
+            .WithMany()
+            .HasForeignKey(r => r.CreatedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<FundCollectionRequest>()
+            .HasOne(r => r.Semester)
+            .WithMany(s => s.FundCollectionRequests)
+            .HasForeignKey(r => r.SemesterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<FundCollectionRequest>()
+            .HasIndex(r => new { r.ClubId, r.Status });
+
+        modelBuilder.Entity<FundCollectionRequest>()
+            .HasIndex(r => new { r.SemesterId, r.Status });
+
+        modelBuilder.Entity<FundCollectionRequest>()
+            .HasIndex(r => r.DueDate);
+
+        // FundCollectionPayment
+        modelBuilder.Entity<FundCollectionPayment>()
+            .HasOne(p => p.FundCollectionRequest)
+            .WithMany(r => r.Payments)
+            .HasForeignKey(p => p.FundCollectionRequestId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FundCollectionPayment>()
+            .HasOne(p => p.ClubMember)
+            .WithMany()
+            .HasForeignKey(p => p.ClubMemberId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<FundCollectionPayment>()
+            .HasOne(p => p.PaymentTransaction)
+            .WithMany()
+            .HasForeignKey(p => p.PaymentTransactionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<FundCollectionPayment>()
+            .HasOne(p => p.ConfirmedBy)
+            .WithMany()
+            .HasForeignKey(p => p.ConfirmedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Unique constraint: 1 member chỉ có 1 payment record cho 1 request
+        modelBuilder.Entity<FundCollectionPayment>()
+            .HasIndex(p => new { p.FundCollectionRequestId, p.ClubMemberId })
+            .IsUnique();
+
+        modelBuilder.Entity<FundCollectionPayment>()
+            .HasIndex(p => p.Status);
     }
 
     /// <summary>
@@ -371,12 +497,16 @@ public class EduXtendContext : DbContext
         modelBuilder.Entity<ActivityRegistration>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<ActivityAttendance>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<ActivityFeedback>().Property(e => e.Id).UseIdentityColumn();
+        modelBuilder.Entity<ActivitySchedule>().Property(e => e.Id).UseIdentityColumn();
+        modelBuilder.Entity<ActivityScheduleAssignment>().Property(e => e.Id).UseIdentityColumn();
         
         modelBuilder.Entity<Plan>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<Proposal>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<ProposalVote>().Property(e => e.Id).UseIdentityColumn();
         
         modelBuilder.Entity<PaymentTransaction>().Property(e => e.Id).UseIdentityColumn();
+        modelBuilder.Entity<FundCollectionRequest>().Property(e => e.Id).UseIdentityColumn();
+        modelBuilder.Entity<FundCollectionPayment>().Property(e => e.Id).UseIdentityColumn();
         
         modelBuilder.Entity<MovementCriterionGroup>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<MovementCriterion>().Property(e => e.Id).UseIdentityColumn();

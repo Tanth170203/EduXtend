@@ -1,6 +1,7 @@
 using BusinessObject.DTOs.Activity;
 using BusinessObject.DTOs.Club;
 using BusinessObject.DTOs.JoinRequest;
+using BusinessObject.DTOs.Proposal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net;
@@ -28,6 +29,7 @@ namespace WebFE.Pages.Clubs
         public List<DepartmentDto> Departments { get; private set; } = new();
         public List<ActivityListItemDto> Activities { get; private set; } = new();
         public List<ClubAwardDto> Awards { get; private set; } = new();
+        public List<ProposalDTO> Proposals { get; private set; } = new();
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -90,6 +92,7 @@ namespace WebFE.Pages.Clubs
                 Departments = await client.GetFromJsonAsync<List<DepartmentDto>>($"api/club/{Id}/departments") ?? new();
                 Activities = await client.GetFromJsonAsync<List<ActivityListItemDto>>($"api/activity/club/{Id}") ?? new();
                 Awards = await client.GetFromJsonAsync<List<ClubAwardDto>>($"api/club/{Id}/awards") ?? new();
+                Proposals = await client.GetFromJsonAsync<List<ProposalDTO>>($"api/proposal/club/{Id}") ?? new();
 
                 return Page();
             }

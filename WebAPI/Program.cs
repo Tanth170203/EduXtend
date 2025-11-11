@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Repositories.Activities;
 using Repositories.Clubs;
+using Repositories.ClubMembers;
+using Repositories.PaymentTransactions;
 using Repositories.LoggedOutTokens;
 using Repositories.Majors;
 using Repositories.MovementCriteria;
@@ -15,6 +17,8 @@ using Repositories.MovementRecords;
 using Repositories.Users;
 using Repositories.JoinRequests;
 using Repositories.Interviews;
+using Repositories.FundCollectionRequests;
+using Repositories.FundCollectionPayments;
 using Services.Activities;
 using Services.Clubs;
 using Services.GGLogin;
@@ -26,8 +30,12 @@ using Services.MovementRecords;
 using Services.UserImport;
 using Services.JoinRequests;
 using Services.Interviews;
+using Services.FundCollections;
+using Services.FinancialDashboard;
 using Repositories.ClubMovementRecords;
 using Services.ClubMovementRecords;
+using Repositories.Proposals;
+using Services.Proposals;
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
@@ -63,11 +71,17 @@ namespace WebAPI
             builder.Services.AddScoped<Repositories.Roles.IRoleRepository, Repositories.Roles.RoleRepository>();
             
             builder.Services.AddScoped<IClubRepository, ClubRepository>();
+            builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
             builder.Services.AddScoped<IJoinRequestRepository, JoinRequestRepository>();
             builder.Services.AddScoped<IInterviewRepository, InterviewRepository>();
             builder.Services.AddScoped<IClubMovementRecordRepository, ClubMovementRecordRepository>();
             builder.Services.AddScoped<IClubMovementRecordDetailRepository, ClubMovementRecordDetailRepository>();
+            builder.Services.AddScoped<IProposalRepository, ProposalRepository>();
+            builder.Services.AddScoped<IProposalVoteRepository, ProposalVoteRepository>();
+            builder.Services.AddScoped<IFundCollectionRequestRepository, FundCollectionRequestRepository>();
+            builder.Services.AddScoped<IFundCollectionPaymentRepository, FundCollectionPaymentRepository>();
+            builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
 
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -89,6 +103,11 @@ namespace WebAPI
             builder.Services.AddScoped<IInterviewService, InterviewService>();
             builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
             builder.Services.AddScoped<IClubScoringService, ClubScoringService>();
+            builder.Services.AddScoped<IProposalService, ProposalService>();
+            builder.Services.AddScoped<IFundCollectionService, FundCollectionService>();
+            builder.Services.AddScoped<IFinancialDashboardService, FinancialDashboardService>();
+            builder.Services.AddScoped<Repositories.News.INewsRepository, Repositories.News.NewsRepository>();
+            builder.Services.AddScoped<Services.News.INewsService, Services.News.NewsService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();

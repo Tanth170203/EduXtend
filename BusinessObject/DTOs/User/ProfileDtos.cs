@@ -16,12 +16,12 @@ public class UpdateProfileRequest
     [Required, MaxLength(100)]
     public string FullName { get; set; } = string.Empty;
 
-    [MaxLength(255)]
-    [Url]
+	[MaxLength(255)]
+	[Url]
     public string? AvatarUrl { get; set; }
 
-    [MaxLength(20)]
-    [RegularExpression(@"^\d*$", ErrorMessage = "Phone number must contain digits only.")]
+	[MaxLength(10)]
+	[RegularExpression(@"^\d{10}$", ErrorMessage = "Phone number must be exactly 10 numbers.")]
     public string? PhoneNumber { get; set; }
 }
 

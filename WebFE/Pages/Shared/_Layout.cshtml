@@ -76,7 +76,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/News" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
+                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/News/Index" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
                                 <i data-lucide="newspaper" style="width: 18px; height: 18px;"></i>
                                 <span>News</span>
                             </a>
@@ -188,8 +188,14 @@
     <script>
         // Initialize Lucide Icons - wait for it to load
         function initLucide() {
-            if (typeof lucide !== 'undefined' && lucide.createIcons) {
-                lucide.createIcons();
+            if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                try {
+                    // Some builds require passing the icons registry explicitly
+                    const options = lucide.icons ? { icons: lucide.icons } : undefined;
+                    lucide.createIcons(options);
+                } catch (e) {
+                    console.warn('Lucide init failed:', e);
+                }
             } else {
                 setTimeout(initLucide, 50);
             }

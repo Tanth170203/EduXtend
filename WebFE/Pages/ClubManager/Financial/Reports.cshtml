@@ -1,0 +1,494 @@
+@page
+@model WebFE.Pages.ClubManager.Financial.ReportsModel
+@{
+    ViewData["Title"] = "Financial Reports";
+    ViewData["Breadcrumb"] = "Reports";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Financial Reports</h1>
+        <p class="admin-page-subtitle">Generate and export detailed financial reports</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            Add Income
+        </button>
+        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            Add Expense
+        </button>
+    </div>
+</div>
+
+<!-- Report Options -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100 text-center report-card">
+            <div class="card-body">
+                <div class="report-icon bg-primary bg-opacity-10 text-primary mx-auto mb-3">
+                    <i data-lucide="file-text" style="width: 32px; height: 32px;"></i>
+                </div>
+                <h5 class="card-title">Full Report</h5>
+                <p class="text-muted small mb-3">PDF/Excel</p>
+                <button class="btn btn-outline-primary btn-sm">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                    Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100 text-center report-card">
+            <div class="card-body">
+                <div class="report-icon bg-success bg-opacity-10 text-success mx-auto mb-3">
+                    <i data-lucide="trending-up" style="width: 32px; height: 32px;"></i>
+                </div>
+                <h5 class="card-title">Income Report</h5>
+                <p class="text-muted small mb-3">Excel</p>
+                <button class="btn btn-outline-success btn-sm">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                    Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100 text-center report-card">
+            <div class="card-body">
+                <div class="report-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3">
+                    <i data-lucide="trending-down" style="width: 32px; height: 32px;"></i>
+                </div>
+                <h5 class="card-title">Expense Report</h5>
+                <p class="text-muted small mb-3">Excel</p>
+                <button class="btn btn-outline-danger btn-sm">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                    Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="card border-0 shadow-sm h-100 text-center report-card">
+            <div class="card-body">
+                <div class="report-icon bg-warning bg-opacity-10 text-warning mx-auto mb-3">
+                    <i data-lucide="users" style="width: 32px; height: 32px;"></i>
+                </div>
+                <h5 class="card-title">Member Report</h5>
+                <p class="text-muted small mb-3">Excel</p>
+                <button class="btn btn-outline-warning btn-sm">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                    Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Financial Summary -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Expense Breakdown</h5>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="expenseBreakdownChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Financial Metrics</h5>
+                
+                <div class="metric-row">
+                    <div class="metric-label">Total Income</div>
+                    <div class="metric-value text-success" id="totalIncome">-</div>
+                </div>
+                <hr>
+                
+                <div class="metric-row">
+                    <div class="metric-label">Total Expenses</div>
+                    <div class="metric-value text-danger" id="totalExpenses">-</div>
+                </div>
+                <hr>
+                
+                <div class="metric-row">
+                    <div class="metric-label">Net Balance</div>
+                    <div class="metric-value text-primary fw-bold" id="netBalance">-</div>
+                </div>
+                <hr>
+                
+                <div class="metric-row">
+                    <div class="metric-label">Pending Expenses</div>
+                    <div class="metric-value text-warning" id="pendingExpenses">-</div>
+                </div>
+                <hr>
+                
+                <div class="metric-row">
+                    <div class="metric-label">Member Contributions</div>
+                    <div class="metric-value" id="memberContributions">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.Partial("_TransactionModals")
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const CLUB_ID = @Model.ClubId;
+        const API_BASE = 'https://localhost:5001/api';
+
+        let expenseChart = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Set default dates to today
+            document.getElementById('incomeDate').valueAsDate = new Date();
+            document.getElementById('expenseDate').valueAsDate = new Date();
+            
+            // Load upcoming activities for expense form
+            await loadUpcomingActivities();
+            
+            await loadFinancialData();
+            lucide.createIcons();
+        });
+
+        // Load upcoming activities (StartTime >= now)
+        async function loadUpcomingActivities() {
+            try {
+                const response = await fetch(`${API_BASE}/Activity/club/${CLUB_ID}`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const activities = await response.json();
+                    const now = new Date();
+                    
+                    // Filter upcoming activities (StartTime >= now)
+                    const upcomingActivities = activities.filter(activity => {
+                        const startTime = new Date(activity.startTime);
+                        return startTime >= now && (activity.status === 'Approved' || activity.status === 'Ongoing');
+                    });
+                    
+                    const select = document.getElementById('expenseActivity');
+                    
+                    // Sort by StartTime (earliest first)
+                    upcomingActivities.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+                    
+                    upcomingActivities.forEach(activity => {
+                        const option = document.createElement('option');
+                        option.value = activity.id;
+                        const startDate = new Date(activity.startTime).toLocaleDateString('vi-VN');
+                        option.textContent = `${activity.title} (${startDate})`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading activities:', error);
+            }
+        }
+
+        // Load all financial data
+        async function loadFinancialData() {
+            try {
+                // Load overview data
+                const overviewResponse = await fetch(`${API_BASE}/FinancialDashboard/club/${CLUB_ID}`, {
+                    credentials: 'include'
+                });
+                
+                if (overviewResponse.ok) {
+                    const data = await overviewResponse.json();
+                    updateFinancialMetrics(data);
+                }
+
+                // Load expense breakdown
+                await loadExpenseBreakdown();
+            } catch (error) {
+                console.error('Error loading financial data:', error);
+            }
+        }
+
+        // Update financial metrics
+        function updateFinancialMetrics(data) {
+            document.getElementById('totalIncome').textContent = formatCurrency(data.totalIncome || 0);
+            document.getElementById('totalExpenses').textContent = formatCurrency(data.totalExpenses || 0);
+            document.getElementById('netBalance').textContent = formatCurrency(data.balance || 0);
+            
+            // Pending expenses (status = pending)
+            fetchPendingExpenses();
+            
+            // Member contributions
+            document.getElementById('memberContributions').textContent = formatCurrency(data.memberFunds || 0);
+        }
+
+        // Fetch pending expenses
+        async function fetchPendingExpenses() {
+            try {
+                const response = await fetch(`${API_BASE}/PaymentTransaction/club/${CLUB_ID}`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const transactions = await response.json();
+                    const pending = transactions
+                        .filter(t => t.type === 'Expense' && t.status === 'pending')
+                        .reduce((sum, t) => sum + t.amount, 0);
+                    
+                    document.getElementById('pendingExpenses').textContent = formatCurrency(pending);
+                }
+            } catch (error) {
+                console.error('Error loading pending expenses:', error);
+            }
+        }
+
+        // Load expense breakdown chart
+        async function loadExpenseBreakdown() {
+            try {
+                const response = await fetch(`${API_BASE}/PaymentTransaction/club/${CLUB_ID}`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const transactions = await response.json();
+                    const expenses = transactions.filter(t => t.type === 'Expense' && t.status === 'completed');
+                    
+                    // Group by category
+                    const categoryMap = {};
+                    expenses.forEach(t => {
+                        const cat = t.category || 'Other';
+                        categoryMap[cat] = (categoryMap[cat] || 0) + t.amount;
+                    });
+                    
+                    const labels = Object.keys(categoryMap);
+                    const data = Object.values(categoryMap);
+                    const colors = ['#003d7a', '#0ea5e9', '#14b8a6', '#f59e0b', '#10b981', '#8b5cf6'];
+                    
+                    const expenseCtx = document.getElementById('expenseBreakdownChart').getContext('2d');
+                    
+                    if (expenseChart) {
+                        expenseChart.destroy();
+                    }
+                    
+                    expenseChart = new Chart(expenseCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: colors.slice(0, labels.length),
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20,
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading expense breakdown:', error);
+            }
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'decimal' }).format(Math.abs(amount)) + ' ₫';
+        }
+
+        // Handle Add Income form
+        document.getElementById('addIncomeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await submitTransaction('Income');
+        });
+
+        // Handle Add Expense form
+        document.getElementById('addExpenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await submitTransaction('Expense');
+        });
+
+        // Submit transaction
+        async function submitTransaction(type) {
+            const prefix = type.toLowerCase();
+            
+            const dto = {
+                title: document.getElementById(`${prefix}Title`).value,
+                type: type,
+                category: document.getElementById(`${prefix}Category`).value || null,
+                amount: parseFloat(document.getElementById(`${prefix}Amount`).value),
+                method: document.getElementById(`${prefix}Method`).value,
+                transactionDate: new Date(document.getElementById(`${prefix}Date`).value + 'T00:00:00').toISOString(),
+                receiptUrl: document.getElementById(`${prefix}ReceiptUrl`).value || null,
+                description: document.getElementById(`${prefix}Description`).value || null,
+                notes: document.getElementById(`${prefix}Notes`).value || null,
+                activityId: null,
+                semesterId: null
+            };
+
+            // Add ActivityId for Expense if selected
+            if (type === 'Expense') {
+                const activityId = document.getElementById('expenseActivity').value;
+                if (activityId) {
+                    dto.activityId = parseInt(activityId);
+                }
+            }
+
+            console.log('📦 Submitting transaction:', dto);
+
+            try {
+                const response = await fetch(`${API_BASE}/PaymentTransaction/club/${CLUB_ID}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(dto)
+                });
+
+                console.log('📡 Response status:', response.status);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Success:', result);
+                    
+                    // Close modal
+                    const modalId = type === 'Income' ? 'addIncomeModal' : 'addExpenseModal';
+                    const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+                    modal.hide();
+                    
+                    // Reset form
+                    const formId = type === 'Income' ? 'addIncomeForm' : 'addExpenseForm';
+                    document.getElementById(formId).reset();
+                    document.getElementById(`${prefix}Date`).valueAsDate = new Date();
+                    if (type === 'Expense') {
+                        document.getElementById('expenseActivity').value = '';
+                    }
+                    
+                    // Show success message
+                    showToast(`${type} added successfully!`, 'success');
+                    
+                    // Reload data
+                    await loadFinancialData();
+                } else {
+                    const errorText = await response.text();
+                    console.error('❌ Error response:', errorText);
+                    
+                    let errorMessage = `Failed to add ${type.toLowerCase()}`;
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        errorMessage = errorJson.message || errorJson.title || errorMessage;
+                    } catch (e) {
+                        errorMessage = errorText || errorMessage;
+                    }
+                    
+                    showToast(errorMessage, 'danger');
+                }
+            } catch (error) {
+                console.error(`❌ Error adding ${type.toLowerCase()}:`, error);
+                showToast(`An error occurred: ${error.message}`, 'danger');
+            }
+        }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                toastContainer.style.zIndex = '9999';
+                document.body.appendChild(toastContainer);
+            }
+
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+            const iconName = type === 'success' ? 'check-circle' : 'alert-circle';
+            
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i data-lucide="${iconName}" style="width: 16px; height: 16px;"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { autohide: true, delay: 3000 });
+            toast.show();
+            
+            lucide.createIcons();
+            
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        }
+
+        lucide.createIcons();
+    </script>
+}
+
+<style>
+    .report-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+    .report-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .report-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+    }
+
+    .metric-label {
+        font-size: 15px;
+        color: #6b7280;
+    }
+
+    .metric-value {
+        font-size: 18px;
+        font-weight: 600;
+    }
+</style>
+

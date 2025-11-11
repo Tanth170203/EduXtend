@@ -23,27 +23,27 @@
                     </div>
                     <div class="col-md-4">
                         <label asp-for="Input.Type" class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
-                        <select asp-for="Input.Type" class="form-select form-select-lg">
+                        <select asp-for="Input.Type" class="form-select form-select-lg" id="activityTypeSelect">
                             <optgroup label="Events">
-                                <option value="3">Large Event (100-200 people)</option>
-                                <option value="4">Medium Event (50-100 people)</option>
-                                <option value="5">Small Event (&lt;50 people)</option>
+                                <option value="3">Large Event (100-200 people) - 20 points</option>
+                                <option value="4">Medium Event (50-100 people) - 15 points</option>
+                                <option value="5">Small Event (&lt;50 people) - 5 points</option>
                             </optgroup>
                             <optgroup label="Competitions">
-                                <option value="6">School Competition</option>
-                                <option value="7">Provincial Competition</option>
-                                <option value="8">National Competition</option>
+                                <option value="6">School Competition (5-10 points)</option>
+                                <option value="7">Provincial Competition - 20 points</option>
+                                <option value="8">National Competition - 30 points</option>
                             </optgroup>
                             <optgroup label="Community">
-                                <option value="9">Volunteer</option>
+                                <option value="9">Volunteer (1-5 points)</option>
                             </optgroup>
                             <optgroup label="Collaboration">
-                                <option value="10">Club Collaboration</option>
-                                <option value="11">School Collaboration</option>
-                                <option value="12">Enterprise Collaboration</option>
+                                <option value="10">Club Collaboration (1-10 points)</option>
+                                <option value="11">School Collaboration (1-10 points)</option>
+                                <option value="12">Enterprise Collaboration (1-10 points)</option>
                             </optgroup>
                             <optgroup label="Other">
-                                <option value="13">Other</option>
+                                <option value="13">Other (1-5 points)</option>
                             </optgroup>
                         </select>
                     </div>
@@ -95,9 +95,10 @@
                         <div class="form-text">Maximum number of participants</div>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Input.MovementPoint" class="form-label fw-semibold">Movement Points</label>
-                        <input asp-for="Input.MovementPoint" type="number" step="0.5" class="form-control" id="MovementPointInput" placeholder="0" />
-                        <div class="form-text" id="MovementPointHint">Points awarded for attending (applies to general events)</div>
+                        <label asp-for="Input.MovementPoint" class="form-label fw-semibold">Movement Points <span class="text-danger">*</span></label>
+                        <input asp-for="Input.MovementPoint" type="number" step="0.5" class="form-control" id="MovementPointInput" placeholder="0" min="0" required />
+                        <div class="form-text" id="MovementPointHint">Points will be auto-filled based on activity type</div>
+                        <span class="text-danger small" id="MovementPointError"></span>
                     </div>
                     <div class="col-md-4 d-flex align-items-center">
                         <div class="form-check form-switch">
@@ -122,6 +123,98 @@
 <partial name="_ValidationScriptsPartial" />
 
 <script>
+    // ===== Auto-fill Movement Points based on Activity Type =====
+    const activityTypeSelect = document.getElementById('activityTypeSelect');
+    const movementPointInput = document.getElementById('MovementPointInput');
+    const movementPointHint = document.getElementById('MovementPointHint');
+    const movementPointError = document.getElementById('MovementPointError');
+
+    // Points mapping based on activity type (Admin - no Club Activities)
+    const activityPoints = {
+        // Events
+        '3': { fixed: 20, hint: 'Large Event (100-200 people): 20 points' },
+        '4': { fixed: 15, hint: 'Medium Event (50-100 people): 15 points' },
+        '5': { fixed: 5, hint: 'Small Event (<50 people): 5 points' },
+        
+        // Competitions
+        '6': { min: 5, max: 10, hint: 'School Competition: 5-10 points (depending on scale and nature)' },
+        '7': { fixed: 20, hint: 'Provincial Competition: 20 points' },
+        '8': { fixed: 30, hint: 'National Competition: 30 points' },
+        
+        // Volunteer
+        '9': { min: 1, max: 5, hint: 'Volunteer: 1-5 points (manual input required)' },
+        
+        // Collaboration
+        '10': { min: 1, max: 10, hint: 'Club Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' },
+        '11': { min: 1, max: 10, hint: 'School Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' },
+        '12': { min: 1, max: 10, hint: 'Enterprise Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' },
+        
+        // Other
+        '13': { min: 1, max: 5, hint: 'Other activities: 1-5 points (manual input required)' }
+    };
+
+    function updateMovementPoints() {
+        const selectedType = activityTypeSelect.value;
+        const pointsConfig = activityPoints[selectedType];
+        
+        if (!pointsConfig) return;
+        
+        // Clear error
+        movementPointError.textContent = '';
+        
+        // Don't override existing value on page load, only on type change
+        if (pointsConfig.fixed !== undefined) {
+            // For fixed points, update hint but keep manual override if exists
+            movementPointInput.readOnly = false; // Allow manual override in edit mode
+            movementPointInput.min = 0;
+            movementPointInput.max = 1000;
+        } else if (pointsConfig.min !== undefined && pointsConfig.max !== undefined) {
+            // Range points
+            movementPointInput.readOnly = false;
+            movementPointInput.min = pointsConfig.min;
+            movementPointInput.max = pointsConfig.max;
+        }
+        
+        movementPointHint.textContent = pointsConfig.hint;
+    }
+
+    // Validate movement points on change
+    function validateMovementPoints() {
+        const selectedType = activityTypeSelect.value;
+        const pointsConfig = activityPoints[selectedType];
+        const value = parseFloat(movementPointInput.value);
+        
+        if (!pointsConfig) return true;
+        
+        if (pointsConfig.min !== undefined && pointsConfig.max !== undefined) {
+            if (value < pointsConfig.min || value > pointsConfig.max) {
+                movementPointError.textContent = `Points must be between ${pointsConfig.min} and ${pointsConfig.max}`;
+                return false;
+            }
+        }
+        
+        movementPointError.textContent = '';
+        return true;
+    }
+
+    activityTypeSelect?.addEventListener('change', function() {
+        updateMovementPoints();
+        // Auto-fill on type change in edit mode
+        const pointsConfig = activityPoints[this.value];
+        if (pointsConfig) {
+            if (pointsConfig.fixed !== undefined) {
+                movementPointInput.value = pointsConfig.fixed;
+            } else if (pointsConfig.min !== undefined) {
+                movementPointInput.value = pointsConfig.min;
+            }
+        }
+    });
+    movementPointInput?.addEventListener('change', validateMovementPoints);
+    movementPointInput?.addEventListener('input', validateMovementPoints);
+
+    // Initial update (don't change value, just update hints)
+    updateMovementPoints();
+
     // ===== Image upload to Cloudinary =====
     const fileInput = document.getElementById('imageFile');
     const statusEl = document.getElementById('imageUploadStatus');

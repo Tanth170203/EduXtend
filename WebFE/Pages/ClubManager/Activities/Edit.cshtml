@@ -117,32 +117,32 @@
                     <!-- Type -->
                     <div class="mb-3">
                         <label asp-for="Activity.Type" class="form-label">Activity Type <span class="text-danger">*</span></label>
-                        <select asp-for="Activity.Type" class="form-select" required>
+                        <select asp-for="Activity.Type" class="form-select" id="activityTypeSelect" required>
                             <optgroup label="Club Activities (Internal)">
-                                <option value="ClubMeeting">Club Meeting</option>
-                                <option value="ClubTraining">Club Training</option>
-                                <option value="ClubWorkshop">Club Workshop</option>
+                                <option value="ClubMeeting">Club Meeting (5 points/week)</option>
+                                <option value="ClubTraining">Club Training (5 points/week)</option>
+                                <option value="ClubWorkshop">Club Workshop (5 points/week)</option>
                             </optgroup>
                             <optgroup label="Events">
-                                <option value="LargeEvent">Large Event (100-200 people)</option>
-                                <option value="MediumEvent">Medium Event (50-100 people)</option>
-                                <option value="SmallEvent">Small Event (&lt;50 people)</option>
+                                <option value="LargeEvent">Large Event (100-200 people) - 20 points</option>
+                                <option value="MediumEvent">Medium Event (50-100 people) - 15 points</option>
+                                <option value="SmallEvent">Small Event (&lt;50 people) - 5 points</option>
                             </optgroup>
                             <optgroup label="Competitions">
-                                <option value="SchoolCompetition">School Competition</option>
-                                <option value="ProvincialCompetition">Provincial Competition</option>
-                                <option value="NationalCompetition">National Competition</option>
+                                <option value="SchoolCompetition">School Competition (5-10 points)</option>
+                                <option value="ProvincialCompetition">Provincial Competition - 20 points</option>
+                                <option value="NationalCompetition">National Competition - 30 points</option>
                             </optgroup>
                             <optgroup label="Community">
-                                <option value="Volunteer">Volunteer</option>
+                                <option value="Volunteer">Volunteer (1-5 points)</option>
                             </optgroup>
                             <optgroup label="Collaboration">
-                                <option value="ClubCollaboration">Club Collaboration</option>
-                                <option value="SchoolCollaboration">School Collaboration</option>
-                                <option value="EnterpriseCollaboration">Enterprise Collaboration</option>
+                                <option value="ClubCollaboration">Club Collaboration (1-10 points)</option>
+                                <option value="SchoolCollaboration">School Collaboration (1-10 points)</option>
+                                <option value="EnterpriseCollaboration">Enterprise Collaboration (1-10 points)</option>
                             </optgroup>
                             <optgroup label="Other">
-                                <option value="Other">Other</option>
+                                <option value="Other">Other (1-5 points)</option>
                             </optgroup>
                         </select>
                         <span asp-validation-for="Activity.Type" class="text-danger"></span>
@@ -157,10 +157,11 @@
 
                     <!-- Movement Points -->
                     <div class="mb-3">
-                        <label asp-for="Activity.MovementPoint" class="form-label">Movement Points</label>
-                        <input asp-for="Activity.MovementPoint" type="number" step="0.5" class="form-control" min="0" />
+                        <label asp-for="Activity.MovementPoint" class="form-label">Movement Points <span class="text-danger">*</span></label>
+                        <input asp-for="Activity.MovementPoint" type="number" step="0.5" class="form-control" min="0" id="movementPointInput" required />
                         <span asp-validation-for="Activity.MovementPoint" class="text-danger"></span>
-                        <small class="form-text text-muted">Points awarded to participants</small>
+                        <small class="form-text text-muted" id="movementPointHint">Points will be auto-filled based on activity type</small>
+                        <span class="text-danger small d-block" id="movementPointError"></span>
                     </div>
 
                     <!-- Public Activity -->
@@ -206,10 +207,114 @@
                         event.preventDefault()
                         event.stopPropagation()
                     }
+                    
+                    // Validate movement points
+                    if (!validateMovementPointsAuto()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    
                     form.classList.add('was-validated')
                 }, false)
             })
         })()
+
+        // ===== Auto-fill Movement Points =====
+        const activityTypeSelect = document.getElementById('activityTypeSelect');
+        const movementPointInput = document.getElementById('movementPointInput');
+        const movementPointHint = document.getElementById('movementPointHint');
+        const movementPointError = document.getElementById('movementPointError');
+
+        // Points mapping based on activity type (Club Manager - includes Club Activities)
+        const activityPoints = {
+            // Club Activities (5 points/week)
+            'ClubMeeting': { fixed: 5, hint: 'Club Meeting: 5 points/week (4 weeks = 20 points)' },
+            'ClubTraining': { fixed: 5, hint: 'Club Training: 5 points/week' },
+            'ClubWorkshop': { fixed: 5, hint: 'Club Workshop: 5 points/week' },
+            
+            // Events
+            'LargeEvent': { fixed: 20, hint: 'Large Event (100-200 people): 20 points' },
+            'MediumEvent': { fixed: 15, hint: 'Medium Event (50-100 people): 15 points' },
+            'SmallEvent': { fixed: 5, hint: 'Small Event (<50 people): 5 points' },
+            
+            // Competitions
+            'SchoolCompetition': { min: 5, max: 10, hint: 'School Competition: 5-10 points (depending on scale and nature)' },
+            'ProvincialCompetition': { fixed: 20, hint: 'Provincial Competition: 20 points' },
+            'NationalCompetition': { fixed: 30, hint: 'National Competition: 30 points' },
+            
+            // Volunteer
+            'Volunteer': { min: 1, max: 5, hint: 'Volunteer: 1-5 points (manual input required)' },
+            
+            // Collaboration
+            'ClubCollaboration': { min: 1, max: 10, hint: 'Club Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' },
+            'SchoolCollaboration': { min: 1, max: 10, hint: 'School Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' },
+            'EnterpriseCollaboration': { min: 1, max: 10, hint: 'Enterprise Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' },
+            
+            // Other
+            'Other': { min: 1, max: 5, hint: 'Other activities: 1-5 points (manual input required)' }
+        };
+
+        function updateMovementPointsAuto() {
+            const selectedType = activityTypeSelect.value;
+            const pointsConfig = activityPoints[selectedType];
+            
+            if (!pointsConfig) return;
+            
+            // Clear error
+            movementPointError.textContent = '';
+            
+            // Don't override existing value on page load, only on type change
+            if (pointsConfig.fixed !== undefined) {
+                // For fixed points, update hint but keep manual override if exists
+                movementPointInput.readOnly = false; // Allow manual override in edit mode
+                movementPointInput.min = 0;
+                movementPointInput.max = 1000;
+            } else if (pointsConfig.min !== undefined && pointsConfig.max !== undefined) {
+                // Range points
+                movementPointInput.readOnly = false;
+                movementPointInput.min = pointsConfig.min;
+                movementPointInput.max = pointsConfig.max;
+            }
+            
+            movementPointHint.textContent = pointsConfig.hint;
+        }
+
+        // Validate movement points
+        function validateMovementPointsAuto() {
+            const selectedType = activityTypeSelect.value;
+            const pointsConfig = activityPoints[selectedType];
+            const value = parseFloat(movementPointInput.value);
+            
+            if (!pointsConfig) return true;
+            
+            if (pointsConfig.min !== undefined && pointsConfig.max !== undefined) {
+                if (value < pointsConfig.min || value > pointsConfig.max) {
+                    movementPointError.textContent = `Points must be between ${pointsConfig.min} and ${pointsConfig.max}`;
+                    return false;
+                }
+            }
+            
+            movementPointError.textContent = '';
+            return true;
+        }
+
+        activityTypeSelect?.addEventListener('change', function() {
+            updateMovementPointsAuto();
+            // Auto-fill on type change in edit mode
+            const pointsConfig = activityPoints[this.value];
+            if (pointsConfig) {
+                if (pointsConfig.fixed !== undefined) {
+                    movementPointInput.value = pointsConfig.fixed;
+                } else if (pointsConfig.min !== undefined) {
+                    movementPointInput.value = pointsConfig.min;
+                }
+            }
+        });
+        movementPointInput?.addEventListener('change', validateMovementPointsAuto);
+        movementPointInput?.addEventListener('input', validateMovementPointsAuto);
+
+        // Initial update (don't change value, just update hints)
+        updateMovementPointsAuto();
 
         // ===== Image upload to Cloudinary via backend helper =====
         const fileInput = document.getElementById('imageFile');

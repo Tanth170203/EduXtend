@@ -1,0 +1,252 @@
+@page "{id:int}"
+@model WebFE.Pages.Clubs.Proposals.DetailModel
+@{
+    ViewData["Title"] = Model.Proposal?.Title ?? "Proposal Details";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="~/lib/lucide/lucide.min.js" defer></script>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Header -->
+                <div class="mb-4">
+                    <a href="/Clubs/MemberDashboard/@Model.Proposal?.ClubId?section=proposals" class="btn btn-outline-secondary btn-sm mb-3">
+                        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back to Proposals
+                    </a>
+                </div>
+
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show">
+                        <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (Model.Proposal != null)
+                {
+                    var statusClass = Model.Proposal.Status switch
+                    {
+                        "PendingVote" => "bg-warning text-dark",
+                        "ApprovedByClub" => "bg-success",
+                        "Rejected" => "bg-danger",
+                        _ => "bg-secondary"
+                    };
+
+                    <!-- Proposal Card -->
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h2 class="fw-bold mb-2">@Model.Proposal.Title</h2>
+                                    <div class="d-flex gap-3 align-items-center text-muted">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                                            <span>@Model.Proposal.CreatedByName</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                                            <span>@Model.Proposal.CreatedAt.ToString("dd MMM yyyy HH:mm")</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="badge @statusClass fs-6 px-3 py-2">@Model.Proposal.Status</span>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(Model.Proposal.Description))
+                            {
+                                <div class="mb-4">
+                                    <h5 class="fw-semibold mb-2">Description</h5>
+                                    <p class="text-muted" style="white-space: pre-wrap;">@Model.Proposal.Description</p>
+                                </div>
+                            }
+
+                            <hr class="my-4" />
+
+                            <!-- Voting Stats -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-success bg-opacity-10">
+                                        <div class="card-body text-center">
+                                            <i data-lucide="thumbs-up" style="width: 32px; height: 32px; color: var(--bs-success);"></i>
+                                            <h3 class="mt-2 mb-0 text-success">@Model.Proposal.AgreeCount</h3>
+                                            <p class="small text-muted mb-0">Agree</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-danger bg-opacity-10">
+                                        <div class="card-body text-center">
+                                            <i data-lucide="thumbs-down" style="width: 32px; height: 32px; color: var(--bs-danger);"></i>
+                                            <h3 class="mt-2 mb-0 text-danger">@Model.Proposal.DisagreeCount</h3>
+                                            <p class="small text-muted mb-0">Disagree</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-primary bg-opacity-10">
+                                        <div class="card-body text-center">
+                                            <i data-lucide="users" style="width: 32px; height: 32px; color: var(--bs-primary);"></i>
+                                            <h3 class="mt-2 mb-0 text-primary">@(Model.Proposal.AgreeCount + Model.Proposal.DisagreeCount)</h3>
+                                            <p class="small text-muted mb-0">Total Votes</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Voting Actions -->
+                            @if (Model.Proposal.Status == "PendingVote")
+                            {
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body">
+                                        <h5 class="fw-semibold mb-3">Cast Your Vote</h5>
+                                        
+                                        @if (Model.Proposal.CurrentUserVote == null)
+                                        {
+                                            <p class="text-muted mb-3">You haven't voted yet. What do you think about this proposal?</p>
+                                            <div class="d-flex gap-2">
+                                                <form method="post" asp-page-handler="Vote" class="flex-fill">
+                                                    <input type="hidden" name="proposalId" value="@Model.Proposal.Id" />
+                                                    <input type="hidden" name="isAgree" value="true" />
+                                                    <button type="submit" class="btn btn-success w-100">
+                                                        <i data-lucide="thumbs-up" style="width: 20px; height: 20px;"></i> Agree
+                                                    </button>
+                                                </form>
+                                                <form method="post" asp-page-handler="Vote" class="flex-fill">
+                                                    <input type="hidden" name="proposalId" value="@Model.Proposal.Id" />
+                                                    <input type="hidden" name="isAgree" value="false" />
+                                                    <button type="submit" class="btn btn-danger w-100">
+                                                        <i data-lucide="thumbs-down" style="width: 20px; height: 20px;"></i> Disagree
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="alert alert-info mb-3">
+                                                <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                                                You voted: <strong>@(Model.Proposal.CurrentUserVote == true ? "Agree" : "Disagree")</strong>
+                                            </div>
+                                            <p class="text-muted mb-3">Want to change your vote?</p>
+                                            <div class="d-flex gap-2">
+                                                <form method="post" asp-page-handler="Vote" class="flex-fill">
+                                                    <input type="hidden" name="proposalId" value="@Model.Proposal.Id" />
+                                                    <input type="hidden" name="isAgree" value="true" />
+                                                    <button type="submit" class="btn btn-outline-success w-100">
+                                                        <i data-lucide="thumbs-up" style="width: 20px; height: 20px;"></i> Change to Agree
+                                                    </button>
+                                                </form>
+                                                <form method="post" asp-page-handler="Vote" class="flex-fill">
+                                                    <input type="hidden" name="proposalId" value="@Model.Proposal.Id" />
+                                                    <input type="hidden" name="isAgree" value="false" />
+                                                    <button type="submit" class="btn btn-outline-danger w-100">
+                                                        <i data-lucide="thumbs-down" style="width: 20px; height: 20px;"></i> Change to Disagree
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-secondary">
+                                    <i data-lucide="lock" style="width: 16px; height: 16px;"></i>
+                                    This proposal is closed for voting.
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Votes List -->
+                    @if (Model.Proposal.Votes.Any())
+                    {
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0">
+                                    <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                                    All Votes (@Model.Proposal.Votes.Count)
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="list-group list-group-flush">
+                                    @foreach (var vote in Model.Proposal.Votes)
+                                    {
+                                        <div class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <strong>@vote.UserName</strong>
+                                                    <div class="small text-muted">
+                                                        <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                                                        @vote.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                                    </div>
+                                                </div>
+                                                <span class="badge @(vote.IsAgree ? "bg-success" : "bg-danger")">
+                                                    <i data-lucide="@(vote.IsAgree ? "thumbs-up" : "thumbs-down")" style="width: 14px; height: 14px;"></i>
+                                                    @(vote.IsAgree ? "Agree" : "Disagree")
+                                                </span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        Proposal not found.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <script>
+        function initLucide() {
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                try {
+                    lucide.createIcons();
+                } catch (e) {
+                    console.error('Error creating Lucide icons:', e);
+                }
+            } else {
+                setTimeout(initLucide, 50);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initLucide();
+            setTimeout(initLucide, 300);
+        });
+        
+        initLucide();
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,188 @@
+@page
+@model WebFE.Pages.ClubManager.Proposals.IndexModel
+@{
+    ViewData["Title"] = "Proposals";
+    ViewData["Breadcrumb"] = "Proposals";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1 class="page-title">
+        <i data-lucide="lightbulb" style="width: 32px; height: 32px;"></i>
+        Club Proposals
+    </h1>
+    <p class="page-description">View and manage all proposals from club members</p>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stats Cards -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Total Proposals</p>
+            </div>
+            <div class="stat-card-icon blue">
+                <i data-lucide="file-text" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Proposals.Count</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Pending Vote</p>
+            </div>
+            <div class="stat-card-icon orange">
+                <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Proposals.Count(p => p.Status == "PendingVote")</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Approved</p>
+            </div>
+            <div class="stat-card-icon green">
+                <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Proposals.Count(p => p.Status == "ApprovedByClub")</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Rejected</p>
+            </div>
+            <div class="stat-card-icon red">
+                <i data-lucide="x-circle" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value">@Model.Proposals.Count(p => p.Status == "Rejected")</div>
+    </div>
+</div>
+
+<!-- Proposals List -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h2 class="content-card-title">All Proposals</h2>
+    </div>
+    <div class="content-card-body">
+        @if (Model.Proposals.Any())
+        {
+            <div class="row g-3">
+                @foreach (var proposal in Model.Proposals)
+                {
+                    var statusClass = proposal.Status switch
+                    {
+                        "PendingVote" => "bg-warning text-dark",
+                        "ApprovedByClub" => "bg-success",
+                        "Rejected" => "bg-danger",
+                        _ => "bg-secondary"
+                    };
+
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h5 class="fw-bold mb-0">@proposal.Title</h5>
+                                        </div>
+                                        
+                                        @if (!string.IsNullOrWhiteSpace(proposal.Description))
+                                        {
+                                            <p class="text-muted small mb-3">
+                                                @(proposal.Description.Length > 200 ? proposal.Description.Substring(0, 200) + "..." : proposal.Description)
+                                            </p>
+                                        }
+                                        
+                                        <div class="d-flex gap-3 align-items-center flex-wrap">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i data-lucide="user" style="width: 14px; height: 14px;"></i>
+                                                <span class="small">@proposal.CreatedByName</span>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                                                <span class="small">@proposal.CreatedAt.ToString("dd MMM yyyy")</span>
+                                            </div>
+                                            <div class="badge bg-success bg-opacity-10 text-success">
+                                                <i data-lucide="thumbs-up" style="width: 12px; height: 12px;"></i>
+                                                @proposal.AgreeCount
+                                            </div>
+                                            <div class="badge bg-danger bg-opacity-10 text-danger">
+                                                <i data-lucide="thumbs-down" style="width: 12px; height: 12px;"></i>
+                                                @proposal.DisagreeCount
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                                        <div class="mb-2">
+                                            <span class="badge @statusClass fs-6 px-3 py-2">@proposal.Status</span>
+                                        </div>
+                                        <div class="d-flex gap-2 justify-content-md-end">
+                                            <a href="/Clubs/Proposals/Detail/@proposal.Id" class="btn btn-sm btn-outline-primary">
+                                                <i data-lucide="eye" style="width: 14px; height: 14px;"></i> View
+                                            </a>
+                                            @if (proposal.Status == "PendingVote")
+                                            {
+                                                <form method="post" asp-page-handler="Close" class="d-inline">
+                                                    <input type="hidden" name="proposalId" value="@proposal.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-success"
+                                                            onclick="return confirm('Are you sure you want to close this proposal? This will determine the final status based on votes.')">
+                                                        <i data-lucide="lock" style="width: 14px; height: 14px;"></i> Close
+                                                    </button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5 text-muted">
+                <i data-lucide="inbox" style="width: 64px; height: 64px; margin-bottom: 1rem;"></i>
+                <h5>No Proposals Yet</h5>
+                <p>Club members haven't created any proposals yet.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+                setTimeout(() => lucide.createIcons(), 100);
+            }
+        });
+    </script>
+}
+

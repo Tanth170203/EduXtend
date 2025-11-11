@@ -1,0 +1,145 @@
+<!-- Add Income Modal -->
+<div class="modal fade" id="addIncomeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Income</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addIncomeForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label for="incomeTitle" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="incomeTitle" required maxlength="200" placeholder="e.g., University Sponsorship">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="incomeAmount" class="form-label">Amount (₫) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="incomeAmount" required min="0" step="1000">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="incomeCategory" class="form-label">Category</label>
+                            <select class="form-select" id="incomeCategory">
+                                <option value="">Select category...</option>
+                                <option value="sponsorship">Sponsorship</option>
+                                <option value="event_revenue">Event Revenue</option>
+                                <option value="member_fees">Member Fees</option>
+                                <option value="donation">Donation</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="incomeMethod" class="form-label">Payment Method <span class="text-danger">*</span></label>
+                            <select class="form-select" id="incomeMethod" required>
+                                <option value="BankTransfer">Bank Transfer</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="incomeDate" class="form-label">Transaction Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="incomeDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="incomeReceiptUrl" class="form-label">Receipt URL</label>
+                            <input type="url" class="form-control" id="incomeReceiptUrl" placeholder="https://...">
+                        </div>
+                        <div class="col-12">
+                            <label for="incomeDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="incomeDescription" rows="2" maxlength="500" placeholder="Add details about this income..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label for="incomeNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="incomeNotes" rows="2" maxlength="1000" placeholder="Internal notes..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                        Add Income
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div class="modal fade" id="addExpenseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Expense</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addExpenseForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label for="expenseTitle" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="expenseTitle" required maxlength="200" placeholder="e.g., Workshop Materials">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="expenseAmount" class="form-label">Amount (₫) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="expenseAmount" required min="0" step="1000">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expenseCategory" class="form-label">Category</label>
+                            <select class="form-select" id="expenseCategory">
+                                <option value="">Select category...</option>
+                                <option value="event">Event</option>
+                                <option value="equipment">Equipment</option>
+                                <option value="marketing">Marketing</option>
+                                <option value="venue">Venue</option>
+                                <option value="supplies">Supplies</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expenseMethod" class="form-label">Payment Method <span class="text-danger">*</span></label>
+                            <select class="form-select" id="expenseMethod" required>
+                                <option value="Cash">Cash</option>
+                                <option value="BankTransfer">Bank Transfer</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expenseDate" class="form-label">Transaction Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="expenseDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="expenseReceiptUrl" class="form-label">Receipt URL</label>
+                            <input type="url" class="form-control" id="expenseReceiptUrl" placeholder="https://...">
+                        </div>
+                        <div class="col-12">
+                            <label for="expenseActivity" class="form-label">Related Activity</label>
+                            <select class="form-select" id="expenseActivity">
+                                <option value="">None (General Expense)</option>
+                                <!-- Activities will be loaded dynamically -->
+                            </select>
+                            <small class="text-muted">Select an activity if this expense is related to a specific event</small>
+                        </div>
+                        <div class="col-12">
+                            <label for="expenseDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="expenseDescription" rows="2" maxlength="500" placeholder="Add details about this expense..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label for="expenseNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="expenseNotes" rows="2" maxlength="1000" placeholder="Internal notes..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                        Add Expense
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
