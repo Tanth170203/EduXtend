@@ -192,7 +192,11 @@ namespace WebAPI.Controllers
         // POST api/activity/club-manager/{id}/attendance/{userId}
         [HttpPost("club-manager/{id:int}/attendance/{targetUserId:int}")]
         [Authorize(Roles = "ClubManager")]
-        public async Task<IActionResult> SetAttendanceByClubManager(int id, int targetUserId, [FromQuery] bool isPresent)
+        public async Task<IActionResult> SetAttendanceByClubManager(
+            int id, 
+            int targetUserId, 
+            [FromQuery] bool isPresent,
+            [FromQuery] int? participationScore = null)
         {
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
@@ -200,7 +204,7 @@ namespace WebAPI.Controllers
 
             try
             {
-                var (success, message) = await _service.SetClubAttendanceAsync(userId, id, targetUserId, isPresent);
+                var (success, message) = await _service.SetClubAttendanceAsync(userId, id, targetUserId, isPresent, participationScore);
                 if (!success) return BadRequest(new { message });
                 return Ok(new { message });
             }

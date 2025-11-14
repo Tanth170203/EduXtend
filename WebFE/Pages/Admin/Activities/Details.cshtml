@@ -82,6 +82,20 @@
                             </div>
                         </div>
                     </div>
+
+                    @* Display rejection reason if activity is rejected *@
+                    @if (activity.Status == "Rejected" && !string.IsNullOrWhiteSpace(activity.RejectionReason))
+                    {
+                        <div class="alert alert-danger mt-4 mb-0" role="alert">
+                            <div class="d-flex">
+                                <i class="bi bi-exclamation-circle-fill me-3 fs-5" style="flex-shrink: 0;"></i>
+                                <div>
+                                    <h6 class="alert-heading mb-2 fw-bold">Rejection Reason</h6>
+                                    <p class="mb-0" style="white-space: pre-wrap;">@activity.RejectionReason</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
 

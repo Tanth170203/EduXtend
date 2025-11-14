@@ -35,6 +35,9 @@ namespace BusinessObject.DTOs.Activity
         public int? ApprovedById { get; set; }
         public string? ApprovedByName { get; set; }
         
+        // Rejection info
+        public string? RejectionReason { get; set; }
+        
         // Statistics
         public int RegisteredCount { get; set; }
         public int AttendedCount { get; set; }
