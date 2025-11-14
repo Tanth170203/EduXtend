@@ -29,9 +29,9 @@ namespace Repositories.Activities
 		Task<ActivityFeedback> AddFeedbackAsync(int activityId, int userId, int rating, string? comment);
 		Task<ActivityFeedback?> GetFeedbackAsync(int activityId, int userId);
 		Task UpdateFeedbackAsync(ActivityFeedback feedback);
-		Task<List<(int UserId, string FullName, string Email, bool? IsPresent)>> GetRegistrantsWithAttendanceAsync(int activityId);
-		Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int checkedById);
-		Task<List<(int UserId, string FullName, string Email, int Rating, string? Comment, DateTime CreatedAt)>> GetFeedbacksAsync(int activityId);
+	Task<List<(int UserId, string FullName, string Email, bool? IsPresent, int? ParticipationScore)>> GetRegistrantsWithAttendanceAsync(int activityId);
+	Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int checkedById);
+	Task<List<(int UserId, string FullName, string Email, int Rating, string? Comment, DateTime CreatedAt)>> GetFeedbacksAsync(int activityId);
 		Task<List<(int UserId, int StudentId)>> GetClubMemberUserIdsAsync(int clubId);
     }
 }

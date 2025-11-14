@@ -30,6 +30,9 @@ namespace BusinessObject.DTOs.Activity
         public bool IsFull { get; set; }
         public bool HasAttended { get; set; }
         public bool HasFeedback { get; set; }
+        
+        // Attendance statistics
+        public int AttendedCount { get; set; }
     }
 }
 

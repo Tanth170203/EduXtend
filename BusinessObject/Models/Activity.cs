@@ -49,6 +49,10 @@ public class Activity
     public User? ApprovedBy { get; set; }
     public DateTime? ApprovedAt { get; set; }
 
+    // Lý do từ chối (nếu bị từ chối)
+    [MaxLength(500)]
+    public string? RejectionReason { get; set; }
+
     // Số lượng người tham gia tối đa
     public int? MaxParticipants { get; set; }
 

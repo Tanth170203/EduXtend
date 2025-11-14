@@ -23,3 +23,7 @@ WHERE ClubId = 1;
 -- Expected result:
 -- Tất cả rows phải có SemesterId = 5
 
+
+
+
+

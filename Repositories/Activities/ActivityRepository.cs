@@ -243,45 +243,51 @@ namespace Repositories.Activities
 			await _ctx.SaveChangesAsync();
 		}
 
-		public async Task<List<(int UserId, string FullName, string Email, bool? IsPresent)>> GetRegistrantsWithAttendanceAsync(int activityId)
+	public async Task<List<(int UserId, string FullName, string Email, bool? IsPresent, int? ParticipationScore)>> GetRegistrantsWithAttendanceAsync(int activityId)
+	{
+		var regs = await _ctx.ActivityRegistrations
+			.Where(r => r.ActivityId == activityId && (r.Status == "Registered" || r.Status == "Attended"))
+			.Select(r => new { r.UserId, r.User.FullName, r.User.Email })
+			.ToListAsync();
+
+		var attendanceMap = await _ctx.ActivityAttendances
+			.Where(a => a.ActivityId == activityId)
+			.ToDictionaryAsync(a => a.UserId, a => new { a.IsPresent, a.ParticipationScore });
+
+		return regs.Select(r => {
+			var attendance = attendanceMap.ContainsKey(r.UserId) ? attendanceMap[r.UserId] : null;
+			return (r.UserId, r.FullName, r.Email, 
+				attendance != null ? (bool?)attendance.IsPresent : null,
+				attendance?.ParticipationScore);
+		}).ToList();
+	}
+
+	public async Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int checkedById)
+	{
+		var existing = await _ctx.ActivityAttendances.FirstOrDefaultAsync(a => a.ActivityId == activityId && a.UserId == userId);
+		if (existing == null)
 		{
-			var regs = await _ctx.ActivityRegistrations
-				.Where(r => r.ActivityId == activityId && (r.Status == "Registered" || r.Status == "Attended"))
-				.Select(r => new { r.UserId, r.User.FullName, r.User.Email })
-				.ToListAsync();
-
-			var attendanceMap = await _ctx.ActivityAttendances
-				.Where(a => a.ActivityId == activityId)
-				.ToDictionaryAsync(a => a.UserId, a => (bool?)a.IsPresent);
-
-			return regs.Select(r => (r.UserId, r.FullName, r.Email, attendanceMap.ContainsKey(r.UserId) ? attendanceMap[r.UserId] : null))
-				.ToList();
+			_ctx.ActivityAttendances.Add(new ActivityAttendance
+			{
+				ActivityId = activityId,
+				UserId = userId,
+				IsPresent = isPresent,
+				ParticipationScore = isPresent ? participationScore : null, // Chỉ lưu khi có mặt
+				CheckedAt = DateTime.UtcNow,
+				CheckedById = checkedById
+			});
+		}
+		else
+		{
+			existing.IsPresent = isPresent;
+			existing.ParticipationScore = isPresent ? participationScore : null;
+			existing.CheckedAt = DateTime.UtcNow;
+			existing.CheckedById = checkedById;
 		}
 
-		public async Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int checkedById)
-		{
-			var existing = await _ctx.ActivityAttendances.FirstOrDefaultAsync(a => a.ActivityId == activityId && a.UserId == userId);
-			if (existing == null)
-			{
-				_ctx.ActivityAttendances.Add(new ActivityAttendance
-				{
-					ActivityId = activityId,
-					UserId = userId,
-					IsPresent = isPresent,
-					CheckedAt = DateTime.UtcNow,
-					CheckedById = checkedById
-				});
-			}
-			else
-			{
-				existing.IsPresent = isPresent;
-				existing.CheckedAt = DateTime.UtcNow;
-				existing.CheckedById = checkedById;
-			}
-
-			// Do not change registration status; keep as 'Registered' to preserve signup count.
-			await _ctx.SaveChangesAsync();
-		}
+		// Do not change registration status; keep as 'Registered' to preserve signup count.
+		await _ctx.SaveChangesAsync();
+	}
 
 		public async Task<List<(int UserId, string FullName, string Email, int Rating, string? Comment, DateTime CreatedAt)>> GetFeedbacksAsync(int activityId)
 		{
