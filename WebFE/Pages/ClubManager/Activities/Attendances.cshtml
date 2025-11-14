@@ -128,9 +128,38 @@
                                 <td class="text-center">
                                     @if (r.IsPresent == true)
                                     {
-                                        <span class="badge bg-success-subtle text-success border border-success">
-                                            <i class="bi bi-check-circle-fill me-1"></i>Present
-                                        </span>
+                                        @if (r.ParticipationScore.HasValue)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Present
+                                            </span>
+                                            <div class="participation-score-display score-@r.ParticipationScore">
+                                                <strong>
+                                                    @if (r.ParticipationScore == 5)
+                                                    {
+                                                        <span>😊 <span style="font-size: 1.1em;">5 điểm</span></span>
+                                                    }
+                                                    else if (r.ParticipationScore == 4)
+                                                    {
+                                                        <span>😐 <span style="font-size: 1.1em;">4 điểm</span></span>
+                                                    }
+                                                    else if (r.ParticipationScore == 3)
+                                                    {
+                                                        <span>☹️ <span style="font-size: 1.1em;">3 điểm</span></span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>@r.ParticipationScore điểm</span>
+                                                    }
+                                                </strong>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Present
+                                            </span>
+                                        }
                                     }
                                     else if (r.IsPresent == false)
                                     {
@@ -146,18 +175,64 @@
                                     }
                                 </td>
                                 <td class="text-center">
-                                    <div class="btn-group btn-group-sm" role="group">
-                                        <button type="button" class="btn @(r.IsPresent == true ? "btn-success" : "btn-outline-success")" 
-                                                onclick="setAttendance(@Model.ActivityId, @r.UserId, true, this)"
-                                                title="Mark as Present">
-                                            <i class="bi bi-check-lg"></i> Present
-                                        </button>
-                                        <button type="button" class="btn @(r.IsPresent == false ? "btn-danger" : "btn-outline-danger")" 
-                                                onclick="setAttendance(@Model.ActivityId, @r.UserId, false, this)"
-                                                title="Mark as Absent">
-                                            <i class="bi bi-x-lg"></i> Absent
-                                        </button>
-                                    </div>
+                                    @if (r.IsPresent == true)
+                                    {
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn @(r.ParticipationScore == 5 ? "btn-success" : "btn-outline-success") btn-sm participation-btn" 
+                                                    onclick="setAttendanceWithScore(@Model.ActivityId, @r.UserId, 5, this)"
+                                                    title="Xuất sắc - 5 điểm"
+                                                    data-score="5"
+                                                    data-selected="@(r.ParticipationScore == 5 ? "true" : "false")">
+                                                @if (r.ParticipationScore == 5)
+                                                {
+                                                    <i class="bi bi-check-circle-fill me-1"></i>
+                                                }
+                                                😊 5
+                                            </button>
+                                            <button type="button" class="btn @(r.ParticipationScore == 4 ? "btn-warning" : "btn-outline-warning") btn-sm participation-btn" 
+                                                    onclick="setAttendanceWithScore(@Model.ActivityId, @r.UserId, 4, this)"
+                                                    title="Tốt - 4 điểm"
+                                                    data-score="4"
+                                                    data-selected="@(r.ParticipationScore == 4 ? "true" : "false")">
+                                                @if (r.ParticipationScore == 4)
+                                                {
+                                                    <i class="bi bi-check-circle-fill me-1"></i>
+                                                }
+                                                😐 4
+                                            </button>
+                                            <button type="button" class="btn @(r.ParticipationScore == 3 ? "btn-secondary" : "btn-outline-secondary") btn-sm participation-btn" 
+                                                    onclick="setAttendanceWithScore(@Model.ActivityId, @r.UserId, 3, this)"
+                                                    title="Trung bình - 3 điểm"
+                                                    data-score="3"
+                                                    data-selected="@(r.ParticipationScore == 3 ? "true" : "false")">
+                                                @if (r.ParticipationScore == 3)
+                                                {
+                                                    <i class="bi bi-check-circle-fill me-1"></i>
+                                                }
+                                                ☹️ 3
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                    onclick="setAttendance(@Model.ActivityId, @r.UserId, false, this)"
+                                                    title="Mark as Absent">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-success" 
+                                                    onclick="showParticipationModal(@Model.ActivityId, @r.UserId, '@r.FullName')"
+                                                    title="Mark as Present with rating">
+                                                <i class="bi bi-check-lg"></i> Present
+                                            </button>
+                                            <button type="button" class="btn @(r.IsPresent == false ? "btn-danger" : "btn-outline-danger")" 
+                                                    onclick="setAttendance(@Model.ActivityId, @r.UserId, false, this)"
+                                                    title="Mark as Absent">
+                                                <i class="bi bi-x-lg"></i> Absent
+                                            </button>
+                                        </div>
+                                    }
                                 </td>
                             </tr>
                             index++;
@@ -190,6 +265,60 @@
     .btn-group-sm .btn {
         padding: 0.375rem 0.75rem;
         font-size: 0.875rem;
+    }
+    
+    /* Highlight nút emoji được chọn */
+    .participation-btn[data-selected="true"] {
+        font-weight: bold !important;
+        border-width: 3px !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        transform: scale(1.05);
+        position: relative;
+    }
+    
+    .participation-btn[data-selected="true"]::after {
+        content: '✓';
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #28a745;
+        color: white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        border: 2px solid white;
+    }
+    
+    /* Cải thiện hiển thị điểm trong Status column */
+    .participation-score-display {
+        margin-top: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        display: inline-block;
+        font-size: 0.9rem;
+    }
+    
+    .participation-score-display.score-5 {
+        background-color: rgba(25, 135, 84, 0.15);
+        color: #198754;
+        border: 1px solid #198754;
+    }
+    
+    .participation-score-display.score-4 {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+        border: 1px solid #ffc107;
+    }
+    
+    .participation-score-display.score-3 {
+        background-color: rgba(108, 117, 125, 0.15);
+        color: #6c757d;
+        border: 1px solid #6c757d;
     }
 </style>
 
@@ -273,6 +402,150 @@
         } catch (error) {
             alert('An error occurred while updating attendance');
         }
+    }
+
+    // Set attendance with participation score
+    async function setAttendanceWithScore(activityId, userId, participationScore, btn) {
+        const baseUrl = '@Model.ApiBaseUrl';
+        const url = (baseUrl ? baseUrl : '') + 
+            `/api/activity/club-manager/${activityId}/attendance/${userId}?isPresent=true&participationScore=${participationScore}`;
+        
+        try {
+            // Update UI immediately for better UX
+            const row = btn.closest('tr');
+            const btnGroup = btn.closest('.btn-group');
+            
+            // Remove highlight from all buttons
+            btnGroup.querySelectorAll('.participation-btn').forEach(b => {
+                b.setAttribute('data-selected', 'false');
+                b.classList.remove('btn-success', 'btn-warning', 'btn-secondary');
+                b.classList.add('btn-outline-success', 'btn-outline-warning', 'btn-outline-secondary');
+                const icon = b.querySelector('i.bi-check-circle-fill');
+                if (icon) icon.remove();
+            });
+            
+            // Highlight selected button
+            btn.setAttribute('data-selected', 'true');
+            if (participationScore === 5) {
+                btn.classList.remove('btn-outline-success');
+                btn.classList.add('btn-success');
+            } else if (participationScore === 4) {
+                btn.classList.remove('btn-outline-warning');
+                btn.classList.add('btn-warning');
+            } else if (participationScore === 3) {
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-secondary');
+            }
+            
+            // Add checkmark icon
+            if (!btn.querySelector('i.bi-check-circle-fill')) {
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-check-circle-fill me-1';
+                btn.insertBefore(icon, btn.firstChild);
+            }
+            
+            // Update status column
+            const statusCell = row.querySelector('td:nth-child(4)');
+            const existingScoreDisplay = statusCell.querySelector('.participation-score-display');
+            if (existingScoreDisplay) {
+                existingScoreDisplay.remove();
+            }
+            
+            const scoreDisplay = document.createElement('div');
+            scoreDisplay.className = `participation-score-display score-${participationScore}`;
+            const emoji = participationScore === 5 ? '😊' : participationScore === 4 ? '😐' : '☹️';
+            scoreDisplay.innerHTML = `<strong>${emoji} <span style="font-size: 1.1em;">${participationScore} điểm</span></strong>`;
+            statusCell.appendChild(scoreDisplay);
+            
+            const res = await fetch(url, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            
+            if (res.ok) {
+                // Show success feedback
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check-lg"></i> Saved!';
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                }, 1000);
+            } else {
+                // Revert UI on error
+                location.reload();
+                const error = await res.json().catch(() => ({}));
+                alert(error.message || 'Failed to update attendance');
+            }
+        } catch (err) {
+            console.error('Error:', err);
+            location.reload();
+            alert('An error occurred while updating attendance');
+        }
+    }
+
+    // Show modal to select participation score
+    function showParticipationModal(activityId, userId, fullName) {
+        // Remove existing modal if any
+        const existingModal = document.getElementById('participationModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Create modal HTML
+        const modalHTML = `
+            <div class="modal fade" id="participationModal" tabindex="-1" aria-labelledby="participationModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="participationModalLabel">
+                                <i class="bi bi-emoji-smile me-2"></i>Đánh giá mức độ tham gia
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center p-4">
+                            <p class="mb-4"><strong class="fs-5">${fullName}</strong></p>
+                            <p class="text-muted mb-4">Chọn mức độ tham gia để cộng điểm phong trào</p>
+                            <div class="d-grid gap-3">
+                                <button class="btn btn-lg btn-success" 
+                                        onclick="setAttendanceWithScore(${activityId}, ${userId}, 5, this); bootstrap.Modal.getInstance(document.getElementById('participationModal')).hide()">
+                                    <span style="font-size: 2.5rem;">😊</span><br>
+                                    <strong class="fs-5">Xuất sắc - 5 điểm</strong><br>
+                                    <small class="text-white-50">Tham gia tích cực, đóng góp nhiều ý tưởng</small>
+                                </button>
+                                <button class="btn btn-lg btn-warning" 
+                                        onclick="setAttendanceWithScore(${activityId}, ${userId}, 4, this); bootstrap.Modal.getInstance(document.getElementById('participationModal')).hide()">
+                                    <span style="font-size: 2.5rem;">😐</span><br>
+                                    <strong class="fs-5">Tốt - 4 điểm</strong><br>
+                                    <small>Tham gia đầy đủ, làm theo yêu cầu</small>
+                                </button>
+                                <button class="btn btn-lg btn-secondary" 
+                                        onclick="setAttendanceWithScore(${activityId}, ${userId}, 3, this); bootstrap.Modal.getInstance(document.getElementById('participationModal')).hide()">
+                                    <span style="font-size: 2.5rem;">☹️</span><br>
+                                    <strong class="fs-5">Trung bình - 3 điểm</strong><br>
+                                    <small>Có mặt nhưng thiếu tập trung</small>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-2"></i>Hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('participationModal'));
+        modal.show();
+        
+        // Remove modal from DOM when hidden
+        document.getElementById('participationModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
     }
 </script>
 

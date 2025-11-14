@@ -13,7 +13,7 @@ namespace Services.Activities
         Task<ActivityDetailDto?> AdminUpdateAsync(int adminUserId, int id, AdminUpdateActivityDto dto);
         Task<bool> AdminDeleteAsync(int id);
         Task<ActivityDetailDto?> ApproveActivityAsync(int adminUserId, int activityId);
-        Task<ActivityDetailDto?> RejectActivityAsync(int adminUserId, int activityId);
+        Task<ActivityDetailDto?> RejectActivityAsync(int adminUserId, int activityId, string rejectionReason);
         // Club Manager
         Task<List<ActivityListItemDto>> GetActivitiesByManagerIdAsync(int managerUserId);
         Task<ActivityDetailDto> ClubCreateAsync(int managerUserId, int clubId, ClubCreateActivityDto dto);
@@ -31,11 +31,11 @@ namespace Services.Activities
         
         // Admin Attendance
         Task<List<AdminActivityRegistrantDto>> GetRegistrantsAsync(int adminUserId, int activityId);
-        Task<(bool success, string message)> SetAttendanceAsync(int adminUserId, int activityId, int targetUserId, bool isPresent);
+        Task<(bool success, string message)> SetAttendanceAsync(int adminUserId, int activityId, int targetUserId, bool isPresent, int? participationScore = null);
         
         // Club Manager Attendance
         Task<List<AdminActivityRegistrantDto>> GetClubRegistrantsAsync(int managerUserId, int activityId);
-        Task<(bool success, string message)> SetClubAttendanceAsync(int managerUserId, int activityId, int targetUserId, bool isPresent);
+        Task<(bool success, string message)> SetClubAttendanceAsync(int managerUserId, int activityId, int targetUserId, bool isPresent, int? participationScore = null);
         Task<List<AdminActivityFeedbackDto>> GetActivityFeedbacksAsync(int adminUserId, int activityId);
     }
 }

@@ -123,7 +123,7 @@ else
                             </div>
                             <div class="col-6">
                                 <div class="text-center p-2 bg-light rounded">
-                                    <div class="fw-bold text-success">@(activity.HasAttended ? "✓" : "—")</div>
+                                    <div class="fw-bold @(activity.AttendanceCount > 0 ? "text-success" : "text-muted")">@activity.AttendanceCount</div>
                                     <small class="text-muted">Attendance</small>
                                 </div>
                             </div>

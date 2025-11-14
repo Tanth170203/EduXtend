@@ -11,6 +11,7 @@ namespace Repositories.Activities
         Task<List<Activity>> GetActivitiesByClubIdAsync(int clubId);
         Task<int> GetRegistrationCountAsync(int activityId);
         Task<int> GetAttendanceCountAsync(int activityId);
+        Task<int> GetMarkedAttendanceCountAsync(int activityId); // Đếm tất cả người đã được điểm danh (có mặt hoặc vắng)
         Task<int> GetFeedbackCountAsync(int activityId);
         Task<Activity> CreateAsync(Activity activity);
         Task<Activity?> UpdateAsync(Activity activity);
@@ -29,9 +30,9 @@ namespace Repositories.Activities
 		Task<ActivityFeedback> AddFeedbackAsync(int activityId, int userId, int rating, string? comment);
 		Task<ActivityFeedback?> GetFeedbackAsync(int activityId, int userId);
 		Task UpdateFeedbackAsync(ActivityFeedback feedback);
-		Task<List<(int UserId, string FullName, string Email, bool? IsPresent)>> GetRegistrantsWithAttendanceAsync(int activityId);
-		Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int checkedById);
-		Task<List<(int UserId, string FullName, string Email, int Rating, string? Comment, DateTime CreatedAt)>> GetFeedbacksAsync(int activityId);
+	Task<List<(int UserId, string FullName, string Email, bool? IsPresent, int? ParticipationScore)>> GetRegistrantsWithAttendanceAsync(int activityId);
+	Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int checkedById);
+	Task<List<(int UserId, string FullName, string Email, int Rating, string? Comment, DateTime CreatedAt)>> GetFeedbacksAsync(int activityId);
 		Task<List<(int UserId, int StudentId)>> GetClubMemberUserIdsAsync(int clubId);
     }
 }

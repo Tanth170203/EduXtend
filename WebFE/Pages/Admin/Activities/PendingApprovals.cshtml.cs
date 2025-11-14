@@ -82,10 +82,23 @@ namespace WebFE.Pages.Admin.Activities
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnPostRejectAsync(int id)
+        public async Task<IActionResult> OnPostRejectAsync(int id, string rejectionReason)
         {
             var token = Request.Cookies["AccessToken"];
             if (string.IsNullOrWhiteSpace(token)) return RedirectToPage("/Auth/Login");
+
+            // Validate rejection reason
+            if (string.IsNullOrWhiteSpace(rejectionReason))
+            {
+                TempData["Error"] = "Rejection reason is required";
+                return RedirectToPage();
+            }
+
+            if (rejectionReason.Length < 10)
+            {
+                TempData["Error"] = "Rejection reason must be at least 10 characters";
+                return RedirectToPage();
+            }
 
             try
             {
@@ -99,16 +112,22 @@ namespace WebFE.Pages.Admin.Activities
                 var client = _httpClientFactory.CreateClient("ApiClient");
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-                var payload = new { AdminUserId = int.Parse(userId), Action = "Reject" };
+                var payload = new { 
+                    AdminUserId = int.Parse(userId), 
+                    Action = "Reject",
+                    RejectionReason = rejectionReason
+                };
                 var response = await client.PostAsJsonAsync($"/api/admin/activities/{id}/reject", payload);
 
                 if (response.IsSuccessStatusCode)
                 {
-                    TempData["Success"] = "Activity rejected";
+                    TempData["Success"] = "Activity rejected successfully";
                 }
                 else
                 {
-                    TempData["Error"] = "Failed to reject activity";
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Failed to reject activity {Id}: {Error}", id, errorContent);
+                    TempData["Error"] = "Failed to reject activity. Please try again.";
                 }
             }
             catch (Exception ex)

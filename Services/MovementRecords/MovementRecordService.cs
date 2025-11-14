@@ -324,10 +324,84 @@ public class MovementRecordService : IMovementRecordService
         return MapToDto(result!);
     }
 
-    public async Task<MovementRecordDto> AddScoreFromAttendanceAsync(int studentId, int criterionId, double points)
+    public async Task<MovementRecordDto> AddScoreFromAttendanceAsync(int studentId, int criterionId, double points, int activityId)
     {
-        // Similar to AddScoreFromEvidenceAsync
-        return await AddScoreFromEvidenceAsync(studentId, criterionId, points);
+        // Get current active semester
+        var currentSemester = await _semesterRepository.GetCurrentSemesterAsync();
+        if (currentSemester == null)
+            throw new InvalidOperationException("No active semester found");
+
+        // Validate student exists
+        var student = await _studentRepository.GetByIdAsync(studentId);
+        if (student == null)
+            throw new KeyNotFoundException($"Student with ID {studentId} not found");
+
+        // Validate criterion
+        var criterion = await _criterionRepository.GetByIdAsync(criterionId);
+        if (criterion == null)
+            throw new KeyNotFoundException($"Criterion with ID {criterionId} not found");
+
+        // Get or create movement record
+        var record = await _recordRepository.GetByStudentAndSemesterAsync(studentId, currentSemester.Id);
+        if (record == null)
+        {
+            var createDto = new CreateMovementRecordDto
+            {
+                StudentId = studentId,
+                SemesterId = currentSemester.Id
+            };
+            await CreateAsync(createDto);
+            record = await _recordRepository.GetByStudentAndSemesterAsync(studentId, currentSemester.Id);
+        }
+
+        if (record == null)
+            throw new InvalidOperationException("Failed to create movement record");
+
+        // Validate score doesn't exceed criterion max
+        if (points > criterion.MaxScore)
+            throw new ArgumentException($"Score {points} exceeds maximum allowed {criterion.MaxScore} for this criterion");
+
+        // Kiểm tra đã điểm danh activity này chưa (chống trùng)
+        var existingDetail = await _detailRepository.GetByRecordCriterionActivityAsync(
+            record.Id, 
+            criterionId,
+            activityId
+        );
+        
+        if (existingDetail != null)
+        {
+            // Đã có điểm cho activity này rồi → Cập nhật điểm thay vì tạo mới
+            existingDetail.Score = points;
+            existingDetail.AwardedAt = DateTime.UtcNow;
+            await _detailRepository.UpdateAsync(existingDetail);
+        }
+        else
+        {
+            // Tạo detail mới
+            var detail = new MovementRecordDetail
+            {
+                MovementRecordId = record.Id,
+                CriterionId = criterionId,
+                ActivityId = activityId, // Link để chống trùng
+                Score = points,
+                ScoreType = "Auto",
+                AwardedAt = DateTime.UtcNow
+            };
+
+            await _detailRepository.CreateAsync(detail);
+        }
+
+        // Tính lại tổng điểm
+        var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
+        record.TotalScore = Math.Min(totalScore, 100); // Cap tại 100
+        record.LastUpdated = DateTime.UtcNow;
+        await _recordRepository.UpdateAsync(record);
+
+        // Áp dụng capping theo nhóm (Group 2 = 50 điểm max)
+        await CapAndAdjustScoresAsync(record.Id);
+
+        var result = await _recordRepository.GetByIdWithDetailsAsync(record.Id);
+        return MapToDto(result!);
     }
 
     public async Task<MovementRecordDto> AddManualScoreAsync(AddManualScoreDto dto)
