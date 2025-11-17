@@ -135,15 +135,6 @@ public class ClubMovementRecordRepository : IClubMovementRecordRepository
             .Where(d => d.Criterion != null && d.Criterion.Title.Contains("Phối hợp"))
             .Sum(d => d.Score);
 
-        record.OtherScore = record.Details
-            .Where(d => d.Criterion != null 
-                && !d.Criterion.Title.Contains("Sinh hoạt CLB")
-                && !d.Criterion.Title.Contains("Sự kiện")
-                && !(d.Criterion.Title.Contains("thi") || d.Criterion.Title.Contains("Thi"))
-                && !d.Criterion.Title.Contains("Kế hoạch")
-                && !d.Criterion.Title.Contains("Phối hợp"))
-            .Sum(d => d.Score);
-
         record.TotalScore = record.Details.Sum(d => d.Score);
 
         record.LastUpdated = DateTime.UtcNow;

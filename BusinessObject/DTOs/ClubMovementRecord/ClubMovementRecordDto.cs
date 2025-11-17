@@ -18,7 +18,6 @@ public class ClubMovementRecordDto
     public double CompetitionScore { get; set; }
     public double PlanScore { get; set; }
     public double CollaborationScore { get; set; }
-    public double OtherScore { get; set; }
     
     public double TotalScore { get; set; }
     
