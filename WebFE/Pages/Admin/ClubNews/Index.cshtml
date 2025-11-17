@@ -1,0 +1,536 @@
+@page
+@model WebFE.Pages.Admin.ClubNews.IndexModel
+@{
+    ViewData["Title"] = "Club News Management";
+    ViewData["Breadcrumb"] = "Club News";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Club News Management</h1>
+        <p class="page-description">Quản lý và phê duyệt tin tức từ các câu lạc bộ</p>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Pending Approval</p>
+            </div>
+            <div class="stat-card-icon orange">
+                <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value" id="pendingCount">0</div>
+        <div class="stat-card-change">
+            <span>Needs review</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Approved</p>
+            </div>
+            <div class="stat-card-icon green">
+                <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value" id="approvedCount">0</div>
+        <div class="stat-card-change positive">
+            <span>Published</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Total News</p>
+            </div>
+            <div class="stat-card-icon blue">
+                <i data-lucide="newspaper" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value" id="totalCount">0</div>
+        <div class="stat-card-change">
+            <span>All clubs</span>
+        </div>
+    </div>
+</div>
+
+<!-- Search Box -->
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="input-group">
+            <span class="input-group-text bg-white">
+                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+            </span>
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by title, club name, or creator..." onkeyup="filterNews()" />
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-3" id="newsTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" onclick="filterNews()">
+            <i data-lucide="clock" style="width: 16px; height: 16px;"></i>
+            Pending Approval
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved" type="button" role="tab" onclick="filterNews()">
+            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+            Approved
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" onclick="filterNews()">
+            <i data-lucide="list" style="width: 16px; height: 16px;"></i>
+            All News
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content" id="newsTabContent">
+    <!-- Pending Tab -->
+    <div class="tab-pane fade show active" id="pending" role="tabpanel">
+        <div class="content-card">
+            <div class="content-card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">ID</th>
+                                <th>Title</th>
+                                <th style="width: 150px;">Club</th>
+                                <th style="width: 120px;">Created By</th>
+                                <th style="width: 150px;">Published</th>
+                                <th style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingList">
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <nav aria-label="Pending pagination" class="mt-3">
+                    <ul class="pagination justify-content-center mb-0" id="pendingPagination"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approved Tab -->
+    <div class="tab-pane fade" id="approved" role="tabpanel">
+        <div class="content-card">
+            <div class="content-card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">ID</th>
+                                <th>Title</th>
+                                <th style="width: 150px;">Club</th>
+                                <th style="width: 120px;">Created By</th>
+                                <th style="width: 150px;">Published</th>
+                                <th style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="approvedList">
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <nav aria-label="Approved pagination" class="mt-3">
+                    <ul class="pagination justify-content-center mb-0" id="approvedPagination"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Tab -->
+    <div class="tab-pane fade" id="all" role="tabpanel">
+        <div class="content-card">
+            <div class="content-card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">ID</th>
+                                <th>Title</th>
+                                <th style="width: 150px;">Club</th>
+                                <th style="width: 120px;">Created By</th>
+                                <th style="width: 100px;">Status</th>
+                                <th style="width: 150px;">Published</th>
+                                <th style="width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allList">
+                            <tr>
+                                <td colspan="7" class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <nav aria-label="All pagination" class="mt-3">
+                    <ul class="pagination justify-content-center mb-0" id="allPagination"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Details Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalTitle">News Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewModalBody">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer" id="viewModalFooter">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let viewModal;
+        let allNews = [];
+        let filteredData = { pending: [], approved: [], all: [] };
+        let currentPages = { pending: 1, approved: 1, all: 1 };
+        const itemsPerPage = 6;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
+            
+            // Load all news
+            await loadAllNews();
+            
+            // Initialize Lucide icons
+            lucide.createIcons();
+            
+            // Tab change event
+            document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function (e) {
+                    lucide.createIcons();
+                });
+            });
+        });
+
+        async function loadAllNews() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/club-news?approvedOnly=false`, {
+                    credentials: 'include'
+                });
+                
+                allNews = res.ok ? await res.json() : [];
+                
+                // Update stats
+                const pending = allNews.filter(n => !n.isApproved);
+                const approved = allNews.filter(n => n.isApproved);
+                
+                document.getElementById('pendingCount').textContent = pending.length;
+                document.getElementById('approvedCount').textContent = approved.length;
+                document.getElementById('totalCount').textContent = allNews.length;
+                
+                // Apply filter
+                filterNews();
+                
+            } catch (e) {
+                console.error('Error loading news:', e);
+                error('Error', 'Failed to load news');
+            }
+        }
+
+        function filterNews() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            // Filter pending
+            let pending = allNews.filter(n => !n.isApproved);
+            if (searchTerm) {
+                pending = pending.filter(n => 
+                    n.title.toLowerCase().includes(searchTerm) ||
+                    (n.clubName && n.clubName.toLowerCase().includes(searchTerm)) ||
+                    (n.createdByName && n.createdByName.toLowerCase().includes(searchTerm)) ||
+                    (n.content && n.content.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // Filter approved
+            let approved = allNews.filter(n => n.isApproved);
+            if (searchTerm) {
+                approved = approved.filter(n => 
+                    n.title.toLowerCase().includes(searchTerm) ||
+                    (n.clubName && n.clubName.toLowerCase().includes(searchTerm)) ||
+                    (n.createdByName && n.createdByName.toLowerCase().includes(searchTerm)) ||
+                    (n.content && n.content.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // Filter all
+            let all = [...allNews];
+            if (searchTerm) {
+                all = all.filter(n => 
+                    n.title.toLowerCase().includes(searchTerm) ||
+                    (n.clubName && n.clubName.toLowerCase().includes(searchTerm)) ||
+                    (n.createdByName && n.createdByName.toLowerCase().includes(searchTerm)) ||
+                    (n.content && n.content.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            filteredData = { pending, approved, all };
+            
+            // Reset to page 1
+            currentPages = { pending: 1, approved: 1, all: 1 };
+            
+            // Render lists
+            renderNewsList('pending', pending);
+            renderNewsList('approved', approved);
+            renderNewsList('all', all);
+        }
+
+        function changePage(tab, page) {
+            currentPages[tab] = page;
+            renderNewsList(tab, filteredData[tab]);
+        }
+
+        function renderNewsList(tab, items) {
+            const tbody = document.getElementById(tab + 'List');
+            const paginationId = tab + 'Pagination';
+            const colSpan = tab === 'all' ? 7 : 6;
+            
+            if (items.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="${colSpan}" class="text-center py-5 text-muted">
+                            No news found
+                        </td>
+                    </tr>`;
+                document.getElementById(paginationId).innerHTML = '';
+                return;
+            }
+            
+            // Pagination
+            const totalPages = Math.ceil(items.length / itemsPerPage);
+            const currentPage = currentPages[tab];
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedItems = items.slice(startIndex, endIndex);
+            
+            // Render rows
+            tbody.innerHTML = '';
+            paginatedItems.forEach(n => {
+                const row = document.createElement('tr');
+                
+                const statusBadge = n.isApproved 
+                    ? '<span class="badge bg-success">Approved</span>'
+                    : '<span class="badge bg-warning text-dark">Pending</span>';
+                
+                const actions = !n.isApproved
+                    ? `
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewNews(${n.id})" title="View">
+                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="approveNews(${n.id}, true)" title="Approve">
+                            <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteNews(${n.id})" title="Delete">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    `
+                    : `
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewNews(${n.id})" title="View">
+                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteNews(${n.id})" title="Delete">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    `;
+                
+                if (tab === 'all') {
+                    row.innerHTML = `
+                        <td>${n.id}</td>
+                        <td>${n.title}</td>
+                        <td>${n.clubName}</td>
+                        <td>${n.createdByName || 'Unknown'}</td>
+                        <td>${statusBadge}</td>
+                        <td>${formatDate(n.publishedAt)}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                ${actions}
+                            </div>
+                        </td>
+                    `;
+                } else {
+                    row.innerHTML = `
+                        <td>${n.id}</td>
+                        <td>${n.title}</td>
+                        <td>${n.clubName}</td>
+                        <td>${n.createdByName || 'Unknown'}</td>
+                        <td>${formatDate(n.publishedAt)}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                ${actions}
+                            </div>
+                        </td>
+                    `;
+                }
+                
+                tbody.appendChild(row);
+            });
+            
+            lucide.createIcons();
+            renderPagination(tab, totalPages);
+        }
+
+        function renderPagination(tab, totalPages) {
+            const pagination = document.getElementById(tab + 'Pagination');
+            const currentPage = currentPages[tab];
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // Previous
+            html += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage('${tab}', ${currentPage - 1}); return false;">&laquo;</a>
+                </li>`;
+            
+            // Pages
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+            
+            if (startPage > 1) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage('${tab}', 1); return false;">1</a></li>`;
+                if (startPage > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage('${tab}', ${i}); return false;">${i}</a>
+                    </li>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage('${tab}', ${totalPages}); return false;">${totalPages}</a></li>`;
+            }
+            
+            // Next
+            html += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage('${tab}', ${currentPage + 1}); return false;">&raquo;</a>
+                </li>`;
+            
+            pagination.innerHTML = html;
+        }
+
+        function viewNews(id) {
+            window.open(`/News/ClubDetails?id=${id}`, '_blank');
+        }
+
+        async function approveNews(id, approve) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/club-news/${id}/approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ approve })
+                });
+                
+                if (res.ok) {
+                    success('Success', approve ? 'News approved successfully' : 'News rejected');
+                    await loadAllNews();
+                } else {
+                    error('Error', 'Failed to update news status');
+                }
+            } catch (e) {
+                console.error('Error approving news:', e);
+                error('Error', 'Failed to update news status');
+            }
+        }
+
+        async function deleteNews(id) {
+            if (!confirm('Are you sure you want to delete this news?')) return;
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/club-news/${id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (res.ok) {
+                    success('Success', 'News deleted successfully');
+                    await loadAllNews();
+                } else {
+                    error('Error', 'Failed to delete news');
+                }
+            } catch (e) {
+                console.error('Error deleting news:', e);
+                error('Error', 'Failed to delete news');
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            try {
+                let dateStr = String(dateString).trim();
+                
+                // Normalize to UTC if no timezone
+                if (dateStr.includes('T') && !dateStr.endsWith('Z') && !dateStr.match(/[+-]\d{2}:\d{2}$/)) {
+                    dateStr = dateStr.replace(/\.\d{1,7}(?=[Z+-]|$)/, '') + 'Z';
+                }
+                
+                const date = new Date(dateStr);
+                
+                if (isNaN(date.getTime())) {
+                    return '';
+                }
+                
+                // Format as Vietnam time: dd/MM/yyyy HH:mm
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${day}/${month}/${year}, ${hours}:${minutes}`;
+            } catch (e) {
+                console.error('Error formatting date:', e, dateString);
+                return '';
+            }
+        }
+    </script>
+}
