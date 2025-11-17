@@ -31,10 +31,104 @@
     }
     else
     {
-        <div class="row g-4">
+        <!-- Statistics Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 opacity-75">Total</h6>
+                                <h3 class="mb-0" id="stat-total">@Model.Applications.Count</h3>
+                            </div>
+                            <i data-lucide="file-text" style="width: 40px; height: 40px; opacity: 0.5;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 opacity-75">Pending</h6>
+                                <h3 class="mb-0" id="stat-pending">@Model.Applications.Count(a => a.Status == "Pending")</h3>
+                            </div>
+                            <i data-lucide="clock" style="width: 40px; height: 40px; opacity: 0.5;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 opacity-75">Approved</h6>
+                                <h3 class="mb-0" id="stat-approved">@Model.Applications.Count(a => a.Status == "Approved")</h3>
+                            </div>
+                            <i data-lucide="check-circle" style="width: 40px; height: 40px; opacity: 0.5;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-danger text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 opacity-75">Rejected</h6>
+                                <h3 class="mb-0" id="stat-rejected">@Model.Applications.Count(a => a.Status == "Rejected")</h3>
+                            </div>
+                            <i data-lucide="x-circle" style="width: 40px; height: 40px; opacity: 0.5;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter Bar -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white">
+                        <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search by club name...">
+                    <button class="btn btn-primary" type="button" onclick="filterAndSort()">
+                        <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                        Search
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-1 d-flex align-items-center">
+                <button class="btn btn-outline-secondary w-100" type="button" onclick="clearFilters()" title="Clear all filters">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                </button>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" id="sortBy">
+                    <option value="date-desc">Newest First</option>
+                    <option value="date-asc">Oldest First</option>
+                    <option value="club-asc">Club Name (A-Z)</option>
+                    <option value="club-desc">Club Name (Z-A)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Applications List -->
+        <div class="row g-4" id="applicationsContainer">
             @foreach (var app in Model.Applications)
             {
-                <div class="col-lg-6">
+                <div class="col-lg-6 application-card" data-club-name="@app.ClubName.ToLower()" data-status="@app.Status" data-date="@app.CreatedAt.Ticks">
                     <div class="card shadow-sm border-0 h-100">
                         <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center gap-3">
@@ -85,7 +179,7 @@
                                 </a>
                                 @if (!string.IsNullOrEmpty(app.CvUrl))
                                 {
-                                    <a href="https://localhost:5001/api/fileupload/cv/@System.IO.Path.GetFileName(app.CvUrl)" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                    <a href="@app.CvUrl" target="_blank" class="btn btn-outline-secondary btn-sm">
                                         <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
                                         View CV
                                     </a>
@@ -101,15 +195,173 @@
 
 @section Scripts {
     <script>
-        lucide.createIcons();
-
         const applications = @Html.Raw(Json.Serialize(Model.Applications.Select(a => new { a.Id, a.ClubId })));
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize lucide icons
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+
+            // Load interviews
             for (const app of applications) {
                 await loadInterviewForApplication(app.Id);
             }
+
+            // Initialize search and filter
+            initializeSearchAndFilter();
         });
+
+        function initializeSearchAndFilter() {
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+            const sortBy = document.getElementById('sortBy');
+
+            console.log('Initializing filters:', { searchInput, statusFilter, sortBy });
+
+            if (!searchInput || !statusFilter || !sortBy) {
+                console.error('Filter elements not found!');
+                return;
+            }
+
+            // Search on input
+            searchInput.addEventListener('input', filterAndSort);
+            console.log('Filter event listeners attached');
+            
+            // Search on Enter key
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    filterAndSort();
+                }
+            });
+            
+            // Filter
+            statusFilter.addEventListener('change', filterAndSort);
+            
+            // Sort
+            sortBy.addEventListener('change', filterAndSort);
+        }
+
+        function filterAndSort() {
+            const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            const statusValue = document.getElementById('statusFilter')?.value || '';
+            const sortValue = document.getElementById('sortBy')?.value || 'date-desc';
+
+            console.log('Filtering with:', { searchTerm, statusValue, sortValue });
+
+            const container = document.getElementById('applicationsContainer');
+            if (!container) {
+                console.error('Applications container not found!');
+                return;
+            }
+
+            const cards = Array.from(container.querySelectorAll('.application-card'));
+            console.log('Found cards:', cards.length);
+
+            // Filter
+            let visibleCount = 0;
+            let statusCounts = { Pending: 0, Approved: 0, Rejected: 0 };
+
+            cards.forEach(card => {
+                const clubName = card.getAttribute('data-club-name') || '';
+                const status = card.getAttribute('data-status') || '';
+
+                const matchesSearch = clubName.includes(searchTerm);
+                const matchesStatus = !statusValue || status === statusValue;
+
+                if (matchesSearch && matchesStatus) {
+                    card.style.display = '';
+                    visibleCount++;
+                    // Count by status
+                    if (status === 'Pending') statusCounts.Pending++;
+                    else if (status === 'Approved') statusCounts.Approved++;
+                    else if (status === 'Rejected') statusCounts.Rejected++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Sort
+            const sortedCards = cards.sort((a, b) => {
+                switch (sortValue) {
+                    case 'date-asc':
+                        return parseInt(a.getAttribute('data-date')) - parseInt(b.getAttribute('data-date'));
+                    case 'date-desc':
+                        return parseInt(b.getAttribute('data-date')) - parseInt(a.getAttribute('data-date'));
+                    case 'club-asc':
+                        return (a.getAttribute('data-club-name') || '').localeCompare(b.getAttribute('data-club-name') || '');
+                    case 'club-desc':
+                        return (b.getAttribute('data-club-name') || '').localeCompare(a.getAttribute('data-club-name') || '');
+                    default:
+                        return 0;
+                }
+            });
+
+            // Re-append in sorted order
+            sortedCards.forEach(card => container.appendChild(card));
+
+            // Update statistics
+            updateStatistics(visibleCount, statusCounts);
+
+            // Show/hide no results message
+            showNoResultsMessage(visibleCount);
+        }
+
+        function updateStatistics(total, statusCounts) {
+            const statTotal = document.getElementById('stat-total');
+            const statPending = document.getElementById('stat-pending');
+            const statApproved = document.getElementById('stat-approved');
+            const statRejected = document.getElementById('stat-rejected');
+
+            if (statTotal) statTotal.textContent = total;
+            if (statPending) statPending.textContent = statusCounts.Pending || 0;
+            if (statApproved) statApproved.textContent = statusCounts.Approved || 0;
+            if (statRejected) statRejected.textContent = statusCounts.Rejected || 0;
+        }
+
+        function showNoResultsMessage(count) {
+            const container = document.getElementById('applicationsContainer');
+            if (!container) return;
+
+            let noResultsDiv = document.getElementById('noResultsMessage');
+            
+            if (count === 0) {
+                if (!noResultsDiv) {
+                    noResultsDiv = document.createElement('div');
+                    noResultsDiv.id = 'noResultsMessage';
+                    noResultsDiv.className = 'col-12';
+                    noResultsDiv.innerHTML = `
+                        <div class="card shadow-sm border-0 text-center py-5">
+                            <div class="card-body">
+                                <i data-lucide="search-x" style="width: 64px; height: 64px; color: var(--muted); margin-bottom: 1rem;"></i>
+                                <h5 class="text-muted mb-2">No Results Found</h5>
+                                <p class="text-muted">Try adjusting your search or filter criteria</p>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(noResultsDiv);
+                    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                        lucide.createIcons();
+                    }
+                }
+            } else {
+                if (noResultsDiv) {
+                    noResultsDiv.remove();
+                }
+            }
+        }
+
+        function clearFilters() {
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+            const sortBy = document.getElementById('sortBy');
+
+            if (searchInput) searchInput.value = '';
+            if (statusFilter) statusFilter.value = '';
+            if (sortBy) sortBy.value = 'date-desc';
+
+            filterAndSort();
+        }
 
         async function loadInterviewForApplication(requestId) {
             try {
@@ -156,7 +408,9 @@
             html += '</div>';
 
             container.innerHTML = html;
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
         }
     </script>
 }

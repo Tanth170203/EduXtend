@@ -88,11 +88,30 @@ class NotificationManager {
     }
 
     loadStoredNotifications() {
-        // Load notifications from localStorage
-        const stored = localStorage.getItem('eduxtend_notifications');
-        if (stored) {
-            this.notifications = JSON.parse(stored);
-            this.updateUnreadCount();
+        // Load notifications from API
+        this.loadNotificationsFromAPI();
+    }
+
+    async loadNotificationsFromAPI() {
+        try {
+            const response = await fetch('https://localhost:5001/api/notification/my-notifications', {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const notifications = await response.json();
+                this.notifications = notifications;
+                this.updateUnreadCount();
+                this.renderNotificationCenter();
+            }
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            // Fallback to localStorage if API fails
+            const stored = localStorage.getItem('eduxtend_notifications');
+            if (stored) {
+                this.notifications = JSON.parse(stored);
+                this.updateUnreadCount();
+            }
         }
     }
 
@@ -111,7 +130,25 @@ class NotificationManager {
         // Listen for visibility change to update unread count
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                this.updateUnreadCount();
+                this.loadNotificationsFromAPI();
+            }
+        });
+
+        // Auto-refresh notifications every 30 seconds
+        setInterval(() => {
+            this.loadNotificationsFromAPI();
+        }, 30000);
+
+        // Close notification center when clicking outside
+        document.addEventListener('click', (e) => {
+            const notificationCenter = document.getElementById('notification-center');
+            const notificationBell = document.querySelector('.notification-bell');
+            
+            if (notificationCenter && notificationBell && 
+                !notificationCenter.contains(e.target) && 
+                !notificationBell.contains(e.target) &&
+                notificationCenter.classList.contains('show')) {
+                this.hideNotificationCenter();
             }
         });
     }
@@ -405,6 +442,58 @@ class NotificationManager {
                 opacity: 1;
             }
 
+            /* Notification Preview on Hover */
+            .notification-preview {
+                position: absolute;
+                top: 50px;
+                right: 0;
+                width: 380px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+                z-index: 9999;
+                display: none;
+                flex-direction: column;
+                overflow: hidden;
+                opacity: 0;
+                transition: opacity 0.2s;
+            }
+
+            .notification-preview.show {
+                opacity: 1;
+            }
+
+            .notification-preview-header {
+                padding: 12px 16px;
+                border-bottom: 1px solid #e5e7eb;
+                background: #f8fafc;
+                font-size: 14px;
+                font-weight: 600;
+                color: #1f2937;
+            }
+
+            .notification-preview-list {
+                max-height: 350px;
+                overflow-y: auto;
+            }
+
+            .notification-preview-footer {
+                padding: 10px 16px;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+            }
+
+            .notification-preview-footer a {
+                color: #3b82f6;
+                text-decoration: none;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+            .notification-preview-footer a:hover {
+                text-decoration: underline;
+            }
+
             .notification-header {
                 padding: 20px 24px 16px;
                 border-bottom: 1px solid #e5e7eb;
@@ -457,7 +546,25 @@ class NotificationManager {
             .notification-list {
                 flex: 1;
                 overflow-y: auto;
-                max-height: 500px;
+                max-height: 490px; /* ~7 notifications */
+            }
+
+            .notification-list::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .notification-list::-webkit-scrollbar-track {
+                background: #f3f4f6;
+                border-radius: 3px;
+            }
+
+            .notification-list::-webkit-scrollbar-thumb {
+                background: #d1d5db;
+                border-radius: 3px;
+            }
+
+            .notification-list::-webkit-scrollbar-thumb:hover {
+                background: #9ca3af;
             }
 
             .notification-item {
@@ -650,23 +757,43 @@ class NotificationManager {
         this.showToast(notificationData.type, notificationData.title, notificationData.message, 5000);
     }
 
-    markAsRead(notificationId) {
+    async markAsRead(notificationId) {
         const notification = this.notifications.find(n => n.id === notificationId);
         if (notification && !notification.isRead) {
-            notification.isRead = true;
-            this.updateUnreadCount();
-            this.saveNotifications();
-            this.renderNotificationCenter();
+            try {
+                const response = await fetch(`https://localhost:5001/api/notification/${notificationId}/mark-read`, {
+                    method: 'PUT',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    notification.isRead = true;
+                    this.updateUnreadCount();
+                    this.renderNotificationCenter();
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
         }
     }
 
-    markAllAsRead() {
-        this.notifications.forEach(notification => {
-            notification.isRead = true;
-        });
-        this.updateUnreadCount();
-        this.saveNotifications();
-        this.renderNotificationCenter();
+    async markAllAsRead() {
+        try {
+            const response = await fetch('https://localhost:5001/api/notification/mark-all-read', {
+                method: 'PUT',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                this.notifications.forEach(notification => {
+                    notification.isRead = true;
+                });
+                this.updateUnreadCount();
+                this.renderNotificationCenter();
+            }
+        } catch (error) {
+            console.error('Error marking all notifications as read:', error);
+        }
     }
 
     deleteNotification(notificationId) {
@@ -733,36 +860,8 @@ class NotificationManager {
     }
 
     renderNotificationList() {
-        return this.notifications.map(notification => {
-            const iconMap = {
-                success: '✓',
-                error: '✕',
-                warning: '⚠',
-                info: 'ℹ'
-            };
-
-            const timeAgo = this.getTimeAgo(notification.createdAt);
-            const scopeText = notification.scope === 'Club' ? 'CLB' : 'Hệ thống';
-
-            return `
-                <div class="notification-item ${!notification.isRead ? 'unread' : ''}" 
-                     onclick="notificationManager.markAsRead('${notification.id}')">
-                    <div class="notification-item-header">
-                        <div class="notification-icon" style="background: ${this.getTypeColor(notification.type)}">
-                            ${iconMap[notification.type] || 'ℹ'}
-                        </div>
-                        <div class="notification-content">
-                            <h4 class="notification-item-title">${notification.title}</h4>
-                            <p class="notification-item-message">${notification.message}</p>
-                            <div class="notification-meta">
-                                <span class="notification-time">${timeAgo}</span>
-                                <span class="notification-scope">${scopeText}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        // Show maximum 7 notifications, rest can be scrolled
+        return this.notifications.map(notification => this.renderNotificationItem(notification)).join('');
     }
 
     getTypeColor(type) {
@@ -789,24 +888,86 @@ class NotificationManager {
 
     // Notification Center UI Methods
     showNotificationCenter() {
+        console.log('Show notification center', this.notifications.length, 'notifications');
         this.renderNotificationCenter();
         this.notificationCenter.style.display = 'flex';
-        setTimeout(() => this.notificationCenter.classList.add('show'), 10);
+        setTimeout(() => {
+            this.notificationCenter.style.transform = 'translateX(0)';
+            this.notificationCenter.style.opacity = '1';
+            console.log('Notification center should be visible now');
+            
+            // Auto mark all as read after 1 second
+            setTimeout(() => {
+                this.markAllAsRead();
+            }, 1000);
+        }, 10);
     }
 
     hideNotificationCenter() {
-        this.notificationCenter.classList.remove('show');
+        this.notificationCenter.style.transform = 'translateX(100%)';
+        this.notificationCenter.style.opacity = '0';
         setTimeout(() => {
             this.notificationCenter.style.display = 'none';
         }, 300);
     }
 
     toggleNotificationCenter() {
+        console.log('Toggle notification center', this.notificationCenter.style.display);
         if (this.notificationCenter.style.display === 'flex') {
             this.hideNotificationCenter();
         } else {
             this.showNotificationCenter();
         }
+    }
+
+    renderNotificationItem(notification) {
+        const iconMap = {
+            success: '✓',
+            error: '✕',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+
+        const timeAgo = this.getTimeAgo(notification.createdAt);
+        const scopeText = notification.scope === 'Club' ? 'CLB' : 'Hệ thống';
+        
+        // Determine the link based on notification title/type
+        let targetUrl = '/Student/MyApplications'; // Default to My Applications page
+        
+        // You can customize this based on notification type
+        if (notification.title.includes('phỏng vấn') || notification.title.includes('interview')) {
+            targetUrl = '/Student/MyApplications';
+        }
+
+        return `
+            <div class="notification-item ${!notification.isRead ? 'unread' : ''}" 
+                 onclick="notificationManager.handleNotificationClick('${notification.id}', '${targetUrl}')">
+                <div class="notification-item-header">
+                    <div class="notification-icon" style="background: ${this.getTypeColor(notification.type)}">
+                        ${iconMap[notification.type] || 'ℹ'}
+                    </div>
+                    <div class="notification-content">
+                        <h4 class="notification-item-title">${notification.title}</h4>
+                        <p class="notification-item-message">${notification.message}</p>
+                        <div class="notification-meta">
+                            <span class="notification-time">${timeAgo}</span>
+                            <span class="notification-scope">${scopeText}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    handleNotificationClick(notificationId, targetUrl) {
+        // Mark as read
+        this.markAsRead(notificationId);
+        
+        // Close notification center
+        this.hideNotificationCenter();
+        
+        // Navigate to target page
+        window.location.href = targetUrl;
     }
 
     // Toast Methods
