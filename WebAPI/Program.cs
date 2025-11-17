@@ -19,6 +19,7 @@ using Repositories.JoinRequests;
 using Repositories.Interviews;
 using Repositories.FundCollectionRequests;
 using Repositories.FundCollectionPayments;
+using Repositories.Notifications;
 using Services.Activities;
 using Services.Clubs;
 using Services.GGLogin;
@@ -47,6 +48,9 @@ namespace WebAPI
     {
         public static void Main(string[] args)
         {
+            // Set timezone to Vietnam (UTC+7)
+            TimeZoneInfo vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            
             var builder = WebApplication.CreateBuilder(args);
 
             // DbContext
@@ -82,6 +86,10 @@ namespace WebAPI
             builder.Services.AddScoped<IFundCollectionRequestRepository, FundCollectionRequestRepository>();
             builder.Services.AddScoped<IFundCollectionPaymentRepository, FundCollectionPaymentRepository>();
             builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+
+            // SignalR
+            builder.Services.AddSignalR();
 
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -113,6 +121,7 @@ namespace WebAPI
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
             builder.Services.AddHostedService<TokenCleanupService>();
             builder.Services.AddHostedService<ComprehensiveAutoScoringService>();
+            builder.Services.AddHostedService<WebAPI.BackgroundServices.NotificationBroadcastService>();
             // DEPRECATED: MovementScoreAutomationService - functionality merged into ComprehensiveAutoScoringService
             // builder.Services.AddHostedService<MovementScoreAutomationService>();
 
@@ -205,6 +214,9 @@ namespace WebAPI
             app.UseAuthorization();      // Check policies and roles
 
             app.MapControllers();
+            
+            // Map SignalR Hub
+            app.MapHub<WebAPI.Hubs.NotificationHub>("/notificationHub");
 
             app.Run();
         }

@@ -166,6 +166,12 @@ namespace Repositories.JoinRequests
                 return false;
             }
         }
+
+        public async Task UpdateAsync(JoinRequest request)
+        {
+            _ctx.JoinRequests.Update(request);
+            await _ctx.SaveChangesAsync();
+        }
     }
 }
 

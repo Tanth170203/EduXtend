@@ -40,6 +40,41 @@ namespace Services.JoinRequests
             return requests.Select(MapToDto).ToList();
         }
 
+        public async Task<List<JoinRequestDto>> GetByClubIdWithFilterAsync(int clubId, string? status)
+        {
+            // If no status filter, return all requests
+            if (string.IsNullOrEmpty(status))
+            {
+                var allRequests = await _repo.GetByClubIdAsync(clubId);
+                var allDtos = allRequests.Select(MapToDto).ToList();
+                
+                // Include interview information
+                foreach (var dto in allDtos)
+                {
+                    var interview = await _interviewRepo.GetByJoinRequestIdAsync(dto.Id);
+                    dto.HasInterview = interview != null;
+                    dto.InterviewId = interview?.Id;
+                }
+                
+                return allDtos;
+            }
+
+            // Filter by status
+            var requests = await _repo.GetByClubIdAsync(clubId);
+            var filteredRequests = requests.Where(r => r.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+            var dtos = filteredRequests.Select(MapToDto).ToList();
+            
+            // Include interview information
+            foreach (var dto in dtos)
+            {
+                var interview = await _interviewRepo.GetByJoinRequestIdAsync(dto.Id);
+                dto.HasInterview = interview != null;
+                dto.InterviewId = interview?.Id;
+            }
+            
+            return dtos;
+        }
+
         public async Task<List<JoinRequestDto>> GetByUserIdAsync(int userId)
         {
             var requests = await _repo.GetByUserIdAsync(userId);
@@ -157,6 +192,47 @@ namespace Services.JoinRequests
         {
             var request = await _repo.GetActiveRequestByUserAndClubAsync(userId, clubId);
             if (request == null) return null;
+
+            var dto = MapToDto(request);
+            
+            // Check if request has an interview
+            var interview = await _interviewRepo.GetByJoinRequestIdAsync(dto.Id);
+            dto.HasInterview = interview != null;
+            dto.InterviewId = interview?.Id;
+            
+            return dto;
+        }
+
+        public async Task<JoinRequestDto?> UpdateRequestAsync(int requestId, int userId, UpdateJoinRequestDto dto)
+        {
+            var request = await _repo.GetByIdAsync(requestId);
+            if (request == null) return null;
+
+            // Verify ownership
+            if (request.UserId != userId)
+            {
+                throw new UnauthorizedAccessException("You can only update your own requests");
+            }
+
+            // Only allow update if status is Pending and no interview scheduled
+            if (request.Status != "Pending")
+            {
+                throw new InvalidOperationException("Cannot update request that has been processed");
+            }
+
+            // Check if interview exists
+            var hasInterview = await _interviewRepo.ExistsForJoinRequestAsync(requestId);
+            if (hasInterview)
+            {
+                throw new InvalidOperationException("Cannot update request after interview has been scheduled");
+            }
+
+            // Update fields
+            request.DepartmentId = dto.DepartmentId;
+            request.Motivation = dto.Motivation;
+            request.CvUrl = dto.CvUrl;
+
+            await _repo.UpdateAsync(request);
 
             return MapToDto(request);
         }

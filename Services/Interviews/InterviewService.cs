@@ -2,6 +2,9 @@ using BusinessObject.DTOs.Interview;
 using BusinessObject.Models;
 using Repositories.Interviews;
 using Repositories.JoinRequests;
+using Repositories.Notifications;
+using Microsoft.Extensions.Logging;
+using Utils;
 
 namespace Services.Interviews
 {
@@ -9,29 +12,37 @@ namespace Services.Interviews
     {
         private readonly IInterviewRepository _interviewRepo;
         private readonly IJoinRequestRepository _joinRequestRepo;
+        private readonly INotificationRepository _notificationRepo;
+        private readonly ILogger<InterviewService> _logger;
 
-        public InterviewService(IInterviewRepository interviewRepo, IJoinRequestRepository joinRequestRepo)
+        public InterviewService(
+            IInterviewRepository interviewRepo, 
+            IJoinRequestRepository joinRequestRepo,
+            INotificationRepository notificationRepo,
+            ILogger<InterviewService> logger)
         {
             _interviewRepo = interviewRepo;
             _joinRequestRepo = joinRequestRepo;
+            _notificationRepo = notificationRepo;
+            _logger = logger;
         }
 
         public async Task<InterviewDto?> GetByIdAsync(int id)
         {
             var interview = await _interviewRepo.GetByIdAsync(id);
-            return interview != null ? MapToDto(interview) : null;
+            return interview != null ? MapToDto(interview, showEvaluationForManager: true) : null;
         }
 
         public async Task<InterviewDto?> GetByJoinRequestIdAsync(int joinRequestId)
         {
             var interview = await _interviewRepo.GetByJoinRequestIdAsync(joinRequestId);
-            return interview != null ? MapToDto(interview) : null;
+            return interview != null ? MapToDto(interview, showEvaluationForManager: true) : null;
         }
 
         public async Task<List<InterviewDto>> GetMyInterviewsAsync(int userId)
         {
             var interviews = await _interviewRepo.GetByUserIdAsync(userId);
-            return interviews.Select(MapToDto).ToList();
+            return interviews.Select(i => MapToDto(i, showEvaluationForManager: false)).ToList();
         }
 
         public async Task<InterviewDto> ScheduleInterviewAsync(ScheduleInterviewDto dto, int createdById)
@@ -56,14 +67,71 @@ namespace Services.Interviews
                 Notes = dto.Notes,
                 Status = "Scheduled",
                 CreatedById = createdById,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeHelper.Now
             };
 
             var created = await _interviewRepo.CreateAsync(interview);
             
+            // Create notification for student
+            try
+            {
+                var notification = new Notification
+                {
+                    Title = "Lịch phỏng vấn mới",
+                    Message = $"Bạn có lịch phỏng vấn cho câu lạc bộ {joinRequest.Club?.Name} vào {dto.ScheduledDate:dd/MM/yyyy HH:mm} tại {dto.Location}",
+                    Scope = "User",
+                    TargetUserId = joinRequest.UserId,
+                    CreatedById = createdById,
+                    IsRead = false,
+                    CreatedAt = DateTimeHelper.Now
+                };
+                await _notificationRepo.CreateAsync(notification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to create notification for interview {InterviewId}", created.Id);
+            }
+            
             // Reload with includes
             var result = await _interviewRepo.GetByIdAsync(created.Id);
-            return MapToDto(result!);
+            return MapToDto(result!, showEvaluationForManager: true);
+        }
+
+        public async Task<InterviewDto> UpdateInterviewAsync(int id, UpdateInterviewDto dto)
+        {
+            var interview = await _interviewRepo.GetByIdAsync(id);
+            if (interview == null)
+                throw new Exception("Interview not found");
+
+            interview.ScheduledDate = dto.ScheduledDate;
+            interview.Location = dto.Location;
+            interview.Notes = dto.Notes;
+
+            await _interviewRepo.UpdateAsync(interview);
+
+            // Create notification for student about the update
+            try
+            {
+                var notification = new Notification
+                {
+                    Title = "Lịch phỏng vấn đã được cập nhật",
+                    Message = $"Lịch phỏng vấn của bạn cho câu lạc bộ {interview.JoinRequest.Club.Name} đã được cập nhật. Thời gian mới: {dto.ScheduledDate:dd/MM/yyyy HH:mm}, Địa điểm: {dto.Location}",
+                    Scope = "User",
+                    TargetUserId = interview.JoinRequest.UserId,
+                    CreatedById = interview.CreatedById,
+                    IsRead = false,
+                    CreatedAt = DateTimeHelper.Now
+                };
+                await _notificationRepo.CreateAsync(notification);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to create notification for interview update {InterviewId}", id);
+            }
+
+            // Reload with includes
+            var result = await _interviewRepo.GetByIdAsync(id);
+            return MapToDto(result!, showEvaluationForManager: true);
         }
 
         public async Task<InterviewDto> UpdateEvaluationAsync(int id, UpdateEvaluationDto dto)
@@ -74,13 +142,13 @@ namespace Services.Interviews
 
             interview.Evaluation = dto.Evaluation;
             interview.Status = "Completed";
-            interview.CompletedAt = DateTime.UtcNow;
+            interview.CompletedAt = DateTimeHelper.Now;
 
             await _interviewRepo.UpdateAsync(interview);
 
             // Reload with includes
             var result = await _interviewRepo.GetByIdAsync(id);
-            return MapToDto(result!);
+            return MapToDto(result!, showEvaluationForManager: true);
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -88,8 +156,16 @@ namespace Services.Interviews
             return await _interviewRepo.DeleteAsync(id);
         }
 
-        private InterviewDto MapToDto(Interview interview)
+        private InterviewDto MapToDto(Interview interview, bool showEvaluationForManager = false)
         {
+            // Show evaluation if:
+            // 1. Manager is viewing (showEvaluationForManager = true), OR
+            // 2. Join request has been processed (Approved/Rejected) - for student view
+            var joinRequestStatus = interview.JoinRequest.Status;
+            var showEvaluation = showEvaluationForManager || 
+                                 joinRequestStatus == "Approved" || 
+                                 joinRequestStatus == "Rejected";
+            
             return new InterviewDto
             {
                 Id = interview.Id,
@@ -102,7 +178,7 @@ namespace Services.Interviews
                 ScheduledDate = interview.ScheduledDate,
                 Location = interview.Location,
                 Notes = interview.Notes,
-                Evaluation = interview.Evaluation,
+                Evaluation = showEvaluation ? interview.Evaluation : null,
                 Status = interview.Status,
                 CreatedAt = interview.CreatedAt,
                 CompletedAt = interview.CompletedAt,

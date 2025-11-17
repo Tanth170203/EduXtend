@@ -14,6 +14,7 @@ namespace Repositories.JoinRequests
         Task<bool> UpdateStatusAsync(int id, string status, int processedById);
         Task<bool> HasPendingRequestAsync(int userId, int clubId);
         Task<bool> CreateClubMemberAsync(int clubId, int userId, int? departmentId);
+        Task UpdateAsync(JoinRequest request);
     }
 }
 

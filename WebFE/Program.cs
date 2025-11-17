@@ -16,6 +16,10 @@ namespace WebFE
             // Add services to the container.
             builder.Services.AddHttpContextAccessor();
             
+            // Add Authentication and Authorization services
+            builder.Services.AddAuthentication();
+            builder.Services.AddAuthorization();
+            
             builder.Services.AddRazorPages()
                 .AddJsonOptions(options =>
                 {
@@ -75,6 +79,7 @@ namespace WebFE
 
             // JWT Authentication & Authorization Middleware
             app.UseJwtAuthentication();
+            app.UseAuthorization(); // Required for [Authorize] attributes
 
             app.MapRazorPages();
 

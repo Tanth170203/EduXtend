@@ -25,5 +25,6 @@ namespace Repositories.Clubs
         Task<List<ClubDepartment>> GetClubDepartmentsAsync(int clubId);
         Task<List<ClubAward>> GetClubAwardsAsync(int clubId);
         Task<string?> GetUserRoleInClubAsync(int userId, int clubId);
+        Task UpdateAsync(Club club);
     }
 }
