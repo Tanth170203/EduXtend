@@ -69,6 +69,10 @@
                         <i data-lucide="newspaper" style="width: 20px; height: 20px;"></i>
                         <span>System News</span>
                     </a>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/ClubNews") == true ? "active" : "")" href="/Admin/ClubNews">
+                        <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
+                        <span>Club News</span>
+                    </a>
                 </div>
                 
                 <div class="sidebar-section">

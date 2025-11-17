@@ -12,6 +12,17 @@
     </div>
  </div>
 
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="input-group">
+            <span class="input-group-text bg-white">
+                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+            </span>
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by title or content..." onkeyup="filterNews()" />
+        </div>
+    </div>
+</div>
+
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="table-responsive">
@@ -27,6 +38,11 @@
                 <tbody id="newsRows"></tbody>
             </table>
         </div>
+        
+        <!-- Pagination -->
+        <nav aria-label="News pagination" class="mt-3">
+            <ul class="pagination justify-content-center mb-0" id="pagination"></ul>
+        </nav>
     </div>
 </div>
 
@@ -46,7 +62,13 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Image</label>
-                    <input type="file" class="form-control" id="newsImageFile" accept="image/*" />
+                    <div class="input-group mb-2">
+                        <input type="file" class="form-control" id="newsImageFile" accept="image/*" style="display: none;" />
+                        <input type="text" class="form-control" id="fileNameDisplay" readonly placeholder="No file chosen" />
+                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('newsImageFile').click()">
+                            Choose File
+                        </button>
+                    </div>
                     <input type="hidden" id="newsImage" />
                     <div id="newsImagePreview" class="mt-2" style="display:none;">
                         <img id="newsPreviewImg" src="#" class="rounded" style="max-width: 100%; max-height: 200px;" />
@@ -140,6 +162,7 @@
             document.getElementById('newsTitle').value = '';
             document.getElementById('newsImage').value = '';
             document.getElementById('newsImageFile').value = '';
+            document.getElementById('fileNameDisplay').value = 'No file chosen';
             document.getElementById('newsFb').value = '';
             document.getElementById('newsContent').value = '';
             document.getElementById('newsPublish').checked = false;
@@ -153,6 +176,7 @@
             document.getElementById('newsTitle').value = n.title || '';
             document.getElementById('newsImage').value = n.imageUrl || '';
             document.getElementById('newsImageFile').value = '';
+            document.getElementById('fileNameDisplay').value = n.imageUrl ? 'Image uploaded' : 'No file chosen';
             document.getElementById('newsFb').value = n.facebookUrl || '';
             document.getElementById('newsContent').value = n.content || '';
             document.getElementById('newsPublish').checked = !!n.isPublished;
@@ -242,12 +266,60 @@
                 closeAllOverlays();
             }
         }
+        let allNews = [];
+        let filteredNews = [];
+        let currentPage = 1;
+        const itemsPerPage = 6;
+
         async function loadAdminNews() {
             const res = await fetch(`${API_BASE_URL}/api/news?publishedOnly=false`, { credentials: 'include' });
             const rows = document.getElementById('newsRows');
-            if (!res.ok) { rows.innerHTML = '<tr><td colspan="4">Failed to load.</td></tr>'; return; }
-            const items = await res.json();
-            rows.innerHTML = items.map(n => `
+            if (!res.ok) { 
+                rows.innerHTML = '<tr><td colspan="4">Failed to load.</td></tr>'; 
+                document.getElementById('pagination').innerHTML = '';
+                return; 
+            }
+            allNews = await res.json();
+            filterNews();
+        }
+
+        function filterNews() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (searchTerm) {
+                filteredNews = allNews.filter(n => 
+                    n.title.toLowerCase().includes(searchTerm) ||
+                    (n.content && n.content.toLowerCase().includes(searchTerm))
+                );
+            } else {
+                filteredNews = [...allNews];
+            }
+            
+            currentPage = 1;
+            renderTable();
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        function renderTable() {
+            const rows = document.getElementById('newsRows');
+            
+            if (filteredNews.length === 0) {
+                rows.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">No news found.</td></tr>';
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+            
+            // Pagination
+            const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedNews = filteredNews.slice(startIndex, endIndex);
+            
+            rows.innerHTML = paginatedNews.map(n => `
                 <tr>
                     <td>${n.id}</td>
                     <td>${n.title}</td>
@@ -269,10 +341,64 @@
                     </td>
                 </tr>
             `).join('');
+            
             // Re-render lucide icons after injecting HTML
             if (window.lucide && typeof lucide.createIcons === 'function') {
                 try { lucide.createIcons(); } catch {}
             }
+            
+            renderPagination(totalPages);
+        }
+
+        function renderPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // Previous
+            html += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">&laquo;</a>
+                </li>`;
+            
+            // Pages
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+            
+            if (startPage > 1) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(1); return false;">1</a></li>`;
+                if (startPage > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                    </li>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a></li>`;
+            }
+            
+            // Next
+            html += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">&raquo;</a>
+                </li>`;
+            
+            pagination.innerHTML = html;
         }
         async function edit(id) {
             const res = await fetch(`${API_BASE_URL}/api/news/${id}?includeUnpublished=true`, { credentials: 'include' });
@@ -292,7 +418,13 @@
 
         newsImageFileInput?.addEventListener('change', async (e) => {
             const file = e.target.files && e.target.files[0];
-            if (!file) return;
+            if (!file) {
+                document.getElementById('fileNameDisplay').value = 'No file chosen';
+                return;
+            }
+            
+            // Display file name
+            document.getElementById('fileNameDisplay').value = file.name;
             
             newsImageUploadStatus.textContent = 'Uploading...';
             newsImageUploadStatus.classList.remove('text-danger', 'text-success');
@@ -338,6 +470,7 @@
                 newsImageUploadStatus.classList.remove('text-primary', 'text-success');
                 newsImageUploadStatus.classList.add('text-danger');
                 newsImageFileInput.value = '';
+                document.getElementById('fileNameDisplay').value = 'Upload failed';
             }
         });
 
@@ -346,6 +479,7 @@
             newsPreviewImg.src = '#';
             newsImagePreview.style.display = 'none';
             newsImageFileInput.value = '';
+            document.getElementById('fileNameDisplay').value = 'No file chosen';
             newsImageUploadStatus.textContent = '';
         });
 

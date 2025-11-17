@@ -104,7 +104,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("CreatedById");
 
-                    b.ToTable("Activities");
+                    b.ToTable("Activities", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ActivityAttendance", b =>
@@ -142,7 +142,7 @@ namespace DataAccess.Migrations
                     b.HasIndex("ActivityId", "UserId")
                         .IsUnique();
 
-                    b.ToTable("ActivityAttendances");
+                    b.ToTable("ActivityAttendances", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ActivityFeedback", b =>
@@ -175,7 +175,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ActivityFeedbacks");
+                    b.ToTable("ActivityFeedbacks", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ActivityRegistration", b =>
@@ -207,7 +207,7 @@ namespace DataAccess.Migrations
                     b.HasIndex("ActivityId", "UserId")
                         .IsUnique();
 
-                    b.ToTable("ActivityRegistrations");
+                    b.ToTable("ActivityRegistrations", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ActivitySchedule", b =>
@@ -250,7 +250,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("ActivityId", "Order");
 
-                    b.ToTable("ActivitySchedules");
+                    b.ToTable("ActivitySchedules", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ActivityScheduleAssignment", b =>
@@ -284,7 +284,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ActivityScheduleAssignments");
+                    b.ToTable("ActivityScheduleAssignments", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Club", b =>
@@ -331,7 +331,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Clubs");
+                    b.ToTable("Clubs", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ClubAward", b =>
@@ -366,7 +366,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("SemesterId");
 
-                    b.ToTable("ClubAwards");
+                    b.ToTable("ClubAwards", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ClubCategory", b =>
@@ -388,7 +388,7 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ClubCategories");
+                    b.ToTable("ClubCategories", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ClubDepartment", b =>
@@ -415,7 +415,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("ClubId");
 
-                    b.ToTable("ClubDepartments");
+                    b.ToTable("ClubDepartments", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ClubMember", b =>
@@ -455,7 +455,7 @@ namespace DataAccess.Migrations
                     b.HasIndex("ClubId", "StudentId")
                         .IsUnique();
 
-                    b.ToTable("ClubMembers");
+                    b.ToTable("ClubMembers", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ClubMovementRecord", b =>
@@ -509,7 +509,7 @@ namespace DataAccess.Migrations
                     b.HasIndex("ClubId", "SemesterId", "Month")
                         .IsUnique();
 
-                    b.ToTable("ClubMovementRecords");
+                    b.ToTable("ClubMovementRecords", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ClubMovementRecordDetail", b =>
@@ -557,7 +557,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("ClubMovementRecordId", "CriterionId");
 
-                    b.ToTable("ClubMovementRecordDetails");
+                    b.ToTable("ClubMovementRecordDetails", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ClubNews", b =>
@@ -601,7 +601,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("CreatedById");
 
-                    b.ToTable("ClubNews");
+                    b.ToTable("ClubNews", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Evidence", b =>
@@ -665,7 +665,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Evidences");
+                    b.ToTable("Evidences", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.FundCollectionPayment", b =>
@@ -732,7 +732,7 @@ namespace DataAccess.Migrations
                     b.HasIndex("FundCollectionRequestId", "ClubMemberId")
                         .IsUnique();
 
-                    b.ToTable("FundCollectionPayments");
+                    b.ToTable("FundCollectionPayments", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.FundCollectionRequest", b =>
@@ -796,7 +796,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("SemesterId", "Status");
 
-                    b.ToTable("FundCollectionRequests");
+                    b.ToTable("FundCollectionRequests", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Interview", b =>
@@ -846,7 +846,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("JoinRequestId");
 
-                    b.ToTable("Interviews");
+                    b.ToTable("Interviews", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.JoinRequest", b =>
@@ -898,7 +898,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("JoinRequests");
+                    b.ToTable("JoinRequests", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.LoggedOutToken", b =>
@@ -938,7 +938,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("LoggedOutTokens");
+                    b.ToTable("LoggedOutTokens", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Major", b =>
@@ -968,7 +968,7 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Majors");
+                    b.ToTable("Majors", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.MovementCriterion", b =>
@@ -1013,7 +1013,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("GroupId");
 
-                    b.ToTable("MovementCriteria");
+                    b.ToTable("MovementCriteria", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.MovementCriterionGroup", b =>
@@ -1043,7 +1043,7 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MovementCriterionGroups");
+                    b.ToTable("MovementCriterionGroups", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.MovementRecord", b =>
@@ -1076,7 +1076,7 @@ namespace DataAccess.Migrations
                     b.HasIndex("StudentId", "SemesterId")
                         .IsUnique();
 
-                    b.ToTable("MovementRecords");
+                    b.ToTable("MovementRecords", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.MovementRecordDetail", b =>
@@ -1124,7 +1124,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("MovementRecordId", "CriterionId", "ActivityId");
 
-                    b.ToTable("MovementRecordDetails");
+                    b.ToTable("MovementRecordDetails", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Notification", b =>
@@ -1175,7 +1175,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("TargetUserId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.PaymentTransaction", b =>
@@ -1265,7 +1265,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("SemesterId", "Type", "Status");
 
-                    b.ToTable("PaymentTransactions");
+                    b.ToTable("PaymentTransactions", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Plan", b =>
@@ -1310,7 +1310,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("ClubId");
 
-                    b.ToTable("Plans");
+                    b.ToTable("Plans", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Proposal", b =>
@@ -1352,7 +1352,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("CreatedById");
 
-                    b.ToTable("Proposals");
+                    b.ToTable("Proposals", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ProposalVote", b =>
@@ -1382,7 +1382,7 @@ namespace DataAccess.Migrations
                     b.HasIndex("ProposalId", "UserId")
                         .IsUnique();
 
-                    b.ToTable("ProposalVotes");
+                    b.ToTable("ProposalVotes", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Role", b =>
@@ -1404,7 +1404,7 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Semester", b =>
@@ -1431,7 +1431,7 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Semesters");
+                    b.ToTable("Semesters", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Student", b =>
@@ -1491,7 +1491,7 @@ namespace DataAccess.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Students");
+                    b.ToTable("Students", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.SystemNews", b =>
@@ -1529,7 +1529,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("CreatedById");
 
-                    b.ToTable("SystemNews");
+                    b.ToTable("SystemNews", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.User", b =>
@@ -1578,7 +1578,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.UserToken", b =>
@@ -1617,7 +1617,7 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserTokens");
+                    b.ToTable("UserTokens", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Activity", b =>

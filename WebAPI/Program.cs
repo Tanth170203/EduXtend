@@ -108,6 +108,8 @@ namespace WebAPI
             builder.Services.AddScoped<IFinancialDashboardService, FinancialDashboardService>();
             builder.Services.AddScoped<Repositories.News.INewsRepository, Repositories.News.NewsRepository>();
             builder.Services.AddScoped<Services.News.INewsService, Services.News.NewsService>();
+            builder.Services.AddScoped<Repositories.ClubNews.IClubNewsRepository, Repositories.ClubNews.ClubNewsRepository>();
+            builder.Services.AddScoped<Services.ClubNews.IClubNewsService, Services.ClubNews.ClubNewsService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
