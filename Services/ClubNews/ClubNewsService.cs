@@ -2,6 +2,7 @@ using BusinessObject.DTOs.News;
 using BusinessObject.Models;
 using Repositories.ClubNews;
 using Repositories.Clubs;
+using Services.Notifications;
 
 namespace Services.ClubNews;
 
@@ -9,11 +10,13 @@ public class ClubNewsService : IClubNewsService
 {
 	private readonly IClubNewsRepository _repo;
 	private readonly IClubRepository _clubRepo;
+	private readonly INotificationService _notificationService;
 
-	public ClubNewsService(IClubNewsRepository repo, IClubRepository clubRepo)
+	public ClubNewsService(IClubNewsRepository repo, IClubRepository clubRepo, INotificationService notificationService)
 	{
 		_repo = repo;
 		_clubRepo = clubRepo;
+		_notificationService = notificationService;
 	}
 
 	public async Task<List<ClubNewsListItemDto>> GetAllAsync(int? clubId = null, bool? approvedOnly = null)
@@ -83,6 +86,16 @@ public class ClubNewsService : IClubNewsService
 		
 		// Reload to get navigation properties
 		var created = await _repo.GetByIdAsync(entity.Id);
+		
+		// Notify admins about new club news
+		await _notificationService.NotifyAdminsAboutNewClubNewsAsync(
+			created!.Id, 
+			created.Title, 
+			clubId, 
+			club.Name, 
+			creatorUserId
+		);
+		
 		return Map(created!);
 	}
 
@@ -107,6 +120,11 @@ public class ClubNewsService : IClubNewsService
 	public async Task<ClubNewsDetailDto> ApproveAsync(int id, bool approve)
 	{
 		var entity = await _repo.GetByIdAsync(id) ?? throw new KeyNotFoundException("Club news not found");
+		
+		// Store creator ID before update
+		var creatorId = entity.CreatedById;
+		var newsTitle = entity.Title;
+		
 		entity.IsApproved = approve;
 		if (approve)
 		{
@@ -116,6 +134,15 @@ public class ClubNewsService : IClubNewsService
 		
 		// Reload to get navigation properties
 		var updated = await _repo.GetByIdAsync(id);
+		
+		// Notify club manager about approval/rejection
+		await _notificationService.NotifyClubManagerAboutNewsApprovalAsync(
+			id,
+			newsTitle,
+			creatorId,
+			approve
+		);
+		
 		return Map(updated!);
 	}
 

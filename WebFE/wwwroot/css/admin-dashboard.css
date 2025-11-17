@@ -90,7 +90,7 @@
     padding: 1.5rem;
     overflow-y: auto;
     flex: 1;
-    max-height: calc(90vh - 130px);
+    max-height: calc(90vh - 200px);
 }
 
 .modal-footer {
@@ -132,7 +132,7 @@
     }
     
     .modal-body {
-        max-height: calc(95vh - 120px);
+        max-height: calc(95vh - 180px);
     }
 }
 /* Form Styles */

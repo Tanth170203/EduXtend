@@ -42,6 +42,7 @@ public class EduXtendContext : DbContext
     public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
     public DbSet<FundCollectionRequest> FundCollectionRequests { get; set; }
     public DbSet<FundCollectionPayment> FundCollectionPayments { get; set; }
+    public DbSet<VnpayTransactionDetail> VnpayTransactionDetails { get; set; }
 
     // Movement Criteria
     public DbSet<MovementCriterionGroup> MovementCriterionGroups { get; set; }
@@ -469,6 +470,20 @@ public class EduXtendContext : DbContext
 
         modelBuilder.Entity<FundCollectionPayment>()
             .HasIndex(p => p.Status);
+
+        // VnpayTransactionDetail
+        modelBuilder.Entity<VnpayTransactionDetail>()
+            .HasOne(v => v.FundCollectionPayment)
+            .WithOne(p => p.VnpayTransactionDetail)
+            .HasForeignKey<VnpayTransactionDetail>(v => v.FundCollectionPaymentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<VnpayTransactionDetail>()
+            .HasIndex(v => v.VnpayTransactionId)
+            .IsUnique();
+
+        modelBuilder.Entity<VnpayTransactionDetail>()
+            .HasIndex(v => v.TransactionStatus);
     }
 
     /// <summary>
@@ -507,6 +522,7 @@ public class EduXtendContext : DbContext
         modelBuilder.Entity<PaymentTransaction>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<FundCollectionRequest>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<FundCollectionPayment>().Property(e => e.Id).UseIdentityColumn();
+        modelBuilder.Entity<VnpayTransactionDetail>().Property(e => e.Id).UseIdentityColumn();
         
         modelBuilder.Entity<MovementCriterionGroup>().Property(e => e.Id).UseIdentityColumn();
         modelBuilder.Entity<MovementCriterion>().Property(e => e.Id).UseIdentityColumn();
