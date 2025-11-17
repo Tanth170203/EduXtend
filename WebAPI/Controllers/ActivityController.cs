@@ -56,6 +56,31 @@ namespace WebAPI.Controllers
 
             var activity = await _service.GetActivityByIdAsync(id, userId);
             if (activity == null) return NotFound();
+            
+            // Filter AttendanceCode visibility (Requirements 6.1, 6.2, 6.3)
+            // Only show AttendanceCode to Admin or Manager of the club
+            if (!string.IsNullOrWhiteSpace(activity.AttendanceCode))
+            {
+                bool canViewCode = false;
+                
+                // Check if user is Admin
+                if (User.IsInRole("Admin"))
+                {
+                    canViewCode = true;
+                }
+                // Check if user is Manager of the club
+                else if (userId.HasValue && activity.ClubId.HasValue && User.IsInRole("ClubManager"))
+                {
+                    canViewCode = await _service.IsUserManagerOfClubAsync(userId.Value, activity.ClubId.Value);
+                }
+                
+                // Hide code from students and non-authorized users
+                if (!canViewCode)
+                {
+                    activity.AttendanceCode = null;
+                }
+            }
+            
             return Ok(activity);
         }
 
@@ -321,6 +346,70 @@ namespace WebAPI.Controllers
 		{
 			_logger.LogError(ex, "Error uploading activity image");
 			return BadRequest(new { message = ex.Message });
+		}
+	}
+
+	// ================= STUDENT SELF CHECK-IN =================
+	// POST api/activity/{id}/check-in
+	[HttpPost("{id:int}/check-in")]
+	[Authorize] // Allow all authenticated users (Student, ClubManager, Admin can test)
+	public async Task<IActionResult> CheckInWithCode(int id, [FromBody] BusinessObject.DTOs.Activity.CheckInDto dto)
+	{
+		var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+			return Unauthorized(new { message = "Missing user id" });
+
+		var (success, message) = await _service.CheckInWithCodeAsync(userId, id, dto.AttendanceCode);
+		if (!success) 
+			return BadRequest(new { message });
+		
+		return Ok(new { message });
+	}
+
+	// ================= UPDATE PARTICIPATION SCORE =================
+	// PATCH api/activity/{activityId}/attendance/{userId}
+	[HttpPatch("{activityId:int}/attendance/{targetUserId:int}")]
+	[Authorize(Roles = "Admin,ClubManager")]
+	public async Task<IActionResult> UpdateParticipationScore(
+		int activityId, 
+		int targetUserId, 
+		[FromBody] BusinessObject.DTOs.Activity.UpdateScoreDto dto)
+	{
+		var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var currentUserId))
+			return Unauthorized(new { message = "Missing user id" });
+
+		var (success, message) = await _service.UpdateParticipationScoreAsync(
+			currentUserId, activityId, targetUserId, dto.ParticipationScore);
+		
+		if (!success) 
+			return BadRequest(new { message });
+		
+		return Ok(new { message });
+	}
+
+	// ================= AUTO MARK ABSENT =================
+	// POST api/activity/{activityId}/auto-mark-absent
+	[HttpPost("{activityId:int}/auto-mark-absent")]
+	[Authorize(Roles = "Admin,ClubManager")]
+	public async Task<IActionResult> AutoMarkAbsent(int activityId)
+	{
+		try
+		{
+			var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+			int? userId = null;
+			if (!string.IsNullOrWhiteSpace(userIdStr) && int.TryParse(userIdStr, out var parsedUserId))
+				userId = parsedUserId;
+			
+			_logger.LogInformation("[AUTO MARK ABSENT] Request for activityId: {ActivityId}, userId: {UserId}", activityId, userId);
+			var (markedCount, message) = await _service.AutoMarkAbsentAsync(activityId, userId);
+			_logger.LogInformation("[AUTO MARK ABSENT] Success: {Message}, Count: {Count}", message, markedCount);
+			return Ok(new { markedCount, message });
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "[AUTO MARK ABSENT] Error for activityId: {ActivityId}", activityId);
+			return StatusCode(500, new { message = "Internal server error: " + ex.Message });
 		}
 	}
     }

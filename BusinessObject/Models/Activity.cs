@@ -59,6 +59,10 @@ public class Activity
     // Cho phép hệ thống tự cộng điểm phong trào khi điểm danh
     public double MovementPoint { get; set; } = 0;
     
+    // Mã code 6 ký tự để sinh viên tự điểm danh
+    [MaxLength(6)]
+    public string? AttendanceCode { get; set; }
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Liên kết dữ liệu

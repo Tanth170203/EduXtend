@@ -182,6 +182,27 @@
 
         <!-- Sidebar Statistics -->
         <div class="col-lg-4">
+            <!-- Attendance Code Card -->
+            @if (!string.IsNullOrWhiteSpace(activity.AttendanceCode))
+            {
+                <div class="card shadow-sm border-0 mb-4 bg-warning bg-opacity-10">
+                    <div class="card-body p-4">
+                        <h5 class="fw-semibold mb-3">
+                            <i class="bi bi-qr-code-scan me-2"></i>Attendance Code
+                        </h5>
+                        <div class="text-center">
+                            <div class="bg-white rounded p-3 mb-3">
+                                <code class="fs-3 fw-bold" style="letter-spacing: 0.3em; color: #333;">@activity.AttendanceCode</code>
+                            </div>
+                            <button class="btn btn-warning w-100" onclick="copyAttendanceCode(event, '@Html.Raw(activity.AttendanceCode)')">
+                                <i class="bi bi-clipboard me-2"></i>Copy Code
+                            </button>
+                            <small class="text-muted d-block mt-2">Share this code with students for self check-in</small>
+                        </div>
+                    </div>
+                </div>
+            }
+            
             <!-- Participation Stats -->
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body p-4">
@@ -295,5 +316,73 @@
             window.location.href = '/Admin/Activities/Delete/' + deleteId;
         }
     });
+    
+    function copyAttendanceCode(evt, code) {
+        navigator.clipboard.writeText(code).then(function() {
+            // Show success feedback
+            const btn = evt.target.closest('button');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2 me-2"></i>Copied!';
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-success');
+            
+            // Show success message
+            showToast('Success', 'success');
+            
+            setTimeout(function() {
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-warning');
+            }, 2000);
+        }).catch(function(err) {
+            showToast('Không thể copy mã', 'danger');
+        });
+    }
+    
+    function showToast(message, type) {
+        // Validate parameters
+        if (!message) message = 'Thao tác thành công';
+        if (!type) type = 'success';
+        
+        // Create toast container if not exists
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+        
+        // Choose icon based on type
+        const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill';
+        
+        // Create toast element
+        const toastId = 'toast-' + Date.now();
+        const toastDiv = document.createElement('div');
+        toastDiv.id = toastId;
+        toastDiv.className = `toast align-items-center text-white bg-${type} border-0`;
+        toastDiv.setAttribute('role', 'alert');
+        toastDiv.setAttribute('aria-live', 'assertive');
+        toastDiv.setAttribute('aria-atomic', 'true');
+        
+        toastDiv.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi ${icon} me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toastDiv);
+        const toast = new bootstrap.Toast(toastDiv, { delay: 3000 });
+        toast.show();
+        
+        // Remove toast element after it's hidden
+        toastDiv.addEventListener('hidden.bs.toast', function() {
+            toastDiv.remove();
+        });
+    }
 </script>
 

@@ -4,6 +4,7 @@ using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(EduXtendContext))]
-    partial class EduXtendContextModelSnapshot : ModelSnapshot
+    [Migration("20251114110447_AddOtherScoreToClubMovementRecord")]
+    partial class AddOtherScoreToClubMovementRecord
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,10 +38,6 @@ namespace DataAccess.Migrations
 
                     b.Property<int?>("ApprovedById")
                         .HasColumnType("int");
-
-                    b.Property<string>("AttendanceCode")
-                        .HasMaxLength(6)
-                        .HasColumnType("nvarchar(6)");
 
                     b.Property<int?>("ClubId")
                         .HasColumnType("int");

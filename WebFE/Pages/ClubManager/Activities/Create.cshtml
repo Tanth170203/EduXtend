@@ -421,7 +421,7 @@
             const currentDate = new Date();
             
             if (this.value && startDate < currentDate) {
-                setError(startTimeError, 'Không được chọn ngày giờ bắt đầu trong quá khứ');
+                setError(startTimeError, 'Start time cannot be in the past');
                 this.value = '';
                 return;
             }
@@ -431,7 +431,7 @@
             
             // Check if end time is before or equal to start time
             if (endTimeInput.value && new Date(endTimeInput.value) <= startDate) {
-                setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
+                setError(endTimeError, 'End time must be after start time');
                 endTimeInput.value = '';
             }
         });
@@ -448,7 +448,7 @@
             }
             
             if (startTimeInput.value && endDate <= new Date(startTimeInput.value)) {
-                setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
+                setError(endTimeError, 'End time must be after start time');
                 this.value = '';
             }
         });
@@ -462,7 +462,7 @@
             let hasError = false;
             
             if (startDate && startDate < currentDate) {
-                setError(startTimeError, 'Không được chọn ngày giờ bắt đầu trong quá khứ');
+                setError(startTimeError, 'Start time cannot be in the past');
                 hasError = true;
             }
             
@@ -472,7 +472,7 @@
             }
             
             if (startDate && endDate && endDate <= startDate) {
-                setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
+                setError(endTimeError, 'End time must be after start time');
                 hasError = true;
             }
 

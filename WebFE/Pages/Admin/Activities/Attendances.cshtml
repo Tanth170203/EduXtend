@@ -14,9 +14,14 @@
             </h2>
             <p class="text-muted mb-0">Activity ID: @Model.ActivityId</p>
         </div>
-        <a class="btn btn-outline-secondary" href="/Admin/Activities/Details/@Model.ActivityId">
-            <i class="bi bi-arrow-left me-2"></i>Back to Activity
-        </a>
+        <div>
+            <button class="btn btn-warning me-2" id="autoMarkAbsentBtn" data-activity-id="@Model.ActivityId">
+                <i class="bi bi-clock-history me-2"></i>Auto Mark Absent
+            </button>
+            <a class="btn btn-outline-secondary" href="/Admin/Activities/Details/@Model.ActivityId">
+                <i class="bi bi-arrow-left me-2"></i>Back to Activity
+            </a>
+        </div>
     </div>
 
     <!-- Statistics Cards -->
@@ -90,11 +95,25 @@
                 <h5 class="mb-0 fw-semibold">
                     <i class="bi bi-list-check me-2"></i>Registrant List
                 </h5>
-                <div class="input-group" style="max-width: 300px;">
-                    <span class="input-group-text bg-light border-end-0">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" class="form-control border-start-0" id="searchInput" placeholder="Search by name or email...">
+                <div class="d-flex gap-2">
+                    <select class="form-select" id="statusFilter" style="max-width: 150px;">
+                        <option value="">All Status</option>
+                        <option value="present">Present</option>
+                        <option value="absent">Absent</option>
+                        <option value="pending">Not Marked</option>
+                    </select>
+                    <button class="btn btn-primary" id="filterBtn">
+                        <i class="bi bi-funnel-fill me-1"></i>Filter
+                    </button>
+                    <button class="btn btn-outline-secondary" id="clearFilterBtn">
+                        <i class="bi bi-x-circle me-1"></i>Clear
+                    </button>
+                    <div class="input-group" style="max-width: 300px;">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" id="searchInput" placeholder="Search by name or email...">
+                    </div>
                 </div>
             </div>
         </div>
@@ -114,7 +133,7 @@
                         @{ int index = 1; }
                         @foreach (var r in Model.Registrants)
                         {
-                            <tr class="registrant-row">
+                            <tr class="registrant-row" data-status="@(r.IsPresent == true ? "present" : r.IsPresent == false ? "absent" : "pending")">
                                 <td class="px-4 text-muted">@index</td>
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -255,21 +274,39 @@
 </style>
 
 <script>
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
+    // Filter and search functionality
+    function applyFilters() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value;
         const rows = document.querySelectorAll('.registrant-row');
         
         rows.forEach(row => {
             const name = row.querySelector('.registrant-name').textContent.toLowerCase();
             const email = row.querySelector('.registrant-email').textContent.toLowerCase();
+            const status = row.getAttribute('data-status');
             
-            if (name.includes(searchTerm) || email.includes(searchTerm)) {
+            const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm);
+            const matchesStatus = !statusFilter || status === statusFilter;
+            
+            if (matchesSearch && matchesStatus) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
             }
         });
+    }
+    
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+    
+    // Filter button
+    document.getElementById('filterBtn').addEventListener('click', applyFilters);
+    
+    // Clear filter button
+    document.getElementById('clearFilterBtn').addEventListener('click', function() {
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('searchInput').value = '';
+        applyFilters();
     });
 
     // Set attendance (instant UI update, no reload)
@@ -413,6 +450,139 @@
         // Remove modal from DOM when hidden
         document.getElementById('participationModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
+        });
+    }
+    
+    // Auto Mark Absent functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const autoMarkAbsentBtn = document.getElementById('autoMarkAbsentBtn');
+        if (autoMarkAbsentBtn) {
+            autoMarkAbsentBtn.addEventListener('click', function() {
+                const activityId = this.getAttribute('data-activity-id');
+                showAutoMarkAbsentModal(activityId);
+            });
+        }
+    });
+    
+    function showAutoMarkAbsentModal(activityId) {
+        const existingModal = document.getElementById('autoMarkAbsentModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const modalHTML = `
+            <div class="modal fade" id="autoMarkAbsentModal" tabindex="-1" aria-labelledby="autoMarkAbsentModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title" id="autoMarkAbsentModalLabel">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Xác nhận đánh dấu vắng mặt
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-3">Bạn có chắc muốn tự động đánh dấu <strong class="text-danger">"Absent"</strong> cho tất cả thành viên chưa điểm danh không?</p>
+                            <p class="text-muted mb-3">Hành động này sẽ đánh dấu vắng mặt cho tất cả người đăng ký nhưng chưa được điểm danh trong hoạt động này.</p>
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <small>Lưu ý: Hành động này không thể hoàn tác.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-2"></i>Hủy bỏ
+                            </button>
+                            <button type="button" class="btn btn-warning" onclick="executeAutoMarkAbsent(${activityId})">
+                                <i class="bi bi-check-circle me-2"></i>Đồng ý
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        const modal = new bootstrap.Modal(document.getElementById('autoMarkAbsentModal'));
+        modal.show();
+        
+        document.getElementById('autoMarkAbsentModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
+    }
+    
+    async function executeAutoMarkAbsent(activityId) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('autoMarkAbsentModal'));
+        modal.hide();
+        
+        try {
+            const baseUrl = '@Model.ApiBaseUrl';
+            const url = (baseUrl ? baseUrl : '') + `/api/activity/${activityId}/auto-mark-absent`;
+            console.log('[Admin] Calling Auto Mark Absent API:', url);
+            
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+
+            const data = await res.json().catch(() => ({}));
+            console.log('[Admin] Response data:', data);
+            
+            if (!res.ok) {
+                showToast(data?.message || 'Không thể tự động đánh dấu vắng mặt', 'danger');
+                return;
+            }
+
+            const successMessage = data?.message || `Đã đánh dấu vắng mặt cho ${data?.markedCount || 0} người`;
+            console.log('[Admin] Success message:', successMessage);
+            showToast(successMessage, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } catch (e) {
+            console.error('Error:', e);
+            showToast('Failed to auto mark absent: ' + e.message, 'danger');
+        }
+    }
+    
+    function showToast(message, type) {
+        if (!message) message = 'Success';
+        if (!type) type = 'success';
+        
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+        
+        const icon = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill';
+        const toastId = 'toast-' + Date.now();
+        const toastDiv = document.createElement('div');
+        toastDiv.id = toastId;
+        toastDiv.className = `toast align-items-center text-white bg-${type} border-0`;
+        toastDiv.setAttribute('role', 'alert');
+        toastDiv.setAttribute('aria-live', 'assertive');
+        toastDiv.setAttribute('aria-atomic', 'true');
+        
+        toastDiv.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi ${icon} me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toastDiv);
+        const toast = new bootstrap.Toast(toastDiv, { delay: 3000 });
+        toast.show();
+        
+        toastDiv.addEventListener('hidden.bs.toast', function() {
+            toastDiv.remove();
         });
     }
 </script>

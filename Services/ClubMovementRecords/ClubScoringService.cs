@@ -94,6 +94,7 @@ public class ClubScoringService : IClubScoringService
                     CompetitionScore = 0,
                     PlanScore = 0,
                     CollaborationScore = 0,
+                    OtherScore = 0,
                     TotalScore = 0
                 };
                 record = await _recordRepo.CreateAsync(record);
@@ -344,6 +345,7 @@ public class ClubScoringService : IClubScoringService
             CompetitionScore = record.CompetitionScore,
             PlanScore = record.PlanScore,
             CollaborationScore = record.CollaborationScore,
+            OtherScore = record.OtherScore,
             TotalScore = record.TotalScore,
             CreatedAt = record.CreatedAt,
             LastUpdated = record.LastUpdated,

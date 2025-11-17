@@ -158,6 +158,29 @@
 
     <!-- Sidebar -->
     <div class="col-lg-4">
+        <!-- Attendance Code Card -->
+        @if (!string.IsNullOrWhiteSpace(activity.AttendanceCode))
+        {
+            <div class="content-card mb-4 bg-warning bg-opacity-10">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">
+                        <i data-lucide="qr-code" style="width: 18px; height: 18px;"></i>
+                        Attendance Code
+                    </h5>
+                </div>
+                <div class="content-card-body text-center">
+                    <div class="bg-white rounded p-3 mb-3">
+                        <code class="fs-3 fw-bold" style="letter-spacing: 0.3em; color: #333;">@activity.AttendanceCode</code>
+                    </div>
+                    <button class="btn btn-warning w-100" onclick="copyAttendanceCode(event, '@Html.Raw(activity.AttendanceCode)')">
+                        <i data-lucide="clipboard" style="width: 16px; height: 16px;"></i>
+                        Copy Code
+                    </button>
+                    <small class="text-muted d-block mt-2">Share this code with students for self check-in</small>
+                </div>
+            </div>
+        }
+        
         <!-- Statistics Card -->
         <div class="content-card mb-4">
             <div class="content-card-header">
@@ -347,6 +370,115 @@
         if (deleteModal) {
             deleteModal.addEventListener('shown.bs.modal', function () {
                 lucide.createIcons();
+            });
+        }
+        
+        function copyAttendanceCode(evt, code) {
+            console.log('Copying code:', code, 'Type:', typeof code);
+            
+            // Ensure code is a string
+            if (!code || code === 'undefined') {
+                showToast('Mã điểm danh không hợp lệ', 'danger');
+                return;
+            }
+            
+            // Check if clipboard API is available
+            if (!navigator.clipboard) {
+                console.error('Clipboard API not available');
+                // Fallback method
+                copyToClipboardFallback(code);
+                return;
+            }
+            
+            navigator.clipboard.writeText(String(code)).then(function() {
+                console.log('Copy successful');
+                // Show success feedback
+                const btn = evt.target.closest('button');
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-success');
+                btn.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Đã copy!';
+                lucide.createIcons();
+                
+                // Show success message
+                showToast('Đã copy mã điểm danh: ' + code, 'success');
+                
+                setTimeout(function() {
+                    btn.innerHTML = '<i data-lucide="clipboard" style="width: 16px; height: 16px;"></i> Copy Code';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-warning');
+                    lucide.createIcons();
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Copy failed:', err);
+                showToast('Không thể copy mã: ' + err.message, 'danger');
+            });
+        }
+        
+        function copyToClipboardFallback(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast('Đã copy mã điểm danh: ' + text, 'success');
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                showToast('Không thể copy mã', 'danger');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        function showToast(message, type) {
+            // Validate parameters
+            if (!message) message = 'Thao tác thành công';
+            if (!type) type = 'success';
+            
+            // Create toast container if not exists
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                toastContainer.style.zIndex = '9999';
+                document.body.appendChild(toastContainer);
+            }
+            
+            // Choose icon based on type
+            const iconName = type === 'success' ? 'check-circle' : 'alert-circle';
+            
+            // Create toast element
+            const toastId = 'toast-' + Date.now();
+            const toastDiv = document.createElement('div');
+            toastDiv.id = toastId;
+            toastDiv.className = `toast align-items-center text-white bg-${type} border-0`;
+            toastDiv.setAttribute('role', 'alert');
+            toastDiv.setAttribute('aria-live', 'assertive');
+            toastDiv.setAttribute('aria-atomic', 'true');
+            
+            toastDiv.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i data-lucide="${iconName}" style="width: 16px; height: 16px;"></i> ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toastDiv);
+            const toast = new bootstrap.Toast(toastDiv, { delay: 3000 });
+            toast.show();
+            
+            // Initialize Lucide icons in toast
+            lucide.createIcons();
+            
+            // Remove toast element after it's hidden
+            toastDiv.addEventListener('hidden.bs.toast', function() {
+                toastDiv.remove();
             });
         }
     </script>

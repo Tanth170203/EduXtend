@@ -262,7 +262,7 @@ namespace Repositories.Activities
 		}).ToList();
 	}
 
-	public async Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int checkedById)
+	public async Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int? checkedById)
 	{
 		var existing = await _ctx.ActivityAttendances.FirstOrDefaultAsync(a => a.ActivityId == activityId && a.UserId == userId);
 		if (existing == null)
@@ -309,6 +309,41 @@ namespace Repositories.Activities
 				.AsNoTracking()
 				.ToListAsync()
 				.ContinueWith(t => t.Result.Select(x => (x.Id, x.StudentId)).ToList());
+		}
+
+		public async Task<bool> IsAttendanceCodeExistsAsync(string code)
+		{
+			return await _ctx.Activities
+				.AnyAsync(a => a.AttendanceCode == code);
+		}
+
+		public async Task<ActivityAttendance?> GetAttendanceAsync(int activityId, int userId)
+		{
+			return await _ctx.ActivityAttendances
+				.FirstOrDefaultAsync(a => a.ActivityId == activityId && a.UserId == userId);
+		}
+
+		public async Task<ActivityAttendance> CreateAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int? checkedById)
+		{
+			var attendance = new ActivityAttendance
+			{
+				ActivityId = activityId,
+				UserId = userId,
+				IsPresent = isPresent,
+				ParticipationScore = participationScore,
+				CheckedById = checkedById,
+				CheckedAt = DateTime.UtcNow
+			};
+			
+			_ctx.ActivityAttendances.Add(attendance);
+			await _ctx.SaveChangesAsync();
+			return attendance;
+		}
+
+		public async Task UpdateAttendanceAsync(ActivityAttendance attendance)
+		{
+			_ctx.ActivityAttendances.Update(attendance);
+			await _ctx.SaveChangesAsync();
 		}
     }
 }

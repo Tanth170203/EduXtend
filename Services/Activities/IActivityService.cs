@@ -37,6 +37,18 @@ namespace Services.Activities
         Task<List<AdminActivityRegistrantDto>> GetClubRegistrantsAsync(int managerUserId, int activityId);
         Task<(bool success, string message)> SetClubAttendanceAsync(int managerUserId, int activityId, int targetUserId, bool isPresent, int? participationScore = null);
         Task<List<AdminActivityFeedbackDto>> GetActivityFeedbacksAsync(int adminUserId, int activityId);
+        
+        // Student self check-in
+        Task<(bool success, string message)> CheckInWithCodeAsync(int userId, int activityId, string attendanceCode);
+        
+        // Update participation score (Admin/Manager)
+        Task<(bool success, string message)> UpdateParticipationScoreAsync(int adminOrManagerUserId, int activityId, int targetUserId, int participationScore);
+        
+        // Auto mark absent for non-attended registrants after activity ends
+        Task<(int markedCount, string message)> AutoMarkAbsentAsync(int activityId, int? userId = null);
+        
+        // Check if user is manager of club
+        Task<bool> IsUserManagerOfClubAsync(int userId, int clubId);
     }
 }
 

@@ -91,6 +91,7 @@
                             <th>Date</th>
                             <th>Status</th>
                             <th>Participants</th>
+                            <th>Code</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -158,6 +159,23 @@
                                     else
                                     {
                                         <span>@activity.CurrentParticipants</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(activity.AttendanceCode))
+                                    {
+                                        <div class="d-flex align-items-center">
+                                            <code class="bg-light px-2 py-1 rounded small" style="letter-spacing: 0.1em;">@activity.AttendanceCode</code>
+                                            <button class="btn btn-sm btn-link p-0 ms-1" 
+                                                    onclick="copyCode(event, '@Html.Raw(activity.AttendanceCode)')" 
+                                                    title="Copy code">
+                                                <i data-lucide="clipboard" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">N/A</span>
                                     }
                                 </td>
                                 <td>
@@ -242,6 +260,87 @@
                 const matchSearch = !searchText || title.includes(searchText);
 
                 row.style.display = matchStatus && matchType && matchSearch ? '' : 'none';
+            });
+        }
+        
+        function copyCode(evt, code) {
+            console.log('Copying code:', code);
+            
+            if (!code || code === 'undefined') {
+                showToast('Mã điểm danh không hợp lệ', 'danger');
+                return;
+            }
+            
+            navigator.clipboard.writeText(String(code)).then(function() {
+                console.log('Copy successful');
+                // Show success feedback
+                const btn = evt.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                
+                btn.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i>';
+                btn.classList.add('text-success');
+                lucide.createIcons();
+                
+                // Show success message
+                showToast('Đã copy mã: ' + code, 'success');
+                
+                setTimeout(function() {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('text-success');
+                    lucide.createIcons();
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Copy failed:', err);
+                showToast('Không thể copy mã: ' + err.message, 'danger');
+            });
+        }
+        
+        function showToast(message, type) {
+            // Validate parameters
+            if (!message) message = 'Thao tác thành công';
+            if (!type) type = 'success';
+            
+            // Create toast container if not exists
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                toastContainer.style.zIndex = '9999';
+                document.body.appendChild(toastContainer);
+            }
+            
+            // Choose icon based on type
+            const iconName = type === 'success' ? 'check-circle' : 'alert-circle';
+            
+            // Create toast element
+            const toastId = 'toast-' + Date.now();
+            const toastDiv = document.createElement('div');
+            toastDiv.id = toastId;
+            toastDiv.className = `toast align-items-center text-white bg-${type} border-0`;
+            toastDiv.setAttribute('role', 'alert');
+            toastDiv.setAttribute('aria-live', 'assertive');
+            toastDiv.setAttribute('aria-atomic', 'true');
+            
+            toastDiv.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i data-lucide="${iconName}" style="width: 16px; height: 16px;"></i> ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toastDiv);
+            const toast = new bootstrap.Toast(toastDiv, { delay: 3000 });
+            toast.show();
+            
+            // Initialize Lucide icons in toast
+            lucide.createIcons();
+            
+            // Remove toast element after it's hidden
+            toastDiv.addEventListener('hidden.bs.toast', function() {
+                toastDiv.remove();
             });
         }
     </script>

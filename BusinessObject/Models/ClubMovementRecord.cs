@@ -48,6 +48,11 @@ public class ClubMovementRecord
     public double CollaborationScore { get; set; }
     
     /// <summary>
+    /// Điểm hoạt động khác (Manual - tùy theo tiêu chí)
+    /// </summary>
+    public double OtherScore { get; set; }
+    
+    /// <summary>
     /// Tổng điểm tháng (max 100đ)
     /// </summary>
     public double TotalScore { get; set; }
