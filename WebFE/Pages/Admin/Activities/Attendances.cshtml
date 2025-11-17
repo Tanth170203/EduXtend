@@ -157,19 +157,19 @@
                                                 <strong class="text-success">
                                                     @if (r.ParticipationScore == 5)
                                                     {
-                                                        <span>😊 5</span>
+                                                        <span class="badge bg-success">5 pts</span>
                                                     }
                                                     else if (r.ParticipationScore == 4)
                                                     {
-                                                        <span>😐 4</span>
+                                                        <span class="badge bg-warning text-dark">4 pts</span>
                                                     }
                                                     else if (r.ParticipationScore == 3)
                                                     {
-                                                        <span>☹️ 3</span>
+                                                        <span class="badge bg-secondary">3 pts</span>
                                                     }
                                                     else
                                                     {
-                                                        <span>@r.ParticipationScore</span>
+                                                        <span class="badge bg-info">@r.ParticipationScore pts</span>
                                                     }
                                                 </strong>
                                             </div>
@@ -200,21 +200,21 @@
                                         <div class="btn-group btn-group-sm" role="group">
                                             <button type="button" class="btn @(r.ParticipationScore == 5 ? "btn-success" : "btn-outline-success") btn-sm" 
                                                     onclick="setAttendanceWithScore(@Model.ActivityId, @r.UserId, 5, this)"
-                                                    title="Xuất sắc - 5 điểm"
+                                                    title="Excellent - 5 points"
                                                     style="@(r.ParticipationScore == 5 ? "font-weight: bold; border-width: 2px;" : "")">
-                                                😊 5
+                                                5
                                             </button>
                                             <button type="button" class="btn @(r.ParticipationScore == 4 ? "btn-warning" : "btn-outline-warning") btn-sm" 
                                                     onclick="setAttendanceWithScore(@Model.ActivityId, @r.UserId, 4, this)"
-                                                    title="Tốt - 4 điểm"
+                                                    title="Good - 4 points"
                                                     style="@(r.ParticipationScore == 4 ? "font-weight: bold; border-width: 2px;" : "")">
-                                                😐 4
+                                                4
                                             </button>
                                             <button type="button" class="btn @(r.ParticipationScore == 3 ? "btn-secondary" : "btn-outline-secondary") btn-sm" 
                                                     onclick="setAttendanceWithScore(@Model.ActivityId, @r.UserId, 3, this)"
-                                                    title="Trung bình - 3 điểm"
+                                                    title="Average - 3 points"
                                                     style="@(r.ParticipationScore == 3 ? "font-weight: bold; border-width: 2px;" : "")">
-                                                ☹️ 3
+                                                3
                                             </button>
                                             <button type="button" class="btn btn-outline-danger btn-sm" 
                                                     onclick="setAttendance(@Model.ActivityId, @r.UserId, false, this)"
@@ -412,21 +412,21 @@
                             <div class="d-grid gap-3">
                                 <button class="btn btn-lg btn-success" 
                                         onclick="setAttendanceWithScore(${activityId}, ${userId}, 5, this); bootstrap.Modal.getInstance(document.getElementById('participationModal')).hide()">
-                                    <span style="font-size: 2.5rem;">😊</span><br>
-                                    <strong class="fs-5">Xuất sắc - 5 điểm</strong><br>
-                                    <small class="text-white-50">Tham gia tích cực, đóng góp nhiều ý tưởng</small>
+                                    <strong class="fs-1">5</strong><br>
+                                    <strong class="fs-5">Excellent</strong><br>
+                                    <small class="text-white-50">Active participation, many contributions</small>
                                 </button>
                                 <button class="btn btn-lg btn-warning" 
                                         onclick="setAttendanceWithScore(${activityId}, ${userId}, 4, this); bootstrap.Modal.getInstance(document.getElementById('participationModal')).hide()">
-                                    <span style="font-size: 2.5rem;">😐</span><br>
-                                    <strong class="fs-5">Tốt - 4 điểm</strong><br>
-                                    <small>Tham gia đầy đủ, làm theo yêu cầu</small>
+                                    <strong class="fs-1">4</strong><br>
+                                    <strong class="fs-5">Good</strong><br>
+                                    <small>Full participation, followed requirements</small>
                                 </button>
                                 <button class="btn btn-lg btn-secondary" 
                                         onclick="setAttendanceWithScore(${activityId}, ${userId}, 3, this); bootstrap.Modal.getInstance(document.getElementById('participationModal')).hide()">
-                                    <span style="font-size: 2.5rem;">☹️</span><br>
-                                    <strong class="fs-5">Trung bình - 3 điểm</strong><br>
-                                    <small>Có mặt nhưng thiếu tập trung</small>
+                                    <strong class="fs-1">3</strong><br>
+                                    <strong class="fs-5">Average</strong><br>
+                                    <small>Present but lacked focus</small>
                                 </button>
                             </div>
                         </div>
