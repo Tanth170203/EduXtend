@@ -796,18 +796,48 @@ class NotificationManager {
         }
     }
 
-    deleteNotification(notificationId) {
-        this.notifications = this.notifications.filter(n => n.id !== notificationId);
-        this.updateUnreadCount();
-        this.saveNotifications();
-        this.renderNotificationCenter();
+    async deleteNotification(notificationId) {
+        try {
+            // Delete notification on server
+            const response = await fetch(`https://localhost:5001/api/notification/${notificationId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                // Remove locally
+                this.notifications = this.notifications.filter(n => n.id !== notificationId);
+                this.updateUnreadCount();
+                this.saveNotifications();
+                this.renderNotificationCenter();
+            } else {
+                console.error('Failed to delete notification');
+            }
+        } catch (error) {
+            console.error('Error deleting notification:', error);
+        }
     }
 
-    clearAllNotifications() {
-        this.notifications = [];
-        this.updateUnreadCount();
-        this.saveNotifications();
-        this.renderNotificationCenter();
+    async clearAllNotifications() {
+        try {
+            // Delete all notifications on server
+            const response = await fetch('https://localhost:5001/api/notification/delete-all', {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                // Clear locally
+                this.notifications = [];
+                this.updateUnreadCount();
+                this.saveNotifications();
+                this.renderNotificationCenter();
+            } else {
+                console.error('Failed to delete all notifications');
+            }
+        } catch (error) {
+            console.error('Error deleting all notifications:', error);
+        }
     }
 
     updateUnreadCount() {
@@ -837,11 +867,7 @@ class NotificationManager {
         
         this.notificationCenter.innerHTML = `
             <div class="notification-header">
-                <h3 class="notification-title">Thông báo</h3>
-                <div class="notification-actions">
-                    ${unreadCount > 0 ? '<button class="notification-btn notification-btn-primary" onclick="notificationManager.markAllAsRead()">Đánh dấu đã đọc</button>' : ''}
-                    <button class="notification-btn notification-btn-secondary" onclick="notificationManager.clearAllNotifications()">Xóa tất cả</button>
-                </div>
+                <h3 class="notification-title">Notifications</h3>
             </div>
             <div class="notification-list">
                 ${this.notifications.length === 0 ? this.renderEmptyState() : this.renderNotificationList()}
@@ -853,8 +879,8 @@ class NotificationManager {
         return `
             <div class="notification-empty">
                 <div class="notification-empty-icon">🔔</div>
-                <p class="notification-empty-text">Chưa có thông báo</p>
-                <p class="notification-empty-subtext">Các thông báo mới sẽ xuất hiện ở đây</p>
+                <p class="notification-empty-text">No notifications</p>
+                <p class="notification-empty-subtext">New notifications will appear here</p>
             </div>
         `;
     }
@@ -879,11 +905,11 @@ class NotificationManager {
         const date = new Date(dateString);
         const diffInSeconds = Math.floor((now - date) / 1000);
 
-        if (diffInSeconds < 60) return 'Vừa xong';
-        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
-        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
-        if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
-        return date.toLocaleDateString('vi-VN');
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+        if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+        return date.toLocaleDateString('en-US');
     }
 
     // Notification Center UI Methods
@@ -929,13 +955,24 @@ class NotificationManager {
         };
 
         const timeAgo = this.getTimeAgo(notification.createdAt);
-        const scopeText = notification.scope === 'Club' ? 'CLB' : 'Hệ thống';
+        const scopeText = notification.scope === 'Club' ? 'Club' : 'System';
         
         // Determine the link based on notification title/type
         let targetUrl = '/Student/MyApplications'; // Default to My Applications page
         
-        // You can customize this based on notification type
-        if (notification.title.includes('phỏng vấn') || notification.title.includes('interview')) {
+        // Club news notifications
+        if (notification.title.includes('article') || notification.title.includes('Article')) {
+            // For admin: go to pending approval page
+            if (notification.title.includes('pending approval')) {
+                targetUrl = '/Admin/ClubNews';
+            }
+            // For club manager: go to their news page
+            else if (notification.title.includes('approved') || notification.title.includes('rejected')) {
+                targetUrl = '/ClubManager/News';
+            }
+        }
+        // Interview notifications
+        else if (notification.title.includes('phỏng vấn') || notification.title.includes('interview')) {
             targetUrl = '/Student/MyApplications';
         }
 
