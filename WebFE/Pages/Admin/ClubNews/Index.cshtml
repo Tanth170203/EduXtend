@@ -483,7 +483,9 @@
         }
 
         async function deleteNews(id) {
-            if (!confirm('Are you sure you want to delete this news?')) return;
+            if (!confirm('Are you sure you want to delete this news?')) {
+                return;
+            }
             
             try {
                 const res = await fetch(`${API_BASE_URL}/api/club-news/${id}`, {
@@ -493,6 +495,17 @@
                 
                 if (res.ok) {
                     success('Success', 'News deleted successfully');
+                    
+                    // Force cleanup modal container immediately
+                    const modalContainer = document.getElementById('modal-container');
+                    if (modalContainer) {
+                        modalContainer.style.display = 'none';
+                    }
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                    
                     await loadAllNews();
                 } else {
                     error('Error', 'Failed to delete news');
@@ -502,6 +515,27 @@
                 error('Error', 'Failed to delete news');
             }
         }
+        
+        // Global cleanup function that runs periodically
+        setInterval(() => {
+            // Clean up Bootstrap modal backdrops
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 0 && !document.querySelector('.modal.show')) {
+                backdrops.forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+            }
+            
+            // Clean up notification modal container if no modal is showing
+            const modalContainer = document.getElementById('modal-container');
+            if (modalContainer && modalContainer.style.display === 'flex') {
+                const modal = modalContainer.querySelector('.modal');
+                if (!modal || !modal.classList.contains('show')) {
+                    modalContainer.style.display = 'none';
+                }
+            }
+        }, 500);
 
         function formatDate(dateString) {
             if (!dateString) return '';

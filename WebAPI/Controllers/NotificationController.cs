@@ -149,6 +149,34 @@ namespace WebAPI.Controllers
             }
         }
 
+        // DELETE api/notification/delete-all
+        [HttpDelete("delete-all")]
+        public async Task<IActionResult> DeleteAllNotifications()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized(new { message = "Invalid user" });
+                }
+
+                // Get all user's notifications and delete them
+                var notifications = await _notificationRepo.GetByUserIdAsync(userId);
+                foreach (var notification in notifications)
+                {
+                    await _notificationRepo.DeleteAsync(notification.Id);
+                }
+
+                return Ok(new { message = "All notifications deleted", count = notifications.Count });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting all notifications");
+                return StatusCode(500, new { message = "Failed to delete all notifications" });
+            }
+        }
+
         // GET api/notification/unread-count
         [HttpGet("unread-count")]
         public async Task<IActionResult> GetUnreadCount()

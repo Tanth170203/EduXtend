@@ -575,7 +575,23 @@
                 
                 if (res.ok) {
                     success('Success', id ? 'News updated successfully' : 'News created successfully. Waiting for admin approval.');
-                    newsModal.hide();
+                    
+                    try {
+                        newsModal.hide();
+                    } catch (modalError) {
+                        console.log('Modal hide error (safe to ignore):', modalError);
+                    }
+                    
+                    // Force cleanup modal container
+                    const modalContainer = document.getElementById('modal-container');
+                    if (modalContainer) {
+                        modalContainer.style.display = 'none';
+                    }
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                    
                     await loadNews();
                 } else {
                     const err = await res.text();
@@ -583,26 +599,17 @@
                 }
             } catch (e) {
                 console.error('Error saving news:', e);
-                error('Error', 'Failed to save news');
+                // Don't show error notification if request was successful
+                if (!e.message || !e.message.includes('hide')) {
+                    error('Error', 'Failed to save news');
+                }
             }
         }
 
         async function deleteNews(id) {
-            // Close any open modals first
-            if (viewModal) {
-                viewModal.hide();
+            if (!confirm('Are you sure you want to delete this news?')) {
+                return;
             }
-            if (newsModal) {
-                newsModal.hide();
-            }
-            
-            // Remove any lingering backdrops
-            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.removeProperty('overflow');
-            document.body.style.removeProperty('padding-right');
-            
-            if (!confirm('Are you sure you want to delete this news?')) return;
             
             try {
                 const res = await fetch(`${API_BASE_URL}/api/club-news/${id}`, {
@@ -612,6 +619,17 @@
                 
                 if (res.ok) {
                     success('Success', 'News deleted successfully');
+                    
+                    // Force cleanup modal container immediately
+                    const modalContainer = document.getElementById('modal-container');
+                    if (modalContainer) {
+                        modalContainer.style.display = 'none';
+                    }
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                    
                     await loadNews();
                 } else {
                     error('Error', 'Failed to delete news');
@@ -621,6 +639,27 @@
                 error('Error', 'Failed to delete news');
             }
         }
+        
+        // Global cleanup function that runs periodically
+        setInterval(() => {
+            // Clean up Bootstrap modal backdrops
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 0 && !document.querySelector('.modal.show')) {
+                backdrops.forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+            }
+            
+            // Clean up notification modal container if no modal is showing
+            const modalContainer = document.getElementById('modal-container');
+            if (modalContainer && modalContainer.style.display === 'flex') {
+                const modal = modalContainer.querySelector('.modal');
+                if (!modal || !modal.classList.contains('show')) {
+                    modalContainer.style.display = 'none';
+                }
+            }
+        }, 500);
 
         async function uploadImage(input) {
             if (!input.files || !input.files[0]) {
