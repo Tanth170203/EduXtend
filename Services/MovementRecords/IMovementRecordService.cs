@@ -19,6 +19,8 @@ public interface IMovementRecordService
     Task<IEnumerable<MovementRecordDto>> GetTopScoresBySemesterAsync(int semesterId, int count);
     Task<MovementRecordDto> AddScoreFromEvidenceAsync(int studentId, int criterionId, double points);
     Task<MovementRecordDto> AddScoreFromAttendanceAsync(int studentId, int criterionId, double points, int activityId);
+    Task<MovementRecordDto> UpdateScoreFromAttendanceAsync(int studentId, int activityId, double newPoints);
+    Task RemoveScoreFromAttendanceAsync(int studentId, int activityId);
     Task<MovementRecordDto> AddManualScoreAsync(AddManualScoreDto dto);
     Task<MovementRecordDto> AddManualScoreWithCriterionAsync(AddManualScoreWithCriterionDto dto);
 }

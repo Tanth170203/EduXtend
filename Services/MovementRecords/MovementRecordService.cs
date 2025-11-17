@@ -210,10 +210,15 @@ public class MovementRecordService : IMovementRecordService
             var roundedTotal = Math.Round(finalCappedTotal, 1);
             if (record.TotalScore != roundedTotal)
             {
+                Console.WriteLine($"[CapAndAdjust] Updating TotalScore from {record.TotalScore} to {roundedTotal}");
                 record.TotalScore = roundedTotal;
                 record.LastUpdated = DateTime.UtcNow;
                 await _recordRepository.UpdateAsync(record);
-                Console.WriteLine($"[CapAndAdjust] Updated record.TotalScore to {roundedTotal} (details unchanged)");
+                Console.WriteLine($"[CapAndAdjust] Successfully updated record.TotalScore to {roundedTotal} in database");
+            }
+            else
+            {
+                Console.WriteLine($"[CapAndAdjust] TotalScore already correct at {roundedTotal}, no update needed");
             }
         }
     }
@@ -392,15 +397,26 @@ public class MovementRecordService : IMovementRecordService
         }
 
         // Tính lại tổng điểm
+        Console.WriteLine($"[AddScoreFromAttendance] Before recalc - RecordId: {record.Id}, OldTotalScore: {record.TotalScore}");
+        
         var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
+        Console.WriteLine($"[AddScoreFromAttendance] Recalculated total from details: {totalScore}");
+        
         record.TotalScore = Math.Min(totalScore, 100); // Cap tại 100
         record.LastUpdated = DateTime.UtcNow;
         await _recordRepository.UpdateAsync(record);
+        Console.WriteLine($"[AddScoreFromAttendance] Updated record with new total: {record.TotalScore}");
 
         // Áp dụng capping theo nhóm (Group 2 = 50 điểm max)
         await CapAndAdjustScoresAsync(record.Id);
 
+        // IMPORTANT: Reload from database to get the latest values after CapAndAdjustScoresAsync
+        // This ensures we return the correct TotalScore that was saved to DB
         var result = await _recordRepository.GetByIdWithDetailsAsync(record.Id);
+        if (result != null)
+        {
+            Console.WriteLine($"[AddScoreFromAttendance] Final total score after caps: {result.TotalScore}");
+        }
         return MapToDto(result!);
     }
 
@@ -690,6 +706,118 @@ public class MovementRecordService : IMovementRecordService
             Details = details,
             CategoryScores = categoryScores.OrderByDescending(c => c.CappedScore).ToList()
         };
+    }
+
+    public async Task<MovementRecordDto> UpdateScoreFromAttendanceAsync(int studentId, int activityId, double newPoints)
+    {
+        // Get current active semester
+        var currentSemester = await _semesterRepository.GetCurrentSemesterAsync();
+        if (currentSemester == null)
+            throw new InvalidOperationException("No active semester found");
+
+        // Validate student exists
+        var student = await _studentRepository.GetByIdAsync(studentId);
+        if (student == null)
+            throw new KeyNotFoundException($"Student with ID {studentId} not found");
+
+        // Get movement record for student in current semester
+        var record = await _recordRepository.GetByStudentAndSemesterAsync(studentId, currentSemester.Id);
+        if (record == null)
+            throw new InvalidOperationException($"No movement record found for student {studentId} in current semester");
+
+        // Find the existing detail for this activity (criterionId = 10 for attendance)
+        var existingDetail = await _detailRepository.GetByRecordCriterionActivityAsync(
+            record.Id, 
+            10, // CriterionId for attendance activities
+            activityId
+        );
+        
+        if (existingDetail == null)
+            throw new InvalidOperationException($"No attendance record found for activity {activityId}");
+
+        // Validate new score doesn't exceed criterion max
+        var criterion = await _criterionRepository.GetByIdAsync(10);
+        if (criterion != null && newPoints > criterion.MaxScore)
+            throw new ArgumentException($"Score {newPoints} exceeds maximum allowed {criterion.MaxScore} for this criterion");
+
+        // Update the score
+        var oldScore = existingDetail.Score;
+        existingDetail.Score = newPoints;
+        existingDetail.AwardedAt = DateTime.UtcNow;
+        await _detailRepository.UpdateAsync(existingDetail);
+
+        Console.WriteLine($"[UpdateScoreFromAttendance] Updated score for activity {activityId}: {oldScore} -> {newPoints}");
+
+        // Recalculate total score
+        var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
+        record.TotalScore = Math.Min(totalScore, 100); // Cap at 100
+        record.LastUpdated = DateTime.UtcNow;
+        await _recordRepository.UpdateAsync(record);
+
+        // Apply category-level caps and adjustments
+        await CapAndAdjustScoresAsync(record.Id);
+
+        var result = await _recordRepository.GetByIdWithDetailsAsync(record.Id);
+        return MapToDto(result!);
+    }
+
+    public async Task RemoveScoreFromAttendanceAsync(int studentId, int activityId)
+    {
+        // Get current active semester
+        var currentSemester = await _semesterRepository.GetCurrentSemesterAsync();
+        if (currentSemester == null)
+            throw new InvalidOperationException("No active semester found");
+
+        // Validate student exists
+        var student = await _studentRepository.GetByIdAsync(studentId);
+        if (student == null)
+            throw new KeyNotFoundException($"Student with ID {studentId} not found");
+
+        // Get movement record for student in current semester
+        var record = await _recordRepository.GetByStudentAndSemesterAsync(studentId, currentSemester.Id);
+        if (record == null)
+        {
+            // No record exists, nothing to remove
+            Console.WriteLine($"[RemoveScoreFromAttendance] No movement record found for student {studentId} in current semester");
+            return;
+        }
+
+        // Find the existing detail for this activity (criterionId = 10 for attendance)
+        var existingDetail = await _detailRepository.GetByRecordCriterionActivityAsync(
+            record.Id, 
+            10, // CriterionId for attendance activities
+            activityId
+        );
+        
+        if (existingDetail == null)
+        {
+            // No detail exists, nothing to remove
+            Console.WriteLine($"[RemoveScoreFromAttendance] No attendance record found for activity {activityId}");
+            return;
+        }
+
+        // Delete the detail record
+        var oldScore = existingDetail.Score;
+        Console.WriteLine($"[RemoveScoreFromAttendance] Before delete - RecordId: {record.Id}, OldTotalScore: {record.TotalScore}, DetailScore: {oldScore}");
+        
+        await _detailRepository.DeleteAsync(existingDetail.Id);
+        Console.WriteLine($"[RemoveScoreFromAttendance] Deleted detail record for activity {activityId}");
+
+        // Recalculate total score from all remaining details
+        var totalScore = await _detailRepository.GetTotalScoreByRecordIdAsync(record.Id);
+        Console.WriteLine($"[RemoveScoreFromAttendance] Recalculated total from details: {totalScore}");
+        
+        record.TotalScore = Math.Min(totalScore, 100); // Cap at 100
+        record.LastUpdated = DateTime.UtcNow;
+        await _recordRepository.UpdateAsync(record);
+        Console.WriteLine($"[RemoveScoreFromAttendance] Updated record with new total: {record.TotalScore}");
+
+        // Apply category-level caps and adjustments
+        await CapAndAdjustScoresAsync(record.Id);
+        
+        // Reload to get final score after caps
+        var finalRecord = await _recordRepository.GetByIdAsync(record.Id);
+        Console.WriteLine($"[RemoveScoreFromAttendance] Final total score after caps: {finalRecord?.TotalScore} for student {studentId}");
     }
 
     /// <summary>

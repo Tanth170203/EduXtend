@@ -47,6 +47,9 @@ namespace BusinessObject.DTOs.Activity
         public bool CanRegister { get; set; }
         public bool IsRegistered { get; set; }
         public bool HasAttended { get; set; }
+        
+        // Attendance code (only visible to Admin/Manager)
+        public string? AttendanceCode { get; set; }
     }
 }
 

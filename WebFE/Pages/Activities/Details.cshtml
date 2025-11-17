@@ -326,7 +326,16 @@
                             <i class="bi bi-patch-check-fill"></i> Your attendance has been taken
                         </button>
                     }
-                    else if (activity.IsRegistered)
+                    else if (activity.IsRegistered && isOngoing)
+                    {
+                        <button class="btn btn-warning w-100 mb-2" id="attendanceBtn" data-bs-toggle="modal" data-bs-target="#attendanceModal">
+                            <i class="bi bi-qr-code-scan"></i> Attendance
+                        </button>
+                        <div class="alert alert-info mb-0 mt-2">
+                            <small><i class="bi bi-info-circle"></i> Cannot unregister while activity is ongoing</small>
+                        </div>
+                    }
+                    else if (activity.IsRegistered && isUpcoming)
                     {
                         <button class="btn btn-primary w-100 mb-2" id="registeredBtn" disabled>
                             <i class="bi bi-check-circle-fill"></i> Activity registered
@@ -334,6 +343,15 @@
                         <button class="btn btn-outline-danger w-100 btn-sm" onclick="unregisterActivity(@activity.Id)">
                             <i class="bi bi-x-circle"></i> Unregister
                         </button>
+                    }
+                    else if (activity.IsRegistered)
+                    {
+                        <button class="btn btn-primary w-100 mb-2" id="registeredBtn" disabled>
+                            <i class="bi bi-check-circle-fill"></i> Activity registered
+                        </button>
+                        <div class="alert alert-info mb-0 mt-2">
+                            <small><i class="bi bi-info-circle"></i> Cannot unregister after activity has started</small>
+                        </div>
                     }
                     else if (!isAuth)
                     {
@@ -393,6 +411,40 @@
                         }
                     }
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Modal -->
+<div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceModalLabel">
+                    <i class="bi bi-qr-code-scan"></i> Điểm danh
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="attendanceCode" class="form-label">Nhập mã điểm danh (6 ký tự)</label>
+                    <input type="text" 
+                           class="form-control form-control-lg text-center" 
+                           id="attendanceCode" 
+                           maxlength="6" 
+                           placeholder="Ví dụ: aB3xY9"
+                           style="letter-spacing: 0.5em; font-weight: bold;">
+                    <div class="form-text">Nhập mã điểm danh mà giảng viên/quản lý cung cấp</div>
+                </div>
+                <div id="attendanceError" class="alert alert-danger d-none"></div>
+                <div id="attendanceSuccess" class="alert alert-success d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="submitAttendanceBtn" onclick="submitAttendance(@activity.Id)">
+                    <i class="bi bi-check-circle"></i> Xác nhận điểm danh
+                </button>
             </div>
         </div>
     </div>
@@ -460,5 +512,80 @@
             alert('Unregister failed. Please try again.');
         }
     }
+
+    async function submitAttendance(activityId) {
+        const codeInput = document.getElementById('attendanceCode');
+        const code = codeInput.value.trim();
+        const errorDiv = document.getElementById('attendanceError');
+        const successDiv = document.getElementById('attendanceSuccess');
+        const submitBtn = document.getElementById('submitAttendanceBtn');
+        
+        // Reset messages
+        errorDiv.classList.add('d-none');
+        successDiv.classList.add('d-none');
+        
+        // Validate code
+        if (!code || code.length !== 6) {
+            errorDiv.textContent = 'Vui lòng nhập đầy đủ 6 ký tự mã điểm danh';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+        
+        // Disable button while processing
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+        
+        try {
+            const baseUrl = '@Model.ApiBaseUrl';
+            const url = (baseUrl ? baseUrl : '') + `/api/activity/${activityId}/check-in`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ attendanceCode: code })
+            });
+
+            const data = await res.json().catch(() => ({}));
+            
+            if (!res.ok) {
+                const msg = data?.message || 'Điểm danh thất bại';
+                errorDiv.textContent = msg;
+                errorDiv.classList.remove('d-none');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận điểm danh';
+                return;
+            }
+
+            // Success
+            successDiv.textContent = data?.message || 'Điểm danh thành công!';
+            successDiv.classList.remove('d-none');
+            
+            // Reload page after 1.5 seconds
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+            
+        } catch (e) {
+            errorDiv.textContent = 'Có lỗi xảy ra. Vui lòng thử lại.';
+            errorDiv.classList.remove('d-none');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận điểm danh';
+        }
+    }
+    
+    // Auto-focus on code input when modal opens
+    document.getElementById('attendanceModal')?.addEventListener('shown.bs.modal', function () {
+        document.getElementById('attendanceCode')?.focus();
+    });
+    
+    // Allow Enter key to submit
+    document.getElementById('attendanceCode')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            submitAttendance(@activity.Id);
+        }
+    });
 </script>
 

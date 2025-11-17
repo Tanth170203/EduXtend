@@ -24,6 +24,9 @@ namespace BusinessObject.DTOs.Activity
         public string? ClubName { get; set; }
         public string? ClubLogo { get; set; }
         
+        // Attendance code for self check-in
+        public string? AttendanceCode { get; set; }
+        
         // Registration info
         public bool CanRegister { get; set; }
         public bool IsRegistered { get; set; }

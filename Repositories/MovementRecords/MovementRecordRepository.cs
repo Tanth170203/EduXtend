@@ -52,7 +52,10 @@ public class MovementRecordRepository : IMovementRecordRepository
 
     public async Task<MovementRecord?> GetByIdWithDetailsAsync(int id)
     {
+        // Use AsNoTracking to always get fresh data from database
+        // This prevents EF from returning cached entities
         return await _context.MovementRecords
+            .AsNoTracking()
             .Include(r => r.Student)
             .Include(r => r.Semester)
             .Include(r => r.Details)

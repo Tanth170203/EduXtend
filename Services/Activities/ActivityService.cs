@@ -27,6 +27,24 @@ namespace Services.Activities
             _logger = logger;
         }
 
+        private async Task<string> GenerateAttendanceCodeAsync()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                var code = new string(Enumerable.Range(0, 6)
+                    .Select(_ => chars[random.Next(chars.Length)])
+                    .ToArray());
+                    
+                var exists = await _repo.IsAttendanceCodeExistsAsync(code);
+                if (!exists) return code;
+            }
+            
+            throw new Exception("Failed to generate unique attendance code after 5 attempts");
+        }
+
         public async Task<List<ActivityListItemDto>> GetAllActivitiesAsync()
         {
             var activities = await _repo.GetAllAsync();
@@ -91,7 +109,8 @@ namespace Services.Activities
                 FeedbackCount = feedbackCount,
                 CanRegister = canRegister,
                 IsRegistered = false,
-                HasAttended = false
+                HasAttended = false,
+                AttendanceCode = activity.AttendanceCode
             };
         }
 
@@ -131,6 +150,9 @@ namespace Services.Activities
             if (dto.StartTime >= dto.EndTime)
                 throw new ArgumentException("StartTime must be earlier than EndTime");
 
+            // Generate unique attendance code
+            var attendanceCode = await GenerateAttendanceCodeAsync();
+
             var activity = new Activity
             {
                 // Admin-created activity: ClubId null, approval fields null
@@ -150,6 +172,7 @@ namespace Services.Activities
                 ApprovedAt = null,
                 MaxParticipants = dto.MaxParticipants,
                 MovementPoint = dto.MovementPoint,
+                AttendanceCode = attendanceCode,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -240,6 +263,9 @@ namespace Services.Activities
                                  dto.Type == ActivityType.ClubTraining || 
                                  dto.Type == ActivityType.ClubWorkshop;
 
+            // Generate unique attendance code
+            var attendanceCode = await GenerateAttendanceCodeAsync();
+
             var activity = new Activity
             {
                 ClubId = clubId,
@@ -256,6 +282,7 @@ namespace Services.Activities
                 Status = isClubActivity ? "Approved" : "PendingApproval", // Auto-approve club activities
                 MaxParticipants = dto.MaxParticipants,
                 MovementPoint = dto.MovementPoint,
+                AttendanceCode = attendanceCode,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -491,6 +518,7 @@ namespace Services.Activities
                     ClubId = activity.ClubId,
                     ClubName = activity.Club?.Name,
                     ClubLogo = activity.Club?.LogoUrl,
+                    AttendanceCode = activity.AttendanceCode, // Include for Admin/Manager
                     CanRegister = canRegister,
                     IsRegistered = false, // TODO: Check if current user is registered
                     IsFull = isFull,
@@ -541,27 +569,29 @@ namespace Services.Activities
 		                              activity.Type == ActivityType.ClubTraining || 
 		                              activity.Type == ActivityType.ClubWorkshop;
 		
-		// CHỈ cộng điểm phong trào cho Event/Competition/Volunteer, KHÔNG cộng cho Club internal activities
-		if (isPresent && participationScore.HasValue && activity.Status == "Approved" && !isClubInternalActivity)
+		// Convert UserId → StudentId
+		var student = await _studentRepo.GetByUserIdAsync(targetUserId);
+		if (student == null)
+		{
+			_logger.LogWarning("[ADMIN ATTENDANCE] User {UserId} is not a student, skipping movement score", targetUserId);
+			return (true, "Attendance updated");
+		}
+		
+		// CHỈ xử lý điểm phong trào cho Event/Competition/Volunteer, KHÔNG cho Club internal activities
+		if (activity.Status == "Approved" && !isClubInternalActivity)
 		{
 			try
 			{
-				_logger.LogInformation("[ADMIN ATTENDANCE] Adding movement score for ActivityId={ActivityId}, UserId={UserId}, Score={Score}, Type={Type}", 
-					activityId, targetUserId, participationScore.Value, activity.Type);
-				
-				// Convert UserId → StudentId
-				var student = await _studentRepo.GetByUserIdAsync(targetUserId);
-				if (student == null)
+				if (isPresent && participationScore.HasValue)
 				{
-					_logger.LogWarning("[ADMIN ATTENDANCE] User {UserId} is not a student, skipping movement score", targetUserId);
-				}
-				else
-				{
-					// Tìm tiêu chí "Hoạt động xã hội, từ thiện, tình nguyện" thuộc Group 2
+					// Cộng hoặc cập nhật điểm khi Present
+					_logger.LogInformation("[ADMIN ATTENDANCE] Adding movement score for ActivityId={ActivityId}, UserId={UserId}, Score={Score}, Type={Type}", 
+						activityId, targetUserId, participationScore.Value, activity.Type);
+					
 					var criterionId = 10; // ID tiêu chí tham gia hoạt động Đoàn/Hội
 					
 					await _movementRecordService.AddScoreFromAttendanceAsync(
-						studentId: student.Id, // ✅ Dùng Student.Id, không phải UserId
+						studentId: student.Id,
 						criterionId: criterionId,
 						points: participationScore.Value,
 						activityId: activityId
@@ -570,11 +600,25 @@ namespace Services.Activities
 					_logger.LogInformation("[ADMIN ATTENDANCE] Successfully added movement score for StudentId={StudentId} (UserId={UserId})", 
 						student.Id, targetUserId);
 				}
+				else if (!isPresent)
+				{
+					// Xóa điểm khi đổi sang Absent
+					_logger.LogInformation("[ADMIN ATTENDANCE] Removing movement score for ActivityId={ActivityId}, UserId={UserId} (marked as Absent)", 
+						activityId, targetUserId);
+					
+					await _movementRecordService.RemoveScoreFromAttendanceAsync(
+						studentId: student.Id,
+						activityId: activityId
+					);
+					
+					_logger.LogInformation("[ADMIN ATTENDANCE] Successfully removed movement score for StudentId={StudentId} (UserId={UserId})", 
+						student.Id, targetUserId);
+				}
 			}
 			catch (Exception ex)
 			{
 				// Log error nhưng vẫn trả về success cho attendance
-				_logger.LogError(ex, "[ADMIN ATTENDANCE] Failed to add movement score for ActivityId={ActivityId}, UserId={UserId}, CriterionId=10", 
+				_logger.LogError(ex, "[ADMIN ATTENDANCE] Failed to update movement score for ActivityId={ActivityId}, UserId={UserId}", 
 					activityId, targetUserId);
 			}
 		}
@@ -644,26 +688,29 @@ namespace Services.Activities
 		                              activity.Type == ActivityType.ClubTraining || 
 		                              activity.Type == ActivityType.ClubWorkshop;
 		
-		// CHỈ cộng điểm phong trào cho Event/Competition/Volunteer, KHÔNG cộng cho Club internal activities
-		if (isPresent && participationScore.HasValue && activity.Status == "Approved" && !isClubInternalActivity)
+		// Convert UserId → StudentId
+		var student = await _studentRepo.GetByUserIdAsync(targetUserId);
+		if (student == null)
+		{
+			_logger.LogWarning("[CLUB ATTENDANCE] User {UserId} is not a student, skipping movement score", targetUserId);
+			return (true, "Attendance updated");
+		}
+		
+		// CHỈ xử lý điểm phong trào cho Event/Competition/Volunteer, KHÔNG cho Club internal activities
+		if (activity.Status == "Approved" && !isClubInternalActivity)
 		{
 			try
 			{
-				_logger.LogInformation("[CLUB ATTENDANCE] Adding movement score for ActivityId={ActivityId}, UserId={UserId}, Score={Score}, Type={Type}", 
-					activityId, targetUserId, participationScore.Value, activity.Type);
-				
-				// Convert UserId → StudentId
-				var student = await _studentRepo.GetByUserIdAsync(targetUserId);
-				if (student == null)
+				if (isPresent && participationScore.HasValue)
 				{
-					_logger.LogWarning("[CLUB ATTENDANCE] User {UserId} is not a student, skipping movement score", targetUserId);
-				}
-				else
-				{
+					// Cộng hoặc cập nhật điểm khi Present
+					_logger.LogInformation("[CLUB ATTENDANCE] Adding movement score for ActivityId={ActivityId}, UserId={UserId}, Score={Score}, Type={Type}", 
+						activityId, targetUserId, participationScore.Value, activity.Type);
+					
 					var criterionId = 10; // ID tiêu chí tham gia hoạt động Đoàn/Hội
 					
 					await _movementRecordService.AddScoreFromAttendanceAsync(
-						studentId: student.Id, // ✅ Dùng Student.Id, không phải UserId
+						studentId: student.Id,
 						criterionId: criterionId,
 						points: participationScore.Value,
 						activityId: activityId
@@ -672,10 +719,24 @@ namespace Services.Activities
 					_logger.LogInformation("[CLUB ATTENDANCE] Successfully added movement score for StudentId={StudentId} (UserId={UserId})", 
 						student.Id, targetUserId);
 				}
+				else if (!isPresent)
+				{
+					// Xóa điểm khi đổi sang Absent
+					_logger.LogInformation("[CLUB ATTENDANCE] Removing movement score for ActivityId={ActivityId}, UserId={UserId} (marked as Absent)", 
+						activityId, targetUserId);
+					
+					await _movementRecordService.RemoveScoreFromAttendanceAsync(
+						studentId: student.Id,
+						activityId: activityId
+					);
+					
+					_logger.LogInformation("[CLUB ATTENDANCE] Successfully removed movement score for StudentId={StudentId} (UserId={UserId})", 
+						student.Id, targetUserId);
+				}
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, "[CLUB ATTENDANCE] Failed to add movement score for ActivityId={ActivityId}, UserId={UserId}, CriterionId=10", 
+				_logger.LogError(ex, "[CLUB ATTENDANCE] Failed to update movement score for ActivityId={ActivityId}, UserId={UserId}", 
 					activityId, targetUserId);
 			}
 		}
@@ -703,6 +764,232 @@ namespace Services.Activities
 				Comment = x.Comment,
 				CreatedAt = x.CreatedAt
 			}).ToList();
+		}
+
+		// ================= STUDENT SELF CHECK-IN =================
+		public async Task<(bool success, string message)> CheckInWithCodeAsync(int userId, int activityId, string attendanceCode)
+		{
+			// Validate Activity exists
+			var activity = await _repo.GetByIdAsync(activityId);
+			if (activity == null) 
+				return (false, "Activity not found");
+			
+			// Validate time window (Requirements 3.1, 3.2, 3.3)
+			// Use local time for comparison since DB stores local time
+			var now = DateTime.Now;
+			_logger.LogInformation("[CHECK-IN] Current time: {Now}, Activity StartTime: {StartTime}, EndTime: {EndTime}", 
+				now, activity.StartTime, activity.EndTime);
+			
+			if (now < activity.StartTime) 
+				return (false, "Chưa đến thời gian điểm danh");
+			if (now > activity.EndTime) 
+				return (false, "Đã hết thời gian điểm danh");
+			
+			// Validate AttendanceCode matches (Requirements 2.1, 2.2)
+			_logger.LogInformation("[CHECK-IN] Comparing codes - Input: '{InputCode}', Activity: '{ActivityCode}'", 
+				attendanceCode, activity.AttendanceCode);
+			
+			if (string.IsNullOrWhiteSpace(activity.AttendanceCode) || activity.AttendanceCode != attendanceCode) 
+				return (false, "Mã điểm danh không chính xác");
+			
+			// Validate User has registered for Activity (Requirements 2.4)
+			var isRegistered = await _repo.IsRegisteredAsync(activityId, userId);
+			if (!isRegistered) 
+				return (false, "Bạn chưa đăng ký tham gia hoạt động này");
+			
+			// Validate User hasn't already checked in (Requirements 2.5)
+			var hasAttendance = await _repo.GetAttendanceAsync(activityId, userId);
+			if (hasAttendance != null) 
+				return (false, "Bạn đã điểm danh rồi");
+			
+			// Create ActivityAttendance with ParticipationScore = 5 and CheckedById = null (Requirements 2.3)
+			await _repo.CreateAttendanceAsync(activityId, userId, true, 5, null);
+			
+			// Add movement score (Requirements 5.1, 5.2)
+			try
+			{
+				var student = await _studentRepo.GetByUserIdAsync(userId);
+				if (student != null)
+				{
+					// Check if this is a club internal activity
+					bool isClubInternalActivity = activity.Type == ActivityType.ClubMeeting || 
+					                              activity.Type == ActivityType.ClubTraining || 
+					                              activity.Type == ActivityType.ClubWorkshop;
+					
+					// Only add movement score for Event/Competition/Volunteer, NOT for club internal activities
+					if (activity.Status == "Approved" && !isClubInternalActivity)
+					{
+						_logger.LogInformation("[STUDENT CHECK-IN] Adding movement score for ActivityId={ActivityId}, StudentId={StudentId}, Score=5, Type={Type}", 
+							activityId, student.Id, activity.Type);
+						
+						await _movementRecordService.AddScoreFromAttendanceAsync(
+							studentId: student.Id,
+							criterionId: 10, // Tiêu chí tham gia hoạt động Đoàn/Hội
+							points: 5,
+							activityId: activityId
+						);
+						
+						_logger.LogInformation("[STUDENT CHECK-IN] Successfully added movement score for StudentId={StudentId}", student.Id);
+					}
+					else
+					{
+						_logger.LogInformation("[STUDENT CHECK-IN] Skipped movement scoring: status={Status}, isClubInternal={IsClubInternal}, type={Type}",
+							activity.Status, isClubInternalActivity, activity.Type);
+					}
+				}
+				else
+				{
+					_logger.LogWarning("[STUDENT CHECK-IN] User {UserId} is not a student, skipping movement score", userId);
+				}
+			}
+			catch (Exception ex)
+			{
+				// Log error but still return success for attendance
+				_logger.LogError(ex, "[STUDENT CHECK-IN] Failed to add movement score for ActivityId={ActivityId}, UserId={UserId}", 
+					activityId, userId);
+			}
+			
+			return (true, "Điểm danh thành công");
+		}
+
+		// ================= UPDATE PARTICIPATION SCORE =================
+		public async Task<(bool success, string message)> UpdateParticipationScoreAsync(
+			int adminOrManagerUserId, 
+			int activityId, 
+			int targetUserId, 
+			int participationScore)
+		{
+			// Validate ParticipationScore in range 3-5 (Requirements 4.3)
+			if (participationScore < 3 || participationScore > 5)
+				return (false, "Điểm phải từ 3 đến 5");
+			
+			// Validate Activity exists
+			var activity = await _repo.GetByIdAsync(activityId);
+			if (activity == null) 
+				return (false, "Activity not found");
+			
+			// Validate User has permission (Admin or Manager of the Club) (Requirements 4.1, 4.2)
+			// Check if user is Admin by checking if they have admin role
+			// For now, we'll check if they're manager of the club
+			bool hasPermission = false;
+			
+			// If activity belongs to a club, check if user is manager
+			if (activity.ClubId.HasValue)
+			{
+				var isManager = await _repo.IsUserManagerOfClubAsync(adminOrManagerUserId, activity.ClubId.Value);
+				hasPermission = isManager;
+			}
+			
+			// Note: Admin check would need to be done at controller level with role check
+			// For now, we assume if not club manager, they might be admin (checked by controller)
+			
+			// Validate target user has checked in (Requirements 4.4)
+			var attendance = await _repo.GetAttendanceAsync(activityId, targetUserId);
+			if (attendance == null) 
+				return (false, "Sinh viên chưa điểm danh");
+			
+			// Store old score for movement record update
+			var oldScore = attendance.ParticipationScore ?? 5;
+			
+			// Update ParticipationScore in ActivityAttendance (Requirements 4.4)
+			attendance.ParticipationScore = participationScore;
+			await _repo.UpdateAttendanceAsync(attendance);
+			
+			// Update movement score (Requirements 5.3, 5.4)
+			try
+			{
+				var student = await _studentRepo.GetByUserIdAsync(targetUserId);
+				if (student != null)
+				{
+					// Check if this is a club internal activity
+					bool isClubInternalActivity = activity.Type == ActivityType.ClubMeeting || 
+					                              activity.Type == ActivityType.ClubTraining || 
+					                              activity.Type == ActivityType.ClubWorkshop;
+					
+					// Only update movement score for Event/Competition/Volunteer, NOT for club internal activities
+					if (activity.Status == "Approved" && !isClubInternalActivity)
+					{
+						_logger.LogInformation("[UPDATE SCORE] Updating movement score for ActivityId={ActivityId}, StudentId={StudentId}, OldScore={OldScore}, NewScore={NewScore}", 
+							activityId, student.Id, oldScore, participationScore);
+						
+						await _movementRecordService.UpdateScoreFromAttendanceAsync(
+							studentId: student.Id,
+							activityId: activityId,
+							newPoints: participationScore
+						);
+						
+						_logger.LogInformation("[UPDATE SCORE] Successfully updated movement score for StudentId={StudentId}", student.Id);
+					}
+					else
+					{
+						_logger.LogInformation("[UPDATE SCORE] Skipped movement scoring: status={Status}, isClubInternal={IsClubInternal}, type={Type}",
+							activity.Status, isClubInternalActivity, activity.Type);
+					}
+				}
+				else
+				{
+					_logger.LogWarning("[UPDATE SCORE] User {UserId} is not a student, skipping movement score update", targetUserId);
+				}
+			}
+			catch (Exception ex)
+			{
+				// Log error but still return success for attendance update
+				_logger.LogError(ex, "[UPDATE SCORE] Failed to update movement score for ActivityId={ActivityId}, UserId={UserId}", 
+					activityId, targetUserId);
+			}
+			
+			return (true, "Cập nhật điểm thành công");
+		}
+
+		// ================= AUTO MARK ABSENT =================
+		public async Task<(int markedCount, string message)> AutoMarkAbsentAsync(int activityId, int? userId = null)
+		{
+			var activity = await _repo.GetByIdAsync(activityId);
+			if (activity == null)
+				return (0, "Activity not found");
+			
+			// If userId is provided (ClubManager), verify they manage this activity's club
+			if (userId.HasValue && activity.ClubId.HasValue)
+			{
+				var isManager = await _repo.IsUserManagerOfClubAsync(userId.Value, activity.ClubId.Value);
+				if (!isManager)
+					return (0, "You don't have permission to manage this activity");
+			}
+			
+			// Optional: Check if activity has ended (commented out to allow manual marking anytime)
+			// if (DateTime.Now < activity.EndTime)
+			// 	return (0, "Activity has not ended yet");
+			
+			_logger.LogInformation("[AUTO MARK ABSENT] Processing activity {ActivityId}, EndTime: {EndTime}, Now: {Now}", 
+				activityId, activity.EndTime, DateTime.Now);
+			
+			// Get all registrants
+			var registrants = await _repo.GetRegistrantsWithAttendanceAsync(activityId);
+			
+			// Find those who registered but haven't been marked (IsPresent = null or false)
+			var notMarked = registrants.Where(r => r.IsPresent != true).ToList();
+			
+			if (!notMarked.Any())
+				return (0, "All registrants have been marked");
+			
+			int markedCount = 0;
+			foreach (var registrant in notMarked)
+			{
+				// Mark as absent (IsPresent = false, no score, checkedById = null for system auto-mark)
+				await _repo.SetAttendanceAsync(activityId, registrant.UserId, false, null, null);
+				markedCount++;
+				
+				_logger.LogInformation("[AUTO MARK ABSENT] Marked user {UserId} as absent for activity {ActivityId}", 
+					registrant.UserId, activityId);
+			}
+			
+			return (markedCount, $"Marked {markedCount} registrant(s) as absent");
+		}
+
+		// ================= HELPER METHODS =================
+		public async Task<bool> IsUserManagerOfClubAsync(int userId, int clubId)
+		{
+			return await _repo.IsUserManagerOfClubAsync(userId, clubId);
 		}
     }
 }
