@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Repositories.Activities;
+using Repositories.ActivitySchedules;
+using Repositories.ActivityScheduleAssignments;
 using Repositories.Clubs;
 using Repositories.ClubMembers;
 using Repositories.PaymentTransactions;
@@ -77,6 +79,8 @@ namespace WebAPI
             builder.Services.AddScoped<IClubRepository, ClubRepository>();
             builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+            builder.Services.AddScoped<IActivityScheduleRepository, ActivityScheduleRepository>();
+            builder.Services.AddScoped<IActivityScheduleAssignmentRepository, ActivityScheduleAssignmentRepository>();
             builder.Services.AddScoped<IJoinRequestRepository, JoinRequestRepository>();
             builder.Services.AddScoped<IInterviewRepository, InterviewRepository>();
             builder.Services.AddScoped<IClubMovementRecordRepository, ClubMovementRecordRepository>();
@@ -111,6 +115,7 @@ namespace WebAPI
             builder.Services.AddScoped<IInterviewService, InterviewService>();
             builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
             builder.Services.AddScoped<IClubScoringService, ClubScoringService>();
+            builder.Services.AddScoped<IClubMovementRecordService, ClubMovementRecordService>();
             builder.Services.AddScoped<IProposalService, ProposalService>();
             builder.Services.AddScoped<IFundCollectionService, FundCollectionService>();
             builder.Services.AddScoped<IFinancialDashboardService, FinancialDashboardService>();

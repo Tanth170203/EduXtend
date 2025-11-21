@@ -114,10 +114,8 @@ public class MovementScoreAutomationService : BackgroundService
             .FirstOrDefaultAsync(c => c.Title.Contains("Hành vi tốt") || c.Title.Contains("Hoạt động xã hội") || c.Title.Contains("Hoạt động tình nguyện"));
         if (criVolunteer == null) return;
 
-        var acts = await db.Activities
-            .Where(a => a.EndTime >= sem.StartDate && a.EndTime <= sem.EndDate && a.Type == BusinessObject.Enum.ActivityType.Volunteer && a.Status == "Completed")
-            .Include(a => a.Attendances)
-            .ToListAsync();
+        // Volunteer activity type has been removed - return empty list
+        var acts = new List<Activity>();
 
         foreach (var act in acts)
         {
@@ -242,11 +240,10 @@ public class MovementScoreAutomationService : BackgroundService
                 return;
             }
 
-            // Skip competitions and volunteer here; they are processed in dedicated routines below
+            // Skip competitions here; they are processed in dedicated routines below
             if (activity.Type == BusinessObject.Enum.ActivityType.SchoolCompetition
                 || activity.Type == BusinessObject.Enum.ActivityType.NationalCompetition
-                || activity.Type == BusinessObject.Enum.ActivityType.ProvincialCompetition
-                || activity.Type == BusinessObject.Enum.ActivityType.Volunteer)
+                || activity.Type == BusinessObject.Enum.ActivityType.ProvincialCompetition)
             {
                 return; // handled elsewhere
             }

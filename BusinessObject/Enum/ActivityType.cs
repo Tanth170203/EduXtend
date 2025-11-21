@@ -42,22 +42,11 @@ namespace BusinessObject.Enum
         /// <summary>Cuộc thi cấp quốc gia - VD: Olympic Tin học VN, ACM/ICPC</summary>
         NationalCompetition = 8,
         
-        // === TÌNH NGUYỆN (Volunteer) ===
-        /// <summary>Hoạt động tình nguyện - VD: Quyên góp từ thiện, dọn bãi biển</summary>
-        Volunteer = 9,
-        
         // === PHỐI HỢP (Collaboration) ===
         /// <summary>Phối hợp với CLB khác - VD: CLB Tin + CLB Anh = Workshop lập trình bằng tiếng Anh</summary>
         ClubCollaboration = 10,
         
         /// <summary>Phối hợp với Nhà trường - VD: Hỗ trợ Ngày hội việc làm</summary>
-        SchoolCollaboration = 11,
-        
-        /// <summary>Phối hợp với Doanh nghiệp - VD: Workshop với FPT Software</summary>
-        EnterpriseCollaboration = 12,
-        
-        // === KHÁC ===
-        /// <summary>Hoạt động khác không thuộc loại trên</summary>
-        Other = 13
+        SchoolCollaboration = 11
     }
 }

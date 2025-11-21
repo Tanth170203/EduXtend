@@ -1,0 +1,299 @@
+@* Club Selection Modal Component *@
+<div class="modal fade" id="clubSelectionModal" tabindex="-1" aria-labelledby="clubSelectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clubSelectionModalLabel">Select Collaborating Club</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="clubSearchInput" placeholder="Search clubs by name...">
+                </div>
+                <div id="clubListContainer">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mt-2">Loading clubs...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmClubSelection" disabled>Select</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        let allClubs = [];
+        let selectedClubId = null;
+        let onClubSelectedCallback = null;
+        
+        const modal = document.getElementById('clubSelectionModal');
+        const searchInput = document.getElementById('clubSearchInput');
+        const clubListContainer = document.getElementById('clubListContainer');
+        const confirmBtn = document.getElementById('confirmClubSelection');
+        
+        // Initialize modal instance
+        let modalInstance = null;
+        
+        // Wait for Bootstrap to be loaded
+        function initModal() {
+            if (typeof bootstrap !== 'undefined' && modal && !modalInstance) {
+                modalInstance = new bootstrap.Modal(modal);
+            }
+        }
+        
+        // Try to initialize immediately
+        initModal();
+        
+        // Also try after DOM is fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initModal);
+        }
+        
+        // Public API
+        window.ClubSelectionModal = {
+            show: function(apiBaseUrl, excludeClubId, onSelected) {
+                onClubSelectedCallback = onSelected;
+                selectedClubId = null;
+                if (confirmBtn) confirmBtn.disabled = true;
+                if (searchInput) searchInput.value = '';
+                
+                // Ensure modal is initialized
+                initModal();
+                
+                // Show modal
+                if (modalInstance) {
+                    modalInstance.show();
+                } else if (modal) {
+                    // Fallback: use vanilla JS
+                    modal.classList.add('show');
+                    modal.style.display = 'block';
+                    modal.setAttribute('aria-modal', 'true');
+                    modal.removeAttribute('aria-hidden');
+                    
+                    // Add backdrop
+                    const backdrop = document.createElement('div');
+                    backdrop.className = 'modal-backdrop fade show';
+                    backdrop.id = 'clubModalBackdrop';
+                    document.body.appendChild(backdrop);
+                    document.body.classList.add('modal-open');
+                }
+                
+                // Load clubs
+                loadClubs(apiBaseUrl, excludeClubId);
+            }
+        };
+        
+        async function loadClubs(apiBaseUrl, excludeClubId) {
+            try {
+                if (clubListContainer) {
+                    clubListContainer.innerHTML = `
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted mt-2">Loading clubs...</p>
+                        </div>
+                    `;
+                }
+                
+                const url = `${apiBaseUrl}/api/activity/available-clubs?excludeClubId=${excludeClubId || 0}`;
+                console.log('[ClubSelectionModal] Loading clubs from:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('[ClubSelectionModal] Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('[ClubSelectionModal] Error response:', errorText);
+                    throw new Error(`Failed to load clubs: ${response.status} ${errorText}`);
+                }
+                
+                allClubs = await response.json();
+                console.log('[ClubSelectionModal] Loaded clubs:', allClubs.length);
+                renderClubs(allClubs);
+            } catch (error) {
+                console.error('[ClubSelectionModal] Error loading clubs:', error);
+                if (clubListContainer) {
+                    clubListContainer.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Failed to load clubs: ${error.message}
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        function renderClubs(clubs) {
+            if (clubs.length === 0) {
+                clubListContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="text-muted mt-2">No clubs available</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const html = clubs.map(club => `
+                <div class="club-item border rounded p-3 mb-2" data-club-id="${club.id}" style="cursor: pointer; transition: all 0.2s;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            ${club.logoUrl 
+                                ? `<img src="${club.logoUrl}" alt="${club.name}" class="rounded" style="width: 50px; height: 50px; object-fit: cover;">` 
+                                : `<div class="rounded bg-secondary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                     <i class="bi bi-people-fill text-white"></i>
+                                   </div>`
+                            }
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1 fw-semibold">${escapeHtml(club.name)}</h6>
+                            <small class="text-muted">
+                                <i class="bi bi-people me-1"></i>${club.memberCount || 0} members
+                            </small>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="form-check">
+                                <input class="form-check-input club-radio" type="radio" name="clubSelection" value="${club.id}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            clubListContainer.innerHTML = html;
+            
+            // Add click handlers
+            document.querySelectorAll('.club-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const clubId = parseInt(this.dataset.clubId);
+                    selectClub(clubId);
+                });
+            });
+            
+            document.querySelectorAll('.club-radio').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectClub(parseInt(this.value));
+                    }
+                });
+            });
+        }
+        
+        function selectClub(clubId) {
+            selectedClubId = clubId;
+            confirmBtn.disabled = false;
+            
+            // Update UI
+            document.querySelectorAll('.club-item').forEach(item => {
+                const itemClubId = parseInt(item.dataset.clubId);
+                if (itemClubId === clubId) {
+                    item.style.backgroundColor = '#e7f3ff';
+                    item.style.borderColor = '#0d6efd';
+                    item.querySelector('.club-radio').checked = true;
+                } else {
+                    item.style.backgroundColor = '';
+                    item.style.borderColor = '';
+                    item.querySelector('.club-radio').checked = false;
+                }
+            });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Search functionality
+        searchInput?.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                renderClubs(allClubs);
+                return;
+            }
+            
+            const filtered = allClubs.filter(club => 
+                club.name.toLowerCase().includes(searchTerm)
+            );
+            
+            renderClubs(filtered);
+        });
+        
+        // Confirm selection
+        confirmBtn?.addEventListener('click', function() {
+            if (selectedClubId && onClubSelectedCallback) {
+                const selectedClub = allClubs.find(c => c.id === selectedClubId);
+                onClubSelectedCallback(selectedClub);
+                
+                // Close modal
+                if (modalInstance) {
+                    modalInstance.hide();
+                } else if (modal) {
+                    // Fallback: use vanilla JS
+                    modal.classList.remove('show');
+                    modal.style.display = 'none';
+                    modal.setAttribute('aria-hidden', 'true');
+                    modal.removeAttribute('aria-modal');
+                    
+                    // Remove backdrop
+                    const backdrop = document.getElementById('clubModalBackdrop');
+                    if (backdrop) backdrop.remove();
+                    document.body.classList.remove('modal-open');
+                }
+            }
+        });
+        
+        // Handle close buttons (fallback for when Bootstrap is not available)
+        const closeButtons = modal?.querySelectorAll('[data-bs-dismiss="modal"]');
+        closeButtons?.forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!modalInstance && modal) {
+                    // Fallback: use vanilla JS
+                    modal.classList.remove('show');
+                    modal.style.display = 'none';
+                    modal.setAttribute('aria-hidden', 'true');
+                    modal.removeAttribute('aria-modal');
+                    
+                    // Remove backdrop
+                    const backdrop = document.getElementById('clubModalBackdrop');
+                    if (backdrop) backdrop.remove();
+                    document.body.classList.remove('modal-open');
+                }
+            });
+        });
+        
+        // Reset on modal close
+        modal?.addEventListener('hidden.bs.modal', function() {
+            selectedClubId = null;
+            if (confirmBtn) confirmBtn.disabled = true;
+            if (searchInput) searchInput.value = '';
+            allClubs = [];
+        });
+    })();
+</script>
+
+<style>
+    .club-item:hover {
+        background-color: #f8f9fa !important;
+    }
+    
+    .club-item[style*="background-color: rgb(231, 243, 255)"] {
+        background-color: #e7f3ff !important;
+    }
+</style>

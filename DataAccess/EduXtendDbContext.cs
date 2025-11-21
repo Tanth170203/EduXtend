@@ -150,6 +150,13 @@ public class EduXtendContext : DbContext
             .HasForeignKey(a => a.ApprovedById)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Activity CollaboratingClub
+        modelBuilder.Entity<Activity>()
+            .HasOne(a => a.CollaboratingClub)
+            .WithMany()
+            .HasForeignKey(a => a.ClubCollaborationId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // ActivityRegistration
         modelBuilder.Entity<ActivityRegistration>()
             .HasIndex(ar => new { ar.ActivityId, ar.UserId })

@@ -27,6 +27,14 @@ namespace BusinessObject.DTOs.Activity
         public string? ClubLogo { get; set; }
         public string? ClubBanner { get; set; }
         
+        // Collaboration info
+        public int? ClubCollaborationId { get; set; }
+        public string? CollaboratingClubName { get; set; }
+        public int? CollaborationPoint { get; set; }
+        public string? CollaborationStatus { get; set; }
+        public string? CollaborationRejectionReason { get; set; }
+        public bool IsCollaboratedActivity { get; set; } // True if current user's club is the collaborating club (not owner)
+        
         // Creator info
         public int CreatedById { get; set; }
         public string CreatedByName { get; set; } = null!;
@@ -50,6 +58,9 @@ namespace BusinessObject.DTOs.Activity
         
         // Attendance code (only visible to Admin/Manager)
         public string? AttendanceCode { get; set; }
+        
+        // Schedules (only for complex activities)
+        public List<ActivityScheduleDto>? Schedules { get; set; }
     }
 }
 

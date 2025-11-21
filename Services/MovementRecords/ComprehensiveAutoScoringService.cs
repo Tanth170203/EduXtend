@@ -214,11 +214,10 @@ public class ComprehensiveAutoScoringService : BackgroundService
                 return;
             }
 
-            // Skip competitions and volunteer here; they are processed in dedicated routines
+            // Skip competitions here; they are processed in dedicated routines
             if (activity.Type == BusinessObject.Enum.ActivityType.SchoolCompetition
                 || activity.Type == BusinessObject.Enum.ActivityType.NationalCompetition
-                || activity.Type == BusinessObject.Enum.ActivityType.ProvincialCompetition
-                || activity.Type == BusinessObject.Enum.ActivityType.Volunteer)
+                || activity.Type == BusinessObject.Enum.ActivityType.ProvincialCompetition)
             {
                 return; // handled elsewhere
             }
@@ -346,18 +345,9 @@ public class ComprehensiveAutoScoringService : BackgroundService
 
     private async Task ProcessVolunteerActivityScoresAsync(EduXtendContext dbContext)
     {
-        var volunteerActivities = await dbContext.Activities
-            .Where(a => a.Type == ActivityType.Volunteer)
-            .Include(a => a.Attendances)
-            .ToListAsync();
-
-        var criterion = await GetCriterionAsync(dbContext, "Hoạt động tình nguyện");
-        if (criterion == null) return;
-
-        foreach (var activity in volunteerActivities)
-        {
-            await ProcessActivityAttendanceAsync(dbContext, activity, criterion, 5);
-        }
+        // Volunteer activity type has been removed
+        // This method is kept for backward compatibility but does nothing
+        await Task.CompletedTask;
     }
 
     #endregion

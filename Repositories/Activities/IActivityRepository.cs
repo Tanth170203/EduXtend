@@ -1,9 +1,11 @@
 using BusinessObject.Models;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Repositories.Activities
 {
     public interface IActivityRepository
     {
+        Task<IDbContextTransaction> BeginTransactionAsync();
         Task<List<Activity>> GetAllAsync();
         Task<List<Activity>> SearchActivitiesAsync(string? searchTerm, string? type, string? status, bool? isPublic, int? clubId);
         Task<Activity?> GetByIdAsync(int id);
@@ -37,6 +39,9 @@ namespace Repositories.Activities
 	Task<ActivityAttendance?> GetAttendanceAsync(int activityId, int userId);
 	Task<ActivityAttendance> CreateAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int? checkedById);
 	Task UpdateAttendanceAsync(ActivityAttendance attendance);
+	Task<List<(int Id, string Name, string? LogoUrl, int MemberCount)>> GetAvailableCollaboratingClubsAsync(int excludeClubId);
+	Task<Club?> GetClubByIdAsync(int clubId);
+	Task<List<Activity>> GetPendingCollaborationInvitationsAsync(int clubId);
     }
 }
 

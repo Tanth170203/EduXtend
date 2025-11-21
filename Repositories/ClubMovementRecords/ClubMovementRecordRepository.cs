@@ -140,5 +140,19 @@ public class ClubMovementRecordRepository : IClubMovementRecordRepository
         record.LastUpdated = DateTime.UtcNow;
         await _context.SaveChangesAsync();
     }
+
+    public async Task<List<ClubMovementRecordDetail>> GetDetailsByClubAndWeekAsync(int clubId, int semesterId, DateTime weekStart, DateTime weekEnd)
+    {
+        return await _context.ClubMovementRecordDetails
+            .Include(d => d.ClubMovementRecord)
+            .Include(d => d.Criterion)
+            .Include(d => d.Activity)
+            .Where(d => 
+                d.ClubMovementRecord.ClubId == clubId &&
+                d.ClubMovementRecord.SemesterId == semesterId &&
+                d.AwardedAt >= weekStart &&
+                d.AwardedAt < weekEnd)
+            .ToListAsync();
+    }
 }
 

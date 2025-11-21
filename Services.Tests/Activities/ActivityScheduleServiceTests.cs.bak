@@ -1,0 +1,998 @@
+using BusinessObject.DTOs.Activity;
+using BusinessObject.Enum;
+using BusinessObject.Models;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Repositories.Activities;
+using Repositories.Students;
+using Repositories.Clubs;
+using Repositories.ActivitySchedules;
+using Repositories.ActivityScheduleAssignments;
+using Services.Activities;
+using Services.MovementRecords;
+
+namespace Services.Tests.Activities
+{
+    public class ActivityScheduleServiceTests
+    {
+        private readonly Mock<IActivityRepository> _mockRepo;
+        private readonly Mock<IStudentRepository> _mockStudentRepo;
+        private readonly Mock<IClubRepository> _mockClubRepo;
+        private readonly Mock<IActivityScheduleRepository> _mockScheduleRepo;
+        private readonly Mock<IActivityScheduleAssignmentRepository> _mockAssignmentRepo;
+        private readonly Mock<IMovementRecordService> _mockMovementRecordService;
+        private readonly Mock<ILogger<ActivityService>> _mockLogger;
+        private readonly ActivityService _service;
+
+        public ActivityScheduleServiceTests()
+        {
+            _mockRepo = new Mock<IActivityRepository>();
+            _mockStudentRepo = new Mock<IStudentRepository>();
+            _mockClubRepo = new Mock<IClubRepository>();
+            _mockScheduleRepo = new Mock<IActivityScheduleRepository>();
+            _mockAssignmentRepo = new Mock<IActivityScheduleAssignmentRepository>();
+            _mockMovementRecordService = new Mock<IMovementRecordService>();
+            _mockLogger = new Mock<ILogger<ActivityService>>();
+            
+            _service = new ActivityService(
+                _mockRepo.Object,
+                _mockStudentRepo.Object,
+                _mockClubRepo.Object,
+                _mockScheduleRepo.Object,
+                _mockAssignmentRepo.Object,
+                _mockMovementRecordService.Object,
+                _mockLogger.Object
+            );
+        }
+
+        #region IsComplexActivity Tests
+
+        [Theory]
+        [InlineData(ActivityType.LargeEvent, true)]
+        [InlineData(ActivityType.MediumEvent, true)]
+        [InlineData(ActivityType.SmallEvent, true)]
+        [InlineData(ActivityType.SchoolCompetition, true)]
+        [InlineData(ActivityType.ProvincialCompetition, true)]
+        [InlineData(ActivityType.NationalCompetition, true)]
+        [InlineData(ActivityType.ClubCollaboration, true)]
+        [InlineData(ActivityType.SchoolCollaboration, true)]
+        [InlineData(ActivityType.ClubMeeting, false)]
+        [InlineData(ActivityType.ClubTraining, false)]
+        [InlineData(ActivityType.ClubWorkshop, false)]
+        public async Task GetActivityByIdAsync_ChecksIsComplexActivity_ReturnsSchedulesForComplexActivities(ActivityType type, bool shouldHaveSchedules)
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Title = "Test Activity",
+                Type = type,
+                StartTime = DateTime.Now.AddDays(1),
+                EndTime = DateTime.Now.AddDays(2),
+                Status = "Approved",
+                CreatedById = 1,
+                CreatedBy = new User { Id = 1, FullName = "Test User" }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+            _mockRepo.Setup(r => r.GetByIdWithDetailsAsync(activityId)).ReturnsAsync(activity);
+            _mockRepo.Setup(r => r.GetRegistrationCountAsync(activityId)).ReturnsAsync(0);
+            _mockRepo.Setup(r => r.GetAttendanceCountAsync(activityId)).ReturnsAsync(0);
+            _mockRepo.Setup(r => r.GetFeedbackCountAsync(activityId)).ReturnsAsync(0);
+
+            if (shouldHaveSchedules)
+            {
+                _mockScheduleRepo.Setup(r => r.GetByActivityIdAsync(activityId))
+                    .ReturnsAsync(new List<ActivitySchedule>());
+                _mockAssignmentRepo.Setup(r => r.GetByScheduleIdAsync(It.IsAny<int>()))
+                    .ReturnsAsync(new List<ActivityScheduleAssignment>());
+            }
+
+            // Act
+            var result = await _service.GetActivityByIdAsync(activityId, 1);
+
+            // Assert
+            Assert.NotNull(result);
+            if (shouldHaveSchedules)
+            {
+                _mockScheduleRepo.Verify(r => r.GetByActivityIdAsync(activityId), Times.Once);
+            }
+            else
+            {
+                _mockScheduleRepo.Verify(r => r.GetByActivityIdAsync(activityId), Times.Never);
+            }
+        }
+
+        #endregion
+
+        #region AddSchedulesToActivityAsync Tests
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_ValidData_CreatesSchedulesWithCorrectOrder()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent,
+                StartTime = DateTime.Now.AddDays(1),
+                EndTime = DateTime.Now.AddDays(2)
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(14, 0, 0),
+                    EndTime = new TimeSpan(15, 0, 0),
+                    Title = "Second Schedule",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>()
+                },
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "First Schedule",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+            _mockScheduleRepo.Setup(r => r.AddAsync(It.IsAny<ActivitySchedule>()))
+                .ReturnsAsync((ActivitySchedule s) => { s.Id = 1; return s; });
+
+            // Act
+            await _service.AddSchedulesToActivityAsync(activityId, schedules);
+
+            // Assert
+            _mockScheduleRepo.Verify(r => r.AddAsync(It.Is<ActivitySchedule>(s => 
+                s.Title == "First Schedule" && s.Order == 1)), Times.Once);
+            _mockScheduleRepo.Verify(r => r.AddAsync(It.Is<ActivitySchedule>(s => 
+                s.Title == "Second Schedule" && s.Order == 2)), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_ClubActivity_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.ClubMeeting
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Test Schedule",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _service.AddSchedulesToActivityAsync(activityId, schedules));
+
+            Assert.Contains("Club Activities (Internal) cannot have schedules", exception.Message);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_ActivityNotFound_ThrowsArgumentException()
+        {
+            // Arrange
+            var activityId = 999;
+            var schedules = new List<CreateActivityScheduleDto>();
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync((Activity?)null);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.AddSchedulesToActivityAsync(activityId, schedules));
+
+            Assert.Contains("Activity not found", exception.Message);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_WithAssignments_CreatesAssignments()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Test Schedule",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>
+                    {
+                        new CreateActivityScheduleAssignmentDto
+                        {
+                            UserId = 1,
+                            Role = "Speaker"
+                        },
+                        new CreateActivityScheduleAssignmentDto
+                        {
+                            ResponsibleName = "John Doe",
+                            Role = "MC"
+                        }
+                    }
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+            _mockScheduleRepo.Setup(r => r.AddAsync(It.IsAny<ActivitySchedule>()))
+                .ReturnsAsync((ActivitySchedule s) => { s.Id = 1; return s; });
+            _mockAssignmentRepo.Setup(r => r.AddAsync(It.IsAny<ActivityScheduleAssignment>()))
+                .ReturnsAsync((ActivityScheduleAssignment a) => a);
+
+            // Act
+            await _service.AddSchedulesToActivityAsync(activityId, schedules);
+
+            // Assert
+            _mockAssignmentRepo.Verify(r => r.AddAsync(It.Is<ActivityScheduleAssignment>(a => 
+                a.UserId == 1 && a.Role == "Speaker")), Times.Once);
+            _mockAssignmentRepo.Verify(r => r.AddAsync(It.Is<ActivityScheduleAssignment>(a => 
+                a.ResponsibleName == "John Doe" && a.Role == "MC")), Times.Once);
+        }
+
+        #endregion
+
+        #region Schedule Validation Tests
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_EndTimeBeforeStartTime_ThrowsArgumentException()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(15, 0, 0),
+                    EndTime = new TimeSpan(14, 0, 0),
+                    Title = "Invalid Schedule",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.AddSchedulesToActivityAsync(activityId, schedules));
+
+            Assert.Contains("end time must be after start time", exception.Message);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_MissingTitle_ThrowsArgumentException()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.AddSchedulesToActivityAsync(activityId, schedules));
+
+            Assert.Contains("title is required", exception.Message);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_TitleTooLong_ThrowsArgumentException()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = new string('A', 501),
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.AddSchedulesToActivityAsync(activityId, schedules));
+
+            Assert.Contains("cannot exceed 500 characters", exception.Message);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_DescriptionTooLong_ThrowsArgumentException()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Valid Title",
+                    Description = new string('A', 1001),
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.AddSchedulesToActivityAsync(activityId, schedules));
+
+            Assert.Contains("description cannot exceed 1000 characters", exception.Message);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_NotesTooLong_ThrowsArgumentException()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Valid Title",
+                    Notes = new string('A', 1001),
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.AddSchedulesToActivityAsync(activityId, schedules));
+
+            Assert.Contains("notes cannot exceed 1000 characters", exception.Message);
+        }
+
+        #endregion
+
+        #region Assignment Validation Tests
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_AssignmentWithoutUserIdOrName_ThrowsArgumentException()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Test Schedule",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>
+                    {
+                        new CreateActivityScheduleAssignmentDto
+                        {
+                            Role = "Speaker"
+                        }
+                    }
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.AddSchedulesToActivityAsync(activityId, schedules));
+
+            Assert.Contains("must have either UserId or ResponsibleName", exception.Message);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_AssignmentWithUserId_Succeeds()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Test Schedule",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>
+                    {
+                        new CreateActivityScheduleAssignmentDto
+                        {
+                            UserId = 1,
+                            Role = "Speaker"
+                        }
+                    }
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+            _mockScheduleRepo.Setup(r => r.AddAsync(It.IsAny<ActivitySchedule>()))
+                .ReturnsAsync((ActivitySchedule s) => { s.Id = 1; return s; });
+            _mockAssignmentRepo.Setup(r => r.AddAsync(It.IsAny<ActivityScheduleAssignment>()))
+                .ReturnsAsync((ActivityScheduleAssignment a) => a);
+
+            // Act
+            await _service.AddSchedulesToActivityAsync(activityId, schedules);
+
+            // Assert
+            _mockAssignmentRepo.Verify(r => r.AddAsync(It.Is<ActivityScheduleAssignment>(a => 
+                a.UserId == 1)), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_AssignmentWithResponsibleName_Succeeds()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Test Schedule",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>
+                    {
+                        new CreateActivityScheduleAssignmentDto
+                        {
+                            ResponsibleName = "John Doe",
+                            Role = "MC"
+                        }
+                    }
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+            _mockScheduleRepo.Setup(r => r.AddAsync(It.IsAny<ActivitySchedule>()))
+                .ReturnsAsync((ActivitySchedule s) => { s.Id = 1; return s; });
+            _mockAssignmentRepo.Setup(r => r.AddAsync(It.IsAny<ActivityScheduleAssignment>()))
+                .ReturnsAsync((ActivityScheduleAssignment a) => a);
+
+            // Act
+            await _service.AddSchedulesToActivityAsync(activityId, schedules);
+
+            // Assert
+            _mockAssignmentRepo.Verify(r => r.AddAsync(It.Is<ActivityScheduleAssignment>(a => 
+                a.ResponsibleName == "John Doe")), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_AssignmentNameTooLong_ThrowsArgumentException()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Test Schedule",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>
+                    {
+                        new CreateActivityScheduleAssignmentDto
+                        {
+                            ResponsibleName = new string('A', 201),
+                            Role = "Speaker"
+                        }
+                    }
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.AddSchedulesToActivityAsync(activityId, schedules));
+
+            Assert.Contains("ResponsibleName cannot exceed 200 characters", exception.Message);
+        }
+
+        [Fact]
+        public async Task AddSchedulesToActivityAsync_AssignmentRoleTooLong_ThrowsArgumentException()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<CreateActivityScheduleDto>
+            {
+                new CreateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Test Schedule",
+                    Assignments = new List<CreateActivityScheduleAssignmentDto>
+                    {
+                        new CreateActivityScheduleAssignmentDto
+                        {
+                            ResponsibleName = "John Doe",
+                            Role = new string('A', 101)
+                        }
+                    }
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.AddSchedulesToActivityAsync(activityId, schedules));
+
+            Assert.Contains("Role cannot exceed 100 characters", exception.Message);
+        }
+
+        #endregion
+
+        #region UpdateActivitySchedulesAsync Tests
+
+        [Fact]
+        public async Task UpdateActivitySchedulesAsync_AddNewSchedule_CreatesSchedule()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<UpdateActivityScheduleDto>
+            {
+                new UpdateActivityScheduleDto
+                {
+                    Id = null, // New schedule
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "New Schedule",
+                    Assignments = new List<UpdateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+            _mockScheduleRepo.Setup(r => r.GetByActivityIdAsync(activityId))
+                .ReturnsAsync(new List<ActivitySchedule>());
+            _mockScheduleRepo.Setup(r => r.AddAsync(It.IsAny<ActivitySchedule>()))
+                .ReturnsAsync((ActivitySchedule s) => { s.Id = 1; return s; });
+
+            // Act
+            await _service.UpdateActivitySchedulesAsync(activityId, schedules);
+
+            // Assert
+            _mockScheduleRepo.Verify(r => r.AddAsync(It.Is<ActivitySchedule>(s => 
+                s.Title == "New Schedule")), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateActivitySchedulesAsync_UpdateExistingSchedule_UpdatesSchedule()
+        {
+            // Arrange
+            var activityId = 1;
+            var scheduleId = 10;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var existingSchedule = new ActivitySchedule
+            {
+                Id = scheduleId,
+                ActivityId = activityId,
+                StartTime = new TimeSpan(10, 0, 0),
+                EndTime = new TimeSpan(11, 0, 0),
+                Title = "Old Title",
+                Order = 1
+            };
+
+            var schedules = new List<UpdateActivityScheduleDto>
+            {
+                new UpdateActivityScheduleDto
+                {
+                    Id = scheduleId,
+                    StartTime = new TimeSpan(14, 0, 0),
+                    EndTime = new TimeSpan(15, 0, 0),
+                    Title = "Updated Title",
+                    Assignments = new List<UpdateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+            _mockScheduleRepo.Setup(r => r.GetByActivityIdAsync(activityId))
+                .ReturnsAsync(new List<ActivitySchedule> { existingSchedule });
+            _mockScheduleRepo.Setup(r => r.UpdateAsync(It.IsAny<ActivitySchedule>()))
+                .Returns(Task.CompletedTask);
+            _mockAssignmentRepo.Setup(r => r.GetByScheduleIdAsync(scheduleId))
+                .ReturnsAsync(new List<ActivityScheduleAssignment>());
+
+            // Act
+            await _service.UpdateActivitySchedulesAsync(activityId, schedules);
+
+            // Assert
+            _mockScheduleRepo.Verify(r => r.UpdateAsync(It.Is<ActivitySchedule>(s => 
+                s.Id == scheduleId && s.Title == "Updated Title")), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateActivitySchedulesAsync_DeleteRemovedSchedule_DeletesSchedule()
+        {
+            // Arrange
+            var activityId = 1;
+            var scheduleId = 10;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var existingSchedule = new ActivitySchedule
+            {
+                Id = scheduleId,
+                ActivityId = activityId,
+                StartTime = new TimeSpan(10, 0, 0),
+                EndTime = new TimeSpan(11, 0, 0),
+                Title = "To Be Deleted",
+                Order = 1
+            };
+
+            var schedules = new List<UpdateActivityScheduleDto>(); // Empty list means delete all
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+            _mockScheduleRepo.Setup(r => r.GetByActivityIdAsync(activityId))
+                .ReturnsAsync(new List<ActivitySchedule> { existingSchedule });
+            _mockScheduleRepo.Setup(r => r.DeleteAsync(scheduleId))
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await _service.UpdateActivitySchedulesAsync(activityId, schedules);
+
+            // Assert
+            _mockScheduleRepo.Verify(r => r.DeleteAsync(scheduleId), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateActivitySchedulesAsync_MixedOperations_HandlesAllCorrectly()
+        {
+            // Arrange
+            var activityId = 1;
+            var existingScheduleId = 10;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var existingSchedule1 = new ActivitySchedule
+            {
+                Id = existingScheduleId,
+                ActivityId = activityId,
+                StartTime = new TimeSpan(10, 0, 0),
+                EndTime = new TimeSpan(11, 0, 0),
+                Title = "Existing Schedule",
+                Order = 1
+            };
+
+            var existingSchedule2 = new ActivitySchedule
+            {
+                Id = 11,
+                ActivityId = activityId,
+                StartTime = new TimeSpan(12, 0, 0),
+                EndTime = new TimeSpan(13, 0, 0),
+                Title = "To Be Deleted",
+                Order = 2
+            };
+
+            var schedules = new List<UpdateActivityScheduleDto>
+            {
+                new UpdateActivityScheduleDto
+                {
+                    Id = existingScheduleId,
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Updated Schedule",
+                    Assignments = new List<UpdateActivityScheduleAssignmentDto>()
+                },
+                new UpdateActivityScheduleDto
+                {
+                    Id = null,
+                    StartTime = new TimeSpan(14, 0, 0),
+                    EndTime = new TimeSpan(15, 0, 0),
+                    Title = "New Schedule",
+                    Assignments = new List<UpdateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+            _mockScheduleRepo.Setup(r => r.GetByActivityIdAsync(activityId))
+                .ReturnsAsync(new List<ActivitySchedule> { existingSchedule1, existingSchedule2 });
+            _mockScheduleRepo.Setup(r => r.UpdateAsync(It.IsAny<ActivitySchedule>()))
+                .Returns(Task.CompletedTask);
+            _mockScheduleRepo.Setup(r => r.AddAsync(It.IsAny<ActivitySchedule>()))
+                .ReturnsAsync((ActivitySchedule s) => { s.Id = 12; return s; });
+            _mockScheduleRepo.Setup(r => r.DeleteAsync(11))
+                .Returns(Task.CompletedTask);
+            _mockAssignmentRepo.Setup(r => r.GetByScheduleIdAsync(It.IsAny<int>()))
+                .ReturnsAsync(new List<ActivityScheduleAssignment>());
+
+            // Act
+            await _service.UpdateActivitySchedulesAsync(activityId, schedules);
+
+            // Assert
+            _mockScheduleRepo.Verify(r => r.UpdateAsync(It.Is<ActivitySchedule>(s => 
+                s.Id == existingScheduleId)), Times.Once);
+            _mockScheduleRepo.Verify(r => r.AddAsync(It.Is<ActivitySchedule>(s => 
+                s.Title == "New Schedule")), Times.Once);
+            _mockScheduleRepo.Verify(r => r.DeleteAsync(11), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateActivitySchedulesAsync_ClubActivity_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.ClubTraining
+            };
+
+            var schedules = new List<UpdateActivityScheduleDto>
+            {
+                new UpdateActivityScheduleDto
+                {
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Test Schedule",
+                    Assignments = new List<UpdateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _service.UpdateActivitySchedulesAsync(activityId, schedules));
+
+            Assert.Contains("Club Activities (Internal) cannot have schedules", exception.Message);
+        }
+
+        [Fact]
+        public async Task UpdateActivitySchedulesAsync_ReordersSchedulesByTime()
+        {
+            // Arrange
+            var activityId = 1;
+            var activity = new Activity
+            {
+                Id = activityId,
+                Type = ActivityType.LargeEvent
+            };
+
+            var schedules = new List<UpdateActivityScheduleDto>
+            {
+                new UpdateActivityScheduleDto
+                {
+                    Id = null,
+                    StartTime = new TimeSpan(14, 0, 0),
+                    EndTime = new TimeSpan(15, 0, 0),
+                    Title = "Second Schedule",
+                    Assignments = new List<UpdateActivityScheduleAssignmentDto>()
+                },
+                new UpdateActivityScheduleDto
+                {
+                    Id = null,
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "First Schedule",
+                    Assignments = new List<UpdateActivityScheduleAssignmentDto>()
+                }
+            };
+
+            _mockRepo.Setup(r => r.GetByIdAsync(activityId)).ReturnsAsync(activity);
+            _mockScheduleRepo.Setup(r => r.GetByActivityIdAsync(activityId))
+                .ReturnsAsync(new List<ActivitySchedule>());
+            _mockScheduleRepo.Setup(r => r.AddAsync(It.IsAny<ActivitySchedule>()))
+                .ReturnsAsync((ActivitySchedule s) => { s.Id = 1; return s; });
+
+            // Act
+            await _service.UpdateActivitySchedulesAsync(activityId, schedules);
+
+            // Assert
+            _mockScheduleRepo.Verify(r => r.AddAsync(It.Is<ActivitySchedule>(s => 
+                s.Title == "First Schedule" && s.Order == 1)), Times.Once);
+            _mockScheduleRepo.Verify(r => r.AddAsync(It.Is<ActivitySchedule>(s => 
+                s.Title == "Second Schedule" && s.Order == 2)), Times.Once);
+        }
+
+        #endregion
+
+        #region GetActivitySchedulesAsync Tests
+
+        [Fact]
+        public async Task GetActivitySchedulesAsync_ReturnsSchedulesWithAssignments()
+        {
+            // Arrange
+            var activityId = 1;
+            var scheduleId = 10;
+
+            var schedules = new List<ActivitySchedule>
+            {
+                new ActivitySchedule
+                {
+                    Id = scheduleId,
+                    ActivityId = activityId,
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "Test Schedule",
+                    Order = 1,
+                    CreatedAt = DateTime.Now
+                }
+            };
+
+            var assignments = new List<ActivityScheduleAssignment>
+            {
+                new ActivityScheduleAssignment
+                {
+                    Id = 1,
+                    ActivityScheduleId = scheduleId,
+                    UserId = 1,
+                    User = new User { Id = 1, FullName = "John Doe" },
+                    Role = "Speaker",
+                    CreatedAt = DateTime.Now
+                }
+            };
+
+            _mockScheduleRepo.Setup(r => r.GetByActivityIdAsync(activityId))
+                .ReturnsAsync(schedules);
+            _mockAssignmentRepo.Setup(r => r.GetByScheduleIdAsync(scheduleId))
+                .ReturnsAsync(assignments);
+
+            // Act
+            var result = await _service.GetActivitySchedulesAsync(activityId);
+
+            // Assert
+            Assert.Single(result);
+            Assert.Equal("Test Schedule", result[0].Title);
+            Assert.Single(result[0].Assignments);
+            Assert.Equal("John Doe", result[0].Assignments[0].UserName);
+            Assert.Equal("Speaker", result[0].Assignments[0].Role);
+        }
+
+        [Fact]
+        public async Task GetActivitySchedulesAsync_ReturnsSchedulesOrderedByOrder()
+        {
+            // Arrange
+            var activityId = 1;
+
+            var schedules = new List<ActivitySchedule>
+            {
+                new ActivitySchedule
+                {
+                    Id = 2,
+                    ActivityId = activityId,
+                    StartTime = new TimeSpan(14, 0, 0),
+                    EndTime = new TimeSpan(15, 0, 0),
+                    Title = "Second Schedule",
+                    Order = 2,
+                    CreatedAt = DateTime.Now
+                },
+                new ActivitySchedule
+                {
+                    Id = 1,
+                    ActivityId = activityId,
+                    StartTime = new TimeSpan(10, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Title = "First Schedule",
+                    Order = 1,
+                    CreatedAt = DateTime.Now
+                }
+            };
+
+            _mockScheduleRepo.Setup(r => r.GetByActivityIdAsync(activityId))
+                .ReturnsAsync(schedules);
+            _mockAssignmentRepo.Setup(r => r.GetByScheduleIdAsync(It.IsAny<int>()))
+                .ReturnsAsync(new List<ActivityScheduleAssignment>());
+
+            // Act
+            var result = await _service.GetActivitySchedulesAsync(activityId);
+
+            // Assert
+            Assert.Equal(2, result.Count);
+            Assert.Equal("First Schedule", result[0].Title);
+            Assert.Equal("Second Schedule", result[1].Title);
+        }
+
+        #endregion
+    }
+}

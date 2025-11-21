@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using BusinessObject.DTOs.Activity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -118,11 +119,8 @@ namespace WebFE.Pages.ClubManager.Activities
                     "SchoolCompetition" => 6,
                     "ProvincialCompetition" => 7,
                     "NationalCompetition" => 8,
-                    "Volunteer" => 9,
                     "ClubCollaboration" => 10,
                     "SchoolCollaboration" => 11,
-                    "EnterpriseCollaboration" => 12,
-                    "Other" => 13,
                     _ => 0
                 };
 
@@ -138,7 +136,9 @@ namespace WebFE.Pages.ClubManager.Activities
                     IsPublic = Activity.IsPublic,
                     MaxParticipants = Activity.MaxParticipants,
                     MovementPoint = Activity.MovementPoint,
-                    IsMandatory = Activity.IsMandatory
+                    IsMandatory = Activity.IsMandatory,
+                    ClubCollaborationId = Activity.ClubCollaborationId,
+                    CollaborationPoint = Activity.CollaborationPoint
                 };
                 var json = JsonSerializer.Serialize(payload);
                 request.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
@@ -168,8 +168,9 @@ namespace WebFE.Pages.ClubManager.Activities
         }
     }
 
-    public class CreateActivityDto
+    public class CreateActivityDto : IValidatableObject
     {
+        [Required(ErrorMessage = "Title is required")]
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? Location { get; set; }
@@ -179,9 +180,36 @@ namespace WebFE.Pages.ClubManager.Activities
         public string Type { get; set; } = "ClubMeeting";
         public bool RequiresApproval { get; set; } = true;
         public bool IsPublic { get; set; }
-        public int? MaxParticipants { get; set; }
+        [Required] [Range(1, int.MaxValue, ErrorMessage = "Max Participants is required")] public int MaxParticipants { get; set; }
         public double MovementPoint { get; set; }
         public bool IsMandatory { get; set; }
+        public int? ClubCollaborationId { get; set; }
+        public int? CollaborationPoint { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (MaxParticipants > 0)
+            {
+                if (Type == "LargeEvent" && (MaxParticipants < 100 || MaxParticipants > 200))
+                {
+                    yield return new ValidationResult(
+                        "Large Event phải có số người tham gia từ 100-200 người",
+                        new[] { nameof(MaxParticipants) });
+                }
+                else if (Type == "MediumEvent" && (MaxParticipants < 50 || MaxParticipants > 100))
+                {
+                    yield return new ValidationResult(
+                        "Medium Event phải có số người tham gia từ 50-100 người",
+                        new[] { nameof(MaxParticipants) });
+                }
+                else if (Type == "SmallEvent" && MaxParticipants >= 50)
+                {
+                    yield return new ValidationResult(
+                        "Small Event phải có số người tham gia dưới 50 người",
+                        new[] { nameof(MaxParticipants) });
+                }
+            }
+        }
     }
 }
 
