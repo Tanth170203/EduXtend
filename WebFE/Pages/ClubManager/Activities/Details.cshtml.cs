@@ -26,6 +26,7 @@ namespace WebFE.Pages.ClubManager.Activities
         public ActivityDetailDto? Activity { get; set; }
         public List<AdminActivityFeedbackDto> Feedbacks { get; set; } = [];
         public string ApiBaseUrl { get; set; } = string.Empty;
+        public bool IsCollaboratedActivity { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -54,6 +55,33 @@ namespace WebFE.Pages.ClubManager.Activities
                 if (Activity == null)
                 {
                     return NotFound();
+                }
+
+                // Check if this is a collaborated activity (current user's club is the collaborating club, not owner)
+                // Get current user's club
+                try
+                {
+                    var clubRequest = new HttpRequestMessage(HttpMethod.Get, "api/club/my-managed-club");
+                    foreach (var cookie in Request.Cookies)
+                    {
+                        clubRequest.Headers.Add("Cookie", $"{cookie.Key}={cookie.Value}");
+                    }
+                    var clubResponse = await client.SendAsync(clubRequest);
+                    if (clubResponse.IsSuccessStatusCode)
+                    {
+                        var clubJson = await clubResponse.Content.ReadAsStringAsync();
+                        var clubDoc = System.Text.Json.JsonDocument.Parse(clubJson);
+                        if (clubDoc.RootElement.TryGetProperty("id", out var idElement))
+                        {
+                            int clubId = idElement.GetInt32();
+                            IsCollaboratedActivity = Activity.ClubCollaborationId == clubId && Activity.ClubId != clubId;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to check if activity is collaborated");
+                    IsCollaboratedActivity = false;
                 }
 
                 // Load feedbacks
