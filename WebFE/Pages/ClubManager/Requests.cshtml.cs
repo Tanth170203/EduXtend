@@ -50,13 +50,24 @@ namespace WebFE.Pages.ClubManager
         {
             try
             {
+                // Get ClubId from TempData
+                if (TempData["SelectedClubId"] != null)
+                {
+                    ClubId = (int)TempData["SelectedClubId"];
+                    TempData.Keep("SelectedClubId");
+                }
+                else
+                {
+                    return Redirect("/ClubManager");
+                }
+
                 using var httpClient = CreateHttpClient();
 
-                // Get managed club
-                var clubResponse = await httpClient.GetAsync("/api/club/my-managed-club");
+                // Get club details
+                var clubResponse = await httpClient.GetAsync($"/api/club/{ClubId}");
                 if (!clubResponse.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("Failed to get managed club");
+                    _logger.LogWarning("Failed to get club details");
                     return Redirect("/ClubManager");
                 }
 
@@ -71,7 +82,6 @@ namespace WebFE.Pages.ClubManager
                     return Redirect("/ClubManager");
                 }
 
-                ClubId = club.Id;
                 ClubName = club.Name;
                 IsRecruitmentOpen = club.IsRecruitmentOpen;
 

@@ -53,6 +53,19 @@ namespace WebFE.Pages.ClubManager
                     return Page();
                 }
 
+                // Get ClubId from TempData
+                int clubId = 0;
+                if (TempData["SelectedClubId"] != null)
+                {
+                    clubId = (int)TempData["SelectedClubId"];
+                    TempData.Keep("SelectedClubId");
+                }
+
+                if (clubId == 0)
+                {
+                    return Redirect("/ClubManager");
+                }
+
                 var client = _httpClientFactory.CreateClient("ApiClient");
                 
                 // Add cookie to request
@@ -62,7 +75,7 @@ namespace WebFE.Pages.ClubManager
                     client.DefaultRequestHeaders.Add("Cookie", $"AccessToken={accessToken}");
                 }
                 
-                var response = await client.GetAsync($"{ApiBaseUrl}/api/club/my-managed-club");
+                var response = await client.GetAsync($"{ApiBaseUrl}/api/club/{clubId}");
 
                 if (!response.IsSuccessStatusCode)
                 {
