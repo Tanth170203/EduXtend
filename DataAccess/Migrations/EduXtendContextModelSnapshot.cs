@@ -40,8 +40,28 @@ namespace DataAccess.Migrations
                         .HasMaxLength(6)
                         .HasColumnType("nvarchar(6)");
 
+                    b.Property<int?>("ClubCollaborationId")
+                      .HasColumnType("int");
+
                     b.Property<int?>("ClubId")
                         .HasColumnType("int");
+                    b.Property<int?>("CollaborationPoint")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CollaborationRejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("CollaborationRespondedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CollaborationRespondedBy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CollaborationStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -99,6 +119,8 @@ namespace DataAccess.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApprovedById");
+
+                    b.HasIndex("ClubCollaborationId");
 
                     b.HasIndex("ClubId");
 
@@ -1696,6 +1718,12 @@ namespace DataAccess.Migrations
                         .HasForeignKey("ApprovedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("BusinessObject.Models.Club", "CollaboratingClub")
+                     .WithMany()
+                     .HasForeignKey("ClubCollaborationId")
+                     .OnDelete(DeleteBehavior.SetNull);
+
+
                     b.HasOne("BusinessObject.Models.Club", "Club")
                         .WithMany("Activities")
                         .HasForeignKey("ClubId");
@@ -1709,6 +1737,8 @@ namespace DataAccess.Migrations
                     b.Navigation("ApprovedBy");
 
                     b.Navigation("Club");
+
+                    b.Navigation("CollaboratingClub");
 
                     b.Navigation("CreatedBy");
                 });
