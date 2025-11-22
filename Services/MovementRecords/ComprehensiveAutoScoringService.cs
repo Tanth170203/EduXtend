@@ -36,6 +36,9 @@ public class ComprehensiveAutoScoringService : BackgroundService
             {
                 _logger.LogInformation("🔄 Starting comprehensive scoring cycle...");
                 
+                // 0. Auto-complete activities that have ended
+                await AutoCompleteActivitiesAsync();
+                
                 // 1. Academic Awareness (Ý thức học tập)
                 await ProcessAcademicScoresAsync();
                 
@@ -48,7 +51,7 @@ public class ComprehensiveAutoScoringService : BackgroundService
                 // 4. Organizational Work (Công tác tổ chức)
                 await ProcessOrganizationalScoresAsync();
                 
-                // 5. Club Scoring (Chấm điểm CLB)
+                // 5. Club Scoring (Chấm điểm CLB) - Now mostly redundant as activities are auto-completed
                 await ProcessClubScoresAsync();
                 
                 // 6. Recalculate all totals
@@ -214,11 +217,10 @@ public class ComprehensiveAutoScoringService : BackgroundService
                 return;
             }
 
-            // Skip competitions and volunteer here; they are processed in dedicated routines
+            // Skip competitions here; they are processed in dedicated routines
             if (activity.Type == BusinessObject.Enum.ActivityType.SchoolCompetition
                 || activity.Type == BusinessObject.Enum.ActivityType.NationalCompetition
-                || activity.Type == BusinessObject.Enum.ActivityType.ProvincialCompetition
-                || activity.Type == BusinessObject.Enum.ActivityType.Volunteer)
+                || activity.Type == BusinessObject.Enum.ActivityType.ProvincialCompetition)
             {
                 return; // handled elsewhere
             }
@@ -346,18 +348,9 @@ public class ComprehensiveAutoScoringService : BackgroundService
 
     private async Task ProcessVolunteerActivityScoresAsync(EduXtendContext dbContext)
     {
-        var volunteerActivities = await dbContext.Activities
-            .Where(a => a.Type == ActivityType.Volunteer)
-            .Include(a => a.Attendances)
-            .ToListAsync();
-
-        var criterion = await GetCriterionAsync(dbContext, "Hoạt động tình nguyện");
-        if (criterion == null) return;
-
-        foreach (var activity in volunteerActivities)
-        {
-            await ProcessActivityAttendanceAsync(dbContext, activity, criterion, 5);
-        }
+        // Volunteer activity type has been removed
+        // This method is kept for backward compatibility but does nothing
+        await Task.CompletedTask;
     }
 
     #endregion
@@ -508,6 +501,69 @@ public class ComprehensiveAutoScoringService : BackgroundService
     #region 5. Club Scoring (Chấm điểm CLB)
 
     /// <summary>
+    /// Auto-complete activities that have ended but not yet completed
+    /// </summary>
+    private async Task AutoCompleteActivitiesAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<EduXtendContext>();
+
+        try
+        {
+            _logger.LogInformation("🔄 Auto-completing ended activities...");
+
+            var now = DateTime.UtcNow;
+            
+            // Find activities that have ended but status is still "Approved"
+            var endedActivities = await db.Activities
+                .Where(a => a.Status == "Approved" 
+                         && a.EndTime < now)
+                .ToListAsync();
+
+            if (!endedActivities.Any())
+            {
+                _logger.LogInformation("No activities to auto-complete");
+                return;
+            }
+
+            _logger.LogInformation("Found {Count} activities to auto-complete", endedActivities.Count);
+
+            // Get ActivityService to properly complete activities
+            var activityService = scope.ServiceProvider.GetRequiredService<Services.Activities.IActivityService>();
+
+            foreach (var activity in endedActivities)
+            {
+                try
+                {
+                    _logger.LogInformation("Auto-completing activity {ActivityId} ({Title})", activity.Id, activity.Title);
+                    
+                    // Use ActivityService to complete (this will handle points, weekly limits, etc.)
+                    var result = await activityService.CompleteActivityAsync(activity.Id, 0); // userId = 0 for system
+                    
+                    if (result.success)
+                    {
+                        _logger.LogInformation("✅ Auto-completed activity {ActivityId}: {Message}", activity.Id, result.message);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("⚠️ Failed to auto-complete activity {ActivityId}: {Message}", activity.Id, result.message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "❌ Error auto-completing activity {ActivityId}", activity.Id);
+                }
+            }
+
+            _logger.LogInformation("✅ Auto-complete process finished");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error in AutoCompleteActivitiesAsync");
+        }
+    }
+
+    /// <summary>
     /// Auto-scoring for Clubs based on activities within current month and semester
     /// - ClubMeeting: 5 points per week (max 20)
     /// - Events: Large(20) if >=70% attendance; Small(15) if >=70%; Internal(5)
@@ -572,43 +628,58 @@ public class ComprehensiveAutoScoringService : BackgroundService
                     var monthEnd = monthStart.AddMonths(1).AddTicks(-1);
 
                     // 1) Club Meetings (5 points per week, max 20)
-                    var meetings = await db.Activities
-                        .Where(a => a.ClubId == club.Id
-                                 && a.Type == BusinessObject.Enum.ActivityType.ClubMeeting
-                                 && a.Status == "Completed"
-                                 && a.EndTime >= monthStart && a.EndTime <= monthEnd)
-                        .Include(a => a.Attendances)
-                        .ToListAsync();
-
-                    var weeks = meetings
-                        .Select(a => System.Globalization.ISOWeek.GetWeekOfYear(a.EndTime))
-                        .Distinct()
-                        .Count();
-
-                    // Each club meeting week gives 5 points; no upper cap per framework
-                    var clubMeetingScore = weeks * 5;
-
-                    // Remove previous auto details for club meeting in this month to idempotently recalc
-                    if (critClubMeeting != null)
+                    // Check if any club meetings have manual details - if so, skip auto-scoring
+                    var hasManualMeetingDetails = await db.ClubMovementRecordDetails
+                        .AnyAsync(d => d.ClubMovementRecordId == record.Id 
+                                    && d.Criterion.Title.Contains("Sinh hoạt CLB")
+                                    && d.ScoreType == "Manual"
+                                    && d.ActivityId != null);
+                    
+                    if (!hasManualMeetingDetails)
                     {
-                        var oldMeetDetails = await db.ClubMovementRecordDetails
-                            .Where(d => d.ClubMovementRecordId == record.Id && d.CriterionId == critClubMeeting.Id && d.ScoreType == "Auto")
+                        // No manual details, proceed with auto-scoring
+                        var meetings = await db.Activities
+                            .Where(a => a.ClubId == club.Id
+                                     && a.Type == BusinessObject.Enum.ActivityType.ClubMeeting
+                                     && a.Status == "Completed"
+                                     && a.EndTime >= monthStart && a.EndTime <= monthEnd)
+                            .Include(a => a.Attendances)
                             .ToListAsync();
-                        if (oldMeetDetails.Any())
-                        {
-                            db.ClubMovementRecordDetails.RemoveRange(oldMeetDetails);
-                        }
 
-                        if (clubMeetingScore > 0)
+                        var weeks = meetings
+                            .Select(a => System.Globalization.ISOWeek.GetWeekOfYear(a.EndTime))
+                            .Distinct()
+                            .Count();
+
+                        // Each club meeting week gives 5 points; no upper cap per framework
+                        var clubMeetingScore = weeks * 5;
+
+                        // Remove previous auto details for club meeting in this month to idempotently recalc
+                        // Only remove auto-generated details (ActivityId == null), not manual completions
+                        if (critClubMeeting != null)
                         {
-                            db.ClubMovementRecordDetails.Add(new BusinessObject.Models.ClubMovementRecordDetail
+                            var oldMeetDetails = await db.ClubMovementRecordDetails
+                                .Where(d => d.ClubMovementRecordId == record.Id 
+                                         && d.CriterionId == critClubMeeting.Id 
+                                         && d.ScoreType == "Auto"
+                                         && d.ActivityId == null)  // Only delete auto-generated, not from manual activity completion
+                                .ToListAsync();
+                            if (oldMeetDetails.Any())
                             {
-                                ClubMovementRecordId = record.Id,
-                                CriterionId = critClubMeeting.Id,
-                                Score = clubMeetingScore,
-                                ScoreType = "Auto",
-                                AwardedAt = DateTime.UtcNow
-                            });
+                                db.ClubMovementRecordDetails.RemoveRange(oldMeetDetails);
+                            }
+
+                            if (clubMeetingScore > 0)
+                            {
+                                db.ClubMovementRecordDetails.Add(new BusinessObject.Models.ClubMovementRecordDetail
+                                {
+                                    ClubMovementRecordId = record.Id,
+                                    CriterionId = critClubMeeting.Id,
+                                    Score = clubMeetingScore,
+                                    ScoreType = "Auto",
+                                    AwardedAt = DateTime.UtcNow
+                                });
+                            }
                         }
                     }
 
@@ -624,6 +695,7 @@ public class ComprehensiveAutoScoringService : BackgroundService
                         .ToListAsync();
 
                     // Clean previous auto event details
+                    // Only remove auto-generated details (ActivityId == null), not manual completions
                     if (critLargeEvent != null || critSmallEvent != null || critInternalEvent != null)
                     {
                         var eventCritIds = new List<int>();
@@ -632,13 +704,30 @@ public class ComprehensiveAutoScoringService : BackgroundService
                         if (critInternalEvent != null) eventCritIds.Add(critInternalEvent.Id);
 
                         var oldEventDetails = await db.ClubMovementRecordDetails
-                            .Where(d => d.ClubMovementRecordId == record.Id && eventCritIds.Contains(d.CriterionId) && d.ScoreType == "Auto")
+                            .Where(d => d.ClubMovementRecordId == record.Id 
+                                     && eventCritIds.Contains(d.CriterionId) 
+                                     && d.ScoreType == "Auto"
+                                     && d.ActivityId == null)  // Only delete auto-generated, not from manual activity completion
                             .ToListAsync();
                         if (oldEventDetails.Any()) db.ClubMovementRecordDetails.RemoveRange(oldEventDetails);
                     }
 
                     foreach (var ev in events)
                     {
+                        // Skip if this activity already has ANY detail (manual or auto)
+                        // This prevents duplicate scoring for the same activity
+                        var hasExistingDetail = await db.ClubMovementRecordDetails
+                            .AnyAsync(d => d.ActivityId == ev.Id);
+                        
+                        if (hasExistingDetail)
+                        {
+                            // Activity already scored (manually or automatically), skip
+                            _logger.LogInformation("Skipping event {ActivityId} ({ActivityTitle}) - already has detail", ev.Id, ev.Title);
+                            continue;
+                        }
+                        
+                        _logger.LogInformation("Auto-scoring event {ActivityId} ({ActivityTitle}) for club {ClubId}", ev.Id, ev.Title, club.Id);
+
                         double? rate = null;
                         if (ev.MaxParticipants.HasValue && ev.MaxParticipants.Value > 0)
                         {
@@ -713,19 +802,37 @@ public class ComprehensiveAutoScoringService : BackgroundService
                         .ToListAsync();
 
                     // Clean previous competition auto details
+                    // Only remove auto-generated details (ActivityId == null), not manual completions
                     if (critProvincial != null || critNational != null)
                     {
                         var compCritIds = new List<int>();
                         if (critProvincial != null) compCritIds.Add(critProvincial.Id);
                         if (critNational != null) compCritIds.Add(critNational.Id);
                         var oldCompDetails = await db.ClubMovementRecordDetails
-                            .Where(d => d.ClubMovementRecordId == record.Id && compCritIds.Contains(d.CriterionId) && d.ScoreType == "Auto")
+                            .Where(d => d.ClubMovementRecordId == record.Id 
+                                     && compCritIds.Contains(d.CriterionId) 
+                                     && d.ScoreType == "Auto"
+                                     && d.ActivityId == null)  // Only delete auto-generated, not from manual activity completion
                             .ToListAsync();
                         if (oldCompDetails.Any()) db.ClubMovementRecordDetails.RemoveRange(oldCompDetails);
                     }
 
                     foreach (var comp in competitions)
                     {
+                        // Skip if this activity already has ANY detail (manual or auto)
+                        // This prevents duplicate scoring for the same activity
+                        var hasExistingDetail = await db.ClubMovementRecordDetails
+                            .AnyAsync(d => d.ActivityId == comp.Id);
+                        
+                        if (hasExistingDetail)
+                        {
+                            // Activity already scored (manually or automatically), skip
+                            _logger.LogInformation("Skipping competition {ActivityId} ({ActivityTitle}) - already has detail", comp.Id, comp.Title);
+                            continue;
+                        }
+                        
+                        _logger.LogInformation("Auto-scoring competition {ActivityId} ({ActivityTitle}) for club {ClubId}", comp.Id, comp.Title, club.Id);
+
                         if (comp.Type == BusinessObject.Enum.ActivityType.ProvincialCompetition && critProvincial != null)
                         {
                             db.ClubMovementRecordDetails.Add(new BusinessObject.Models.ClubMovementRecordDetail

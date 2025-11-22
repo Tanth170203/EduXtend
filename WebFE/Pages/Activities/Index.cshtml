@@ -22,25 +22,32 @@
                        placeholder="Search by title, description, location...">
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <select name="type" class="form-select">
                     <option value="">All Types</option>
-                    <option value="Club" selected="@(Model.Type == "Club")">Club</option>
-                    <option value="University" selected="@(Model.Type == "University")">University</option>
+                    <optgroup label="Club Activities">
+                        <option value="ClubMeeting" selected="@(Model.Type == "ClubMeeting")">Club Meeting</option>
+                        <option value="ClubTraining" selected="@(Model.Type == "ClubTraining")">Club Training</option>
+                        <option value="ClubWorkshop" selected="@(Model.Type == "ClubWorkshop")">Club Workshop</option>
+                    </optgroup>
+                    <optgroup label="Events">
+                        <option value="LargeEvent" selected="@(Model.Type == "LargeEvent")">Large Event</option>
+                        <option value="MediumEvent" selected="@(Model.Type == "MediumEvent")">Medium Event</option>
+                        <option value="SmallEvent" selected="@(Model.Type == "SmallEvent")">Small Event</option>
+                    </optgroup>
+                    <optgroup label="Competitions">
+                        <option value="SchoolCompetition" selected="@(Model.Type == "SchoolCompetition")">School Competition</option>
+                        <option value="ProvincialCompetition" selected="@(Model.Type == "ProvincialCompetition")">Provincial Competition</option>
+                        <option value="NationalCompetition" selected="@(Model.Type == "NationalCompetition")">National Competition</option>
+                    </optgroup>
+                    <optgroup label="Collaboration">
+                        <option value="ClubCollaboration" selected="@(Model.Type == "ClubCollaboration")">Club Collaboration</option>
+                        <option value="SchoolCollaboration" selected="@(Model.Type == "SchoolCollaboration")">School Collaboration</option>
+                    </optgroup>
                 </select>
             </div>
 
-            <div class="col-md-2">
-                <select name="status" class="form-select">
-                    <option value="">All Status</option>
-                    <option value="Approved" selected="@(Model.Status == "Approved")">Approved</option>
-                    <option value="PendingApproval" selected="@(Model.Status == "PendingApproval")">Pending</option>
-                    <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
-                    <option value="Rejected" selected="@(Model.Status == "Rejected")">Rejected</option>
-                </select>
-            </div>
-
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <select name="filter" class="form-select">
                     <option value="" selected="@(string.IsNullOrEmpty(Model.Filter))">All Activities</option>
                     <option value="public" selected="@(Model.Filter == "public")">Public (Anyone)</option>
@@ -55,7 +62,7 @@
             </button>
 
             @if (!string.IsNullOrEmpty(Model.SearchTerm) || !string.IsNullOrEmpty(Model.Type) || 
-                 !string.IsNullOrEmpty(Model.Status) || !string.IsNullOrEmpty(Model.Filter))
+                 !string.IsNullOrEmpty(Model.Filter))
             {
                 <a href="/Activities" class="btn btn-outline-secondary">
                     <i class="bi bi-x-circle"></i> Clear Filters
@@ -119,22 +126,27 @@
                                 <span class="badge bg-info">@activity.Type</span>
                             </div>
                             
-                            @if (!activity.IsPublic)
-                            {
-                                <div class="mb-2">
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                @if (!activity.IsPublic)
+                                {
                                     <span class="badge bg-warning text-dark">
                                         <i class="bi bi-lock"></i> Club Members Only
                                     </span>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="mb-2">
+                                }
+                                else
+                                {
                                     <span class="badge bg-primary">
                                         <i class="bi bi-globe"></i> Public
                                     </span>
-                                </div>
-                            }
+                                }
+                                
+                                @if (activity.ClubCollaborationId.HasValue)
+                                {
+                                    <span class="badge bg-gradient-collaboration">
+                                        <i class="bi bi-diagram-3"></i> Collaboration
+                                    </span>
+                                }
+                            </div>
 
                             <h5 class="card-title fw-bold mb-2">@activity.Title</h5>
                             
@@ -142,6 +154,13 @@
                             {
                                 <p class="text-muted small mb-0">
                                     <i class="bi bi-people"></i> @activity.ClubName
+                                </p>
+                            }
+                            
+                            @if (activity.ClubCollaborationId.HasValue && !string.IsNullOrWhiteSpace(activity.CollaboratingClubName))
+                            {
+                                <p class="text-muted small mb-0">
+                                    <i class="bi bi-diagram-3"></i> with <strong>@activity.CollaboratingClubName</strong>
                                 </p>
                             }
                         </div>
@@ -175,6 +194,13 @@
                                     <i class="bi bi-award"></i>
                                     +@activity.MovementPoint points
                                 </div>
+                                @if (activity.CollaborationPoint.HasValue)
+                                {
+                                    <div class="text-info fw-bold">
+                                        <i class="bi bi-star"></i>
+                                        +@activity.CollaborationPoint collaboration points
+                                    </div>
+                                }
                             </div>
                         </div>
 
@@ -218,6 +244,9 @@
 <style>
     .bg-gradient-primary {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .bg-gradient-collaboration {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
     }
 </style>
 
