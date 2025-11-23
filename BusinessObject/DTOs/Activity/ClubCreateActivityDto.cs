@@ -12,8 +12,10 @@ namespace BusinessObject.DTOs.Activity
         public DateTime EndTime { get; set; }
         public ActivityType Type { get; set; }
         public bool IsPublic { get; set; }
-        public int? MaxParticipants { get; set; }
+        public int MaxParticipants { get; set; }
         public double MovementPoint { get; set; }
+        public int? ClubCollaborationId { get; set; }
+        public int? CollaborationPoint { get; set; }
         
         /// <summary>
         /// For Club Activities (ClubMeeting, ClubTraining, ClubWorkshop) only.

@@ -200,6 +200,37 @@ public class ClubController : ControllerBase
         }
     }
 
+    // GET api/club/my-club-members
+    [HttpGet("my-club-members")]
+    [Authorize(Roles = "ClubManager")]
+    public async Task<IActionResult> GetMyClubMembers()
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user ID" });
+            }
+
+            // Get the club managed by this user
+            var club = await _service.GetManagedClubByUserIdAsync(userId);
+            if (club == null)
+            {
+                return NotFound(new { message = "You are not managing any club" });
+            }
+
+            // Get members of that club
+            var members = await _service.GetClubMembersAsync(club.Id);
+            return Ok(members);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting members for managed club");
+            return StatusCode(500, new { message = "Failed to retrieve members" });
+        }
+    }
+
     // GET api/club/{clubId}/departments
     [HttpGet("{clubId:int}/departments")]
     [Authorize]

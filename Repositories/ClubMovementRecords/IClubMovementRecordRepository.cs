@@ -12,6 +12,7 @@ public interface IClubMovementRecordRepository
     Task<ClubMovementRecord> CreateAsync(ClubMovementRecord record);
     Task UpdateAsync(ClubMovementRecord record);
     Task RecalculateTotalScoreAsync(int recordId);
+    Task<List<ClubMovementRecordDetail>> GetDetailsByClubAndWeekAsync(int clubId, int semesterId, DateTime weekStart, DateTime weekEnd);
 }
 
 

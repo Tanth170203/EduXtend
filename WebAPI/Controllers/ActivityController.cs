@@ -129,10 +129,54 @@ namespace WebAPI.Controllers
             }
         }
 
+        // GET api/activity/available-clubs?excludeClubId=1
+        [HttpGet("available-clubs")]
+        [Authorize(Roles = "ClubManager,Admin")]
+        public async Task<IActionResult> GetAvailableCollaboratingClubs([FromQuery] int excludeClubId = 0)
+        {
+            var clubs = await _service.GetAvailableCollaboratingClubsAsync(excludeClubId);
+            return Ok(clubs);
+        }
+
+        // POST api/activity/admin
+        [HttpPost("admin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateByAdmin([FromBody] BusinessObject.DTOs.Activity.AdminCreateActivityWithSchedulesRequest request)
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Missing user id" });
+
+            try
+            {
+                // Create activity
+                var result = await _service.AdminCreateAsync(userId, request.Activity);
+                
+                // Add schedules if provided
+                if (request.Schedules != null && request.Schedules.Any())
+                {
+                    await _service.AddSchedulesToActivityAsync(result.Id, request.Schedules);
+                    
+                    // Reload activity with schedules
+                    result = await _service.GetActivityByIdAsync(result.Id, userId);
+                }
+                
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         // POST api/activity/club-manager
         [HttpPost("club-manager")]
         [Authorize(Roles = "ClubManager")]
-        public async Task<IActionResult> CreateByClubManager([FromBody] BusinessObject.DTOs.Activity.ClubCreateActivityDto dto, [FromQuery] int clubId)
+        public async Task<IActionResult> CreateByClubManager([FromBody] BusinessObject.DTOs.Activity.CreateActivityWithSchedulesRequest request, [FromQuery] int clubId)
         {
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
@@ -143,10 +187,61 @@ namespace WebAPI.Controllers
 
             try
             {
-                var result = await _service.ClubCreateAsync(userId, clubId, dto);
+                // Create activity
+                var result = await _service.ClubCreateAsync(userId, clubId, request.Activity);
+                
+                // Add schedules if provided
+                if (request.Schedules != null && request.Schedules.Any())
+                {
+                    await _service.AddSchedulesToActivityAsync(result.Id, request.Schedules);
+                    
+                    // Reload activity with schedules
+                    result = await _service.GetActivityByIdAsync(result.Id, userId);
+                }
+                
                 return Ok(result);
             }
             catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // PUT api/activity/admin/{id}
+        [HttpPut("admin/{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateByAdmin(int id, [FromBody] BusinessObject.DTOs.Activity.AdminUpdateActivityWithSchedulesRequest request)
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Missing user id" });
+
+            try
+            {
+                // Update activity
+                var result = await _service.AdminUpdateAsync(userId, id, request.Activity);
+                if (result == null) return NotFound(new { message = "Activity not found" });
+                
+                // Update schedules if provided
+                if (request.Schedules != null)
+                {
+                    await _service.UpdateActivitySchedulesAsync(id, request.Schedules);
+                    
+                    // Reload activity with schedules
+                    result = await _service.GetActivityByIdAsync(id, userId);
+                }
+                
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
@@ -155,7 +250,7 @@ namespace WebAPI.Controllers
         // PUT api/activity/club-manager/{id}
         [HttpPut("club-manager/{id}")]
         [Authorize(Roles = "ClubManager")]
-        public async Task<IActionResult> UpdateByClubManager(int id, [FromBody] BusinessObject.DTOs.Activity.ClubCreateActivityDto dto)
+        public async Task<IActionResult> UpdateByClubManager(int id, [FromBody] BusinessObject.DTOs.Activity.UpdateActivityWithSchedulesRequest request)
         {
             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
@@ -163,11 +258,26 @@ namespace WebAPI.Controllers
 
             try
             {
-                var result = await _service.ClubUpdateAsync(userId, id, dto);
+                // Update activity
+                var result = await _service.ClubUpdateAsync(userId, id, request.Activity);
                 if (result == null) return NotFound(new { message = "Activity not found or you don't have permission" });
+                
+                // Update schedules if provided
+                if (request.Schedules != null)
+                {
+                    await _service.UpdateActivitySchedulesAsync(id, request.Schedules);
+                    
+                    // Reload activity with schedules
+                    result = await _service.GetActivityByIdAsync(id, userId);
+                }
+                
                 return Ok(result);
             }
             catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
@@ -236,6 +346,58 @@ namespace WebAPI.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 return StatusCode(403, new { message = ex.Message });
+            }
+        }
+
+        // POST api/activity/club-manager/{id}/complete
+        [HttpPost("club-manager/{id:int}/complete")]
+        [Authorize(Roles = "ClubManager")]
+        public async Task<IActionResult> CompleteActivityByClubManager(int id)
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                return Unauthorized(new { message = "Missing user id" });
+
+            try
+            {
+                // Get activity to verify user is manager of the club
+                var activity = await _service.GetActivityByIdAsync(id, userId);
+                if (activity == null)
+                    return NotFound(new { message = "Activity not found" });
+
+                // Verify user is manager of the activity's club (Requirement 2.1)
+                if (activity.ClubId.HasValue)
+                {
+                    var isManager = await _service.IsUserManagerOfClubAsync(userId, activity.ClubId.Value);
+                    if (!isManager)
+                        return StatusCode(403, new { message = "You don't have permission to complete this activity" });
+                }
+                else
+                {
+                    // Activity has no club, ClubManager cannot complete it
+                    return StatusCode(403, new { message = "You don't have permission to complete this activity" });
+                }
+
+                // Call service to complete activity (Requirement 2.1, 8.1)
+                var result = await _service.CompleteActivityAsync(id, userId);
+                
+                if (!result.success)
+                {
+                    return BadRequest(new { message = result.message });
+                }
+                
+                // Return success with point details (Requirement 8.4)
+                return Ok(new 
+                { 
+                    message = result.message,
+                    organizingClubPoints = result.organizingClubPoints,
+                    collaboratingClubPoints = result.collaboratingClubPoints
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error completing activity {ActivityId} by ClubManager {UserId}", id, userId);
+                return StatusCode(500, new { message = "An error occurred while completing the activity" });
             }
         }
 
@@ -410,6 +572,132 @@ namespace WebAPI.Controllers
 		{
 			_logger.LogError(ex, "[AUTO MARK ABSENT] Error for activityId: {ActivityId}", activityId);
 			return StatusCode(500, new { message = "Internal server error: " + ex.Message });
+		}
+	}
+
+	// ================= COLLABORATION INVITATIONS =================
+	
+	// GET api/activity/collaboration-invitations
+	[HttpGet("collaboration-invitations")]
+	[Authorize(Roles = "ClubManager")]
+	public async Task<IActionResult> GetCollaborationInvitations()
+	{
+		var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+			return Unauthorized(new { message = "Missing user id" });
+
+		try
+		{
+			// Get user's managed club
+			// This should be done through a club service, but for now we'll need to get it from activity service
+			// You may need to add a method to get user's managed club ID
+			// For now, assuming we can get it from the first activity or a separate call
+			
+			// Temporary: Get club ID from query parameter or implement proper club service
+			// This is a placeholder - you should implement proper club ID retrieval
+			return BadRequest(new { message = "Club ID retrieval not implemented yet. Please pass clubId as query parameter." });
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error getting collaboration invitations");
+			return StatusCode(500, new { message = "Internal server error" });
+		}
+	}
+
+	// GET api/activity/collaboration-invitations/count?clubId=1
+	[HttpGet("collaboration-invitations/count")]
+	[Authorize(Roles = "ClubManager")]
+	public async Task<IActionResult> GetPendingInvitationCount([FromQuery] int clubId)
+	{
+		if (clubId <= 0)
+			return BadRequest(new { message = "Invalid club ID" });
+
+		try
+		{
+			var count = await _service.GetPendingInvitationCountAsync(clubId);
+			return Ok(new { count });
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error getting invitation count for club {ClubId}", clubId);
+			return StatusCode(500, new { message = "Internal server error" });
+		}
+	}
+
+	// GET api/activity/collaboration-invitations/list?clubId=1
+	[HttpGet("collaboration-invitations/list")]
+	[Authorize(Roles = "ClubManager")]
+	public async Task<IActionResult> GetCollaborationInvitationsList([FromQuery] int clubId)
+	{
+		if (clubId <= 0)
+			return BadRequest(new { message = "Invalid club ID" });
+
+		try
+		{
+			var invitations = await _service.GetCollaborationInvitationsAsync(clubId);
+			return Ok(invitations);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error getting invitations for club {ClubId}", clubId);
+			return StatusCode(500, new { message = "Internal server error" });
+		}
+	}
+
+	// POST api/activity/{activityId}/collaboration/accept?clubId=1
+	[HttpPost("{activityId:int}/collaboration/accept")]
+	[Authorize(Roles = "ClubManager")]
+	public async Task<IActionResult> AcceptCollaboration(int activityId, [FromQuery] int clubId)
+	{
+		var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+			return Unauthorized(new { message = "Missing user id" });
+
+		if (clubId <= 0)
+			return BadRequest(new { message = "Invalid club ID" });
+
+		try
+		{
+			var (success, message) = await _service.AcceptCollaborationAsync(activityId, userId, clubId);
+			if (!success)
+				return BadRequest(new { message });
+
+			return Ok(new { message });
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error accepting collaboration for activity {ActivityId}", activityId);
+			return StatusCode(500, new { message = "Internal server error" });
+		}
+	}
+
+	// POST api/activity/{activityId}/collaboration/reject?clubId=1
+	[HttpPost("{activityId:int}/collaboration/reject")]
+	[Authorize(Roles = "ClubManager")]
+	public async Task<IActionResult> RejectCollaboration(int activityId, [FromQuery] int clubId, [FromBody] BusinessObject.DTOs.Activity.RejectCollaborationDto dto)
+	{
+		var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+			return Unauthorized(new { message = "Missing user id" });
+
+		if (clubId <= 0)
+			return BadRequest(new { message = "Invalid club ID" });
+
+		if (!ModelState.IsValid)
+			return BadRequest(ModelState);
+
+		try
+		{
+			var (success, message) = await _service.RejectCollaborationAsync(activityId, userId, clubId, dto.Reason);
+			if (!success)
+				return BadRequest(new { message });
+
+			return Ok(new { message });
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error rejecting collaboration for activity {ActivityId}", activityId);
+			return StatusCode(500, new { message = "Internal server error" });
 		}
 	}
     }

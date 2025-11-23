@@ -46,10 +46,13 @@ namespace WebFE.Pages.Admin.Activities
                 ImageUrl = detail.ImageUrl,
                 StartTime = detail.StartTime,
                 EndTime = detail.EndTime,
-                Type = Enum.TryParse<ActivityType>(detail.Type, out var t) ? t : ActivityType.Other,
+                Type = Enum.TryParse<ActivityType>(detail.Type, out var t) ? t : ActivityType.LargeEvent,
                 IsPublic = detail.IsPublic,
-                MaxParticipants = detail.MaxParticipants,
-                MovementPoint = detail.MovementPoint
+                MaxParticipants = detail.MaxParticipants ?? 1,
+                MovementPoint = detail.MovementPoint,
+                ClubCollaborationId = detail.ClubCollaborationId,
+                CollaborationPoint = detail.CollaborationPoint,
+                CollaboratingClubName = detail.CollaboratingClubName
             };
             return Page();
         }
@@ -77,7 +80,9 @@ namespace WebFE.Pages.Admin.Activities
                 Type = Input.Type,
                 IsPublic = Input.IsPublic,
                 MaxParticipants = Input.MaxParticipants,
-                MovementPoint = Input.MovementPoint
+                MovementPoint = Input.MovementPoint,
+                ClubCollaborationId = Input.ClubCollaborationId,
+                CollaborationPoint = Input.CollaborationPoint
             };
 
             var resp = await client.PutAsJsonAsync($"/api/admin/activities/{Input.Id}", dto);
@@ -92,7 +97,7 @@ namespace WebFE.Pages.Admin.Activities
             return RedirectToPage("/Admin/Activities/Index");
         }
 
-        public class AdminUpdateActivityInput
+        public class AdminUpdateActivityInput : IValidatableObject
         {
             public int Id { get; set; }
             [Required] public string Title { get; set; } = null!;
@@ -103,8 +108,36 @@ namespace WebFE.Pages.Admin.Activities
             [Required] public DateTime EndTime { get; set; }
             [Required] public ActivityType Type { get; set; } = ActivityType.LargeEvent;
             public bool IsPublic { get; set; } = true;
-            public int? MaxParticipants { get; set; }
+            [Required] [Range(1, int.MaxValue, ErrorMessage = "Max Participants is required")] public int MaxParticipants { get; set; }
             [Range(0, 1000)] public double MovementPoint { get; set; }
+            public int? ClubCollaborationId { get; set; }
+            [Range(1, 3)] public int? CollaborationPoint { get; set; }
+            public string? CollaboratingClubName { get; set; }
+
+            public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+            {
+                if (MaxParticipants > 0)
+                {
+                    if (Type == ActivityType.LargeEvent && (MaxParticipants < 100 || MaxParticipants > 200))
+                    {
+                        yield return new ValidationResult(
+                            "Large Event phải có số người tham gia từ 100-200 người",
+                            new[] { nameof(MaxParticipants) });
+                    }
+                    else if (Type == ActivityType.MediumEvent && (MaxParticipants < 50 || MaxParticipants > 100))
+                    {
+                        yield return new ValidationResult(
+                            "Medium Event phải có số người tham gia từ 50-100 người",
+                            new[] { nameof(MaxParticipants) });
+                    }
+                    else if (Type == ActivityType.SmallEvent && MaxParticipants >= 50)
+                    {
+                        yield return new ValidationResult(
+                            "Small Event phải có số người tham gia dưới 50 người",
+                            new[] { nameof(MaxParticipants) });
+                    }
+                }
+            }
         }
     }
 }
