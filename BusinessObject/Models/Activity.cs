@@ -87,4 +87,7 @@ public class Activity
     public ICollection<ActivityFeedback> Feedbacks { get; set; } = new List<ActivityFeedback>();
     public ICollection<Evidence> Evidences { get; set; } = new List<Evidence>();
     public ICollection<ActivitySchedule> Schedules { get; set; } = new List<ActivitySchedule>();
+    
+    // Activity evaluation (one-to-one)
+    public ActivityEvaluation? Evaluation { get; set; }
 }

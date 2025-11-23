@@ -109,6 +109,10 @@
                         <i data-lucide="clipboard-check" style="width: 20px; height: 20px;"></i>
                         <span>Attendances</span>
                     </a>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/MonthlyReports") == true ? "active" : "")" href="/Admin/MonthlyReports">
+                        <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
+                        <span>Monthly Reports</span>
+                    </a>
                 </div>
                 
                 <div class="sidebar-section">

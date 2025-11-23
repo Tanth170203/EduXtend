@@ -20,6 +20,11 @@ namespace Repositories.Notifications
             return notification;
         }
 
+        public async Task<Notification> CreateNotificationAsync(Notification notification)
+        {
+            return await CreateAsync(notification);
+        }
+
         public async Task<Notification?> GetByIdAsync(int id)
         {
             return await _context.Notifications
@@ -51,14 +56,46 @@ namespace Repositories.Notifications
                 .ToListAsync();
         }
 
-        public async Task MarkAsReadAsync(int id)
+        public async Task DeleteAsync(int id)
         {
             var notification = await _context.Notifications.FindAsync(id);
             if (notification != null)
             {
-                notification.IsRead = true;
+                _context.Notifications.Remove(notification);
                 await _context.SaveChangesAsync();
             }
+        }
+
+        public async Task<List<Notification>> GetUnreadNotificationsAsync(int userId)
+        {
+            return await _context.Notifications
+                .AsNoTracking()
+                .Where(n => n.TargetUserId == userId && !n.IsRead)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<Notification>> GetNotificationsAsync(int userId, int pageNumber = 1, int pageSize = 10)
+        {
+            var skip = (pageNumber - 1) * pageSize;
+            return await _context.Notifications
+                .AsNoTracking()
+                .Where(n => n.TargetUserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<Notification> MarkAsReadAsync(int notificationId)
+        {
+            var notification = await _context.Notifications.FindAsync(notificationId);
+            if (notification == null)
+                throw new InvalidOperationException($"Notification with ID {notificationId} not found");
+
+            notification.IsRead = true;
+            await _context.SaveChangesAsync();
+            return notification;
         }
 
         public async Task MarkAllAsReadAsync(int userId)
@@ -73,16 +110,6 @@ namespace Repositories.Notifications
             }
 
             await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteAsync(int id)
-        {
-            var notification = await _context.Notifications.FindAsync(id);
-            if (notification != null)
-            {
-                _context.Notifications.Remove(notification);
-                await _context.SaveChangesAsync();
-            }
         }
     }
 }

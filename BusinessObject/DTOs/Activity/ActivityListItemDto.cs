@@ -44,6 +44,9 @@ namespace BusinessObject.DTOs.Activity
         
         // Attendance statistics
         public int AttendedCount { get; set; }
+        
+        // Evaluation status
+        public bool HasEvaluation { get; set; }
     }
 }
 

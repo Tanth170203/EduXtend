@@ -17,8 +17,8 @@
         <h1 class="page-title">@activity.Title</h1>
         <p class="page-description">Activity details and information</p>
     </div>
-    <div>
-        <a href="/ClubManager/Activities" class="btn btn-outline-secondary me-2">
+    <div class="d-flex gap-2">
+        <a href="/ClubManager/Activities" class="btn btn-outline-secondary">
             <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
             Back
         </a>
@@ -302,6 +302,7 @@
         <div class="content-card mb-4">
             <div class="content-card-header">
                 <h5 class="content-card-title">Quick Actions</h5>
+                <small class="text-muted">Status: @activity.Status | IsPublic: @activity.IsPublic</small>
             </div>
             <div class="content-card-body">
                 <div class="d-grid gap-2">
@@ -334,7 +335,37 @@
                             <i class="bi bi-chat-left-text me-2"></i>View Feedback
                         </a>
                     }
-                    @if (!Model.IsCollaboratedActivity && activity.Status != "Approved")
+                    @* Activity Evaluation for completed public activities *@
+                    @if (activity.IsPublic && activity.Status == "Completed")
+                    {
+                        @if (!activity.HasEvaluation)
+                        {
+                            <a href="/ClubManager/Activities/Evaluate/@activity.Id" class="btn btn-outline-warning">
+                                <i class="bi bi-star me-2"></i>Evaluate Activity
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="/ClubManager/Activities/EvaluationDetail/@activity.Id" class="btn btn-outline-primary">
+                                <i class="bi bi-eye me-2"></i>View Activity Evaluation
+                            </a>
+                        }
+                    }
+                    @* Member Evaluation for completed activities *@
+                    @if (activity.Status == "Completed")
+                    {
+                        <a href="/ClubManager/ActivityMemberEvaluations?activityId=@activity.Id" class="btn btn-outline-info">
+                            <i class="bi bi-star-fill me-2"></i>Evaluate Members
+                        </a>
+                    }
+                    @* Communication Plan for approved/completed activities *@
+                    @if (activity.IsPublic && (activity.Status == "Approved" || activity.Status == "Completed"))
+                    {
+                        <a href="/ClubManager/CommunicationPlans/Create?activityId=@activity.Id" class="btn btn-outline-success">
+                            <i class="bi bi-megaphone me-2"></i>Create Communication Plan
+                        </a>
+                    }
+                    @if (activity.Status != "Approved" && activity.Status != "Completed")
                     {
                         @if (!isEnded && activity.Status != "Completed")
                         {
@@ -659,7 +690,7 @@
             
             // Ensure code is a string
             if (!code || code === 'undefined') {
-                showToast('Mã điểm danh không hợp lệ', 'danger');
+                showToast('Invalid attendance code', 'danger');
                 return;
             }
             
@@ -677,11 +708,11 @@
                 const btn = evt.target.closest('button');
                 btn.classList.remove('btn-warning');
                 btn.classList.add('btn-success');
-                btn.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Đã copy!';
+                btn.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Copied!';
                 lucide.createIcons();
                 
                 // Show success message
-                showToast('Đã copy mã điểm danh: ' + code, 'success');
+                showToast('Copied attendance code: ' + code, 'success');
                 
                 setTimeout(function() {
                     btn.innerHTML = '<i data-lucide="clipboard" style="width: 16px; height: 16px;"></i> Copy Code';
@@ -691,7 +722,7 @@
                 }, 2000);
             }).catch(function(err) {
                 console.error('Copy failed:', err);
-                showToast('Không thể copy mã: ' + err.message, 'danger');
+                showToast('Failed to copy code: ' + err.message, 'danger');
             });
         }
         
@@ -705,10 +736,10 @@
             
             try {
                 document.execCommand('copy');
-                showToast('Đã copy mã điểm danh: ' + text, 'success');
+                showToast('Copied attendance code: ' + text, 'success');
             } catch (err) {
                 console.error('Fallback copy failed:', err);
-                showToast('Không thể copy mã', 'danger');
+                showToast('Failed to copy code', 'danger');
             }
             
             document.body.removeChild(textArea);
@@ -716,7 +747,7 @@
         
         function showToast(message, type) {
             // Validate parameters
-            if (!message) message = 'Thao tác thành công';
+            if (!message) message = 'Operation successful';
             if (!type) type = 'success';
             
             // Create toast container if not exists

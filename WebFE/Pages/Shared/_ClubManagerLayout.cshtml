@@ -70,6 +70,14 @@
                         <i data-lucide="clipboard-check" style="width: 20px; height: 20px;"></i>
                         <span>Attendances</span>
                     </a>
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/CommunicationPlans") ? "active" : "")" href="/ClubManager/CommunicationPlans">
+                        <i data-lucide="megaphone" style="width: 20px; height: 20px;"></i>
+                        <span>Communication Plans</span>
+                    </a>
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/MonthlyReports") ? "active" : "")" href="/ClubManager/MonthlyReports">
+                        <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
+                        <span>Monthly Reports</span>
+                    </a>
                 </div>
                 
                 <div class="sidebar-section">

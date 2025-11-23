@@ -28,5 +28,8 @@ namespace Repositories.Users
         Task<List<User>> GetUsersByEmailsAsync(List<string> emails);
         Task AddRangeAsync(List<User> users);
         Task<Dictionary<string, int>> GetRoleIdsByNamesAsync(List<string> roleNames);
+        
+        // Get users by role name
+        Task<List<User>> GetUsersByRoleAsync(string roleName);
     }
 }

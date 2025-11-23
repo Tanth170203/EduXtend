@@ -1,0 +1,753 @@
+@page "{id:int}"
+@model WebFE.Pages.ClubManager.MonthlyReports.DetailsModel
+@{
+    ViewData["Title"] = "Chi tiết báo cáo hoạt động";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        /* Reset & Base Fonts for Document Feel */
+        :root {
+            --doc-font: "Times New Roman", Times, serif;
+            --doc-bg: #ffffff;
+            --doc-text: #000000;
+        }
+
+        body {
+            background-color: #f0f2f5;
+        }
+
+        /* Toolbar (Buttons) */
+        .action-toolbar {
+            max-width: 210mm;
+            margin: 20px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: transparent;
+        }
+
+        /* The A4 Paper Container */
+        .document-page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto 50px auto;
+            background: var(--doc-bg);
+            padding: 20mm 15mm;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            font-family: var(--doc-font);
+            font-size: 13pt;
+            line-height: 1.3;
+            color: var(--doc-text);
+            position: relative;
+        }
+
+        /* Typography Helper Classes */
+        .doc-bold { font-weight: bold; }
+        .doc-italic { font-style: italic; }
+        .doc-center { text-align: center; }
+        .doc-right { text-align: right; }
+        .doc-uppercase { text-transform: uppercase; }
+
+        /* Header Layout */
+        .doc-header-table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+        .doc-header-table td {
+            vertical-align: top;
+            padding: 0;
+            border: none !important;
+        }
+        .header-left {
+            width: 45%;
+            text-align: center;
+        }
+        .header-right {
+            width: 55%;
+            text-align: center;
+        }
+
+        /* Section Titles */
+        .section-header {
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        
+        .part-title {
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        /* Tables - Official Style */
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 12pt;
+        }
+        .doc-table th, .doc-table td {
+            border: 1px solid #000;
+            padding: 5px;
+            vertical-align: middle;
+        }
+        .doc-table th {
+            font-weight: bold;
+            text-align: center;
+            background-color: transparent;
+        }
+
+        /* Specific Lists/Spacing */
+        .content-block {
+            margin-bottom: 15px;
+        }
+        .info-line {
+            margin-bottom: 5px;
+        }
+
+        /* Signature Section */
+        .signature-table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+            page-break-inside: avoid;
+        }
+        .signature-table td {
+            text-align: center;
+            vertical-align: top;
+            border: none !important;
+            padding: 0;
+        }
+        .signature-title {
+            font-weight: bold;
+            margin-bottom: 80px;
+        }
+
+        /* Status Badge for Web View Only */
+        .web-status-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            opacity: 0.8;
+        }
+    </style>
+}
+
+@if (Model.Report == null)
+{
+    <div class="container mt-5">
+        <div class="alert alert-warning">
+            Không tìm thấy báo cáo
+        </div>
+    </div>
+}
+else
+{
+    <div class="action-toolbar">
+        <div>
+            <a href="/ClubManager/MonthlyReports" class="btn btn-secondary btn-sm">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Quay lại
+            </a>
+        </div>
+        <div class="d-flex gap-2">
+            @if (Model.Report.Status == "Draft" || Model.Report.Status == "Rejected")
+            {
+                <a href="/ClubManager/MonthlyReports/Edit/@Model.Report.Id" class="btn btn-primary btn-sm">
+                    <i data-lucide="edit" style="width: 16px; height: 16px;"></i> Chỉnh sửa
+                </a>
+            }
+            @if (Model.Report.Status == "Draft")
+            {
+                <button type="button" class="btn btn-success btn-sm" onclick="submitReport(@Model.Report.Id)">
+                    <i data-lucide="send" style="width: 16px; height: 16px;"></i> Nộp báo cáo
+                </button>
+            }
+            <button type="button" class="btn btn-outline-dark btn-sm" onclick="exportPdf(@Model.Report.Id)">
+                <i data-lucide="download" style="width: 16px; height: 16px;"></i> Xuất PDF
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Report.RejectionReason))
+    {
+        <div class="action-toolbar alert alert-danger mb-3">
+            <strong>Lý do từ chối:</strong> @Model.Report.RejectionReason
+        </div>
+    }
+
+    <div class="document-page">
+        
+        <div class="web-status-badge">
+             @if (Model.Report.Status == "Draft") { <span class="badge bg-secondary">Nháp</span> }
+             else if (Model.Report.Status == "PendingApproval") { <span class="badge bg-warning text-dark">Chờ duyệt</span> }
+             else if (Model.Report.Status == "Approved") { <span class="badge bg-success">Đã duyệt</span> }
+             else if (Model.Report.Status == "Rejected") { <span class="badge bg-danger">Từ chối</span> }
+        </div>
+
+        <table class="doc-header-table">
+            <tr>
+                <td class="header-left">
+                    <div class="doc-bold doc-uppercase">PDP</div>
+                    <div class="doc-bold doc-uppercase">PHÒNG HỢP TÁC QUỐC TẾ <br />& PHÁT TRIỂN CÁ NHÂN</div>
+                </td>
+                <td class="header-right">
+                    <div class="doc-bold doc-uppercase" style="font-size: 14pt;">BÁO CÁO HOẠT ĐỘNG THÁNG @Model.Report.ReportMonth VÀ KẾ HOẠCH HOẠT ĐỘNG THÁNG @Model.Report.NextMonth</div>
+                    <div class="doc-italic" style="margin-top: 10px;">@Model.Report.Header.Location, Ngày @Model.Report.Header.ReportDate.Day tháng @Model.Report.Header.ReportDate.Month năm @Model.Report.Header.ReportDate.Year</div>
+                </td>
+            </tr>
+            <tr>
+                <td class="header-left">
+                    <div class="doc-bold doc-uppercase" style="margin-top: 10px;">@Model.Report.Header.ClubName</div>
+                </td>
+                <td></td>
+            </tr>
+        </table>
+
+        <div class="content-block">
+            <div class="info-line"><span class="doc-bold">Họ và tên:</span> @Model.Report.Footer.CreatorName</div>
+            <div class="info-line"><span class="doc-bold">Chức vụ:</span> @Model.Report.Footer.CreatorPosition</div>
+            <div class="info-line">Hôm nay, ngày @Model.Report.Header.ReportDate.Day tháng @Model.Report.Header.ReportDate.Month năm @Model.Report.Header.ReportDate.Year, tôi đại diện CLB @Model.Report.Header.ClubName xin báo cáo với phòng ICPDP (Hợp tác quốc tế & Phát triển cá nhân) như sau:</div>
+        </div>
+
+        <div class="part-title">A. HOẠT ĐỘNG THÁNG @Model.Report.ReportMonth</div>
+
+        <div class="section-header">I. Sự kiện cấp trường</div>
+        
+        @if (Model.Report.CurrentMonthActivities.SchoolEvents.Any())
+        {
+            var eventIndex = 1;
+            @foreach (var evt in Model.Report.CurrentMonthActivities.SchoolEvents)
+            {
+                <div class="content-block">
+                    <div class="info-line doc-bold">@eventIndex. Tên sự kiện: @evt.EventName</div>
+                    <div class="info-line">1. Thời gian diễn ra sự kiện: @evt.EventDate.ToString("dd/MM/yyyy HH:mm")</div>
+                    <div class="info-line">2. Số lượng người tham gia sự kiện: @evt.ActualParticipants</div>
+                    @* <div class="info-line">Link check-in: @(string.IsNullOrEmpty(evt.MediaUrls) ? "..." : evt.MediaUrls)</div> *@
+
+                    @if (evt.Participants.Any())
+                    {
+                        <div class="doc-center doc-bold doc-uppercase mt-2 mb-2">BẢNG THỐNG KÊ SỐ LƯỢNG NGƯỜI THAM DỰ CHƯƠNG TRÌNH</div>
+                        <table class="doc-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">STT</th>
+                                    <th>Họ & tên<br/>MSSV</th>
+                                    <th>SĐT</th>
+                                    <th>Điểm đánh giá<br/>(thang 3-5 điểm)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < evt.Participants.Count; i++)
+                                {
+                                    var p = evt.Participants[i];
+                                    <tr>
+                                        <td class="doc-center">@(i + 1)</td>
+                                        <td>@p.FullName<br/>@p.StudentCode</td>
+                                        <td class="doc-center">@p.PhoneNumber</td>
+                                        <td class="doc-center">@(p.Rating?.ToString("0.0") ?? "")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+
+                    <div class="info-line">3. Đánh giá sự kiện</div>
+                    @if (evt.Evaluation != null)
+                    {
+                        <table class="doc-table">
+                            <thead>
+                                <tr>
+                                    <th>Số lượng dự kiến (A)</th>
+                                    <th>Số lượng thực tế (B)</th>
+                                    <th>Nguyên nhân nếu B &lt; A</th>
+                                    <th>Truyền thông (thang 10)</th>
+                                    <th>Tổ chức (thang 10)</th>
+                                    <th>MC/ Host</th>
+                                    <th>Diễn giả/ Biểu diễn</th>
+                                    <th>Thành công</th>
+                                    <th>Hạn chế</th>
+                                    <th>Biện pháp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="doc-center">@evt.Evaluation.ExpectedCount</td>
+                                    <td class="doc-center">@evt.Evaluation.ActualCount</td>
+                                    <td>@evt.Evaluation.ReasonIfLess</td>
+                                    <td class="doc-center">@(evt.Evaluation.CommunicationScore?.ToString("0.0"))</td>
+                                    <td class="doc-center">@(evt.Evaluation.OrganizationScore?.ToString("0.0"))</td>
+                                    <td>@evt.Evaluation.McHostEvaluation</td>
+                                    <td>@evt.Evaluation.SpeakerPerformerEvaluation</td>
+                                    <td>@evt.Evaluation.Achievements</td>
+                                    <td>@evt.Evaluation.Limitations</td>
+                                    <td>@evt.Evaluation.ProposedSolutions</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    }
+
+                    <div class="info-line">4. Tình hình hoạt động của CLB trước, trong và sau sự kiện</div>
+                    <div class="info-line" style="margin-left: 20px;">a. Danh sách các thành viên tham gia hỗ trợ sự kiện</div>
+                    
+                    @if (evt.SupportMembers.Any())
+                    {
+                        <table class="doc-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">STT</th>
+                                    <th>Họ & tên</th>
+                                    <th>MSSV</th>
+                                    <th>SĐT</th>
+                                    <th>Vị trí công việc</th>
+                                    <th>Điểm đánh giá<br/>(thang 5-10 điểm)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < evt.SupportMembers.Count; i++)
+                                {
+                                    var m = evt.SupportMembers[i];
+                                    <tr>
+                                        <td class="doc-center">@(i + 1)</td>
+                                        <td>@m.FullName</td>
+                                        <td class="doc-center">@m.StudentCode</td>
+                                        <td class="doc-center">@m.PhoneNumber</td>
+                                        <td>@m.Position</td>
+                                        <td class="doc-center">@(m.Rating?.ToString("0.0") ?? "")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+
+                    <div class="info-line">5. Feedback sau sự kiện: @(string.IsNullOrEmpty(evt.FeedbackUrl) ? "(Đính kèm link feedback)" : evt.FeedbackUrl)</div>
+                    <div class="info-line">6. Hình ảnh, video của sự kiện: @(string.IsNullOrEmpty(evt.MediaUrls) ? "(Đính kèm link drive)" : evt.MediaUrls)</div>
+                </div>
+                eventIndex++;
+            }
+        }
+        else
+        {
+            <div class="doc-italic mb-3">Không có sự kiện cấp trường.</div>
+        }
+
+        <div class="section-header">II. Các hoạt động hỗ trợ các phòng ban khác/bộ môn</div>
+        <div class="info-line">1. Tên sự kiện</div>
+        @if (Model.Report.CurrentMonthActivities.SupportActivities.Any())
+        {
+            <table class="doc-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">STT</th>
+                        <th>Nội dung sự kiện</th>
+                        <th>Phòng ban/bộ môn</th>
+                        <th>Thời gian</th>
+                        <th>Địa điểm</th>
+                        <th>Hình ảnh hoạt động<br/>(Link hình ảnh)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Report.CurrentMonthActivities.SupportActivities.Count; i++)
+                    {
+                        var sa = Model.Report.CurrentMonthActivities.SupportActivities[i];
+                        <tr>
+                            <td class="doc-center">@(i + 1)</td>
+                            <td>@sa.EventContent</td>
+                            <td>@sa.DepartmentName</td>
+                            <td class="doc-center">@sa.EventTime.ToString("dd/MM/yyyy")</td>
+                            <td>@sa.Location</td>
+                            <td>@sa.ImageUrl</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="info-line">2. Danh sách sinh viên tham gia hỗ trợ</div>
+            
+             <table class="doc-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">STT</th>
+                        <th>Họ và tên</th>
+                        <th>Mã số sinh viên</th>
+                        <th>Tên sự kiện</th>
+                        <th>Thời gian</th>
+                        <th>Điểm đánh giá</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int supCount = 1; }
+                    @foreach(var sa in Model.Report.CurrentMonthActivities.SupportActivities) {
+                        @foreach(var s in sa.SupportStudents) {
+                             <tr>
+                                <td class="doc-center">@(supCount++)</td>
+                                <td>@s.FullName</td>
+                                <td class="doc-center">@s.StudentCode</td>
+                                <td>@s.EventName</td>
+                                <td class="doc-center">@s.EventTime.ToString("dd/MM/yyyy")</td>
+                                <td class="doc-center">@s.Rating</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        }
+        else 
+        {
+             <div class="doc-italic mb-3">Không có hoạt động hỗ trợ.</div>
+        }
+
+        <div class="section-header">III. Cuộc thi cấp thành phố/ cấp vùng miền/ cấp quốc gia</div>
+        @if (Model.Report.CurrentMonthActivities.Competitions.Any())
+        {
+            foreach (var comp in Model.Report.CurrentMonthActivities.Competitions)
+            {
+                <div class="info-line">1. Tên cuộc thi: @comp.CompetitionName</div>
+                <div class="info-line">2. Đơn vị có thẩm quyền tổ chức: @comp.OrganizingUnit</div>
+                <div class="info-line">3. Danh sách sinh viên tham gia</div>
+                
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">STT</th>
+                            <th>Họ và tên</th>
+                            <th>Mã số sinh viên</th>
+                            <th>Email</th>
+                            <th>Thành tích</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                         @for (int i = 0; i < comp.Participants.Count; i++)
+                         {
+                             var p = comp.Participants[i];
+                             <tr>
+                                 <td class="doc-center">@(i + 1)</td>
+                                 <td>@p.FullName</td>
+                                 <td class="doc-center">@p.StudentCode</td>
+                                 <td>@p.Email</td>
+                                 <td>@p.Achievement</td>
+                                 <td>@p.Note</td>
+                             </tr>
+                         }
+                    </tbody>
+                </table>
+            }
+        }
+        else
+        {
+             <div class="info-line">1. Tên cuộc thi:</div>
+             <div class="info-line">2. Đơn vị có thẩm quyền tổ chức:</div>
+             <div class="info-line">3. Danh sách sinh viên tham gia: (Trống)</div>
+        }
+
+
+        <div class="section-header">IV. Sinh hoạt nội bộ tháng @Model.Report.ReportMonth</div>
+        <table class="doc-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">STT</th>
+                    <th>Thời gian</th>
+                    <th>Địa điểm</th>
+                    <th>Số người tham gia</th>
+                    <th>Nội dung sinh hoạt chuyên môn</th>
+                    <th>Hình ảnh (đính kèm link)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Report.CurrentMonthActivities.InternalMeetings.Any())
+                {
+                    @for (int i = 0; i < Model.Report.CurrentMonthActivities.InternalMeetings.Count; i++)
+                    {
+                        var m = Model.Report.CurrentMonthActivities.InternalMeetings[i];
+                        <tr>
+                            <td class="doc-center">@(i + 1)</td>
+                            <td class="doc-center">@m.MeetingTime.ToString("dd/MM/yyyy")</td>
+                            <td>@m.Location</td>
+                            <td class="doc-center">@m.ParticipantCount</td>
+                            <td>@m.Content</td>
+                            <td>@m.ImageUrl</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="6" class="doc-center">Không có dữ liệu</td></tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="part-title">B. KẾ HOẠCH THÁNG @Model.Report.NextMonth</div>
+
+        <div class="section-header">I. Mục đích và ý nghĩa:</div>
+        <div class="info-line" style="white-space: pre-line;">@Model.Report.NextMonthPlans.Purpose.Purpose</div>
+        <div class="info-line" style="white-space: pre-line;">@Model.Report.NextMonthPlans.Purpose.Significance</div>
+
+        <div class="section-header">II. Sự kiện cấp trường</div>
+        @if (Model.Report.NextMonthPlans.PlannedEvents.Any())
+        {
+            var planIndex = 1;
+            foreach (var evt in Model.Report.NextMonthPlans.PlannedEvents)
+            {
+                <div class="info-line">@planIndex. Tên sự kiện: @evt.EventName</div>
+                <div class="info-line">2. Nội dung chi tiết về sự kiện: @evt.EventContent</div>
+                
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>Thời gian tổ chức</th>
+                            <th>Địa điểm tổ chức</th>
+                            <th>Số lượng SV dự kiến</th>
+                            <th>Link đăng ký (nếu có)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="doc-center">@evt.OrganizationTime.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@evt.Location</td>
+                            <td class="doc-center">@evt.ExpectedStudents</td>
+                            <td>@evt.RegistrationUrl</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-line">3. Timeline chi tiết sự kiện:</div>
+                <div class="info-line" style="white-space: pre-wrap; margin-bottom: 10px; border: 1px solid #ddd; padding: 5px;">@evt.Timeline</div>
+
+                <div class="info-line">4. Khách mời/ Diễn giả sự kiện:</div>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">STT</th>
+                            <th>Họ & tên khách mời/diễn giả</th>
+                            <th>Ngày tham gia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for(int i=0; i < evt.Guests.Count; i++)
+                        {
+                            <tr>
+                                <td class="doc-center">@(i+1)</td>
+                                <td>@evt.Guests[i].FullName</td>
+                                <td class="doc-center">@evt.Guests[i].ParticipationDate.ToString("dd/MM/yyyy")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                planIndex++;
+            }
+        }
+        else
+        {
+             <div class="info-line">1. Tên sự kiện: (Chưa có)</div>
+        }
+
+        <div class="section-header">III. Cuộc thi cấp thành phố/ vùng miền/ quốc gia</div>
+         @if (Model.Report.NextMonthPlans.PlannedCompetitions.Any())
+        {
+             foreach(var comp in Model.Report.NextMonthPlans.PlannedCompetitions)
+             {
+                <div class="info-line">1. Tên cuộc thi: @comp.CompetitionName</div>
+                <div class="info-line">2. Đơn vị có thẩm quyền tổ chức: @comp.AuthorizedUnit</div>
+                <div class="info-line">3. Thời gian: @comp.CompetitionTime.ToString("dd/MM/yyyy")</div>
+                <div class="info-line">4. Địa điểm: @comp.Location</div>
+                <div class="info-line">5. Danh sách sinh viên tham gia dự thi</div>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">STT</th>
+                            <th>Họ & tên sinh viên</th>
+                            <th>MSSV</th>
+                            <th>Email FPT</th>
+                            <th>Số điện thoại</th>
+                        </tr>
+                    </thead>
+                     <tbody>
+                        @for(int i=0; i < comp.Participants.Count; i++)
+                        {
+                            var p = comp.Participants[i];
+                            <tr>
+                                <td class="doc-center">@(i+1)</td>
+                                <td>@p.FullName</td>
+                                <td class="doc-center">@p.StudentCode</td>
+                                <td>@p.Email</td>
+                                <td class="doc-center"></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+             }
+        }
+        else
+        {
+             <div class="info-line">1. Tên cuộc thi: (Chưa có)</div>
+        }
+
+        <div class="section-header">IV. Kế hoạch truyền thông</div>
+        <div class="doc-center doc-bold doc-uppercase mb-2">BẢNG KẾ HOẠCH TRUYỀN THÔNG</div>
+        <table class="doc-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">STT</th>
+                    <th>Nội dung truyền thông<br/>(Bao gồm cả poster/hình ảnh và link đăng ký)</th>
+                    <th>Thời gian truyền thông</th>
+                    <th>Phụ trách</th>
+                    <th>Ghi chú<br/>(Tick vào nội dung cần gửi phòng IC-PDP hỗ trợ)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="5" class="doc-bold doc-italic">Truyền thông trước sự kiện</td></tr>
+                @{ 
+                    int cIndex = 1;
+                }
+                @foreach (var com in Model.Report.NextMonthPlans.CommunicationPlan)
+                {
+                    <tr>
+                        <td class="doc-center">@(cIndex++)</td>
+                        <td>@com.Content</td>
+                        <td class="doc-center">@com.Time.ToString("dd/MM/yyyy")</td>
+                        <td>@com.ResponsiblePerson</td>
+                        <td class="doc-center">@(com.NeedSupport ? "✓" : "")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="section-header">V. Hỗ trợ kinh phí</div>
+        <table class="doc-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">STT</th>
+                    <th>Hạng mục</th>
+                    <th>Số lượng</th>
+                    <th>Đơn vị tính</th>
+                    <th>Đơn giá<br/>(Đã bao gồm VAT)</th>
+                    <th>Thành tiền<br/>(Đã bao gồm VAT)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="6" class="doc-bold doc-italic">Chi phí hỗ trợ từ phía Nhà trường</td></tr>
+                @for(int i=0; i< Model.Report.NextMonthPlans.Budget.SchoolFunding.Count; i++)
+                {
+                    var item = Model.Report.NextMonthPlans.Budget.SchoolFunding[i];
+                    <tr>
+                        <td class="doc-center">@(i+1)</td>
+                        <td>@item.Category</td>
+                        <td class="doc-center">@item.Quantity</td>
+                        <td class="doc-center">@item.Unit</td>
+                        <td class="doc-right">@item.UnitPrice.ToString("N0")</td>
+                        <td class="doc-right">@item.TotalPrice.ToString("N0")</td>
+                    </tr>
+                }
+                <tr>
+                    <td colspan="5" class="doc-bold doc-right">Tổng:</td>
+                    <td class="doc-bold doc-right">@Model.Report.NextMonthPlans.Budget.SchoolTotal.ToString("N0") VNĐ</td>
+                </tr>
+                 <tr>
+                    <td colspan="6" class="doc-italic">Bằng chữ: @Model.Report.NextMonthPlans.Budget.SchoolTotalInWords</td>
+                </tr>
+
+                <tr><td colspan="6" class="doc-bold doc-italic">Chi phí từ phía CLB</td></tr>
+                 @for(int i=0; i< Model.Report.NextMonthPlans.Budget.ClubFunding.Count; i++)
+                {
+                    var item = Model.Report.NextMonthPlans.Budget.ClubFunding[i];
+                    <tr>
+                        <td class="doc-center">@(i+1)</td>
+                        <td>@item.Category</td>
+                        <td class="doc-center">@item.Quantity</td>
+                        <td class="doc-center">@item.Unit</td>
+                        <td class="doc-right">@item.UnitPrice.ToString("N0")</td>
+                        <td class="doc-right">@item.TotalPrice.ToString("N0")</td>
+                    </tr>
+                }
+                <tr>
+                    <td colspan="5" class="doc-bold doc-right">Tổng:</td>
+                    <td class="doc-bold doc-right">@Model.Report.NextMonthPlans.Budget.ClubTotal.ToString("N0") VNĐ</td>
+                </tr>
+                 <tr>
+                    <td colspan="6" class="doc-italic">Bằng chữ: @Model.Report.NextMonthPlans.Budget.ClubTotalInWords</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-header">VI. Kế hoạch sử dụng cơ sở vật chất cho sự kiện/ sinh hoạt nội bộ</div>
+        @if (Model.Report.NextMonthPlans.Facility.ElectionTime.HasValue) {
+             <div class="info-line">Thời gian bầu BCN nhiệm kỳ: @Model.Report.NextMonthPlans.Facility.ElectionTime.Value.ToString("dd/MM/yyyy")</div>
+        }
+        <table class="doc-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">STT</th>
+                    <th>Cơ sở vật chất</th>
+                    <th>Thời gian sinh hoạt</th>
+                </tr>
+            </thead>
+            <tbody>
+                 @for (int i = 0; i < Model.Report.NextMonthPlans.Facility.Items.Count; i++)
+                {
+                    var f = Model.Report.NextMonthPlans.Facility.Items[i];
+                    <tr>
+                        <td class="doc-center">@(i+1)</td>
+                        <td>@f.FacilityName</td>
+                        <td>@f.UsageTime.ToString("dd/MM/yyyy HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="section-header">VII. Trách nhiệm của CLB:</div>
+        <div class="info-line" style="white-space: pre-line;">@Model.Report.NextMonthPlans.Responsibilities.CustomText</div>
+
+        <table class="signature-table">
+            <tr>
+                <td style="width: 33%;">
+                    <div class="doc-bold">Người phê duyệt</div>
+                    <div class="signature-title"></div> <div class="doc-bold">@Model.Report.Footer.ApproverName</div>
+                </td>
+                <td style="width: 33%;">
+                    <div class="doc-bold">Người xem xét</div>
+                     <div class="signature-title"></div>
+                    <div class="doc-bold">@Model.Report.Footer.ReviewerName</div>
+                </td>
+                <td style="width: 33%;">
+                    <div class="doc-bold">Người lập bảng</div>
+                     <div class="signature-title"></div>
+                    <div class="doc-bold">@Model.Report.Footer.CreatorName</div>
+                </td>
+            </tr>
+        </table>
+
+    </div> }
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+        
+        async function submitReport(reportId) {
+            if(!confirm('Bạn có chắc chắn muốn nộp báo cáo này không?')) return;
+            try {
+                const response = await fetch(`/api/monthly-reports/${reportId}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (response.ok) {
+                    alert('Nộp báo cáo thành công!');
+                    window.location.reload();
+                } else {
+                    alert('Lỗi khi nộp báo cáo.');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Đã xảy ra lỗi hệ thống.');
+            }
+        }
+        
+        async function exportPdf(reportId) {
+             window.open(`/api/monthly-reports/${reportId}/pdf`, '_blank');
+        }
+    </script>
+}

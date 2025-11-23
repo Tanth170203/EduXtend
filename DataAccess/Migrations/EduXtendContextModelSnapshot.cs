@@ -17,7 +17,7 @@ namespace DataAccess.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.10")
+                .HasAnnotation("ProductVersion", "9.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -167,6 +167,72 @@ namespace DataAccess.Migrations
                     b.ToTable("ActivityAttendances");
                 });
 
+            modelBuilder.Entity("BusinessObject.Models.ActivityEvaluation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActivityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ActualParticipants")
+                        .HasColumnType("int");
+
+                    b.Property<double>("AverageScore")
+                        .HasColumnType("float");
+
+                    b.Property<int>("CommunicationScore")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ExpectedParticipants")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HostScore")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImprovementMeasures")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Limitations")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("OrganizationScore")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("SpeakerScore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Success")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("ActivityEvaluations");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.ActivityFeedback", b =>
             {
                 b.Property<int>("Id")
@@ -198,6 +264,63 @@ namespace DataAccess.Migrations
                 b.HasIndex("UserId");
 
                     b.ToTable("ActivityFeedbacks");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.ActivityMemberEvaluation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActivityScheduleAssignmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AttitudeScore")
+                        .HasColumnType("int");
+
+                    b.Property<double>("AverageScore")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Comments")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EffectivenessScore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EvaluatorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Improvements")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("ResponsibilityScore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SkillScore")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Strengths")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityScheduleAssignmentId")
+                        .IsUnique();
+
+                    b.HasIndex("EvaluatorId");
+
+                    b.ToTable("ActivityMemberEvaluations");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.ActivityRegistration", b =>
@@ -525,9 +648,6 @@ namespace DataAccess.Migrations
                 b.HasIndex("ClubId", "SemesterId", "Month")
                     .IsUnique();
 
-                    b.HasIndex("ClubId", "SemesterId", "Month")
-                        .IsUnique();
-
                     b.ToTable("ClubMovementRecords");
                 });
 
@@ -609,18 +729,87 @@ namespace DataAccess.Migrations
                 b.Property<DateTime>("PublishedAt")
                     .HasColumnType("datetime2");
 
-                b.Property<string>("Title")
-                    .IsRequired()
-                    .HasMaxLength(200)
-                    .HasColumnType("nvarchar(200)");
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
-                b.HasKey("Id");
+                    b.HasKey("Id");
 
-                b.HasIndex("ClubId");
+                    b.HasIndex("ClubId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("ClubNews");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.CommunicationItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CommunicationPlanId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ResponsiblePerson")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("ScheduledDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommunicationPlanId", "Order");
+
+                    b.ToTable("CommunicationItems");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.CommunicationPlan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActivityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClubId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId")
+                        .IsUnique();
+
+                    b.HasIndex("ClubId");
 
                 b.HasIndex("CreatedById");
 
-                    b.ToTable("ClubNews");
+                    b.ToTable("CommunicationPlans");
                 });
 
             modelBuilder.Entity("BusinessObject.Models.Evidence", b =>
@@ -1304,8 +1493,11 @@ namespace DataAccess.Migrations
                 b.Property<int?>("ApprovedById")
                     .HasColumnType("int");
 
-                b.Property<int>("ClubId")
-                    .HasColumnType("int");
+                    b.Property<string>("ClubResponsibilities")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ClubId")
+                        .HasColumnType("int");
 
                 b.Property<DateTime>("CreatedAt")
                     .HasColumnType("datetime2");
@@ -1313,10 +1505,35 @@ namespace DataAccess.Migrations
                 b.Property<string>("Description")
                     .HasColumnType("nvarchar(max)");
 
-                b.Property<string>("Status")
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .HasColumnType("nvarchar(50)");
+                    b.Property<string>("EventMediaUrls")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NextMonthPurposeAndSignificance")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReportActivityIds")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ReportMonth")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReportSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReportType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("ReportYear")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                 b.Property<DateTime?>("SubmittedAt")
                     .HasColumnType("datetime2");
@@ -1330,7 +1547,7 @@ namespace DataAccess.Migrations
 
                 b.HasIndex("ApprovedById");
 
-                b.HasIndex("ClubId");
+                    b.HasIndex("ClubId", "ReportMonth", "ReportYear", "ReportType");
 
                     b.ToTable("Plans");
                 });
@@ -1639,47 +1856,6 @@ namespace DataAccess.Migrations
 
                 b.HasIndex("UserId");
 
-                b.ToTable("UserTokens");
-            });
-
-            modelBuilder.Entity("BusinessObject.Models.VnpayTransactionDetail", b =>
-            {
-                b.Property<int>("Id")
-                    .ValueGeneratedOnAdd()
-                    .HasColumnType("int");
-
-                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                b.Property<decimal>("Amount")
-                    .HasColumnType("decimal(18,2)");
-
-                b.Property<string>("BankCode")
-                    .HasMaxLength(20)
-                    .HasColumnType("nvarchar(20)");
-
-                b.Property<string>("BankTransactionId")
-                    .HasMaxLength(255)
-                    .HasColumnType("nvarchar(255)");
-
-                b.Property<DateTime>("CreatedAt")
-                    .HasColumnType("datetime2");
-
-                b.Property<int>("FundCollectionPaymentId")
-                    .HasColumnType("int");
-
-                b.Property<string>("IpAddress")
-                    .HasMaxLength(50)
-                    .HasColumnType("nvarchar(50)");
-
-                b.Property<string>("OrderInfo")
-                    .HasMaxLength(500)
-                    .HasColumnType("nvarchar(500)");
-
-                b.Property<string>("ResponseCode")
-                    .IsRequired()
-                    .HasMaxLength(10)
-                    .HasColumnType("nvarchar(10)");
-
                     b.ToTable("UserTokens");
                 });
 
@@ -1740,6 +1916,25 @@ namespace DataAccess.Migrations
                 b.Navigation("User");
             });
 
+            modelBuilder.Entity("BusinessObject.Models.ActivityEvaluation", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Activity", "Activity")
+                        .WithOne("Evaluation")
+                        .HasForeignKey("BusinessObject.Models.ActivityEvaluation", "ActivityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Activity");
+
+                    b.Navigation("CreatedBy");
+                });
+
             modelBuilder.Entity("BusinessObject.Models.ActivityFeedback", b =>
             {
                 b.HasOne("BusinessObject.Models.Activity", "Activity")
@@ -1758,6 +1953,25 @@ namespace DataAccess.Migrations
 
                 b.Navigation("User");
             });
+
+            modelBuilder.Entity("BusinessObject.Models.ActivityMemberEvaluation", b =>
+                {
+                    b.HasOne("BusinessObject.Models.ActivityScheduleAssignment", "Assignment")
+                        .WithMany()
+                        .HasForeignKey("ActivityScheduleAssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "Evaluator")
+                        .WithMany()
+                        .HasForeignKey("EvaluatorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Assignment");
+
+                    b.Navigation("Evaluator");
+                });
 
             modelBuilder.Entity("BusinessObject.Models.ActivityRegistration", b =>
             {
@@ -1924,20 +2138,58 @@ namespace DataAccess.Migrations
             });
 
             modelBuilder.Entity("BusinessObject.Models.ClubNews", b =>
-            {
-                b.HasOne("BusinessObject.Models.Club", "Club")
-                    .WithMany("NewsPosts")
-                    .HasForeignKey("ClubId")
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .IsRequired();
+                {
+                    b.HasOne("BusinessObject.Models.Club", "Club")
+                        .WithMany("NewsPosts")
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                b.HasOne("BusinessObject.Models.User", "CreatedBy")
-                    .WithMany()
-                    .HasForeignKey("CreatedById")
-                    .OnDelete(DeleteBehavior.Restrict)
-                    .IsRequired();
+                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                b.Navigation("Club");
+                    b.Navigation("Club");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.CommunicationItem", b =>
+                {
+                    b.HasOne("BusinessObject.Models.CommunicationPlan", "CommunicationPlan")
+                        .WithMany("Items")
+                        .HasForeignKey("CommunicationPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CommunicationPlan");
+                });
+
+            modelBuilder.Entity("BusinessObject.Models.CommunicationPlan", b =>
+                {
+                    b.HasOne("BusinessObject.Models.Activity", "Activity")
+                        .WithOne()
+                        .HasForeignKey("BusinessObject.Models.CommunicationPlan", "ActivityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.Club", "Club")
+                        .WithMany()
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Activity");
+
+                    b.Navigation("Club");
 
                 b.Navigation("CreatedBy");
             });
@@ -2342,7 +2594,9 @@ namespace DataAccess.Migrations
             {
                 b.Navigation("Attendances");
 
-                b.Navigation("Evidences");
+                    b.Navigation("Evaluation");
+
+                    b.Navigation("Evidences");
 
                 b.Navigation("Feedbacks");
 
@@ -2392,10 +2646,10 @@ namespace DataAccess.Migrations
                 b.Navigation("Details");
             });
 
-            modelBuilder.Entity("BusinessObject.Models.FundCollectionPayment", b =>
-            {
-                b.Navigation("VnpayTransactionDetail");
-            });
+            modelBuilder.Entity("BusinessObject.Models.CommunicationPlan", b =>
+                {
+                    b.Navigation("Items");
+                });
 
             modelBuilder.Entity("BusinessObject.Models.FundCollectionRequest", b =>
             {

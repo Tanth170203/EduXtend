@@ -51,6 +51,12 @@ namespace Services.Activities
         // Check if user is manager of club
         Task<bool> IsUserManagerOfClubAsync(int userId, int clubId);
         
+        // Evaluation methods
+        Task<ActivityEvaluationDto> CreateEvaluationAsync(int managerId, int activityId, CreateActivityEvaluationDto dto);
+        Task<ActivityEvaluationDto?> UpdateEvaluationAsync(int managerId, int activityId, CreateActivityEvaluationDto dto);
+        Task<ActivityEvaluationDto?> GetEvaluationAsync(int userId, int activityId, bool isAdmin = false);
+        Task<int> AutoCompleteActivitiesAsync();
+        
         // Collaboration validation
         Task ValidateCollaborationSettingsAsync(ActivityType type, string userRole, int? organizingClubId, int? clubCollaborationId, int? collaborationPoint, double movementPoint);
         

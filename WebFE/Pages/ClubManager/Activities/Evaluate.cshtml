@@ -1,0 +1,413 @@
+﻿@page "{activityId:int}"
+@model WebFE.Pages.ClubManager.Activities.EvaluateModel
+@{
+    ViewData["Title"] = Model.IsEditMode ? "Edit Evaluation" : "Evaluate Activity";
+    ViewData["Breadcrumb"] = Model.IsEditMode ? "Edit Evaluation" : "Evaluate Activity";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">@(Model.IsEditMode ? "Edit Evaluation" : "Evaluate Activity")</h1>
+        <p class="page-description">@(Model.Activity?.Title ?? "Activity Evaluation")</p>
+    </div>
+    <a href="/ClubManager/Activities/Details?id=@Model.ActivityId" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        Back
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+        @Model.ErrorMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Activity Info -->
+@if (Model.Activity != null)
+{
+    <div class="content-card mb-4">
+        <div class="content-card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <small class="text-muted d-block mb-1">
+                        <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> Location
+                    </small>
+                    <strong>@(Model.Activity.Location ?? "N/A")</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block mb-1">
+                        <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Date
+                    </small>
+                    <strong>@Model.Activity.StartTime.ToString("dd/MM/yyyy")</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block mb-1">
+                        <i data-lucide="clock" style="width: 14px; height: 14px;"></i> Time
+                    </small>
+                    <strong>@Model.Activity.StartTime.ToString("HH:mm") - @Model.Activity.EndTime.ToString("HH:mm")</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block mb-1">
+                        <i data-lucide="users" style="width: 14px; height: 14px;"></i> Registered
+                    </small>
+                    <strong>@Model.Activity.RegisteredCount participants</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Evaluation Form -->
+<form method="post" class="needs-validation" novalidate id="evaluationForm">
+    <div class="row g-4">
+        <!-- Main Form -->
+        <div class="col-lg-8">
+            <!-- Participant Assessment -->
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">
+                        <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                        Participant Assessment
+                    </h5>
+                </div>
+                <div class="content-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded">
+                                <label asp-for="Evaluation.ExpectedParticipants" class="form-label mb-2">
+                                    <small class="text-muted">Expected Participants (A)</small>
+                                </label>
+                                <input asp-for="Evaluation.ExpectedParticipants" 
+                                       type="number" 
+                                       class="form-control form-control-lg text-center fw-bold" 
+                                       readonly
+                                       id="expectedParticipants" />
+                                <small class="text-muted d-block mt-2">From max participants</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded">
+                                <label asp-for="Evaluation.ActualParticipants" class="form-label mb-2">
+                                    <small class="text-muted">Actual Participants (B)</small>
+                                </label>
+                                <input asp-for="Evaluation.ActualParticipants" 
+                                       type="number" 
+                                       class="form-control form-control-lg text-center fw-bold" 
+                                       readonly
+                                       id="actualParticipants" />
+                                <small class="text-muted d-block mt-2">From attended count</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reason (conditional) -->
+                    <div id="reasonSection" style="display: none;" class="mt-3">
+                        <div class="alert alert-warning" role="alert">
+                            <div class="d-flex">
+                                <i data-lucide="alert-triangle" class="me-2" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
+                                <div class="flex-grow-1">
+                                    <label asp-for="Evaluation.Reason" class="form-label fw-semibold mb-2">
+                                        Reason Required (B &lt; A)
+                                    </label>
+                                    <textarea asp-for="Evaluation.Reason" 
+                                              class="form-control" 
+                                              rows="3" 
+                                              maxlength="1000"
+                                              id="reasonInput"
+                                              placeholder="Please explain why actual participants was less than expected..."></textarea>
+                                    <small class="text-muted">
+                                        <span id="reasonCharCount">0</span>/1000 characters
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evaluation Scores -->
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">
+                        <i data-lucide="bar-chart-2" style="width: 18px; height: 18px;"></i>
+                        Evaluation Scores
+                    </h5>
+                </div>
+                <div class="content-card-body">
+                    <p class="text-muted small mb-4">Rate each criterion from 0 to 10</p>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded">
+                                <label asp-for="Evaluation.CommunicationScore" class="form-label">
+                                    <i data-lucide="message-circle" style="width: 14px; height: 14px;"></i>
+                                    Communication Score
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="Evaluation.CommunicationScore" 
+                                           type="number" 
+                                           class="form-control form-control-lg text-center fw-bold" 
+                                           min="0" 
+                                           max="10" 
+                                           required />
+                                    <span class="input-group-text">/10</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded">
+                                <label asp-for="Evaluation.OrganizationScore" class="form-label">
+                                    <i data-lucide="layout" style="width: 14px; height: 14px;"></i>
+                                    Organization Score
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="Evaluation.OrganizationScore" 
+                                           type="number" 
+                                           class="form-control form-control-lg text-center fw-bold" 
+                                           min="0" 
+                                           max="10" 
+                                           required />
+                                    <span class="input-group-text">/10</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded">
+                                <label asp-for="Evaluation.HostScore" class="form-label">
+                                    <i data-lucide="mic" style="width: 14px; height: 14px;"></i>
+                                    MC/Host Score
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="Evaluation.HostScore" 
+                                           type="number" 
+                                           class="form-control form-control-lg text-center fw-bold" 
+                                           min="0" 
+                                           max="10" 
+                                           required />
+                                    <span class="input-group-text">/10</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded">
+                                <label asp-for="Evaluation.SpeakerScore" class="form-label">
+                                    <i data-lucide="user-check" style="width: 14px; height: 14px;"></i>
+                                    Speaker/Performer Score
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="Evaluation.SpeakerScore" 
+                                           type="number" 
+                                           class="form-control form-control-lg text-center fw-bold" 
+                                           min="0" 
+                                           max="10" 
+                                           required />
+                                    <span class="input-group-text">/10</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="p-3 bg-light rounded">
+                                <label asp-for="Evaluation.Success" class="form-label">
+                                    <i data-lucide="award" style="width: 14px; height: 14px;"></i>
+                                    Overall Success Score
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="Evaluation.Success" 
+                                           type="number" 
+                                           class="form-control form-control-lg text-center fw-bold" 
+                                           min="0" 
+                                           max="10" 
+                                           required 
+                                           id="successScore" />
+                                    <span class="input-group-text">/10</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Details -->
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">
+                        <i data-lucide="file-text" style="width: 18px; height: 18px;"></i>
+                        Additional Details
+                    </h5>
+                </div>
+                <div class="content-card-body">
+                    <!-- Limitations -->
+                    <div class="mb-4">
+                        <label asp-for="Evaluation.Limitations" class="form-label">
+                            <i data-lucide="alert-circle" style="width: 14px; height: 14px;"></i>
+                            Limitations (Optional)
+                        </label>
+                        <textarea asp-for="Evaluation.Limitations" 
+                                  class="form-control" 
+                                  rows="4" 
+                                  maxlength="2000"
+                                  id="limitationsInput"
+                                  placeholder="Describe any limitations or challenges encountered..."></textarea>
+                        <small class="text-muted">
+                            <span id="limitationsCharCount">0</span>/2000 characters
+                        </small>
+                    </div>
+
+                    <!-- Improvement Measures -->
+                    <div class="mb-0">
+                        <label asp-for="Evaluation.ImprovementMeasures" class="form-label">
+                            <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                            Improvement Measures (Optional)
+                        </label>
+                        <textarea asp-for="Evaluation.ImprovementMeasures" 
+                                  class="form-control" 
+                                  rows="4" 
+                                  maxlength="2000"
+                                  id="improvementInput"
+                                  placeholder="Suggest measures to improve future activities..."></textarea>
+                        <small class="text-muted">
+                            <span id="improvementCharCount">0</span>/2000 characters
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Submit Section -->
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Actions</h5>
+                </div>
+                <div class="content-card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                            <span id="submitBtnText">@(Model.IsEditMode ? "Update Evaluation" : "Save Evaluation")</span>
+                        </button>
+                        <a href="/ClubManager/Activities/Details?id=@Model.ActivityId" class="btn btn-outline-secondary">
+                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        // Form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+
+        // Get form elements
+        const expectedInput = document.getElementById('expectedParticipants');
+        const actualInput = document.getElementById('actualParticipants');
+        const reasonSection = document.getElementById('reasonSection');
+        const reasonInput = document.getElementById('reasonInput');
+        const form = document.getElementById('evaluationForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // Character counters
+        const reasonCharCount = document.getElementById('reasonCharCount');
+        const limitationsCharCount = document.getElementById('limitationsCharCount');
+        const improvementCharCount = document.getElementById('improvementCharCount');
+        
+        const limitationsInput = document.getElementById('limitationsInput');
+        const improvementInput = document.getElementById('improvementInput');
+
+        // Update character count
+        function updateCharCount(input, counter) {
+            if (input && counter) {
+                counter.textContent = input.value.length;
+            }
+        }
+
+        // Initialize character counts
+        updateCharCount(reasonInput, reasonCharCount);
+        updateCharCount(limitationsInput, limitationsCharCount);
+        updateCharCount(improvementInput, improvementCharCount);
+
+        // Add event listeners for character counting
+        reasonInput?.addEventListener('input', () => updateCharCount(reasonInput, reasonCharCount));
+        limitationsInput?.addEventListener('input', () => updateCharCount(limitationsInput, limitationsCharCount));
+        improvementInput?.addEventListener('input', () => updateCharCount(improvementInput, improvementCharCount));
+
+        // Show/hide reason field
+        function updateReasonVisibility() {
+            const expected = parseInt(expectedInput.value) || 0;
+            const actual = parseInt(actualInput.value) || 0;
+            
+            if (actual < expected) {
+                reasonSection.style.display = 'block';
+                reasonInput.required = true;
+            } else {
+                reasonSection.style.display = 'none';
+                reasonInput.required = false;
+                reasonInput.value = '';
+            }
+        }
+
+        // Event listeners
+        expectedInput?.addEventListener('input', updateReasonVisibility);
+        expectedInput?.addEventListener('change', updateReasonVisibility);
+        actualInput?.addEventListener('input', updateReasonVisibility);
+        actualInput?.addEventListener('change', updateReasonVisibility);
+
+        // Initialize
+        updateReasonVisibility();
+
+        // Form submission
+        form?.addEventListener('submit', function(e) {
+            const expected = parseInt(expectedInput.value) || 0;
+            const actual = parseInt(actualInput.value) || 0;
+            
+            if (actual < expected && !reasonInput.value.trim()) {
+                e.preventDefault();
+                reasonInput.setCustomValidity('Please provide a reason when actual participants is less than expected');
+                reasonInput.reportValidity();
+                return false;
+            } else {
+                reasonInput.setCustomValidity('');
+            }
+            
+            if (form.checkValidity()) {
+                loadingOverlay.style.display = 'flex';
+                submitBtn.disabled = true;
+            }
+        });
+
+        // Re-initialize icons
+        setTimeout(() => lucide.createIcons(), 100);
+    </script>
+    <partial name="_ValidationScriptsPartial" />
+}

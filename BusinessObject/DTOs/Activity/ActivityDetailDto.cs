@@ -61,6 +61,9 @@ namespace BusinessObject.DTOs.Activity
         
         // Schedules (only for complex activities)
         public List<ActivityScheduleDto>? Schedules { get; set; }
+        
+        // Evaluation status
+        public bool HasEvaluation { get; set; }
     }
 }
 
