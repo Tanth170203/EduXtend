@@ -39,4 +39,17 @@ public interface INotificationService
     /// Requirements: 7.4
     /// </summary>
     Task<Notification> MarkNotificationAsReadAsync(int notificationId);
+    Task NotifyMemberAboutSuccessfulVnpayPaymentAsync(int memberId, string fundCollectionTitle, decimal amount, long transactionId);
+    Task NotifyClubManagerAboutVnpayPaymentAsync(int clubManagerId, string memberName, string fundCollectionTitle, decimal amount, long transactionId);
+    
+    // Fund collection notifications
+    Task NotifyMembersAboutNewFundCollectionAsync(int clubId, string fundCollectionTitle, decimal amount, DateTime dueDate, int createdById);
+    Task NotifyClubManagerAboutCashPaymentAsync(int clubManagerId, int clubId, string memberName, string fundCollectionTitle, decimal amount);
+    Task NotifyClubManagerAboutBankTransferPaymentAsync(int clubManagerId, int clubId, string memberName, string fundCollectionTitle, decimal amount);
+    Task NotifyMemberAboutPaymentConfirmationAsync(int memberId, int clubId, string fundCollectionTitle, decimal amount, string paymentMethod);
+    Task NotifyMemberAboutPaymentReminderAsync(int memberId, int clubId, string fundCollectionTitle, decimal amount, DateTime dueDate, int daysUntilDue);
+    
+    // Join request notifications
+    Task NotifyUserAboutJoinRequestApprovalAsync(int userId, int clubId, string clubName);
+    Task NotifyUserAboutJoinRequestRejectionAsync(int userId, int clubId, string clubName);
 }

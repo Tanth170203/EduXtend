@@ -1,0 +1,12 @@
+version: 2
+
+paths-ignore:
+  - "WebAPI/appsettings.json"
+  - "WebAPI/appsettings.*.json"
+  - "**/appsettings.json"
+  - "**/appsettings.*.json"
+
+# Bỏ qua các loại secret cụ thể (nếu cần)
+# matches-ignore:
+#   - name: SMTP Credentials
+#     match: jmgc bgyc fzez ydtc

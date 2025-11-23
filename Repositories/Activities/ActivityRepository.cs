@@ -2,6 +2,7 @@ using BusinessObject.Models;
 using BusinessObject.Enum;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Repositories.Activities
 {
@@ -10,10 +11,16 @@ namespace Repositories.Activities
         private readonly EduXtendContext _ctx;
         public ActivityRepository(EduXtendContext ctx) => _ctx = ctx;
 
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _ctx.Database.BeginTransactionAsync();
+        }
+
         public async Task<List<Activity>> GetAllAsync()
             => await _ctx.Activities
                 .AsNoTracking()
                 .Include(a => a.Club)
+                .Include(a => a.CollaboratingClub)
                 .Include(a => a.CreatedBy)
                 .OrderByDescending(a => a.StartTime)
                 .ToListAsync();
@@ -28,6 +35,7 @@ namespace Repositories.Activities
             var query = _ctx.Activities
                 .AsNoTracking()
                 .Include(a => a.Club)
+                .Include(a => a.CollaboratingClub)
                 .Include(a => a.CreatedBy)
                 .AsQueryable();
 
@@ -66,6 +74,7 @@ namespace Repositories.Activities
             => await _ctx.Activities
                 .AsNoTracking()
                 .Include(a => a.Club)
+                .Include(a => a.CollaboratingClub)
                 .Include(a => a.CreatedBy)
                 .Include(a => a.ApprovedBy)
                 .FirstOrDefaultAsync(a => a.Id == id);
@@ -74,6 +83,7 @@ namespace Repositories.Activities
             => await _ctx.Activities
                 .AsNoTracking()
                 .Include(a => a.Club)
+                .Include(a => a.CollaboratingClub)
                 .Include(a => a.CreatedBy)
                 .Include(a => a.ApprovedBy)
                 .Include(a => a.Registrations)
@@ -86,6 +96,7 @@ namespace Repositories.Activities
                 .AsNoTracking()
                 .Where(a => a.ClubId == clubId)
                 .Include(a => a.Club)
+                .Include(a => a.CollaboratingClub)
                 .OrderByDescending(a => a.StartTime)
                 .ToListAsync();
 
@@ -199,6 +210,16 @@ namespace Repositories.Activities
 		public async Task<ActivityRegistration?> GetRegistrationAsync(int activityId, int userId)
 			=> await _ctx.ActivityRegistrations
 				.FirstOrDefaultAsync(r => r.ActivityId == activityId && r.UserId == userId);
+
+		public async Task<bool> UpdateRegistrationAsync(int activityId, int userId, string status)
+		{
+			var reg = await _ctx.ActivityRegistrations
+				.FirstOrDefaultAsync(r => r.ActivityId == activityId && r.UserId == userId);
+			if (reg == null) return false;
+			reg.Status = status;
+			await _ctx.SaveChangesAsync();
+			return true;
+		}
 
 		public async Task<bool> CancelRegistrationAsync(int activityId, int userId)
 		{
@@ -421,6 +442,43 @@ namespace Repositories.Activities
 				.Include(a => a.Club)
 				.Include(a => a.CreatedBy)
 				.OrderBy(a => a.StartTime)
+				.ToListAsync();
+		}
+    }
+		}
+
+		public async Task<List<(int Id, string Name, string? LogoUrl, int MemberCount)>> GetAvailableCollaboratingClubsAsync(int excludeClubId)
+		{
+			var clubs = await _ctx.Clubs
+				.AsNoTracking()
+				.Where(c => c.Id != excludeClubId && c.IsActive)
+				.Select(c => new
+				{
+					c.Id,
+					c.Name,
+					c.LogoUrl,
+					MemberCount = c.Members.Count(m => m.IsActive)
+				})
+				.OrderBy(c => c.Name)
+				.ToListAsync();
+
+			return clubs.Select(c => (c.Id, c.Name, c.LogoUrl, c.MemberCount)).ToList();
+		}
+
+		public async Task<Club?> GetClubByIdAsync(int clubId)
+		{
+			return await _ctx.Clubs
+				.AsNoTracking()
+				.FirstOrDefaultAsync(c => c.Id == clubId);
+		}
+
+		public async Task<List<Activity>> GetPendingCollaborationInvitationsAsync(int clubId)
+		{
+			return await _ctx.Activities
+				.Include(a => a.Club)
+				.Where(a => a.ClubCollaborationId == clubId && 
+				           (a.CollaborationStatus == null || a.CollaborationStatus == "Pending"))
+				.OrderByDescending(a => a.CreatedAt)
 				.ToListAsync();
 		}
     }

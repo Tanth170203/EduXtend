@@ -98,12 +98,25 @@
                 <div class="col-md-2">
                     <select asp-for="Type" class="form-select">
                         <option value="">All types</option>
-                        <option>AcademicClub</option>
-                        <option>Festival</option>
-                        <option>SkillDevelopment</option>
-                        <option>Volunteer</option>
-                        <option>Health</option>
-                        <option>Other</option>
+                        <optgroup label="Club Activities">
+                            <option>ClubMeeting</option>
+                            <option>ClubTraining</option>
+                            <option>ClubWorkshop</option>
+                        </optgroup>
+                        <optgroup label="Events">
+                            <option>LargeEvent</option>
+                            <option>MediumEvent</option>
+                            <option>SmallEvent</option>
+                        </optgroup>
+                        <optgroup label="Competitions">
+                            <option>SchoolCompetition</option>
+                            <option>ProvincialCompetition</option>
+                            <option>NationalCompetition</option>
+                        </optgroup>
+                        <optgroup label="Collaboration">
+                            <option>ClubCollaboration</option>
+                            <option>SchoolCollaboration</option>
+                        </optgroup>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -159,6 +172,11 @@
                     }
                     @foreach (var a in Model.Items)
                     {
+                        var now = DateTime.Now;
+                        var hasStarted = a.StartTime <= now;
+                        var isCompleted = a.Status == "Completed";
+                        var canEdit = !hasStarted && !isCompleted;
+                        
                         <tr>
                             <td class="px-4 py-3">
                                 <div class="d-flex align-items-center">
@@ -221,15 +239,33 @@
                                 <a class="btn btn-sm btn-outline-info me-1" href="/Admin/Activities/Details/@a.Id" title="View Details" style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;">
                                     <i class="bi bi-eye" style="font-size: 16px;"></i>
                                 </a>
-                                <a class="btn btn-sm btn-outline-primary me-1" href="/Admin/Activities/Edit/@a.Id" title="Edit" style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-pencil-square" style="font-size: 16px;"></i>
-                                </a>
-                                <button class="btn btn-sm btn-outline-danger" 
-                                        onclick="confirmDelete(@a.Id, '@a.Title')" 
-                                        title="Delete"
-                                        style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;">
-                                    <i class="bi bi-trash3" style="font-size: 16px;"></i>
-                                </button>
+                                @if (canEdit)
+                                {
+                                    <a class="btn btn-sm btn-outline-primary me-1" href="/Admin/Activities/Edit/@a.Id" title="Edit" style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-pencil-square" style="font-size: 16px;"></i>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary me-1" disabled title="@(hasStarted ? "Edit (Started)" : "Edit (Completed)")" style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-pencil-square" style="font-size: 16px;"></i>
+                                    </button>
+                                }
+                                @if (canEdit)
+                                {
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmDelete(@a.Id, '@a.Title')" 
+                                            title="Delete"
+                                            style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-trash3" style="font-size: 16px;"></i>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" disabled title="@(hasStarted ? "Delete (Started)" : "Delete (Completed)")" style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-trash3" style="font-size: 16px;"></i>
+                                    </button>
+                                }
                             </td>
                         </tr>
                     }

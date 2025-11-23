@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Repositories.Activities;
+using Repositories.ActivitySchedules;
+using Repositories.ActivityScheduleAssignments;
 using Repositories.Clubs;
 using Repositories.ClubMembers;
 using Repositories.PaymentTransactions;
@@ -48,6 +50,7 @@ using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
 using Microsoft.OpenApi.Models;
+using VNPAY.Extensions;
 
 namespace WebAPI
 {
@@ -68,6 +71,18 @@ namespace WebAPI
             builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
             builder.Services.Configure<GoogleAuthOptions>(builder.Configuration.GetSection("GoogleAuth"));
 
+            // VNPAY Configuration
+            var vnpayConfig = builder.Configuration.GetSection("VNPAY");
+            builder.Services.AddVnpayClient(config =>
+            {
+                config.TmnCode = vnpayConfig["TmnCode"]!;
+                config.HashSecret = vnpayConfig["HashSecret"]!;
+                config.CallbackUrl = vnpayConfig["CallbackUrl"]!;
+                config.BaseUrl = vnpayConfig["BaseUrl"]!;
+                config.Version = vnpayConfig["Version"]!;
+                config.OrderType = vnpayConfig["OrderType"]!;
+            });
+
             // Repositories
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<ISemesterRepository, SemesterRepository>();
@@ -84,6 +99,8 @@ namespace WebAPI
             builder.Services.AddScoped<IClubRepository, ClubRepository>();
             builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+            builder.Services.AddScoped<IActivityScheduleRepository, ActivityScheduleRepository>();
+            builder.Services.AddScoped<IActivityScheduleAssignmentRepository, ActivityScheduleAssignmentRepository>();
             builder.Services.AddScoped<IJoinRequestRepository, JoinRequestRepository>();
             builder.Services.AddScoped<IInterviewRepository, InterviewRepository>();
             builder.Services.AddScoped<IClubMovementRecordRepository, ClubMovementRecordRepository>();
@@ -122,6 +139,7 @@ namespace WebAPI
             builder.Services.AddScoped<IInterviewService, InterviewService>();
             builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
             builder.Services.AddScoped<IClubScoringService, ClubScoringService>();
+            builder.Services.AddScoped<IClubMovementRecordService, ClubMovementRecordService>();
             builder.Services.AddScoped<IProposalService, ProposalService>();
             builder.Services.AddScoped<IFundCollectionService, FundCollectionService>();
             builder.Services.AddScoped<IFinancialDashboardService, FinancialDashboardService>();
@@ -136,6 +154,7 @@ namespace WebAPI
             builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportApprovalService, Services.MonthlyReports.MonthlyReportApprovalService>();
             builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportDataAggregator, Services.MonthlyReports.MonthlyReportDataAggregator>();
             builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportPdfService, Services.MonthlyReports.MonthlyReportPdfService>();
+            builder.Services.AddScoped<Services.Emails.IEmailService, Services.Emails.EmailService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
@@ -145,6 +164,8 @@ namespace WebAPI
             builder.Services.AddHostedService<WebAPI.BackgroundServices.ActivityAutoCompleteService>();
             builder.Services.AddHostedService<WebAPI.BackgroundServices.EvaluationReminderService>();
             builder.Services.AddHostedService<WebAPI.BackgroundServices.MonthlyReportGenerationService>();
+            builder.Services.AddHostedService<Services.FundCollections.PaymentReminderBackgroundService>();
+            builder.Services.AddHostedService<Services.FundCollections.FundCollectionAutoCompleteService>();
             // DEPRECATED: MovementScoreAutomationService - functionality merged into ComprehensiveAutoScoringService
             // builder.Services.AddHostedService<MovementScoreAutomationService>();
 

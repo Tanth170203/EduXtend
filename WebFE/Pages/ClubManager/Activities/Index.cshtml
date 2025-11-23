@@ -12,10 +12,19 @@
         <h1 class="page-title">My Activities</h1>
         <p class="page-description">Manage your club activities</p>
     </div>
-    <a href="/ClubManager/Activities/Create" class="btn btn-primary">
-        <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-        Create Activity
-    </a>
+    <div class="d-flex gap-2">
+        <a href="/ClubManager/Activities/CollaborationInvitations" class="btn btn-warning position-relative" id="invitationsBtn">
+            <i data-lucide="mail" style="width: 16px; height: 16px;"></i>
+            Invitations
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="invitationBadge" style="display: none; font-size: 0.75rem; padding: 0.25em 0.5em;">
+                0
+            </span>
+        </a>
+        <a href="/ClubManager/Activities/Create" class="btn btn-primary">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            Create Activity
+        </a>
+    </div>
 </div>
 
 @if (TempData["Success"] != null)
@@ -50,12 +59,25 @@
             <div class="col-md-3">
                 <select class="form-select" id="typeFilter">
                     <option value="">All Types</option>
-                    <option value="AcademicClub">Academic Club</option>
-                    <option value="Festival">Festival</option>
-                    <option value="SkillDevelopment">Skill Development</option>
-                    <option value="Volunteer">Volunteer</option>
-                    <option value="Health">Health</option>
-                    <option value="Other">Other</option>
+                    <optgroup label="Club Activities">
+                        <option value="ClubMeeting">Club Meeting</option>
+                        <option value="ClubTraining">Club Training</option>
+                        <option value="ClubWorkshop">Club Workshop</option>
+                    </optgroup>
+                    <optgroup label="Events">
+                        <option value="LargeEvent">Large Event</option>
+                        <option value="MediumEvent">Medium Event</option>
+                        <option value="SmallEvent">Small Event</option>
+                    </optgroup>
+                    <optgroup label="Competitions">
+                        <option value="SchoolCompetition">School Competition</option>
+                        <option value="ProvincialCompetition">Provincial Competition</option>
+                        <option value="NationalCompetition">National Competition</option>
+                    </optgroup>
+                    <optgroup label="Collaboration">
+                        <option value="ClubCollaboration">Club Collaboration</option>
+                        <option value="SchoolCollaboration">School Collaboration</option>
+                    </optgroup>
                 </select>
             </div>
             <div class="col-md-6">
@@ -113,6 +135,12 @@
                                 "SkillDevelopment" => "Skill Development",
                                 _ => activity.Type
                             };
+
+                            // Check if activity has started or is completed
+                            var now = DateTime.Now;
+                            var hasStarted = activity.StartTime <= now;
+                            var isCompleted = activity.Status == "Completed";
+                            var canEdit = !hasStarted && !isCompleted;
 
                             <tr data-status="@activity.Status" data-type="@activity.Type" data-title="@activity.Title.ToLower()">
                                 <td>
@@ -187,16 +215,37 @@
                                         <a href="/ClubManager/Activities/Details/@activity.Id" class="btn btn-sm btn-outline-primary" title="View Details">
                                             <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
                                         </a>
-                                        @if (activity.Status != "Approved")
+                                        @if (!activity.IsCollaboratedActivity && activity.Status != "Approved")
                                         {
-                                            <a href="/ClubManager/Activities/Edit/@activity.Id" class="btn btn-sm btn-outline-secondary" title="Edit">
-                                                <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
-                                            </a>
+                                            @if (canEdit)
+                                            {
+                                                <a href="/ClubManager/Activities/Edit/@activity.Id" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                    <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="@(hasStarted ? "Edit Activity (Started)" : "Edit Activity (Completed)")">
+                                                    <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                                </button>
+                                            }
                                         }
-                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                onclick="deleteActivity(@activity.Id, '@activity.Title')" title="Delete">
-                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                                        </button>
+                                        @if (!activity.IsCollaboratedActivity)
+                                        {
+                                            @if (canEdit)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="deleteActivity(@activity.Id, '@activity.Title')" title="Delete">
+                                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-danger" disabled title="@(hasStarted ? "Delete Activity (Started)" : "Delete Activity (Completed)")">
+                                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                                </button>
+                                            }
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -347,6 +396,47 @@
                 toastDiv.remove();
             });
         }
+
+        // ===== Load Collaboration Invitation Count =====
+        async function loadInvitationCount() {
+            try {
+                // Get club ID
+                const clubRes = await fetch('@Model.ApiBaseUrl/api/club/my-managed-club', {
+                    credentials: 'include'
+                });
+                
+                if (!clubRes.ok) return;
+                
+                const club = await clubRes.json();
+                const clubId = club.id;
+                
+                // Get invitation count
+                const countRes = await fetch(`@Model.ApiBaseUrl/api/activity/collaboration-invitations/count?clubId=${clubId}`, {
+                    credentials: 'include'
+                });
+                
+                if (!countRes.ok) return;
+                
+                const data = await countRes.json();
+                const count = data.count || 0;
+                
+                const badge = document.getElementById('invitationBadge');
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Failed to load invitation count:', error);
+            }
+        }
+
+        // Load invitation count on page load
+        loadInvitationCount();
+        
+        // Refresh count every 30 seconds
+        setInterval(loadInvitationCount, 30000);
     </script>
 }
 

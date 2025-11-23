@@ -1,0 +1,273 @@
+@page
+@model WebFE.Pages.ClubManager.MembersModel
+@{
+    ViewData["Title"] = "Members";
+    ViewData["Breadcrumb"] = "Members";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Club Members</h1>
+        <p class="admin-page-subtitle">Manage and view club members</p>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="searchMembers" placeholder="Search by name or student ID...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filterRole">
+                    <option value="">All Roles</option>
+                    <option value="President">President</option>
+                    <option value="VicePresident">Vice President</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Member">Member</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                    Clear
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Members Table -->
+<div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="px-4 py-3">Student ID</th>
+                    <th class="py-3">Name</th>
+                    <th class="py-3">Email</th>
+                    <th class="py-3">Role</th>
+                    <th class="py-3">Joined Date</th>
+                    <th class="py-3 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="membersTableBody">
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        <i data-lucide="loader" style="width: 32px; height: 32px;" class="spin"></i>
+                        <p>Loading members...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Member Detail Modal -->
+<div class="modal fade" id="memberDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Member Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Student ID</label>
+                        <div class="fw-bold" id="detailStudentCode">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Full Name</label>
+                        <div class="fw-bold" id="detailFullName">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Email</label>
+                        <div id="detailEmail">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Role</label>
+                        <div id="detailRole">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Joined Date</label>
+                        <div id="detailJoinedDate">-</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted small">Status</label>
+                        <div id="detailStatus">-</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const CLUB_ID = @Model.ClubId;
+        const API_BASE = 'https://localhost:5001/api';
+
+        let allMembers = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadMembers();
+            setupSearchAndFilter();
+            lucide.createIcons();
+        });
+
+        async function loadMembers() {
+            try {
+                const response = await fetch(`${API_BASE}/club/${CLUB_ID}/members`, {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    allMembers = await response.json();
+                    renderMembers(allMembers);
+                } else {
+                    console.error('Failed to load members:', response.status);
+                    showError('Failed to load members');
+                }
+            } catch (error) {
+                console.error('Error loading members:', error);
+                showError('An error occurred while loading members');
+            }
+        }
+
+        function renderMembers(members) {
+            const tbody = document.getElementById('membersTableBody');
+            
+            if (!members || members.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i data-lucide="users" style="width: 48px; height: 48px;"></i>
+                            <p class="mt-2">No members found</p>
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            tbody.innerHTML = members.map(member => {
+                const roleClass = member.roleInClub === 'President' || member.roleInClub === 'Manager' ? 'primary' : 
+                                 member.roleInClub === 'VicePresident' ? 'info' : 'secondary';
+                const joinedDate = new Date(member.joinedAt).toLocaleDateString('en-GB');
+
+                return `
+                    <tr>
+                        <td class="px-4">${escapeHtml(member.studentCode)}</td>
+                        <td>${escapeHtml(member.studentName)}</td>
+                        <td>${escapeHtml(member.email)}</td>
+                        <td>
+                            <span class="badge bg-${roleClass}">${member.roleInClub}</span>
+                        </td>
+                        <td>${joinedDate}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-link text-secondary" onclick="viewMemberDetail(${member.id})">
+                                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        function setupSearchAndFilter() {
+            const searchInput = document.getElementById('searchMembers');
+            const roleFilter = document.getElementById('filterRole');
+
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    filterMembers();
+                }, 300);
+            });
+
+            roleFilter.addEventListener('change', filterMembers);
+        }
+
+        function filterMembers() {
+            const searchTerm = document.getElementById('searchMembers').value.toLowerCase();
+            const roleFilter = document.getElementById('filterRole').value;
+
+            let filtered = [...allMembers];
+
+            if (searchTerm) {
+                filtered = filtered.filter(member => 
+                    member.studentName.toLowerCase().includes(searchTerm) ||
+                    member.studentCode.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (roleFilter) {
+                filtered = filtered.filter(member => member.roleInClub === roleFilter);
+            }
+
+            renderMembers(filtered);
+        }
+
+        function clearFilters() {
+            document.getElementById('searchMembers').value = '';
+            document.getElementById('filterRole').value = '';
+            renderMembers(allMembers);
+        }
+
+        function viewMemberDetail(memberId) {
+            const member = allMembers.find(m => m.id === memberId);
+            if (!member) return;
+
+            document.getElementById('detailStudentCode').textContent = member.studentCode;
+            document.getElementById('detailFullName').textContent = member.studentName;
+            document.getElementById('detailEmail').textContent = member.email;
+            
+            const roleClass = member.roleInClub === 'President' || member.roleInClub === 'Manager' ? 'primary' : 
+                             member.roleInClub === 'VicePresident' ? 'info' : 'secondary';
+            document.getElementById('detailRole').innerHTML = `<span class="badge bg-${roleClass}">${member.roleInClub}</span>`;
+            document.getElementById('detailJoinedDate').textContent = new Date(member.joinedAt).toLocaleString('en-GB');
+            
+            const statusClass = member.isActive ? 'success' : 'secondary';
+            const statusText = member.isActive ? 'Active' : 'Inactive';
+            document.getElementById('detailStatus').innerHTML = `<span class="badge bg-${statusClass}">${statusText}</span>`;
+
+            const modal = new bootstrap.Modal(document.getElementById('memberDetailModal'));
+            modal.show();
+        }
+
+        function showError(message) {
+            const tbody = document.getElementById('membersTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-danger">
+                        <i data-lucide="alert-circle" style="width: 48px; height: 48px;"></i>
+                        <p class="mt-2">${message}</p>
+                    </td>
+                </tr>
+            `;
+            lucide.createIcons();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        lucide.createIcons();
+    </script>
+}

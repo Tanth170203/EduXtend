@@ -59,6 +59,22 @@ public class Activity
     // Cho phép hệ thống tự cộng điểm phong trào khi điểm danh
     public double MovementPoint { get; set; } = 0;
     
+    // Collaboration fields for Club Collaboration and School Collaboration
+    public int? ClubCollaborationId { get; set; }
+    public Club? CollaboratingClub { get; set; }
+    public int? CollaborationPoint { get; set; }
+    
+    // Collaboration Invitation fields
+    [MaxLength(50)]
+    public string? CollaborationStatus { get; set; } // "Pending", "Accepted", "Rejected"
+    
+    [MaxLength(500)]
+    public string? CollaborationRejectionReason { get; set; }
+    
+    public DateTime? CollaborationRespondedAt { get; set; }
+    
+    public int? CollaborationRespondedBy { get; set; }
+    
     // Mã code 6 ký tự để sinh viên tự điểm danh
     [MaxLength(6)]
     public string? AttendanceCode { get; set; }

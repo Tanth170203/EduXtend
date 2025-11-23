@@ -32,28 +32,28 @@
                     <span class="input-group-text bg-white border-end-0">
                         <i data-lucide="search" style="width: 18px; height: 18px;"></i>
                     </span>
-                    <input type="text" class="form-control border-start-0" placeholder="Search transactions...">
+                    <input type="text" class="form-control border-start-0" id="searchTransactions" placeholder="Search by title, description, category...">
                 </div>
             </div>
             <div class="col-md-3">
-                <select class="form-select">
-                    <option selected>All Types</option>
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
+                <select class="form-select" id="filterType">
+                    <option value="">All Types</option>
+                    <option value="Income">Income</option>
+                    <option value="Expense">Expense</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <select class="form-select">
-                    <option selected>All Months</option>
-                    <option value="1">January</option>
-                    <option value="2">February</option>
-                    <option value="3">March</option>
+                <select class="form-select" id="filterStatus">
+                    <option value="">All Status</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="cancelled">Cancelled</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <button class="btn btn-outline-secondary w-100">
-                    <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
-                    Filter
+                <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                    Clear
                 </button>
             </div>
         </div>
@@ -375,8 +375,69 @@
             await loadUpcomingActivities();
             
             await loadTransactions();
+            
+            // Setup search and filter
+            setupSearchAndFilter();
+            
             lucide.createIcons();
         });
+
+        // Setup search and filter event listeners
+        function setupSearchAndFilter() {
+            const searchInput = document.getElementById('searchTransactions');
+            const typeFilter = document.getElementById('filterType');
+            const statusFilter = document.getElementById('filterStatus');
+
+            // Debounced search
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    filterTransactions();
+                }, 300);
+            });
+
+            typeFilter.addEventListener('change', filterTransactions);
+            statusFilter.addEventListener('change', filterTransactions);
+        }
+
+        // Filter transactions based on search and filters
+        function filterTransactions() {
+            const searchTerm = document.getElementById('searchTransactions').value.toLowerCase();
+            const typeFilter = document.getElementById('filterType').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+
+            let filtered = [...allTransactions];
+
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(t => 
+                    t.title.toLowerCase().includes(searchTerm) ||
+                    (t.description && t.description.toLowerCase().includes(searchTerm)) ||
+                    (t.category && t.category.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            // Apply type filter
+            if (typeFilter) {
+                filtered = filtered.filter(t => t.type === typeFilter);
+            }
+
+            // Apply status filter
+            if (statusFilter) {
+                filtered = filtered.filter(t => t.status === statusFilter);
+            }
+
+            renderTransactions(filtered);
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('searchTransactions').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterStatus').value = '';
+            renderTransactions(allTransactions);
+        }
 
         // Load upcoming activities (StartTime >= now)
         async function loadUpcomingActivities() {

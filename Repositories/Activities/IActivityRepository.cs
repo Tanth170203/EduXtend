@@ -1,9 +1,11 @@
 using BusinessObject.Models;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Repositories.Activities
 {
     public interface IActivityRepository
     {
+        Task<IDbContextTransaction> BeginTransactionAsync();
         Task<List<Activity>> GetAllAsync();
         Task<List<Activity>> SearchActivitiesAsync(string? searchTerm, string? type, string? status, bool? isPublic, int? clubId);
         Task<Activity?> GetByIdAsync(int id);
@@ -25,6 +27,7 @@ namespace Repositories.Activities
 		Task<bool> HasAttendanceAsync(int activityId, int userId);
 		Task<bool> HasAnyAttendanceRecordAsync(int activityId, int userId);
 		Task<ActivityRegistration?> GetRegistrationAsync(int activityId, int userId);
+		Task<bool> UpdateRegistrationAsync(int activityId, int userId, string status);
 		Task<bool> CancelRegistrationAsync(int activityId, int userId);
 		Task<List<ActivityRegistration>> GetUserRegistrationsAsync(int userId);
 		Task<bool> HasFeedbackAsync(int activityId, int userId);
@@ -46,6 +49,9 @@ namespace Repositories.Activities
 	Task<ActivityEvaluation?> GetEvaluationByActivityIdAsync(int activityId);
 	Task<bool> HasEvaluationAsync(int activityId);
 	Task UpdateActivityStatusAsync(int activityId, string status);
+	Task<List<(int Id, string Name, string? LogoUrl, int MemberCount)>> GetAvailableCollaboratingClubsAsync(int excludeClubId);
+	Task<Club?> GetClubByIdAsync(int clubId);
+	Task<List<Activity>> GetPendingCollaborationInvitationsAsync(int clubId);
     }
 }
 

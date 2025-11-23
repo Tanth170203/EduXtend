@@ -958,10 +958,30 @@ class NotificationManager {
         const scopeText = notification.scope === 'Club' ? 'Club' : 'System';
         
         // Determine the link based on notification title/type
-        let targetUrl = '/Student/MyApplications'; // Default to My Applications page
+        let targetUrl = '#'; // Default: no redirect, just mark as read
         
+        // Fund collection / Payment notifications
+        if (notification.title.includes('payment') || notification.title.includes('Payment') ||
+            notification.title.includes('fund collection') || notification.title.includes('Fund collection')) {
+            // For members: go to Finance section in Member Dashboard
+            if (notification.title.includes('New payment request') || 
+                notification.title.includes('Payment confirmed') ||
+                notification.title.includes('Payment reminder') ||
+                notification.title.includes('Payment overdue') ||
+                notification.title.includes('Payment successful')) {
+                // Extract club ID from notification if available, otherwise use a default
+                const clubId = notification.targetClubId || 1; // You may need to store clubId in notification
+                targetUrl = `/Clubs/MemberDashboard/${clubId}?section=finance`;
+            }
+            // For club managers: go to Member Funds page
+            else if (notification.title.includes('cash payment') || 
+                     notification.title.includes('bank transfer') ||
+                     notification.title.includes('VNPAY payment')) {
+                targetUrl = '/ClubManager/Financial/MemberFunds';
+            }
+        }
         // Club news notifications
-        if (notification.title.includes('article') || notification.title.includes('Article')) {
+        else if (notification.title.includes('article') || notification.title.includes('Article')) {
             // For admin: go to pending approval page
             if (notification.title.includes('pending approval')) {
                 targetUrl = '/Admin/ClubNews';
@@ -1003,8 +1023,10 @@ class NotificationManager {
         // Close notification center
         this.hideNotificationCenter();
         
-        // Navigate to target page
-        window.location.href = targetUrl;
+        // Navigate to target page only if targetUrl is not '#'
+        if (targetUrl && targetUrl !== '#') {
+            window.location.href = targetUrl;
+        }
     }
 
     // Toast Methods
