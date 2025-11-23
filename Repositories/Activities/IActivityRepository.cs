@@ -9,6 +9,8 @@ namespace Repositories.Activities
         Task<Activity?> GetByIdAsync(int id);
         Task<Activity?> GetByIdWithDetailsAsync(int id);
         Task<List<Activity>> GetActivitiesByClubIdAsync(int clubId);
+        Task<List<Activity>> GetByClubAndMonthAsync(int clubId, int month, int year);
+        Task<List<Activity>> GetByTypeAsync(int clubId, string type, int month, int year);
         Task<int> GetRegistrationCountAsync(int activityId);
         Task<int> GetAttendanceCountAsync(int activityId);
         Task<int> GetFeedbackCountAsync(int activityId);
@@ -37,6 +39,13 @@ namespace Repositories.Activities
 	Task<ActivityAttendance?> GetAttendanceAsync(int activityId, int userId);
 	Task<ActivityAttendance> CreateAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int? checkedById);
 	Task UpdateAttendanceAsync(ActivityAttendance attendance);
+	
+	// Evaluation methods
+	Task<ActivityEvaluation> CreateEvaluationAsync(ActivityEvaluation evaluation);
+	Task<ActivityEvaluation?> UpdateEvaluationAsync(ActivityEvaluation evaluation);
+	Task<ActivityEvaluation?> GetEvaluationByActivityIdAsync(int activityId);
+	Task<bool> HasEvaluationAsync(int activityId);
+	Task UpdateActivityStatusAsync(int activityId, string status);
     }
 }
 

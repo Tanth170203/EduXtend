@@ -10,7 +10,7 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">My Activities</h1>
-        <p class="page-description">Qu&#7843;n lý các ho&#7841;t &#273;&#7897;ng c&#7911;a câu l&#7841;c b&#7897;</p>
+        <p class="page-description">Manage your club activities</p>
     </div>
     <a href="/ClubManager/Activities/Create" class="btn btn-primary">
         <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
@@ -134,6 +134,10 @@
                                             @if (activity.IsPublic)
                                             {
                                                 <span class="badge bg-info ms-2">Public</span>
+                                            }
+                                            @if (activity.IsPublic && activity.Status == "Completed" && !activity.HasEvaluation)
+                                            {
+                                                <span class="badge bg-warning text-dark ms-2">Not Evaluated</span>
                                             }
                                         </div>
                                     </div>
@@ -267,7 +271,7 @@
             console.log('Copying code:', code);
             
             if (!code || code === 'undefined') {
-                showToast('Mã điểm danh không hợp lệ', 'danger');
+                showToast('Invalid attendance code', 'danger');
                 return;
             }
             
@@ -282,7 +286,7 @@
                 lucide.createIcons();
                 
                 // Show success message
-                showToast('Đã copy mã: ' + code, 'success');
+                showToast('Copied code: ' + code, 'success');
                 
                 setTimeout(function() {
                     btn.innerHTML = originalHTML;
@@ -291,13 +295,13 @@
                 }, 2000);
             }).catch(function(err) {
                 console.error('Copy failed:', err);
-                showToast('Không thể copy mã: ' + err.message, 'danger');
+                showToast('Failed to copy code: ' + err.message, 'danger');
             });
         }
         
         function showToast(message, type) {
             // Validate parameters
-            if (!message) message = 'Thao tác thành công';
+            if (!message) message = 'Operation successful';
             if (!type) type = 'success';
             
             // Create toast container if not exists

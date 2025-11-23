@@ -92,4 +92,46 @@ public class NotificationService : INotificationService
 
         await _repo.CreateAsync(notification);
     }
+
+    public async Task<Notification> SendNotificationAsync(int userId, string type, string message, int? reportId = null)
+    {
+        var notification = new Notification
+        {
+            Title = GetNotificationTitle(type),
+            Message = message,
+            Scope = "User",
+            TargetUserId = userId,
+            CreatedById = 1, // System user
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        return await _repo.CreateNotificationAsync(notification);
+    }
+
+    public async Task<List<Notification>> GetUnreadNotificationsAsync(int userId)
+    {
+        return await _repo.GetUnreadNotificationsAsync(userId);
+    }
+
+    public async Task<List<Notification>> GetNotificationsAsync(int userId, int pageNumber = 1, int pageSize = 10)
+    {
+        return await _repo.GetNotificationsAsync(userId, pageNumber, pageSize);
+    }
+
+    public async Task<Notification> MarkNotificationAsReadAsync(int notificationId)
+    {
+        return await _repo.MarkAsReadAsync(notificationId);
+    }
+
+    private string GetNotificationTitle(string type)
+    {
+        return type switch
+        {
+            "ReportSubmitted" => "Báo cáo được nộp",
+            "ReportApproved" => "Báo cáo được duyệt",
+            "ReportRejected" => "Báo cáo bị từ chối",
+            _ => "Thông báo"
+        };
+    }
 }

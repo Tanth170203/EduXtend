@@ -1,0 +1,190 @@
+@page
+@model WebFE.Pages.ClubManager.CommunicationPlans.IndexModel
+@{
+    ViewData["Title"] = "Communication Plans";
+    ViewData["Breadcrumb"] = "Communication Plans";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Communication Plans</h1>
+        <p class="page-description">Quản lý kế hoạch truyền thông cho các hoạt động</p>
+    </div>
+    <div>
+        <a href="/ClubManager/CommunicationPlans/Create" class="btn btn-primary">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            Tạo kế hoạch mới
+        </a>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filter Section -->
+<div class="content-card mb-3">
+    <div class="content-card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Tìm kiếm theo tên Activity</label>
+                <input type="text" name="SearchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Nhập tên activity..." />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tháng</label>
+                <select name="FilterMonth" class="form-select">
+                    <option value="">-- Tất cả --</option>
+                    @for (int i = 1; i <= 12; i++)
+                    {
+                        <option value="@i" selected="@(Model.FilterMonth == i)">Tháng @i</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Năm</label>
+                <select name="FilterYear" class="form-select">
+                    <option value="">-- Tất cả --</option>
+                    @for (int year = DateTime.Now.Year; year >= DateTime.Now.Year - 3; year--)
+                    {
+                        <option value="@year" selected="@(Model.FilterYear == year)">@year</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                    Tìm kiếm
+                </button>
+            </div>
+        </form>
+        @if (!string.IsNullOrWhiteSpace(Model.SearchTerm) || Model.FilterMonth.HasValue || Model.FilterYear.HasValue)
+        {
+            <div class="mt-3">
+                <a href="/ClubManager/CommunicationPlans" class="btn btn-sm btn-outline-secondary">
+                    <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                    Xóa bộ lọc
+                </a>
+                <span class="text-muted ms-2">
+                    Tìm thấy @Model.FilteredPlans.Count / @Model.Plans.Count kế hoạch
+                </span>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Communication Plans List -->
+<div class="content-card">
+    <div class="content-card-body">
+        @if (Model.FilteredPlans == null || Model.FilteredPlans.Count == 0)
+        {
+            <div class="text-center py-5 text-muted">
+                <i data-lucide="file-text" style="width: 64px; height: 64px; margin-bottom: 1rem;"></i>
+                @if (Model.Plans.Count == 0)
+                {
+                    <h4>No communication plans yet</h4>
+                    <p>Create communication plans from your activities</p>
+                }
+                else
+                {
+                    <h4>Không tìm thấy kết quả</h4>
+                    <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Activity</th>
+                            <th>Items</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var plan in Model.FilteredPlans)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@plan.ActivityTitle</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">@plan.Items.Count items</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        @plan.CreatedAt.ToString("MMM dd, yyyy")
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="/ClubManager/CommunicationPlans/Details/@plan.Id" class="btn btn-sm btn-outline-primary" title="View Details">
+                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                        <a href="/ClubManager/CommunicationPlans/Edit/@plan.Id" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="deletePlan(@plan.Id, '@plan.ActivityTitle')" title="Delete">
+                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete communication plan for <strong id="planNameDelete"></strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" id="deleteForm">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        function deletePlan(id, activityTitle) {
+            document.getElementById('planNameDelete').textContent = activityTitle;
+            document.getElementById('deleteForm').action = `?handler=Delete&id=${id}`;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
+}

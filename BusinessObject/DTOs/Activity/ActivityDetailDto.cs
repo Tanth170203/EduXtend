@@ -50,6 +50,9 @@ namespace BusinessObject.DTOs.Activity
         
         // Attendance code (only visible to Admin/Manager)
         public string? AttendanceCode { get; set; }
+        
+        // Evaluation status
+        public bool HasEvaluation { get; set; }
     }
 }
 

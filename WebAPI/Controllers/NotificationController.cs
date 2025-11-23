@@ -1,248 +1,197 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Repositories.Notifications;
+using BusinessObject.Models;
+using BusinessObject.DTOs.Notification;
+using Services.Notifications;
 using System.Security.Claims;
-using Utils;
 
 namespace WebAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/notifications")]
     [Authorize]
     public class NotificationController : ControllerBase
     {
-        private readonly INotificationRepository _notificationRepo;
+        private readonly INotificationService _service;
         private readonly ILogger<NotificationController> _logger;
 
         public NotificationController(
-            INotificationRepository notificationRepo,
+            INotificationService service,
             ILogger<NotificationController> logger)
         {
-            _notificationRepo = notificationRepo;
+            _service = service;
             _logger = logger;
         }
 
-        // GET api/notification/my-notifications
-        [HttpGet("my-notifications")]
-        public async Task<IActionResult> GetMyNotifications()
+        // Helper method to get current user ID
+        private int? GetCurrentUserId()
         {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                return null;
+            return userId;
+        }
+
+        /// <summary>
+        /// GET api/notifications/unread
+        /// Get unread notifications for current user
+        /// Requirements: 7.1, 7.2
+        /// </summary>
+        [HttpGet("unread")]
+        public async Task<IActionResult> GetUnreadNotifications()
+        {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized(new { message = "Missing user id" });
+
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                {
-                    return Unauthorized(new { message = "Invalid user" });
-                }
+                var notifications = await _service.GetUnreadNotificationsAsync(userId.Value);
+                var dtos = notifications.Select(MapToDto).ToList();
+                return Ok(new { data = dtos, count = dtos.Count });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting unread notifications");
+                return StatusCode(500, new { message = "An error occurred while retrieving unread notifications" });
+            }
+        }
 
-                var notifications = await _notificationRepo.GetByUserIdAsync(userId);
-                
-                // Map to DTO format for frontend
-                var notificationDtos = notifications.Select(n => new
-                {
-                    id = n.Id,
-                    title = n.Title,
-                    message = n.Message,
-                    type = MapScopeToType(n.Scope),
-                    scope = n.Scope,
-                    targetClubId = n.TargetClubId,
-                    targetRole = n.TargetRole,
-                    createdAt = n.CreatedAt,
-                    isRead = n.IsRead
-                }).ToList();
+        /// <summary>
+        /// GET api/notifications?page=1&pageSize=10
+        /// Get paginated notifications for current user
+        /// Requirements: 7.3
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetNotifications(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized(new { message = "Missing user id" });
 
-                return Ok(notificationDtos);
+            try
+            {
+                // Validate pagination parameters
+                if (page < 1)
+                    page = 1;
+                if (pageSize < 1 || pageSize > 100)
+                    pageSize = 10;
+
+                var notifications = await _service.GetNotificationsAsync(userId.Value, page, pageSize);
+                var dtos = notifications.Select(MapToDto).ToList();
+                return Ok(new { data = dtos, page, pageSize, count = dtos.Count });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting notifications");
-                return StatusCode(500, new { message = "Failed to get notifications" });
+                return StatusCode(500, new { message = "An error occurred while retrieving notifications" });
             }
         }
 
-        // PUT api/notification/{id}/mark-read
-        [HttpPut("{id}/mark-read")]
+        /// <summary>
+        /// PUT api/notifications/{id}/read
+        /// Mark notification as read
+        /// Requirements: 7.4
+        /// </summary>
+        [HttpPut("{id:int}/read")]
         public async Task<IActionResult> MarkAsRead(int id)
         {
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                {
-                    return Unauthorized(new { message = "Invalid user" });
-                }
-
-                var notification = await _notificationRepo.GetByIdAsync(id);
-                if (notification == null)
-                {
-                    return NotFound(new { message = "Notification not found" });
-                }
-
-                // Verify user owns this notification
-                if (notification.TargetUserId != userId)
-                {
-                    return Forbid();
-                }
-
-                await _notificationRepo.MarkAsReadAsync(id);
-                return Ok(new { message = "Notification marked as read" });
+                var notification = await _service.MarkNotificationAsReadAsync(id);
+                var dto = MapToDto(notification);
+                return Ok(new { message = "Thông báo đã được đánh dấu là đã đọc", data = dto });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error marking notification as read");
-                return StatusCode(500, new { message = "Failed to mark notification as read" });
+                return StatusCode(500, new { message = "An error occurred while marking notification as read" });
             }
         }
 
-        // PUT api/notification/mark-all-read
-        [HttpPut("mark-all-read")]
+        /// <summary>
+        /// PUT api/notifications/read-all
+        /// Mark all notifications as read for current user
+        /// Requirements: 7.4
+        /// </summary>
+        [HttpPut("read-all")]
         public async Task<IActionResult> MarkAllAsRead()
         {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized(new { message = "Missing user id" });
+
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                {
-                    return Unauthorized(new { message = "Invalid user" });
-                }
-
-                await _notificationRepo.MarkAllAsReadAsync(userId);
-                return Ok(new { message = "All notifications marked as read" });
+                await _service.MarkAllAsReadAsync(userId.Value);
+                return Ok(new { message = "Tất cả thông báo đã được đánh dấu là đã đọc" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error marking all notifications as read");
-                return StatusCode(500, new { message = "Failed to mark all notifications as read" });
+                return StatusCode(500, new { message = "An error occurred while marking all notifications as read" });
             }
         }
 
-        // DELETE api/notification/{id}
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteNotification(int id)
-        {
-            try
-            {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                {
-                    return Unauthorized(new { message = "Invalid user" });
-                }
-
-                var notification = await _notificationRepo.GetByIdAsync(id);
-                if (notification == null)
-                {
-                    return NotFound(new { message = "Notification not found" });
-                }
-
-                // Verify user owns this notification
-                if (notification.TargetUserId != userId)
-                {
-                    return Forbid();
-                }
-
-                await _notificationRepo.DeleteAsync(id);
-                return Ok(new { message = "Notification deleted" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting notification");
-                return StatusCode(500, new { message = "Failed to delete notification" });
-            }
-        }
-
-        // DELETE api/notification/delete-all
-        [HttpDelete("delete-all")]
-        public async Task<IActionResult> DeleteAllNotifications()
-        {
-            try
-            {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                {
-                    return Unauthorized(new { message = "Invalid user" });
-                }
-
-                // Get all user's notifications and delete them
-                var notifications = await _notificationRepo.GetByUserIdAsync(userId);
-                foreach (var notification in notifications)
-                {
-                    await _notificationRepo.DeleteAsync(notification.Id);
-                }
-
-                return Ok(new { message = "All notifications deleted", count = notifications.Count });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting all notifications");
-                return StatusCode(500, new { message = "Failed to delete all notifications" });
-            }
-        }
-
-        // GET api/notification/unread-count
+        /// <summary>
+        /// GET api/notifications/unread-count
+        /// Get count of unread notifications for current user
+        /// </summary>
         [HttpGet("unread-count")]
         public async Task<IActionResult> GetUnreadCount()
         {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+                return Unauthorized(new { message = "Missing user id" });
+
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                {
-                    return Unauthorized(new { message = "Invalid user" });
-                }
-
-                var count = await _notificationRepo.GetUnreadCountAsync(userId);
+                var count = await _service.GetUnreadCountAsync(userId.Value);
                 return Ok(new { count });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting unread count");
-                return StatusCode(500, new { message = "Failed to get unread count" });
+                return StatusCode(500, new { message = "An error occurred while retrieving unread count" });
             }
         }
 
-        // POST api/notification/test - Test endpoint to send a notification
-        [HttpPost("test")]
-        public async Task<IActionResult> TestNotification()
+        /// <summary>
+        /// Map Notification model to NotificationDto
+        /// </summary>
+        private NotificationDto MapToDto(Notification notification)
         {
-            try
+            return new NotificationDto
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                {
-                    return Unauthorized(new { message = "Invalid user" });
-                }
-
-                var notification = new BusinessObject.Models.Notification
-                {
-                    Title = "Test Notification",
-                    Message = "This is a test notification to verify SignalR is working",
-                    Scope = "User",
-                    TargetUserId = userId,
-                    CreatedById = userId,
-                    IsRead = false,
-                    CreatedAt = DateTimeHelper.Now
-                };
-
-                await _notificationRepo.CreateAsync(notification);
-                
-                return Ok(new { message = "Test notification sent", notificationId = notification.Id });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error sending test notification");
-                return StatusCode(500, new { message = ex.Message });
-            }
-        }
-
-        private string MapScopeToType(string scope)
-        {
-            // Map notification scope to toast type for consistent UI
-            return scope switch
-            {
-                "User" => "info",
-                "Club" => "info",
-                "System" => "warning",
-                _ => "info"
+                Id = notification.Id,
+                Title = notification.Title,
+                Message = notification.Message,
+                Type = DetermineNotificationType(notification.Title),
+                Scope = notification.Scope,
+                ReportId = null, // Will be set by service if needed
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt
             };
+        }
+
+        /// <summary>
+        /// Determine notification type based on title
+        /// </summary>
+        private string DetermineNotificationType(string title)
+        {
+            if (title.Contains("được nộp") || title.Contains("submitted"))
+                return "ReportSubmitted";
+            if (title.Contains("được duyệt") || title.Contains("approved"))
+                return "ReportApproved";
+            if (title.Contains("bị từ chối") || title.Contains("rejected"))
+                return "ReportRejected";
+            return "info";
         }
     }
 }

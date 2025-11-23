@@ -23,6 +23,9 @@ public interface IMovementRecordService
     Task RemoveScoreFromAttendanceAsync(int studentId, int activityId);
     Task<MovementRecordDto> AddManualScoreAsync(AddManualScoreDto dto);
     Task<MovementRecordDto> AddManualScoreWithCriterionAsync(AddManualScoreWithCriterionDto dto);
+    Task<MovementRecordDto> AddScoreFromEvaluationAsync(int studentId, int activityId, double points);
+    Task<MovementRecordDto> UpdateScoreFromEvaluationAsync(int studentId, int activityId, double newPoints);
+    Task RemoveScoreFromEvaluationAsync(int studentId, int activityId);
 }
 
 

@@ -1,0 +1,521 @@
+@* Notification Center Component *@
+<div id="notification-center-container" class="notification-center-container">
+    <!-- Notification Center Panel -->
+    <div id="notification-center" class="notification-center">
+        <div class="notification-header">
+            <h3 class="notification-title">Thông báo</h3>
+            <div class="notification-actions">
+                <button class="notification-btn notification-btn-secondary" id="mark-all-read-btn" title="Đánh dấu tất cả là đã đọc">
+                    <i data-lucide="check-check" style="width: 16px; height: 16px;"></i>
+                </button>
+                <button class="notification-btn notification-btn-secondary" id="close-notification-center-btn" title="Đóng">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                </button>
+            </div>
+        </div>
+        <div class="notification-list" id="notification-list">
+            <!-- Notifications will be rendered here -->
+        </div>
+    </div>
+</div>
+
+<style>
+    .notification-center-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 9997;
+        pointer-events: none;
+    }
+
+    .notification-center {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        width: 420px;
+        max-height: 600px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        z-index: 9998;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        transform: translateX(120%);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: auto;
+    }
+
+    .notification-center.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .notification-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f9fafb;
+    }
+
+    .notification-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .notification-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .notification-btn {
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .notification-btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .notification-btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .notification-list {
+        flex: 1;
+        overflow-y: auto;
+        max-height: 520px;
+    }
+
+    .notification-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .notification-list::-webkit-scrollbar-track {
+        background: #f3f4f6;
+    }
+
+    .notification-list::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+
+    .notification-list::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+    }
+
+    .notification-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f3f4f6;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        position: relative;
+        display: flex;
+        gap: 12px;
+    }
+
+    .notification-item:hover {
+        background: #f8fafc;
+    }
+
+    .notification-item.unread {
+        background: #eff6ff;
+        border-left: 3px solid #3b82f6;
+    }
+
+    .notification-item.unread::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: 12px;
+        width: 8px;
+        height: 8px;
+        background: #3b82f6;
+        border-radius: 50%;
+        transform: translateY(-50%);
+    }
+
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .notification-icon.success {
+        background: #10b981;
+    }
+
+    .notification-icon.error {
+        background: #ef4444;
+    }
+
+    .notification-icon.warning {
+        background: #f59e0b;
+    }
+
+    .notification-icon.info {
+        background: #3b82f6;
+    }
+
+    .notification-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .notification-item-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0 0 4px 0;
+        line-height: 1.3;
+    }
+
+    .notification-item-message {
+        font-size: 12px;
+        color: #6b7280;
+        margin: 0 0 6px 0;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .notification-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: #9ca3af;
+    }
+
+    .notification-time {
+        margin: 0;
+    }
+
+    .notification-empty {
+        padding: 40px 20px;
+        text-align: center;
+        color: #9ca3af;
+    }
+
+    .notification-empty-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+    }
+
+    .notification-empty-text {
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0 0 4px 0;
+    }
+
+    .notification-empty-subtext {
+        font-size: 12px;
+        margin: 0;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: #ef4444;
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 10px;
+        min-width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: scale(0);
+        transition: transform 0.2s;
+    }
+
+    .notification-badge.show {
+        transform: scale(1);
+    }
+
+    /* Corrected CSS media query syntax */
+    @@media screen and (max-width: 768px) {
+        .notification-center {
+            width: calc(100vw - 40px);               
+            max-width: 420px;
+            right: 20px;
+        }
+    }
+</style>
+
+<script>
+    // Notification Center Manager
+    class NotificationCenterManager {
+        constructor() {
+            this.container = document.getElementById('notification-center');
+            this.list = document.getElementById('notification-list');
+            this.markAllReadBtn = document.getElementById('mark-all-read-btn');
+            this.closeBtn = document.getElementById('close-notification-center-btn');
+            this.notifications = [];
+            this.init();
+        }
+
+        init() {
+            if (this.markAllReadBtn) {
+                this.markAllReadBtn.addEventListener('click', () => this.markAllAsRead());
+            }
+            if (this.closeBtn) {
+                this.closeBtn.addEventListener('click', () => this.hide());
+            }
+            this.loadNotifications();
+        }
+
+        async loadNotifications() {
+            try {
+                const response = await fetch('/api/notifications', {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.notifications = data.data || [];
+                    this.render();
+                    this.updateBadge();
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        async loadUnreadCount() {
+            try {
+                const response = await fetch('/api/notifications/unread-count', {
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.querySelector('.notification-badge');
+                    if (badge) {
+                        if (data.count > 0) {
+                            badge.textContent = data.count > 99 ? '99+' : data.count;
+                            badge.classList.add('show');
+                        } else {
+                            badge.classList.remove('show');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading unread count:', error);
+            }
+        }
+
+        render() {
+            if (!this.list) return;
+
+            if (this.notifications.length === 0) {
+                this.list.innerHTML = `
+                    <div class="notification-empty">
+                        <div class="notification-empty-icon">🔔</div>
+                        <p class="notification-empty-text">Không có thông báo</p>
+                        <p class="notification-empty-subtext">Thông báo mới sẽ xuất hiện ở đây</p>
+                    </div>
+                `;
+                return;
+            }
+
+            this.list.innerHTML = this.notifications.map(n => this.renderItem(n)).join('');
+        }
+
+        renderItem(notification) {
+            const iconMap = {
+                'ReportSubmitted': '📤',
+                'ReportApproved': '✓',
+                'ReportRejected': '✕',
+                'success': '✓',
+                'error': '✕',
+                'warning': '⚠',
+                'info': 'ℹ'
+            };
+
+            const typeMap = {
+                'ReportSubmitted': 'info',
+                'ReportApproved': 'success',
+                'ReportRejected': 'error'
+            };
+
+            const type = typeMap[notification.type] || 'info';
+            const icon = iconMap[notification.type] || iconMap[type];
+            const timeAgo = this.getTimeAgo(notification.createdAt);
+            const unreadClass = !notification.isRead ? 'unread' : '';
+
+            return `
+                <div class="notification-item ${unreadClass}" onclick="notificationCenterManager.handleClick(${notification.id}, '${notification.reportId || ''}')">
+                    <div class="notification-icon ${type}">${icon}</div>
+                    <div class="notification-content">
+                        <div class="notification-item-title">${this.escapeHtml(notification.message)}</div>
+                        <div class="notification-meta">
+                            <span class="notification-time">${timeAgo}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        getTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+
+            if (diffInSeconds < 60) return 'Vừa xong';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+            if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async handleClick(notificationId, reportId) {
+            await this.markAsRead(notificationId);
+            this.hide();
+            
+            // Navigate to report if available
+            if (reportId) {
+                window.location.href = `/ClubManager/MonthlyReports/Details?id=${reportId}`;
+            }
+        }
+
+        async markAsRead(notificationId) {
+            try {
+                const response = await fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'PUT',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    const notification = this.notifications.find(n => n.id === notificationId);
+                    if (notification) {
+                        notification.isRead = true;
+                        this.render();
+                        this.updateBadge();
+                    }
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        async markAllAsRead() {
+            try {
+                const response = await fetch('/api/notifications/read-all', {
+                    method: 'PUT',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    this.notifications.forEach(n => n.isRead = true);
+                    this.render();
+                    this.updateBadge();
+                }
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+            }
+        }
+
+        show() {
+            if (this.container) {
+                this.container.style.display = 'flex';
+                setTimeout(() => {
+                    this.container.classList.add('show');
+                }, 10);
+                this.loadNotifications();
+            }
+        }
+
+        hide() {
+            if (this.container) {
+                this.container.classList.remove('show');
+                setTimeout(() => {
+                    this.container.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        toggle() {
+            if (this.container && this.container.classList.contains('show')) {
+                this.hide();
+            } else {
+                this.show();
+            }
+        }
+
+        updateBadge() {
+            const unreadCount = this.notifications.filter(n => !n.isRead).length;
+            const badge = document.querySelector('.notification-badge');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    badge.classList.add('show');
+                } else {
+                    badge.classList.remove('show');
+                }
+            }
+        }
+    }
+
+    // Initialize when DOM is ready
+    let notificationCenterManager;
+    document.addEventListener('DOMContentLoaded', function() {
+        notificationCenterManager = new NotificationCenterManager();
+        
+        // Load unread count on page load
+        setTimeout(() => {
+            if (notificationCenterManager) {
+                notificationCenterManager.loadUnreadCount();
+            }
+        }, 500);
+        
+        // Refresh notifications every 30 seconds
+        setInterval(() => {
+            if (notificationCenterManager) {
+                notificationCenterManager.loadNotifications();
+            }
+        }, 30000);
+    });
+
+    // Global function to toggle notification center
+    function toggleNotificationCenter() {
+        if (notificationCenterManager) {
+            notificationCenterManager.toggle();
+        }
+    }
+</script>

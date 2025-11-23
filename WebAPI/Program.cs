@@ -37,6 +37,13 @@ using Repositories.ClubMovementRecords;
 using Services.ClubMovementRecords;
 using Repositories.Proposals;
 using Services.Proposals;
+using Repositories.ActivityMemberEvaluations;
+using Services.ActivityMemberEvaluations;
+using Repositories.ActivityEvaluations;
+using Repositories.CommunicationPlans;
+using Services.CommunicationPlans;
+using Repositories.MonthlyReports;
+using Services.MonthlyReports;
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
@@ -87,6 +94,10 @@ namespace WebAPI
             builder.Services.AddScoped<IFundCollectionPaymentRepository, FundCollectionPaymentRepository>();
             builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+            builder.Services.AddScoped<IActivityMemberEvaluationRepository, ActivityMemberEvaluationRepository>();
+            builder.Services.AddScoped<Repositories.ActivityEvaluations.IActivityEvaluationRepository, Repositories.ActivityEvaluations.ActivityEvaluationRepository>();
+            builder.Services.AddScoped<ICommunicationPlanRepository, CommunicationPlanRepository>();
+            builder.Services.AddScoped<IMonthlyReportRepository, MonthlyReportRepository>();
 
             // SignalR
             builder.Services.AddSignalR();
@@ -119,12 +130,21 @@ namespace WebAPI
             builder.Services.AddScoped<Repositories.ClubNews.IClubNewsRepository, Repositories.ClubNews.ClubNewsRepository>();
             builder.Services.AddScoped<Services.ClubNews.IClubNewsService, Services.ClubNews.ClubNewsService>();
             builder.Services.AddScoped<Services.Notifications.INotificationService, Services.Notifications.NotificationService>();
+            builder.Services.AddScoped<IActivityMemberEvaluationService, ActivityMemberEvaluationService>();
+            builder.Services.AddScoped<ICommunicationPlanService, CommunicationPlanService>();
+            builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportService, Services.MonthlyReports.MonthlyReportService>();
+            builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportApprovalService, Services.MonthlyReports.MonthlyReportApprovalService>();
+            builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportDataAggregator, Services.MonthlyReports.MonthlyReportDataAggregator>();
+            builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportPdfService, Services.MonthlyReports.MonthlyReportPdfService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
             builder.Services.AddHostedService<TokenCleanupService>();
             builder.Services.AddHostedService<ComprehensiveAutoScoringService>();
             builder.Services.AddHostedService<WebAPI.BackgroundServices.NotificationBroadcastService>();
+            builder.Services.AddHostedService<WebAPI.BackgroundServices.ActivityAutoCompleteService>();
+            builder.Services.AddHostedService<WebAPI.BackgroundServices.EvaluationReminderService>();
+            builder.Services.AddHostedService<WebAPI.BackgroundServices.MonthlyReportGenerationService>();
             // DEPRECATED: MovementScoreAutomationService - functionality merged into ComprehensiveAutoScoringService
             // builder.Services.AddHostedService<MovementScoreAutomationService>();
 

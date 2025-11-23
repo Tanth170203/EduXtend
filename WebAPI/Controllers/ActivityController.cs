@@ -412,6 +412,129 @@ namespace WebAPI.Controllers
 			return StatusCode(500, new { message = "Internal server error: " + ex.Message });
 		}
 	}
+
+	// ================= ACTIVITY EVALUATION =================
+	// POST api/activity/{activityId}/evaluation
+	// Authorization: Only ClubManager role can create evaluations (Requirement 6.1)
+	// Service layer verifies user is manager of the specific club (Requirement 6.2)
+	[HttpPost("{activityId:int}/evaluation")]
+	[Authorize(Roles = "ClubManager")]
+	public async Task<IActionResult> CreateEvaluation(int activityId, [FromBody] BusinessObject.DTOs.Activity.CreateActivityEvaluationDto dto)
+	{
+		var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+			return Unauthorized(new { message = "Missing user id" });
+
+		try
+		{
+			var result = await _service.CreateEvaluationAsync(userId, activityId, dto);
+			return Ok(result);
+		}
+		catch (InvalidOperationException ex)
+		{
+			return BadRequest(new { message = ex.Message });
+		}
+		catch (ArgumentException ex)
+		{
+			return BadRequest(new { message = ex.Message });
+		}
+		catch (UnauthorizedAccessException ex)
+		{
+			// Return 403 Forbidden when unauthorized user attempts to access (Requirement 6.3)
+			return StatusCode(403, new { message = ex.Message });
+		}
+		catch (KeyNotFoundException ex)
+		{
+			return NotFound(new { message = ex.Message });
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error creating evaluation for activity {ActivityId}", activityId);
+			return StatusCode(500, new { message = "An error occurred while creating the evaluation" });
+		}
+	}
+
+	// PUT api/activity/{activityId}/evaluation
+	// Authorization: Only ClubManager role can update evaluations (Requirement 6.1)
+	// Service layer verifies user is manager of the specific club (Requirement 6.2)
+	[HttpPut("{activityId:int}/evaluation")]
+	[Authorize(Roles = "ClubManager")]
+	public async Task<IActionResult> UpdateEvaluation(int activityId, [FromBody] BusinessObject.DTOs.Activity.CreateActivityEvaluationDto dto)
+	{
+		var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+			return Unauthorized(new { message = "Missing user id" });
+
+		try
+		{
+			var result = await _service.UpdateEvaluationAsync(userId, activityId, dto);
+			if (result == null)
+				return NotFound(new { message = "Evaluation not found" });
+			
+			return Ok(result);
+		}
+		catch (InvalidOperationException ex)
+		{
+			return BadRequest(new { message = ex.Message });
+		}
+		catch (ArgumentException ex)
+		{
+			return BadRequest(new { message = ex.Message });
+		}
+		catch (UnauthorizedAccessException ex)
+		{
+			// Return 403 Forbidden when unauthorized user attempts to access (Requirement 6.3)
+			return StatusCode(403, new { message = ex.Message });
+		}
+		catch (KeyNotFoundException ex)
+		{
+			return NotFound(new { message = ex.Message });
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error updating evaluation for activity {ActivityId}", activityId);
+			return StatusCode(500, new { message = "An error occurred while updating the evaluation" });
+		}
+	}
+
+	// GET api/activity/{activityId}/evaluation
+	// Authorization: ClubManager and Admin roles can view evaluations (Requirement 6.4)
+	// ClubManager can only view evaluations for their club (Requirement 6.2)
+	// Admin can view all evaluations (read-only) (Requirement 6.4)
+	[HttpGet("{activityId:int}/evaluation")]
+	[Authorize(Roles = "ClubManager,Admin")]
+	public async Task<IActionResult> GetEvaluation(int activityId)
+	{
+		var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out var userId))
+			return Unauthorized(new { message = "Missing user id" });
+
+		try
+		{
+			// Check if user is Admin (Requirement 6.4: Admin can view all evaluations)
+			var isAdmin = User.IsInRole("Admin");
+			
+			var result = await _service.GetEvaluationAsync(userId, activityId, isAdmin);
+			if (result == null)
+				return NotFound(new { message = "Evaluation not found" });
+			
+			return Ok(result);
+		}
+		catch (UnauthorizedAccessException ex)
+		{
+			// Return 403 Forbidden when unauthorized user attempts to access (Requirement 6.3)
+			return StatusCode(403, new { message = ex.Message });
+		}
+		catch (KeyNotFoundException ex)
+		{
+			return NotFound(new { message = ex.Message });
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error retrieving evaluation for activity {ActivityId}", activityId);
+			return StatusCode(500, new { message = "An error occurred while retrieving the evaluation" });
+		}
+	}
     }
 }
 

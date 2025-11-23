@@ -70,6 +70,7 @@ namespace Services.Activities
             var registrationCount = await _repo.GetRegistrationCountAsync(id);
             var attendanceCount = await _repo.GetAttendanceCountAsync(id);
             var feedbackCount = await _repo.GetFeedbackCountAsync(id);
+            var hasEvaluation = await _repo.HasEvaluationAsync(id);
 
             // Determine if user can register (allow during upcoming and ongoing)
             var isFullDetail = activity.MaxParticipants.HasValue && registrationCount >= activity.MaxParticipants.Value;
@@ -110,7 +111,8 @@ namespace Services.Activities
                 CanRegister = canRegister,
                 IsRegistered = false,
                 HasAttended = false,
-                AttendanceCode = activity.AttendanceCode
+                AttendanceCode = activity.AttendanceCode,
+                HasEvaluation = hasEvaluation
             };
         }
 
@@ -414,6 +416,7 @@ namespace Services.Activities
 				var a = reg.Activity;
 				var count = await _repo.GetRegistrationCountAsync(a.Id);
 				var attendanceCount = await _repo.GetAttendanceCountAsync(a.Id);
+				var hasEvaluation = await _repo.HasEvaluationAsync(a.Id);
 				var isFull = a.MaxParticipants.HasValue && count >= a.MaxParticipants.Value;
 				var hasAttended = await _repo.HasAttendanceAsync(a.Id, userId) || reg.Status == "Attended";
 				var hasFeedback = await _repo.HasFeedbackAsync(a.Id, userId);
@@ -441,7 +444,8 @@ namespace Services.Activities
 					IsFull = isFull,
 					HasAttended = hasAttended,
 					HasFeedback = hasFeedback,
-					AttendedCount = attendanceCount
+					AttendedCount = attendanceCount,
+					HasEvaluation = hasEvaluation
 				});
 			}
 			return list;
@@ -494,6 +498,7 @@ namespace Services.Activities
             {
                 var registrationCount = await _repo.GetRegistrationCountAsync(activity.Id);
                 var attendanceCount = await _repo.GetAttendanceCountAsync(activity.Id);
+                var hasEvaluation = await _repo.HasEvaluationAsync(activity.Id);
                 var isFull = activity.MaxParticipants.HasValue && registrationCount >= activity.MaxParticipants.Value;
                 var canRegister = activity.Status == "Approved" &&
                                   activity.EndTime > DateTime.UtcNow &&
@@ -522,7 +527,8 @@ namespace Services.Activities
                     CanRegister = canRegister,
                     IsRegistered = false, // TODO: Check if current user is registered
                     IsFull = isFull,
-                    AttendedCount = attendanceCount
+                    AttendedCount = attendanceCount,
+                    HasEvaluation = hasEvaluation
                 });
             }
 
@@ -990,6 +996,259 @@ namespace Services.Activities
 		public async Task<bool> IsUserManagerOfClubAsync(int userId, int clubId)
 		{
 			return await _repo.IsUserManagerOfClubAsync(userId, clubId);
+		}
+
+		// ================= EVALUATION METHODS =================
+		/// <summary>
+		/// Creates a new evaluation for a completed activity
+		/// Authorization: Only ClubManager who manages the club can create evaluations (Requirements 6.1, 6.2)
+		/// Validation: Activity must be completed, no existing evaluation, reason required if actual < expected
+		/// </summary>
+		public async Task<ActivityEvaluationDto> CreateEvaluationAsync(int managerId, int activityId, CreateActivityEvaluationDto dto)
+		{
+			// Get activity
+			var activity = await _repo.GetByIdAsync(activityId);
+			if (activity == null)
+				throw new KeyNotFoundException("Activity not found");
+			
+			// Check activity status is "Completed"
+			if (activity.Status != "Completed")
+				throw new InvalidOperationException("Only completed activities can be evaluated");
+			
+			// Check no existing evaluation
+			var hasEvaluation = await _repo.HasEvaluationAsync(activityId);
+			if (hasEvaluation)
+				throw new InvalidOperationException("This activity has already been evaluated");
+			
+			// Authorization check (Requirement 6.1, 6.2): Verify user is manager of club
+			if (!activity.ClubId.HasValue)
+				throw new InvalidOperationException("Cannot evaluate school-wide activities");
+			
+			var isManager = await _repo.IsUserManagerOfClubAsync(managerId, activity.ClubId.Value);
+			if (!isManager)
+				throw new UnauthorizedAccessException("You do not have permission to evaluate this activity");
+			
+			// Validate reason when ActualParticipants < ExpectedParticipants
+			if (dto.ActualParticipants < dto.ExpectedParticipants && string.IsNullOrWhiteSpace(dto.Reason))
+				throw new ArgumentException("Please provide a reason when actual participants is less than expected");
+			
+			// Calculate average score (including Success score)
+			var averageScore = (dto.CommunicationScore + dto.OrganizationScore + dto.HostScore + dto.SpeakerScore + dto.Success) / 5.0;
+			
+			// Create evaluation entity
+			var evaluation = new ActivityEvaluation
+			{
+				ActivityId = activityId,
+				ExpectedParticipants = dto.ExpectedParticipants,
+				ActualParticipants = dto.ActualParticipants,
+				Reason = dto.Reason,
+				CommunicationScore = dto.CommunicationScore,
+				OrganizationScore = dto.OrganizationScore,
+				HostScore = dto.HostScore,
+				SpeakerScore = dto.SpeakerScore,
+				Success = dto.Success,
+				Limitations = dto.Limitations,
+				ImprovementMeasures = dto.ImprovementMeasures,
+				AverageScore = averageScore,
+				CreatedById = managerId,
+				CreatedAt = DateTime.UtcNow
+			};
+			
+			// Save to database
+			var created = await _repo.CreateEvaluationAsync(evaluation);
+			
+			// Get full evaluation with navigation properties
+			var fullEvaluation = await _repo.GetEvaluationByActivityIdAsync(activityId);
+			if (fullEvaluation == null)
+				throw new InvalidOperationException("Failed to retrieve created evaluation");
+			
+			// Map to DTO
+			return new ActivityEvaluationDto
+			{
+				Id = fullEvaluation.Id,
+				ActivityId = fullEvaluation.ActivityId,
+				ActivityTitle = fullEvaluation.Activity.Title,
+				ActivityStartTime = fullEvaluation.Activity.StartTime,
+				ActivityEndTime = fullEvaluation.Activity.EndTime,
+				ExpectedParticipants = fullEvaluation.ExpectedParticipants,
+				ActualParticipants = fullEvaluation.ActualParticipants,
+				Reason = fullEvaluation.Reason,
+				CommunicationScore = fullEvaluation.CommunicationScore,
+				OrganizationScore = fullEvaluation.OrganizationScore,
+				HostScore = fullEvaluation.HostScore,
+				SpeakerScore = fullEvaluation.SpeakerScore,
+				AverageScore = fullEvaluation.AverageScore,
+				Success = fullEvaluation.Success,
+				Limitations = fullEvaluation.Limitations,
+				ImprovementMeasures = fullEvaluation.ImprovementMeasures,
+				CreatedById = fullEvaluation.CreatedById,
+				CreatedByName = fullEvaluation.CreatedBy.FullName,
+				CreatedAt = fullEvaluation.CreatedAt,
+				UpdatedAt = fullEvaluation.UpdatedAt
+			};
+		}
+
+		/// <summary>
+		/// Updates an existing evaluation for an activity
+		/// Authorization: Only ClubManager who manages the club can update evaluations (Requirements 6.1, 6.2)
+		/// Validation: Reason required if actual < expected
+		/// </summary>
+		public async Task<ActivityEvaluationDto?> UpdateEvaluationAsync(int managerId, int activityId, CreateActivityEvaluationDto dto)
+		{
+			// Get activity
+			var activity = await _repo.GetByIdAsync(activityId);
+			if (activity == null)
+				throw new KeyNotFoundException("Activity not found");
+			
+			// Authorization check (Requirement 6.1, 6.2): Verify user is manager of club
+			if (!activity.ClubId.HasValue)
+				throw new InvalidOperationException("Cannot evaluate school-wide activities");
+			
+			var isManager = await _repo.IsUserManagerOfClubAsync(managerId, activity.ClubId.Value);
+			if (!isManager)
+				throw new UnauthorizedAccessException("You do not have permission to evaluate this activity");
+			
+			// Get existing evaluation
+			var evaluation = await _repo.GetEvaluationByActivityIdAsync(activityId);
+			if (evaluation == null)
+				return null;
+			
+			// Validate reason when ActualParticipants < ExpectedParticipants
+			if (dto.ActualParticipants < dto.ExpectedParticipants && string.IsNullOrWhiteSpace(dto.Reason))
+				throw new ArgumentException("Please provide a reason when actual participants is less than expected");
+			
+			// Calculate average score (including Success score)
+			var averageScore = (dto.CommunicationScore + dto.OrganizationScore + dto.HostScore + dto.SpeakerScore + dto.Success) / 5.0;
+			
+			// Update evaluation entity
+			evaluation.ExpectedParticipants = dto.ExpectedParticipants;
+			evaluation.ActualParticipants = dto.ActualParticipants;
+			evaluation.Reason = dto.Reason;
+			evaluation.CommunicationScore = dto.CommunicationScore;
+			evaluation.OrganizationScore = dto.OrganizationScore;
+			evaluation.HostScore = dto.HostScore;
+			evaluation.SpeakerScore = dto.SpeakerScore;
+			evaluation.Success = dto.Success;
+			evaluation.Limitations = dto.Limitations;
+			evaluation.ImprovementMeasures = dto.ImprovementMeasures;
+			evaluation.AverageScore = averageScore;
+			evaluation.UpdatedAt = DateTime.UtcNow;
+			
+			// Save to database
+			var updated = await _repo.UpdateEvaluationAsync(evaluation);
+			if (updated == null)
+				return null;
+			
+			// Map to DTO
+			return new ActivityEvaluationDto
+			{
+				Id = updated.Id,
+				ActivityId = updated.ActivityId,
+				ActivityTitle = updated.Activity.Title,
+				ActivityStartTime = updated.Activity.StartTime,
+				ActivityEndTime = updated.Activity.EndTime,
+				ExpectedParticipants = updated.ExpectedParticipants,
+				ActualParticipants = updated.ActualParticipants,
+				Reason = updated.Reason,
+				CommunicationScore = updated.CommunicationScore,
+				OrganizationScore = updated.OrganizationScore,
+				HostScore = updated.HostScore,
+				SpeakerScore = updated.SpeakerScore,
+				AverageScore = updated.AverageScore,
+				Success = updated.Success,
+				Limitations = updated.Limitations,
+				ImprovementMeasures = updated.ImprovementMeasures,
+				CreatedById = updated.CreatedById,
+				CreatedByName = updated.CreatedBy.FullName,
+				CreatedAt = updated.CreatedAt,
+				UpdatedAt = updated.UpdatedAt
+			};
+		}
+
+		/// <summary>
+		/// Retrieves an evaluation for an activity
+		/// Authorization: 
+		/// - ClubManager can view evaluations for their club (Requirement 6.2)
+		/// - Admin can view all evaluations (read-only) (Requirement 6.4)
+		/// </summary>
+		public async Task<ActivityEvaluationDto?> GetEvaluationAsync(int userId, int activityId, bool isAdmin = false)
+		{
+			// Get activity
+			var activity = await _repo.GetByIdAsync(activityId);
+			if (activity == null)
+				throw new KeyNotFoundException("Activity not found");
+			
+			// Authorization check
+			// Admin can view all evaluations (read-only) - Requirement 6.4
+			if (!isAdmin)
+			{
+				// For non-admin users (ClubManager), verify they are manager of the club (Requirement 6.2)
+				if (!activity.ClubId.HasValue)
+					throw new UnauthorizedAccessException("You do not have permission to view this evaluation");
+				
+				var isManager = await _repo.IsUserManagerOfClubAsync(userId, activity.ClubId.Value);
+				if (!isManager)
+					throw new UnauthorizedAccessException("You do not have permission to view this evaluation");
+			}
+			
+			// Get evaluation
+			var evaluation = await _repo.GetEvaluationByActivityIdAsync(activityId);
+			if (evaluation == null)
+				return null;
+			
+			// Map to DTO
+			return new ActivityEvaluationDto
+			{
+				Id = evaluation.Id,
+				ActivityId = evaluation.ActivityId,
+				ActivityTitle = evaluation.Activity.Title,
+				ActivityStartTime = evaluation.Activity.StartTime,
+				ActivityEndTime = evaluation.Activity.EndTime,
+				ExpectedParticipants = evaluation.ExpectedParticipants,
+				ActualParticipants = evaluation.ActualParticipants,
+				Reason = evaluation.Reason,
+				CommunicationScore = evaluation.CommunicationScore,
+				OrganizationScore = evaluation.OrganizationScore,
+				HostScore = evaluation.HostScore,
+				SpeakerScore = evaluation.SpeakerScore,
+				AverageScore = evaluation.AverageScore,
+				Success = evaluation.Success,
+				Limitations = evaluation.Limitations,
+				ImprovementMeasures = evaluation.ImprovementMeasures,
+				CreatedById = evaluation.CreatedById,
+				CreatedByName = evaluation.CreatedBy.FullName,
+				CreatedAt = evaluation.CreatedAt,
+				UpdatedAt = evaluation.UpdatedAt
+			};
+		}
+
+		public async Task<int> AutoCompleteActivitiesAsync()
+		{
+			// Get all activities with Status="Approved" AND EndTime < Now
+			var allActivities = await _repo.GetAllAsync();
+			var now = DateTime.UtcNow;
+			
+			var activitiesToComplete = allActivities
+				.Where(a => a.Status == "Approved" && a.EndTime < now)
+				.ToList();
+			
+			int count = 0;
+			foreach (var activity in activitiesToComplete)
+			{
+				try
+				{
+					await _repo.UpdateActivityStatusAsync(activity.Id, "Completed");
+					count++;
+					_logger.LogInformation("[AUTO COMPLETE] Updated activity {ActivityId} to Completed", activity.Id);
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, "[AUTO COMPLETE] Failed to update activity {ActivityId}", activity.Id);
+				}
+			}
+			
+			_logger.LogInformation("[AUTO COMPLETE] Completed {Count} activities", count);
+			return count;
 		}
     }
 }
