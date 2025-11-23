@@ -716,7 +716,9 @@ namespace DataAccess.Migrations
                 b.Property<DateTime?>("UpdatedAt")
                     .HasColumnType("datetime2");
 
-              
+                b.Property<int?>("VnpayTransactionDetailId")
+                    .HasColumnType("int");
+
                 b.HasKey("Id");
 
                 b.HasIndex("ClubMemberId");
@@ -1618,7 +1620,74 @@ namespace DataAccess.Migrations
                 b.ToTable("UserTokens");
             });
 
+            modelBuilder.Entity("BusinessObject.Models.VnpayTransactionDetail", b =>
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
 
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                b.Property<decimal>("Amount")
+                    .HasColumnType("decimal(18,2)");
+
+                b.Property<string>("BankCode")
+                    .HasMaxLength(20)
+                    .HasColumnType("nvarchar(20)");
+
+                b.Property<string>("BankTransactionId")
+                    .HasMaxLength(255)
+                    .HasColumnType("nvarchar(255)");
+
+                b.Property<DateTime>("CreatedAt")
+                    .HasColumnType("datetime2");
+
+                b.Property<int>("FundCollectionPaymentId")
+                    .HasColumnType("int");
+
+                b.Property<string>("IpAddress")
+                    .HasMaxLength(50)
+                    .HasColumnType("nvarchar(50)");
+
+                b.Property<string>("OrderInfo")
+                    .HasMaxLength(500)
+                    .HasColumnType("nvarchar(500)");
+
+                b.Property<string>("ResponseCode")
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasColumnType("nvarchar(10)");
+
+                b.Property<string>("SecureHash")
+                    .HasMaxLength(500)
+                    .HasColumnType("nvarchar(500)");
+
+                b.Property<DateTime?>("TransactionDate")
+                    .HasColumnType("datetime2");
+
+                b.Property<string>("TransactionStatus")
+                    .IsRequired()
+                    .HasMaxLength(20)
+                    .HasColumnType("nvarchar(20)");
+
+                b.Property<DateTime?>("UpdatedAt")
+                    .HasColumnType("datetime2");
+
+                b.Property<long>("VnpayTransactionId")
+                    .HasColumnType("bigint");
+
+                b.HasKey("Id");
+
+                b.HasIndex("FundCollectionPaymentId")
+                    .IsUnique();
+
+                b.HasIndex("TransactionStatus");
+
+                b.HasIndex("VnpayTransactionId")
+                    .IsUnique();
+
+                b.ToTable("VnpayTransactionDetails");
+            });
 
             modelBuilder.Entity("BusinessObject.Models.Activity", b =>
             {
@@ -2257,7 +2326,16 @@ namespace DataAccess.Migrations
                 b.Navigation("User");
             });
 
+            modelBuilder.Entity("BusinessObject.Models.VnpayTransactionDetail", b =>
+            {
+                b.HasOne("BusinessObject.Models.FundCollectionPayment", "FundCollectionPayment")
+                    .WithOne("VnpayTransactionDetail")
+                    .HasForeignKey("BusinessObject.Models.VnpayTransactionDetail", "FundCollectionPaymentId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
+                b.Navigation("FundCollectionPayment");
+            });
 
             modelBuilder.Entity("BusinessObject.Models.Activity", b =>
             {
@@ -2313,6 +2391,10 @@ namespace DataAccess.Migrations
                 b.Navigation("Details");
             });
 
+            modelBuilder.Entity("BusinessObject.Models.FundCollectionPayment", b =>
+            {
+                b.Navigation("VnpayTransactionDetail");
+            });
 
             modelBuilder.Entity("BusinessObject.Models.FundCollectionRequest", b =>
             {
@@ -2381,6 +2463,7 @@ namespace DataAccess.Migrations
 
                 b.Navigation("UserTokens");
             });
+#pragma warning restore 612, 618
         }
     }
 }
