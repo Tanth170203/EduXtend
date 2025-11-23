@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace WebFE.Pages.ClubManager.Financial
+namespace WebFE.Pages.ClubManager
 {
-    public class TransactionsModel : ClubManagerPageModel
+    public class MembersModel : ClubManagerPageModel
     {
         public async Task<IActionResult> OnGetAsync()
         {
@@ -10,4 +10,3 @@ namespace WebFE.Pages.ClubManager.Financial
         }
     }
 }
-

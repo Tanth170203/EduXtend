@@ -43,6 +43,7 @@ using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
 using Microsoft.OpenApi.Models;
+using VNPAY.Extensions;
 
 namespace WebAPI
 {
@@ -62,6 +63,18 @@ namespace WebAPI
             // Options
             builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
             builder.Services.Configure<GoogleAuthOptions>(builder.Configuration.GetSection("GoogleAuth"));
+
+            // VNPAY Configuration
+            var vnpayConfig = builder.Configuration.GetSection("VNPAY");
+            builder.Services.AddVnpayClient(config =>
+            {
+                config.TmnCode = vnpayConfig["TmnCode"]!;
+                config.HashSecret = vnpayConfig["HashSecret"]!;
+                config.CallbackUrl = vnpayConfig["CallbackUrl"]!;
+                config.BaseUrl = vnpayConfig["BaseUrl"]!;
+                config.Version = vnpayConfig["Version"]!;
+                config.OrderType = vnpayConfig["OrderType"]!;
+            });
 
             // Repositories
             builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -124,12 +137,15 @@ namespace WebAPI
             builder.Services.AddScoped<Repositories.ClubNews.IClubNewsRepository, Repositories.ClubNews.ClubNewsRepository>();
             builder.Services.AddScoped<Services.ClubNews.IClubNewsService, Services.ClubNews.ClubNewsService>();
             builder.Services.AddScoped<Services.Notifications.INotificationService, Services.Notifications.NotificationService>();
+            builder.Services.AddScoped<Services.Emails.IEmailService, Services.Emails.EmailService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
             builder.Services.AddHostedService<TokenCleanupService>();
             builder.Services.AddHostedService<ComprehensiveAutoScoringService>();
             builder.Services.AddHostedService<WebAPI.BackgroundServices.NotificationBroadcastService>();
+            builder.Services.AddHostedService<Services.FundCollections.PaymentReminderBackgroundService>();
+            builder.Services.AddHostedService<Services.FundCollections.FundCollectionAutoCompleteService>();
             // DEPRECATED: MovementScoreAutomationService - functionality merged into ComprehensiveAutoScoringService
             // builder.Services.AddHostedService<MovementScoreAutomationService>();
 

@@ -3,7 +3,10 @@ using BusinessObject.Models;
 using Repositories.JoinRequests;
 using Repositories.Clubs;
 using Repositories.Interviews;
+using Repositories.Users;
 using Microsoft.Extensions.Logging;
+using DataAccess;
+using Microsoft.EntityFrameworkCore;
 
 namespace Services.JoinRequests
 {
@@ -13,17 +16,26 @@ namespace Services.JoinRequests
         private readonly IClubRepository _clubRepo;
         private readonly IInterviewRepository _interviewRepo;
         private readonly ILogger<JoinRequestService> _logger;
+        private readonly Services.Notifications.INotificationService _notificationService;
+        private readonly IUserRepository _userRepo;
+        private readonly EduXtendContext _context;
 
         public JoinRequestService(
             IJoinRequestRepository repo, 
             IClubRepository clubRepo,
             IInterviewRepository interviewRepo,
-            ILogger<JoinRequestService> logger)
+            ILogger<JoinRequestService> logger,
+            Services.Notifications.INotificationService notificationService,
+            IUserRepository userRepo,
+            EduXtendContext context)
         {
             _repo = repo;
             _clubRepo = clubRepo;
             _interviewRepo = interviewRepo;
             _logger = logger;
+            _notificationService = notificationService;
+            _userRepo = userRepo;
+            _context = context;
         }
 
         public async Task<JoinRequestDto?> GetByIdAsync(int id)
@@ -158,6 +170,64 @@ namespace Services.JoinRequests
                 _logger.LogInformation("Creating ClubMember for UserId: {UserId}, ClubId: {ClubId}", joinRequest.UserId, joinRequest.ClubId);
                 var memberCreated = await _repo.CreateClubMemberAsync(joinRequest.ClubId, joinRequest.UserId, joinRequest.DepartmentId);
                 _logger.LogInformation("ClubMember creation result: {Result}", memberCreated);
+
+                // Update user role from Student to Member if needed
+                try
+                {
+                    var user = await _userRepo.GetByIdWithRolesAsync(joinRequest.UserId);
+                    if (user != null && user.Role.RoleName == "Student")
+                    {
+                        _logger.LogInformation("Updating user {UserId} role from Student to Member", joinRequest.UserId);
+                        
+                        // Get Member role ID
+                        var memberRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Member");
+                        if (memberRole != null)
+                        {
+                            user.RoleId = memberRole.Id;
+                            await _userRepo.UpdateAsync(user);
+                            _logger.LogInformation("User {UserId} role updated to Member successfully", joinRequest.UserId);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Member role not found in database");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to update user role to Member");
+                    // Don't fail the approval process if role update fails
+                }
+
+                // Send approval notification
+                try
+                {
+                    await _notificationService.NotifyUserAboutJoinRequestApprovalAsync(
+                        joinRequest.UserId,
+                        joinRequest.ClubId,
+                        joinRequest.Club?.Name ?? "the club"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send approval notification");
+                }
+            }
+            else if (result && action == "Reject")
+            {
+                // Send rejection notification
+                try
+                {
+                    await _notificationService.NotifyUserAboutJoinRequestRejectionAsync(
+                        joinRequest.UserId,
+                        joinRequest.ClubId,
+                        joinRequest.Club?.Name ?? "the club"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send rejection notification");
+                }
             }
 
             return result;

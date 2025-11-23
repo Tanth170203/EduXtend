@@ -16,19 +16,25 @@ namespace Services.FundCollections
         private readonly IClubMemberRepository _clubMemberRepo;
         private readonly IClubRepository _clubRepo;
         private readonly EduXtendContext _context;
+        private readonly Services.Notifications.INotificationService _notificationService;
+        private readonly Services.Emails.IEmailService _emailService;
 
         public FundCollectionService(
             IFundCollectionRequestRepository requestRepo,
             IFundCollectionPaymentRepository paymentRepo,
             IClubMemberRepository clubMemberRepo,
             IClubRepository clubRepo,
-            EduXtendContext context)
+            EduXtendContext context,
+            Services.Notifications.INotificationService notificationService,
+            Services.Emails.IEmailService emailService)
         {
             _requestRepo = requestRepo;
             _paymentRepo = paymentRepo;
             _clubMemberRepo = clubMemberRepo;
             _clubRepo = clubRepo;
             _context = context;
+            _notificationService = notificationService;
+            _emailService = emailService;
         }
 
         public async Task<FundCollectionRequestDto> CreateRequestAsync(int clubId, CreateFundCollectionRequestDto dto, int createdById)
@@ -114,6 +120,23 @@ namespace Services.FundCollections
             }).ToList();
 
             await _paymentRepo.CreateManyAsync(payments);
+
+            // Send notifications to all members (in-app only, no email)
+            try
+            {
+                await _notificationService.NotifyMembersAboutNewFundCollectionAsync(
+                    clubId,
+                    dto.Title,
+                    dto.AmountPerMember,
+                    dto.DueDate,
+                    createdById
+                );
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the request creation
+                Console.WriteLine($"Failed to send notifications: {ex.Message}");
+            }
 
             // Reload with details
             var result = await _requestRepo.GetByIdWithDetailsAsync(createdRequest.Id);
@@ -209,7 +232,7 @@ namespace Services.FundCollections
 
         public async Task<bool> CompleteRequestAsync(int requestId, int userId)
         {
-            var request = await _requestRepo.GetByIdAsync(requestId);
+            var request = await _requestRepo.GetByIdWithDetailsAsync(requestId);
             if (request == null)
             {
                 throw new ArgumentException("Fund collection request not found");
@@ -218,8 +241,40 @@ namespace Services.FundCollections
             // Validate user is club manager
             await ValidateClubManagerPermissionAsync(request.ClubId, userId);
 
+            // Calculate total collected amount
+            var totalCollected = request.Payments
+                .Where(p => p.Status == "paid" || p.Status == "confirmed")
+                .Sum(p => p.Amount);
+
+            // Only create transaction if there's collected money
+            if (totalCollected > 0)
+            {
+                // Create PaymentTransaction (Income)
+                var transaction = new PaymentTransaction
+                {
+                    ClubId = request.ClubId,
+                    Type = "Income",
+                    Amount = totalCollected,
+                    Title = $"Fund Collection: {request.Title}",
+                    Description = $"Completed fund collection. Total collected from {request.Payments.Count(p => p.Status == "paid" || p.Status == "confirmed")} members.",
+                    Category = "member_fees",
+                    Method = "Multiple",
+                    Status = "completed",
+                    TransactionDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedById = userId
+                };
+
+                _context.PaymentTransactions.Add(transaction);
+            }
+
+            // Update fund collection status
             request.Status = "completed";
+            request.UpdatedAt = DateTime.UtcNow;
             await _requestRepo.UpdateAsync(request);
+            
+            // Save all changes
+            await _context.SaveChangesAsync();
             
             return true;
         }
@@ -261,6 +316,24 @@ namespace Services.FundCollections
             payment.ConfirmedById = confirmedById;
 
             var updated = await _paymentRepo.UpdateAsync(payment);
+
+            // Send notification to member (in-app only, no email)
+            try
+            {
+                await _notificationService.NotifyMemberAboutPaymentConfirmationAsync(
+                    payment.ClubMember.Student.UserId,
+                    payment.FundCollectionRequest.ClubId,
+                    payment.FundCollectionRequest.Title,
+                    payment.Amount,
+                    payment.PaymentMethod ?? "N/A"
+                );
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the confirmation
+                Console.WriteLine($"Failed to send notification: {ex.Message}");
+            }
+
             return MapPaymentToDto(updated);
         }
 
@@ -295,19 +368,46 @@ namespace Services.FundCollections
 
             foreach (var paymentId in dto.PaymentIds)
             {
-                var payment = await _paymentRepo.GetByIdAsync(paymentId);
+                var payment = await _paymentRepo.GetByIdWithDetailsAsync(paymentId);
                 if (payment == null) continue;
 
                 // Validate payment belongs to club
-                var request = await _requestRepo.GetByIdAsync(payment.FundCollectionRequestId);
-                if (request?.ClubId != clubId) continue;
+                if (payment.FundCollectionRequest?.ClubId != clubId) continue;
 
                 // Update reminder count
                 payment.ReminderCount++;
                 payment.LastReminderAt = DateTime.UtcNow;
                 await _paymentRepo.UpdateAsync(payment);
 
-                // TODO: Send actual reminder notification/email
+                // Send email reminder ONLY (manual reminder by manager)
+                // In-app notifications are handled automatically by background service at 3 & 1 day before due
+                try
+                {
+                    var dueDate = payment.FundCollectionRequest.DueDate;
+                    var daysUntilDue = (dueDate - DateTime.UtcNow).Days;
+                    var studentEmail = payment.ClubMember.Student.Email;
+                    var studentName = payment.ClubMember.Student.FullName;
+
+                    // Send email reminder only (no in-app notification to avoid duplication)
+                    if (!string.IsNullOrEmpty(studentEmail))
+                    {
+                        var clubName = payment.FundCollectionRequest.Club?.Name ?? "Club";
+                        await _emailService.SendPaymentReminderEmailAsync(
+                            studentEmail,
+                            studentName,
+                            clubName,
+                            payment.FundCollectionRequest.Title,
+                            payment.Amount,
+                            dueDate,
+                            daysUntilDue
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the reminder
+                    Console.WriteLine($"Failed to send reminder: {ex.Message}");
+                }
             }
 
             return true;
@@ -446,6 +546,49 @@ namespace Services.FundCollections
             payment.UpdatedAt = DateTime.UtcNow;
 
             await _paymentRepo.UpdateAsync(payment);
+
+            // Send notification to club manager
+            try
+            {
+                // Get club manager
+                var clubManagers = await _clubMemberRepo.GetByClubIdAsync(payment.FundCollectionRequest.ClubId);
+                var manager = clubManagers.FirstOrDefault(m => 
+                    m.RoleInClub == "Manager" || 
+                    m.RoleInClub == "President" || 
+                    m.RoleInClub == "VicePresident");
+
+                if (manager != null)
+                {
+                    var memberName = payment.ClubMember.Student.FullName;
+                    var fundTitle = payment.FundCollectionRequest.Title;
+
+                    if (dto.PaymentMethod == "Cash")
+                    {
+                        await _notificationService.NotifyClubManagerAboutCashPaymentAsync(
+                            manager.Student.UserId,
+                            payment.FundCollectionRequest.ClubId,
+                            memberName,
+                            fundTitle,
+                            payment.Amount
+                        );
+                    }
+                    else if (dto.PaymentMethod == "Bank Transfer")
+                    {
+                        await _notificationService.NotifyClubManagerAboutBankTransferPaymentAsync(
+                            manager.Student.UserId,
+                            payment.FundCollectionRequest.ClubId,
+                            memberName,
+                            fundTitle,
+                            payment.Amount
+                        );
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the payment submission
+                Console.WriteLine($"Failed to send notification: {ex.Message}");
+            }
 
             return MapPaymentToDto(payment);
         }

@@ -27,6 +27,14 @@ namespace BusinessObject.DTOs.FundCollection
         public string? ConfirmedByName { get; set; }
         public int ReminderCount { get; set; }
         public DateTime? LastReminderAt { get; set; }
+        
+        // VNPAY transaction details
+        public int? VnpayTransactionDetailId { get; set; }
+        public long? VnpayTransactionId { get; set; }
+        public string? VnpayBankCode { get; set; }
+        public string? VnpayTransactionStatus { get; set; }
+        public DateTime? VnpayTransactionDate { get; set; }
+        
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

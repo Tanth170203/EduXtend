@@ -74,6 +74,12 @@ public class FundCollectionPayment
     /// </summary>
     public DateTime? LastReminderAt { get; set; }
     
+    /// <summary>
+    /// Link to VnpayTransactionDetail (khi thanh toán qua VNPAY)
+    /// </summary>
+    public int? VnpayTransactionDetailId { get; set; }
+    public VnpayTransactionDetail? VnpayTransactionDetail { get; set; }
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 }

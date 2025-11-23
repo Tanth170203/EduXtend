@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.Identity.Client" Version="4.77.1" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="VNPAY.NET" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
