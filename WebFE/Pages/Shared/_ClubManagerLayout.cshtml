@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/chatbot.css" asp-append-version="true" />
+    <environment include="Development">
+        <link rel="stylesheet" href="~/css/recommendation-cards.css" asp-append-version="true" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="~/css/recommendation-cards.min.css" asp-append-version="true" />
+    </environment>
     <link rel="stylesheet" href="~/WebFE.styles.css" asp-append-version="true" />
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -217,11 +224,49 @@
     <!-- Overlay for mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
+    <!-- AI Chatbot Component (For Club Managers) -->
+    <div id="chatbotContainer" style="display: none;">
+        <!-- Floating Chat Button -->
+        <button id="chatbot-float-button" class="chatbot-float-button" title="AI Assistant">
+            <i data-lucide="message-circle" style="width: 30px; height: 30px;"></i>
+        </button>
+
+        <!-- Chat Modal -->
+        <div id="chatbot-modal" class="chatbot-modal">
+            <div class="chatbot-header">
+                <h3>AI Assistant - Hỗ trợ tìm CLB & Hoạt động</h3>
+                <button id="chatbot-close" class="chatbot-close" title="Đóng">
+                    <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+                </button>
+            </div>
+
+            <div class="chatbot-messages" id="chatbot-messages">
+                <!-- Welcome message and quick actions will be inserted here by JavaScript -->
+                <div id="chatbot-typing" class="chatbot-typing">
+                    <span class="chatbot-typing-text">AI đang suy nghĩ</span>
+                    <div class="chatbot-typing-dots">
+                        <div class="chatbot-typing-dot"></div>
+                        <div class="chatbot-typing-dot"></div>
+                        <div class="chatbot-typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chatbot-input-area">
+                <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Nhập tin nhắn của bạn..." />
+                <button id="chatbot-send-button" class="chatbot-send-button" title="Gửi">
+                    <i data-lucide="send" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/auth.js" asp-append-version="true"></script>
     <script src="~/js/notifications.js" asp-append-version="true"></script>
+    <script src="~/js/chatbot.js" asp-append-version="true"></script>
 
     <script>
         // Initialize Lucide Icons
@@ -233,6 +278,18 @@
             
             // Check for stored notifications from redirects
             checkStoredNotifications();
+            
+            // Show chatbot for authenticated Club Managers
+            if (typeof isAuthenticated === 'function' && await isAuthenticated()) {
+                const chatbotContainer = document.getElementById('chatbotContainer');
+                if (chatbotContainer) {
+                    chatbotContainer.style.display = 'block';
+                }
+                // Initialize chatbot
+                if (typeof initChatbot === 'function') {
+                    initChatbot();
+                }
+            }
         });
 
         async function updateClubManagerAuthUI() {
