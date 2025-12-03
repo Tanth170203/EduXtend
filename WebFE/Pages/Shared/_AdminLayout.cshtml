@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
     <title>@ViewData["Title"] - Admin Dashboard - EduXtend</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
@@ -182,7 +183,7 @@
                 <!-- User Menu -->
                 <div class="dropdown">
                     <button class="user-menu-btn" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img id="adminUserAvatar" src="" alt="Avatar" class="user-avatar" />
+                        <img id="adminUserAvatar" src="" alt="Avatar" referrerpolicy="no-referrer" crossorigin="anonymous" class="user-avatar" />
                         <div class="user-info d-none d-md-block">
                             <div class="user-name" id="adminUserName">Admin</div>
                             <div class="user-role">Administrator</div>
@@ -255,26 +256,10 @@
             }
         })();
 
-        // Initialize Lucide Icons (robust)
-        (function initLucideIcons() {
-            function run() {
-                if (window.lucide && typeof lucide.createIcons === 'function') {
-                    try { lucide.createIcons(); } catch {}
-                }
-            }
-            Run now, on DOM ready, and after a short delay
-            run();
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', run);
-            } else {
-                setTimeout(run, 100);
-            }
-            Re-run when DOM changes (e.g., partial updates)
-            try {
-                const observer = new MutationObserver(() => run());
-                observer.observe(document.body, { childList: true, subtree: true });
-            } catch {}
-        })();
+        // Initialize Lucide Icons
+        if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+            lucide.createIcons();
+        }
 
         // Check authentication status and update UI
         document.addEventListener('DOMContentLoaded', async function() {
@@ -300,11 +285,24 @@
 
         async function updateAdminAuthUI() {
             const user = await getUser();
+            console.log('[Admin Auth Debug] User data:', user);
+            console.log('[Admin Auth Debug] Avatar URL:', user?.avatar);
+            
             const avatarEl = document.getElementById('adminUserAvatar');
             const nameEl = document.getElementById('adminUserName');
             const fallbackAvatar = '/images/default-avatar.png';
+            
             if (avatarEl) {
-                avatarEl.src = (user && user.avatar) ? user.avatar : fallbackAvatar;
+                const avatarUrl = (user && user.avatar) ? user.avatar : fallbackAvatar;
+                console.log('[Admin Auth Debug] Setting avatar to:', avatarUrl);
+                avatarEl.src = avatarUrl;
+                avatarEl.onerror = function() {
+                    console.error('[Admin Auth Debug] Failed to load avatar from:', avatarUrl);
+                    this.src = fallbackAvatar;
+                };
+                avatarEl.onload = function() {
+                    console.log('[Admin Auth Debug] Avatar loaded successfully!');
+                };
             }
             if (nameEl && user && user.name) {
                 nameEl.textContent = user.name;

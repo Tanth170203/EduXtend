@@ -49,16 +49,20 @@ class NotificationManager {
         this.modalContainer = document.createElement('div');
         this.modalContainer.id = 'modal-container';
         this.modalContainer.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 10000;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            z-index: 10000 !important;
             display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.5);
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(0, 0, 0, 0.5) !important;
             backdrop-filter: blur(4px);
         `;
         document.body.appendChild(this.modalContainer);
@@ -94,15 +98,18 @@ class NotificationManager {
 
     async loadNotificationsFromAPI() {
         try {
-            const response = await fetch('https://localhost:5001/api/notification/my-notifications', {
+            const response = await fetch('https://localhost:5001/api/notifications', {
                 credentials: 'include'
             });
 
             if (response.ok) {
-                const notifications = await response.json();
-                this.notifications = notifications;
+                const result = await response.json();
+                this.notifications = result.data || [];
                 this.updateUnreadCount();
                 this.renderNotificationCenter();
+            } else if (response.status === 401) {
+                // User not authenticated, skip loading
+                console.log('User not authenticated, skipping notification load');
             }
         } catch (error) {
             console.error('Error loading notifications:', error);
@@ -761,7 +768,7 @@ class NotificationManager {
         const notification = this.notifications.find(n => n.id === notificationId);
         if (notification && !notification.isRead) {
             try {
-                const response = await fetch(`https://localhost:5001/api/notification/${notificationId}/mark-read`, {
+                const response = await fetch(`https://localhost:5001/api/notifications/${notificationId}/read`, {
                     method: 'PUT',
                     credentials: 'include'
                 });
@@ -779,7 +786,7 @@ class NotificationManager {
 
     async markAllAsRead() {
         try {
-            const response = await fetch('https://localhost:5001/api/notification/mark-all-read', {
+            const response = await fetch('https://localhost:5001/api/notifications/read-all', {
                 method: 'PUT',
                 credentials: 'include'
             });

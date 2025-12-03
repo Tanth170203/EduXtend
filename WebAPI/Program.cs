@@ -51,6 +51,7 @@ using WebAPI.Authentication;
 using WebAPI.Middleware;
 using Microsoft.OpenApi.Models;
 using VNPAY.Extensions;
+using AspNetCoreRateLimit;
 
 namespace WebAPI
 {
@@ -67,9 +68,25 @@ namespace WebAPI
             builder.Services.AddDbContext<EduXtendContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            // Memory Cache
+            builder.Services.AddMemoryCache();
+
+            // Rate Limiting Configuration
+            builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+            builder.Services.Configure<IpRateLimitPolicies>(builder.Configuration.GetSection("IpRateLimitPolicies"));
+            builder.Services.AddInMemoryRateLimiting();
+            builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
             // Options
             builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
             builder.Services.Configure<GoogleAuthOptions>(builder.Configuration.GetSection("GoogleAuth"));
+            builder.Services.Configure<Services.Chatbot.GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
+
+            // HttpClient for Gemini AI
+            builder.Services.AddHttpClient("GeminiAI", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
 
             // VNPAY Configuration
             var vnpayConfig = builder.Configuration.GetSection("VNPAY");
@@ -155,6 +172,8 @@ namespace WebAPI
             builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportDataAggregator, Services.MonthlyReports.MonthlyReportDataAggregator>();
             builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportPdfService, Services.MonthlyReports.MonthlyReportPdfService>();
             builder.Services.AddScoped<Services.Emails.IEmailService, Services.Emails.EmailService>();
+            builder.Services.AddScoped<Services.Chatbot.IGeminiAIService, Services.Chatbot.GeminiAIService>();
+            builder.Services.AddScoped<Services.Chatbot.IChatbotService, Services.Chatbot.ChatbotService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
@@ -249,6 +268,10 @@ namespace WebAPI
             
             // Enable serving static files (for uploaded CVs, images, etc.)
             app.UseStaticFiles();
+
+            // Rate Limiting - Must be before Authentication
+            app.UseIpRateLimiting();
+            app.UseCustomRateLimitResponse();
 
             // Custom middleware (order matters!)
             app.UseAuthentication();     // Validate JWT and set User principal

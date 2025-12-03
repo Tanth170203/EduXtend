@@ -58,13 +58,27 @@ async function updateAuthUI() {
     const loginBtn = document.getElementById('loginBtn');
     const userInfo = document.getElementById('userInfo');
 
+    console.log('[Auth Debug] User data:', user);
+    console.log('[Auth Debug] Avatar URL:', user?.avatar);
+
     if (user && user.id && user.roles && user.roles.length > 0) {
         loginBtn.style.display = 'none';
         userInfo.style.display = 'block';
 
         const displayName = user.name && user.name.trim() !== '' ? user.name : user.email;
         document.getElementById('userName').textContent = displayName;
-        document.getElementById('userAvatar').src = user.avatar || '/images/default-avatar.png';
+        
+        const avatarUrl = user.avatar || '/images/default-avatar.png';
+        console.log('[Auth Debug] Setting avatar to:', avatarUrl);
+        const avatarImg = document.getElementById('userAvatar');
+        avatarImg.src = avatarUrl;
+        avatarImg.onerror = function() {
+            console.error('[Auth Debug] Failed to load avatar from:', avatarUrl);
+            this.src = '/images/default-avatar.png';
+        };
+        avatarImg.onload = function() {
+            console.log('[Auth Debug] Avatar loaded successfully!');
+        };
     } else {
         loginBtn.style.display = 'inline-block';
         userInfo.style.display = 'none';
@@ -110,10 +124,42 @@ async function requireAdmin() {
 }
 
 // --------------------------
+// Kiểm tra xác thực
+// --------------------------
+async function isAuthenticated() {
+    const user = await getUser();
+    return user && user.id && user.roles && user.roles.length > 0;
+}
+
+// --------------------------
+// Lấy vai trò người dùng
+// --------------------------
+async function getUserRole() {
+    const user = await getUser();
+    if (user && user.roles && user.roles.length > 0) {
+        return user.roles[0]; // Return first role
+    }
+    return null;
+}
+
+// --------------------------
+// Kiểm tra vai trò Admin
+// --------------------------
+async function isAdmin() {
+    const user = await getUser();
+    return user && user.roles && user.roles.includes("Admin");
+}
+
+// --------------------------
 // Đăng xuất
 // --------------------------
 async function logout() {
     try {
+        // Clear chat history before logout
+        if (typeof clearChatHistory === 'function') {
+            clearChatHistory();
+        }
+
         await fetch(`${API_BASE_URL}/api/auth/logout`, {
             method: 'POST',
             credentials: 'include'
