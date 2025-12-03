@@ -161,7 +161,7 @@
     <!-- Notification Center Component -->
     @await Html.PartialAsync("_NotificationCenter")
 
-    <!-- AI Chatbot Component (Only for authenticated students) -->
+    <!-- AI Chatbot Component (For authenticated users: Students, Club Managers, Club Members) -->
     <div id="chatbotContainer" style="display: none;">
         <!-- Floating Chat Button -->
         <button id="chatbot-float-button" class="chatbot-float-button" title="AI Assistant">
@@ -282,10 +282,11 @@
                 }
             }
             
-            // Show chatbot for authenticated students
+            // Show chatbot for authenticated users (Student, ClubManager, ClubMember)
             if (typeof isAuthenticated === 'function' && await isAuthenticated()) {
                 const userRole = await getUserRole();
-                if (userRole === 'Student') {
+                // Allow chatbot for Student, ClubManager, and ClubMember roles
+                if (userRole === 'Student' || userRole === 'ClubManager' || userRole === 'ClubMember') {
                     const chatbotContainer = document.getElementById('chatbotContainer');
                     if (chatbotContainer) {
                         chatbotContainer.style.display = 'block';

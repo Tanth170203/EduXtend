@@ -476,7 +476,18 @@ namespace Services.Chatbot
                 return cachedContext;
             }
 
-            // If not in cache, fetch from database using UserId
+            // First, get the user to check their role
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                _logger.LogError("User with UserId {UserId} not found", userId);
+                throw new InvalidOperationException("Không tìm thấy thông tin người dùng.");
+            }
+
+            // Try to get student record if exists
             var student = await _context.Students
                 .Include(s => s.Major)
                 .Include(s => s.ClubMembers)
@@ -484,42 +495,58 @@ namespace Services.Chatbot
                         .ThenInclude(c => c.Category)
                 .FirstOrDefaultAsync(s => s.UserId == userId);
 
-            if (student == null)
+            StudentContext context;
+
+            if (student != null)
             {
-                _logger.LogError("Student with UserId {UserId} not found", userId);
-                throw new InvalidOperationException("Không tìm thấy thông tin sinh viên.");
+                // User is a student - use full student context
+                var currentClubs = student.ClubMembers
+                    .Where(cm => cm.IsActive)
+                    .Select(cm => cm.Club.Name)
+                    .ToList();
+
+                var interests = student.ClubMembers
+                    .Where(cm => cm.IsActive)
+                    .Select(cm => cm.Club.Category.Name)
+                    .Distinct()
+                    .ToList();
+
+                context = new StudentContext
+                {
+                    StudentId = student.Id,
+                    FullName = student.FullName,
+                    MajorName = student.Major.Name,
+                    Cohort = student.Cohort,
+                    CurrentClubs = currentClubs,
+                    Interests = interests
+                };
             }
-
-            // Get current active clubs
-            var currentClubs = student.ClubMembers
-                .Where(cm => cm.IsActive)
-                .Select(cm => cm.Club.Name)
-                .ToList();
-
-            // Get interests from club categories
-            var interests = student.ClubMembers
-                .Where(cm => cm.IsActive)
-                .Select(cm => cm.Club.Category.Name)
-                .Distinct()
-                .ToList();
-
-            var context = new StudentContext
+            else
             {
-                StudentId = student.Id,
-                FullName = student.FullName,
-                MajorName = student.Major.Name,
-                Cohort = student.Cohort,
-                CurrentClubs = currentClubs,
-                Interests = interests
-            };
+                // User is not a student (e.g., ClubManager, Admin) - create basic context
+                _logger.LogInformation("User {UserId} is not a student (Role: {Role}), creating basic context", 
+                    userId, user.Role.RoleName);
+
+                // For non-students, provide a generic context that allows them to use chatbot
+                // They can still ask about clubs, activities, and news
+                context = new StudentContext
+                {
+                    StudentId = 0, // Not a student
+                    FullName = user.FullName,
+                    MajorName = user.Role.RoleName, // Use role name instead of major
+                    Cohort = "N/A", // Not applicable for non-students
+                    CurrentClubs = new List<string>(), // Empty list for non-students
+                    Interests = new List<string>() // Empty list for non-students
+                };
+            }
 
             // Cache for 5 minutes
             var cacheOptions = new MemoryCacheEntryOptions()
                 .SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
 
             _cache.Set(cacheKey, context, cacheOptions);
-            _logger.LogInformation("Cached student context for user {UserId} ({StudentName}) for 5 minutes", 
-                userId, student.FullName);
+            _logger.LogInformation("Cached context for user {UserId} ({UserName}) for 5 minutes", 
+                userId, context.FullName);
 
             return context;
         }
@@ -688,12 +715,22 @@ namespace Services.Chatbot
             prompt.AppendLine("- Quản lý thành viên, điểm danh, và báo cáo hoạt động");
             prompt.AppendLine("- Tích hợp thanh toán và quản lý tài chính CLB");
             prompt.AppendLine();
-            prompt.AppendLine("Bạn đang nói chuyện với sinh viên sau đây:");
+            prompt.AppendLine("Bạn đang nói chuyện với người dùng sau đây:");
             prompt.AppendLine();
             prompt.AppendLine($"TÊN: {context.FullName}");
-            prompt.AppendLine($"MÃ SINH VIÊN: {context.StudentId}");
-            prompt.AppendLine($"KHÓA: {context.Cohort}");
-            prompt.AppendLine($"CHUYÊN NGÀNH: {context.MajorName}");
+            
+            if (context.StudentId > 0)
+            {
+                // User is a student
+                prompt.AppendLine($"MÃ SINH VIÊN: {context.StudentId}");
+                prompt.AppendLine($"KHÓA: {context.Cohort}");
+                prompt.AppendLine($"CHUYÊN NGÀNH: {context.MajorName}");
+            }
+            else
+            {
+                // User is not a student (e.g., ClubManager, Admin)
+                prompt.AppendLine($"VAI TRÒ: {context.MajorName}");
+            }
             
             if (context.CurrentClubs.Any())
             {
@@ -711,13 +748,13 @@ namespace Services.Chatbot
             
             prompt.AppendLine();
             prompt.AppendLine("=== QUY TẮC QUAN TRỌNG ===");
-            prompt.AppendLine("1. Khi sinh viên hỏi 'tôi là ai', 'thông tin của tôi', hãy trả lời CHÍNH XÁC thông tin ở trên");
-            prompt.AppendLine("2. KHÔNG được nhầm lẫn với sinh viên khác");
+            prompt.AppendLine("1. Khi người dùng hỏi 'tôi là ai', 'thông tin của tôi', hãy trả lời CHÍNH XÁC thông tin ở trên");
+            prompt.AppendLine("2. KHÔNG được nhầm lẫn với người dùng khác");
             prompt.AppendLine("3. Luôn dựa vào thông tin profile ở trên khi trả lời");
-            prompt.AppendLine("4. Khi đề xuất câu lạc bộ/hoạt động, xem xét chuyên ngành và sở thích");
+            prompt.AppendLine("4. Khi đề xuất câu lạc bộ/hoạt động, xem xét vai trò, chuyên ngành (nếu có) và sở thích");
             prompt.AppendLine();
             prompt.AppendLine("Bạn là AI Assistant của EduXtend - hệ thống quản lý câu lạc bộ và hoạt động ngoại khóa.");
-            prompt.AppendLine("Nhiệm vụ của bạn là hỗ trợ sinh viên tìm kiếm và tham gia các câu lạc bộ (CLB) và hoạt động phù hợp.");
+            prompt.AppendLine("Nhiệm vụ của bạn là hỗ trợ người dùng tìm kiếm thông tin về các câu lạc bộ (CLB) và hoạt động.");
             prompt.AppendLine();
 
             // Club list
@@ -822,7 +859,7 @@ namespace Services.Chatbot
             prompt.AppendLine("   **Tên hoạt động:** Basic Information");
             prompt.AppendLine("   * CLB: FPT Code Club");
             prompt.AppendLine();
-            prompt.AppendLine("2. QUAN TRỌNG - Khi sinh viên hỏi về TIN TỨC/BÀI BÁO/THÔNG BÁO:");
+            prompt.AppendLine("2. QUAN TRỌNG - Khi người dùng hỏi về TIN TỨC/BÀI BÁO/THÔNG BÁO:");
             prompt.AppendLine("   CÁC TỪ KHÓA CẦN NHẬN DIỆN:");
             prompt.AppendLine("   - Tiếng Việt: tin tức, bài báo, thông báo, bài viết, tin, bài đăng, post");
             prompt.AppendLine("   - Tiếng Anh: news, post, article, announcement, update");
@@ -842,13 +879,13 @@ namespace Services.Chatbot
             prompt.AppendLine("      - Dùng emoji thay vì markdown");
             prompt.AppendLine("   e) Nếu KHÔNG tìm thấy tin tức phù hợp:");
             prompt.AppendLine("      - Nói rõ: 'Hiện tại không có tin tức về [từ khóa]'");
-            prompt.AppendLine("      - Liệt kê các tin tức gần đây nhất để sinh viên tham khảo");
+            prompt.AppendLine("      - Liệt kê các tin tức gần đây nhất để người dùng tham khảo");
             prompt.AppendLine();
-            prompt.AppendLine("3. Đề xuất CLB và hoạt động phù hợp với chuyên ngành và sở thích của sinh viên");
+            prompt.AppendLine("3. Đề xuất CLB và hoạt động phù hợp với vai trò, chuyên ngành (nếu có) và sở thích của người dùng");
             prompt.AppendLine("4. Giải thích lý do tại sao CLB/hoạt động phù hợp");
             prompt.AppendLine("5. Cung cấp thông tin cụ thể: tên CLB, mô tả, thời gian hoạt động");
-            prompt.AppendLine("6. Khuyến khích sinh viên tham gia và phát triển kỹ năng");
-            prompt.AppendLine("7. Nếu không có thông tin phù hợp, gợi ý sinh viên khám phá các lựa chọn khác");
+            prompt.AppendLine("6. Khuyến khích người dùng tham gia và phát triển kỹ năng");
+            prompt.AppendLine("7. Nếu không có thông tin phù hợp, gợi ý người dùng khám phá các lựa chọn khác");
             prompt.AppendLine("8. Giữ câu trả lời ngắn gọn (dưới 500 từ)");
             prompt.AppendLine();
             prompt.AppendLine("ĐỊNH DẠNG ĐỀ XUẤT:");
@@ -865,14 +902,14 @@ namespace Services.Chatbot
                 var recentHistory = conversationHistory.TakeLast(10).ToList(); // Last 10 messages
                 foreach (var message in recentHistory)
                 {
-                    var role = message.Role == "user" ? "Sinh viên" : "AI Assistant";
+                    var role = message.Role == "user" ? "Người dùng" : "AI Assistant";
                     prompt.AppendLine($"{role}: {message.Content}");
                 }
                 prompt.AppendLine();
             }
 
             // User message
-            prompt.AppendLine("CÂU HỎI CỦA SINH VIÊN:");
+            prompt.AppendLine("CÂU HỎI CỦA NGƯỜI DÙNG:");
             prompt.AppendLine(userMessage);
 
             return prompt.ToString();
@@ -955,7 +992,7 @@ namespace Services.Chatbot
             prompt.AppendLine("- TUYỆT ĐỐI KHÔNG tự tạo ra CLB hoặc hoạt động không có trong danh sách");
             prompt.AppendLine("- \"relevanceScore\" là số từ 0-100 (phần trăm độ phù hợp)");
             prompt.AppendLine("- Tính relevanceScore dựa trên:");
-            prompt.AppendLine("  + Chuyên ngành của sinh viên (40%)");
+            prompt.AppendLine("  + Vai trò/Chuyên ngành của người dùng (40%)");
             prompt.AppendLine("  + Sở thích hiện tại (30%)");
             prompt.AppendLine("  + Câu lạc bộ đang tham gia (20%)");
             prompt.AppendLine("  + Nội dung câu hỏi (10%)");
@@ -979,13 +1016,23 @@ namespace Services.Chatbot
             prompt.AppendLine("✅ ĐÚNG: Câu hỏi \"Show me activities\" → CHỈ trả về activities, message bằng tiếng Anh");
             prompt.AppendLine();
 
-            // Student context
-            prompt.AppendLine("=== THÔNG TIN SINH VIÊN ===");
+            // User context
+            prompt.AppendLine("=== THÔNG TIN NGƯỜI DÙNG ===");
             prompt.AppendLine();
             prompt.AppendLine($"Họ tên: {context.FullName}");
-            prompt.AppendLine($"Mã sinh viên: {context.StudentId}");
-            prompt.AppendLine($"Chuyên ngành: {context.MajorName}");
-            prompt.AppendLine($"Khóa: {context.Cohort}");
+            
+            if (context.StudentId > 0)
+            {
+                // User is a student
+                prompt.AppendLine($"Mã sinh viên: {context.StudentId}");
+                prompt.AppendLine($"Chuyên ngành: {context.MajorName}");
+                prompt.AppendLine($"Khóa: {context.Cohort}");
+            }
+            else
+            {
+                // User is not a student (e.g., ClubManager, Admin)
+                prompt.AppendLine($"Vai trò: {context.MajorName}");
+            }
 
             if (context.CurrentClubs.Any())
             {
@@ -1107,7 +1154,7 @@ namespace Services.Chatbot
             }
 
             // User message
-            prompt.AppendLine("=== CÂU HỎI CỦA SINH VIÊN ===");
+            prompt.AppendLine("=== CÂU HỎI CỦA NGƯỜI DÙNG ===");
             prompt.AppendLine();
             prompt.AppendLine(userMessage);
             prompt.AppendLine();
@@ -1115,12 +1162,12 @@ namespace Services.Chatbot
             // Final instructions
             prompt.AppendLine("=== HƯỚNG DẪN TRẢ LỜI ===");
             prompt.AppendLine();
-            prompt.AppendLine("1. Phân tích câu hỏi của sinh viên:");
-            prompt.AppendLine("   - Xác định sinh viên muốn tìm CÂU LẠC BỘ hay HOẠT ĐỘNG");
+            prompt.AppendLine("1. Phân tích câu hỏi của người dùng:");
+            prompt.AppendLine("   - Xác định người dùng muốn tìm CÂU LẠC BỘ hay HOẠT ĐỘNG");
             prompt.AppendLine("   - Từ khóa CLB/câu lạc bộ/club → CHỈ đề xuất clubs");
             prompt.AppendLine("   - Từ khóa hoạt động/activity/sự kiện → CHỈ đề xuất activities");
             prompt.AppendLine();
-            prompt.AppendLine("2. Nếu sinh viên hỏi về CÂU LẠC BỘ:");
+            prompt.AppendLine("2. Nếu người dùng hỏi về CÂU LẠC BỘ:");
             prompt.AppendLine("   - Kiểm tra danh sách \"CÁC CÂU LẠC BỘ ĐANG MỞ TUYỂN\" bên dưới");
             prompt.AppendLine("   - Nếu TÌM THẤY CLB phù hợp:");
             prompt.AppendLine("     + Trả về JSON với CHỈ type=\"club\"");
@@ -1131,10 +1178,10 @@ namespace Services.Chatbot
             prompt.AppendLine("     + KHÔNG trả về JSON");
             prompt.AppendLine("     + Trả lời bằng VĂN BẢN thông thường");
             prompt.AppendLine("     + Giải thích không tìm thấy CLB về [chủ đề]");
-            prompt.AppendLine("     + Gợi ý sinh viên xem các CLB khác hoặc liên hệ admin");
+            prompt.AppendLine("     + Gợi ý người dùng xem các CLB khác hoặc liên hệ admin");
             prompt.AppendLine("   - TUYỆT ĐỐI KHÔNG tự tạo ra CLB không có trong danh sách");
             prompt.AppendLine();
-            prompt.AppendLine("3. Nếu sinh viên hỏi về HOẠT ĐỘNG:");
+            prompt.AppendLine("3. Nếu người dùng hỏi về HOẠT ĐỘNG:");
             prompt.AppendLine("   - Kiểm tra danh sách \"HOẠT ĐỘNG SẮP TỚI\" bên dưới");
             prompt.AppendLine("   - Nếu TÌM THẤY hoạt động phù hợp:");
             prompt.AppendLine("     + Trả về JSON với CHỈ type=\"activity\"");
@@ -1145,18 +1192,18 @@ namespace Services.Chatbot
             prompt.AppendLine("     + KHÔNG trả về JSON");
             prompt.AppendLine("     + Trả lời bằng VĂN BẢN thông thường");
             prompt.AppendLine("     + Giải thích không có hoạt động về [chủ đề]");
-            prompt.AppendLine("     + Gợi ý sinh viên theo dõi thông báo hoặc xem hoạt động khác");
+            prompt.AppendLine("     + Gợi ý người dùng theo dõi thông báo hoặc xem hoạt động khác");
             prompt.AppendLine("   - TUYỆT ĐỐI KHÔNG tự tạo ra hoạt động không có trong danh sách");
             prompt.AppendLine();
-            prompt.AppendLine("4. Tính relevanceScore chính xác dựa trên profile sinh viên");
+            prompt.AppendLine("4. Tính relevanceScore chính xác dựa trên profile người dùng");
             prompt.AppendLine("5. Giải thích lý do phù hợp trong trường \"reason\"");
-            prompt.AppendLine("6. Nếu sinh viên hỏi về EDUXTEND:");
+            prompt.AppendLine("6. Nếu người dùng hỏi về EDUXTEND:");
             prompt.AppendLine("   - Giải thích EduXtend là hệ thống quản lý CLB và hoạt động sinh viên");
             prompt.AppendLine("   - Nêu các chức năng chính: quản lý CLB, tổ chức hoạt động, tìm kiếm CLB phù hợp");
             prompt.AppendLine("   - Nhấn mạnh AI Assistant giúp tư vấn và gợi ý CLB/hoạt động");
             prompt.AppendLine("   - Trả lời ngắn gọn, dễ hiểu");
             prompt.AppendLine();
-            prompt.AppendLine("7. QUAN TRỌNG - Nếu sinh viên hỏi về TIN TỨC/BÀI VIẾT:");
+            prompt.AppendLine("7. QUAN TRỌNG - Nếu người dùng hỏi về TIN TỨC/BÀI VIẾT:");
             prompt.AppendLine("   CÁC TỪ KHÓA CẦN NHẬN DIỆN:");
             prompt.AppendLine("   - Tiếng Việt: tin tức, bài báo, thông báo, bài viết, tin, bài đăng, post");
             prompt.AppendLine("   - Tiếng Anh: news, post, article, announcement, update");
@@ -1448,7 +1495,7 @@ namespace Services.Chatbot
 
             foreach (var message in recentHistory)
             {
-                var role = message.Role == "user" ? "Sinh viên" : "AI Assistant";
+                var role = message.Role == "user" ? "Người dùng" : "AI Assistant";
                 formatted.AppendLine($"{role}: {message.Content}");
             }
 
