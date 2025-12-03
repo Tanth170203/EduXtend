@@ -179,10 +179,10 @@
                                 </a>
                                 @if (!string.IsNullOrEmpty(app.CvUrl))
                                 {
-                                    <a href="@app.CvUrl" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm view-cv-btn" data-cv-url="@app.CvUrl" data-cv-title="My CV - @app.ClubName">
                                         <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
                                         View CV
-                                    </a>
+                                    </button>
                                 }
                             </div>
                         </div>
@@ -412,6 +412,17 @@
                 lucide.createIcons();
             }
         }
+
+        // Attach event listeners to view CV buttons
+        document.querySelectorAll('.view-cv-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const cvUrl = this.getAttribute('data-cv-url');
+                const cvTitle = this.getAttribute('data-cv-title');
+                if (window.cvViewer) {
+                    window.cvViewer.showCV(cvUrl, { title: cvTitle });
+                }
+            });
+        });
     </script>
 }
 

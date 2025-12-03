@@ -1,13 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Net;
 using System.Text.Json;
 using BusinessObject.DTOs.Club;
 using BusinessObject.DTOs.JoinRequest;
 
 namespace WebFE.Pages.ClubManager
 {
-    public class RequestsModel : PageModel
+    public class RequestsModel : ClubManagerPageModel
     {
         private readonly ILogger<RequestsModel> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -18,48 +16,21 @@ namespace WebFE.Pages.ClubManager
             _httpClientFactory = httpClientFactory;
         }
 
-        public int ClubId { get; set; }
-        public string ClubName { get; set; } = string.Empty;
         public bool IsRecruitmentOpen { get; set; }
         public List<JoinRequestDto> PendingRequests { get; set; } = new();
         public List<JoinRequestDto> AllRequests { get; set; } = new();
 
-        private HttpClient CreateHttpClient()
-        {
-            var handler = new HttpClientHandler
-            {
-                UseCookies = true,
-                CookieContainer = new CookieContainer(),
-                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
-            };
-
-            foreach (var cookie in Request.Cookies)
-            {
-                handler.CookieContainer.Add(new Uri("https://localhost:5001"), new Cookie(cookie.Key, cookie.Value));
-            }
-
-            var client = new HttpClient(handler)
-            {
-                BaseAddress = new Uri("https://localhost:5001")
-            };
-            client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            return client;
-        }
-
         public async Task<IActionResult> OnGetAsync()
         {
+            // Initialize club context from TempData
+            var result = await InitializeClubContextAsync();
+            if (result is RedirectResult)
+            {
+                return result;
+            }
+
             try
             {
-                // Get ClubId from TempData
-                if (TempData["SelectedClubId"] != null)
-                {
-                    ClubId = (int)TempData["SelectedClubId"];
-                    TempData.Keep("SelectedClubId");
-                }
-                else
-                {
-                    return Redirect("/ClubManager");
-                }
 
                 using var httpClient = CreateHttpClient();
 
@@ -82,7 +53,6 @@ namespace WebFE.Pages.ClubManager
                     return Redirect("/ClubManager");
                 }
 
-                ClubName = club.Name;
                 IsRecruitmentOpen = club.IsRecruitmentOpen;
 
                 // Get all join requests

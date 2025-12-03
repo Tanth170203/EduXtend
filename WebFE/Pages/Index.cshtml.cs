@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net.Http.Json;
 
 namespace WebFE.Pages
 {
@@ -34,93 +35,95 @@ namespace WebFE.Pages
     public class IndexModel : PageModel
     {
         private readonly ILogger<IndexModel> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public IndexModel(ILogger<IndexModel> logger)
+        public IndexModel(ILogger<IndexModel> logger, IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
         }
 
         public List<FeaturedClub> FeaturedClubs { get; set; } = new();
         public List<UpcomingActivity> UpcomingActivities { get; set; } = new();
         public List<StatItem> Stats { get; set; } = new();
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
-            // Initialize stats
-            Stats = new List<StatItem>
-            {
-                new StatItem { Label = "Clubs", Value = "48+", Icon = "users" },
-                new StatItem { Label = "Activities/Month", Value = "120+", Icon = "calendar" },
-                new StatItem { Label = "Participating Students", Value = "5,000+", Icon = "trending-up" },
-                new StatItem { Label = "Average Score", Value = "85", Icon = "award" }
-            };
+            var client = _httpClientFactory.CreateClient("ApiClient");
 
-            // Initialize featured clubs
-            FeaturedClubs = new List<FeaturedClub>
+            try
             {
-                new FeaturedClub
+                // Fetch real clubs data
+                var clubsResponse = await client.GetFromJsonAsync<List<BusinessObject.DTOs.Club.ClubListItemDto>>("api/club");
+                if (clubsResponse != null && clubsResponse.Any())
                 {
-                    Id = 1,
-                    Name = "Technology Club",
-                    Description = "Explore and develop programming, AI, and new technology skills",
-                    Members = 245,
-                    Image = "https://images.unsplash.com/photo-1707301280380-56f7e7a00aef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMG1lZXRpbmclMjB0ZWFtd29ya3xlbnwxfHx8fDE3NTk1ODYzNzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
-                    Category = "Academic"
-                },
-                new FeaturedClub
-                {
-                    Id = 2,
-                    Name = "Arts Club",
-                    Description = "Create and express artistic passion through various forms",
-                    Members = 189,
-                    Image = "https://images.unsplash.com/photo-1700087209989-5a83d1a7c484?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtdXNpYyUyMHBlcmZvcm1hbmNlJTIwY29uY2VydHxlbnwxfHx8fDE3NTk1ODYzODB8MA&ixlib=rb-4.1.0&q=80&w=1080",
-                    Category = "Cultural"
-                },
-                new FeaturedClub
-                {
-                    Id = 3,
-                    Name = "Sports Club",
-                    Description = "Build health and team spirit through various sports",
-                    Members = 312,
-                    Image = "https://images.unsplash.com/photo-1526646560565-39e6d9fe9e58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcG9ydHMlMjB0ZWFtJTIwY29sbGVnZXxlbnwxfHx8fDE3NTk1ODYzODB8MA&ixlib=rb-4.1.0&q=80&w=1080",
-                    Category = "Sports"
+                    FeaturedClubs = clubsResponse
+                        .Where(c => c.IsActive)
+                        .OrderByDescending(c => c.MemberCount)
+                        .Take(3)
+                        .Select(c => new FeaturedClub
+                        {
+                            Id = c.Id,
+                            Name = c.Name,
+                            Description = c.Description ?? "Join us to explore and develop your skills",
+                            Members = c.MemberCount,
+                            Image = c.LogoUrl ?? "https://via.placeholder.com/400x225/003366/FFFFFF?text=" + Uri.EscapeDataString(c.Name),
+                            Category = c.CategoryName ?? "General"
+                        })
+                        .ToList();
                 }
-            };
 
-            // Initialize upcoming activities
-            UpcomingActivities = new List<UpcomingActivity>
-            {
-                new UpcomingActivity
+                // Fetch all activities (Approved and Completed)
+                var allActivitiesResponse = await client.GetFromJsonAsync<List<BusinessObject.DTOs.Activity.ActivityListItemDto>>("api/activity");
+                
+                // Filter for upcoming activities display
+                if (allActivitiesResponse != null && allActivitiesResponse.Any())
                 {
-                    Id = 1,
-                    Title = "Hackathon 2025",
-                    Date = "15/10/2025",
-                    Location = "Hall A",
-                    Points = 20,
-                    Type = "Academic",
-                    Image = "https://images.unsplash.com/photo-1557734864-c78b6dfef1b1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50JTIwY2x1YiUyMGFjdGl2aXRpZXN8ZW58MXx8fHwxNzU5NTg2Mzc4fDA&ixlib=rb-4.1.0&q=80&w=1080"
-                },
-                new UpcomingActivity
-                {
-                    Id = 2,
-                    Title = "Cultural Festival",
-                    Date = "20/10/2025",
-                    Location = "School Yard",
-                    Points = 15,
-                    Type = "Cultural",
-                    Image = "https://images.unsplash.com/photo-1589872880544-76e896b0592c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkeSUyMGdyb3VwJTIwbGlicmFyeXxlbnwxfHx8fDE3NTk1ODYzNzl8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                },
-                new UpcomingActivity
-                {
-                    Id = 3,
-                    Title = "Faculty Football Tournament",
-                    Date = "25/10/2025",
-                    Location = "Stadium",
-                    Points = 10,
-                    Type = "Sports",
-                    Image = "https://images.unsplash.com/photo-1526646560565-39e6d9fe9e58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcG9ydHMlMjB0ZWFtJTIwY29sbGVnZXxlbnwxfHx8fDE3NTk1ODYzODB8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                    UpcomingActivities = allActivitiesResponse
+                        .Where(a => (a.Status == "Approved" || a.Status == "Completed") && a.StartTime >= DateTime.Now)
+                        .OrderBy(a => a.StartTime)
+                        .Take(3)
+                        .Select(a => new UpcomingActivity
+                        {
+                            Id = a.Id,
+                            Title = a.Title,
+                            Date = a.StartTime.ToString("dd/MM/yyyy"),
+                            Location = a.Location ?? "TBA",
+                            Points = (int)a.MovementPoint,
+                            Type = a.Type,
+                            Image = a.ImageUrl ?? "https://via.placeholder.com/400x225/007ACC/FFFFFF?text=" + Uri.EscapeDataString(a.Title)
+                        })
+                        .ToList();
                 }
-            };
+
+                // Calculate real stats
+                var totalClubs = clubsResponse?.Count(c => c.IsActive) ?? 0;
+                var totalActivities = allActivitiesResponse?.Count(a => a.Status == "Approved" || a.Status == "Completed") ?? 0;
+                var totalMembers = clubsResponse?.Sum(c => c.MemberCount) ?? 0;
+
+                _logger.LogInformation($"Stats - Clubs: {totalClubs}, Activities: {totalActivities}, Members: {totalMembers}");
+
+                Stats = new List<StatItem>
+                {
+                    new StatItem { Label = "Clubs", Value = totalClubs.ToString(), Icon = "users" },
+                    new StatItem { Label = "Activities", Value = totalActivities.ToString(), Icon = "calendar" },
+                    new StatItem { Label = "Members", Value = totalMembers.ToString(), Icon = "trending-up" },
+                    new StatItem { Label = "Points", Value = "100", Icon = "award" }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading homepage data");
+                
+                // Fallback to empty lists if API fails
+                Stats = new List<StatItem>
+                {
+                    new StatItem { Label = "Clubs", Value = "0", Icon = "users" },
+                    new StatItem { Label = "Activities", Value = "0", Icon = "calendar" },
+                    new StatItem { Label = "Members", Value = "0", Icon = "trending-up" },
+                    new StatItem { Label = "Points", Value = "0", Icon = "award" }
+                };
+            }
         }
     }
 }

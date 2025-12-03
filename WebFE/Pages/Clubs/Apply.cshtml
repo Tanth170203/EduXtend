@@ -5,9 +5,10 @@
     Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+<div class="container my-5" style="max-width: 900px;">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-12" id="mainContent">
             <!-- Show error message if any -->
             @if (TempData["ErrorMessage"] != null)
             {
@@ -79,11 +80,11 @@
                             {
                                 <div class="col-12">
                                     <label class="form-label text-muted small">Your CV</label>
-                                    <div>
-                                        <a href="@Model.ExistingRequest.CvUrl" target="_blank" class="btn btn-sm btn-outline-primary">
-                                            <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn view-cv-btn" data-cv-url="@Model.ExistingRequest.CvUrl" data-cv-title="My CV - @Model.ClubName">
+                                            <i data-lucide="file-text" style="width: 18px; height: 18px;"></i>
                                             View Uploaded CV
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                             }
@@ -201,9 +202,15 @@
                                     </label>
                                     @if (!string.IsNullOrEmpty(Model.ExistingRequest.CvUrl))
                                     {
-                                        <div class="alert alert-info mb-2 small">
-                                            <i data-lucide="info" style="width: 14px; height: 14px;"></i>
-                                            Current: <a href="@Model.ExistingRequest.CvUrl" target="_blank" class="fw-bold">View CV</a>
+                                        <div class="alert alert-info mb-2 small d-flex align-items-center justify-content-between" style="background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%); border: none; border-radius: 10px;">
+                                            <div>
+                                                <i data-lucide="info" style="width: 16px; height: 16px; color: #0284c7;"></i>
+                                                <span class="ms-2" style="color: #0c4a6e;">Current CV uploaded</span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm view-cv-btn" data-cv-url="@Model.ExistingRequest.CvUrl" data-cv-title="My CV - @Model.ClubName" style="padding: 0.4rem 1rem !important;">
+                                                <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                                View
+                                            </button>
                                         </div>
                                     }
                                     <input class="form-control" type="file" id="editCvUpload" accept=".pdf">
@@ -364,6 +371,27 @@
                 }
             } catch (error) {
                 console.warn('Lucide icons initialization failed:', error);
+            }
+        }
+
+        // Toggle sidebar visibility
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('cvSidebar');
+            const mainContent = document.getElementById('mainContent');
+            const showBtn = document.getElementById('showSidebarBtn');
+            
+            if (sidebar.classList.contains('d-none')) {
+                // Show sidebar
+                sidebar.classList.remove('d-none');
+                mainContent.classList.remove('col-lg-12');
+                mainContent.classList.add('col-lg-8');
+                showBtn.classList.add('d-none');
+            } else {
+                // Hide sidebar
+                sidebar.classList.add('d-none');
+                mainContent.classList.remove('col-lg-8');
+                mainContent.classList.add('col-lg-12');
+                showBtn.classList.remove('d-none');
             }
         }
 
@@ -804,6 +832,19 @@
             @:    }
             @:});
         }
+
+        // Attach event listeners to view CV buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.view-cv-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const cvUrl = this.getAttribute('data-cv-url');
+                    const cvTitle = this.getAttribute('data-cv-title');
+                    if (window.cvViewer) {
+                        window.cvViewer.showCV(cvUrl, { title: cvTitle });
+                    }
+                });
+            });
+        });
     </script>
 }
 

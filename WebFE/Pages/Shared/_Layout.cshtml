@@ -21,6 +21,8 @@
     <script src="~/lib/lucide/lucide.min.js"></script>
     <!-- Modal Fix CSS -->
     <link rel="stylesheet" href="~/css/modal-fix.css" asp-append-version="true" />
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -46,7 +48,16 @@
                                 <span>Home</span>
                             </a>
                         </li>
-                        <li class="nav-item dropdown">
+                        <!-- Clubs menu for guests (not logged in) -->
+                        <li class="nav-item" id="clubsMenuGuest">
+                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-page="/Clubs/Active" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
+                                <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                                <span>Clubs</span>
+                            </a>
+                        </li>
+                        
+                        <!-- Clubs dropdown for logged in users -->
+                        <li class="nav-item dropdown" id="clubsMenuAuth" style="display: none;">
                             <a class="nav-link d-flex align-items-center gap-2 px-3 dropdown-toggle" href="#" id="clubsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                                style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
                                 <i data-lucide="users" style="width: 18px; height: 18px;"></i>
@@ -78,17 +89,17 @@
                                 <i data-lucide="calendar" style="width: 18px; height: 18px;"></i>
                                 <span>Activities</span>
                             </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/Evaluation" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
-                                <i data-lucide="trophy" style="width: 18px; height: 18px;"></i>
-                                <span>Evaluation</span>
-                            </a>
-                        </li>
+                        </li>                      
                         <li class="nav-item">
                             <a class="nav-link d-flex align-items-center gap-2 px-3" asp-area="" asp-page="/News/Index" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s;">
                                 <i data-lucide="newspaper" style="width: 18px; height: 18px;"></i>
                                 <span>News</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" id="adminNavItem" style="display: none;">
+                            <a class="nav-link d-flex align-items-center gap-2 px-3" href="/Admin/Dashboard" style="padding: 0.5rem 1rem !important; border-radius: 6px; transition: background-color 0.2s; background-color: rgba(255,255,255,0.1);">
+                                <i data-lucide="shield" style="width: 18px; height: 18px;"></i>
+                                <span>Admin</span>
                             </a>
                         </li>
                     </ul>
@@ -160,8 +171,11 @@
 
     <!-- Notification Center Component -->
     @await Html.PartialAsync("_NotificationCenter")
+    
+    <!-- CV Viewer Modal Component -->
+    @await Html.PartialAsync("_CVViewerModal")
 
-    <!-- AI Chatbot Component (Only for authenticated students) -->
+    <!-- AI Chatbot Component (For authenticated users: Students, Club Managers, Club Members) -->
     <div id="chatbotContainer" style="display: none;">
         <!-- Floating Chat Button -->
         <button id="chatbot-float-button" class="chatbot-float-button" title="AI Assistant">
@@ -238,6 +252,13 @@
     <script src="~/js/notifications.js" asp-append-version="true"></script>
     <script src="~/js/signalr-connection.js" asp-append-version="true"></script>
     <script src="~/js/chatbot.js" asp-append-version="true"></script>
+    <script src="~/js/cv-viewer.js" asp-append-version="true"></script>
+    <script>
+        // Configure PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
     <script>
         // Initialize Lucide Icons - wait for it to load
         function initLucide() {
@@ -274,6 +295,19 @@
         document.addEventListener('DOMContentLoaded', async function() {
             updateAuthUI();
             
+            // Show/hide clubs menu based on authentication
+            const isAuth = typeof isAuthenticated === 'function' && await isAuthenticated();
+            const clubsMenuGuest = document.getElementById('clubsMenuGuest');
+            const clubsMenuAuth = document.getElementById('clubsMenuAuth');
+            
+            if (isAuth) {
+                if (clubsMenuGuest) clubsMenuGuest.style.display = 'none';
+                if (clubsMenuAuth) clubsMenuAuth.style.display = 'block';
+            } else {
+                if (clubsMenuGuest) clubsMenuGuest.style.display = 'block';
+                if (clubsMenuAuth) clubsMenuAuth.style.display = 'none';
+            }
+            
             // Show/hide admin nav item based on user role
             if (typeof isAdmin === 'function' && await isAdmin()) {
                 const adminNavItem = document.getElementById('adminNavItem');
@@ -282,10 +316,11 @@
                 }
             }
             
-            // Show chatbot for authenticated students
+            // Show chatbot for authenticated users (Student, ClubManager, ClubMember)
             if (typeof isAuthenticated === 'function' && await isAuthenticated()) {
                 const userRole = await getUserRole();
-                if (userRole === 'Student') {
+                // Allow chatbot for Student, ClubManager, and ClubMember roles
+                if (userRole === 'Student' || userRole === 'ClubManager' || userRole === 'ClubMember') {
                     const chatbotContainer = document.getElementById('chatbotContainer');
                     if (chatbotContainer) {
                         chatbotContainer.style.display = 'block';

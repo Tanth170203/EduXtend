@@ -53,13 +53,15 @@ namespace WebFE.Pages.Clubs
             if (Club == null) return NotFound();
 
             // Get club activities
-            Activities = await client.GetFromJsonAsync<List<ActivityListItemDto>>($"api/activity/club/{Id}") ?? new();
+            var allActivities = await client.GetFromJsonAsync<List<ActivityListItemDto>>($"api/activity/club/{Id}") ?? new();
 
             // Get club awards (public data)
             Awards = await client.GetFromJsonAsync<List<ClubAwardDto>>($"api/club/{Id}/awards") ?? new();
 
             // Check if user has existing join request and membership (only if authenticated)
-            if (User.Identity?.IsAuthenticated == true)
+            bool isAuthenticated = User.Identity?.IsAuthenticated == true;
+            
+            if (isAuthenticated)
             {
                 try
                 {
@@ -88,6 +90,22 @@ namespace WebFE.Pages.Clubs
                     // No existing request - that's fine
                     MyJoinRequest = null;
                 }
+            }
+            
+            // Filter activities based on user authentication and membership status
+            // For guests (not authenticated) or non-members:
+            // - Hide completed activities (Status == "Completed")
+            // - Hide members-only activities (IsPublic == false)
+            if (!isAuthenticated || !IsMember)
+            {
+                Activities = allActivities
+                    .Where(a => a.Status != "Completed" && a.IsPublic)
+                    .ToList();
+            }
+            else
+            {
+                // Members can see all activities
+                Activities = allActivities;
             }
 
             return Page();

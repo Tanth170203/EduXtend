@@ -6,7 +6,7 @@ using System.Security.Claims;
 
 namespace WebFE.Pages.ClubManager.MonthlyReports
 {
-    public class IndexModel : PageModel
+    public class IndexModel : ClubManagerPageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<IndexModel> _logger;
@@ -18,7 +18,6 @@ namespace WebFE.Pages.ClubManager.MonthlyReports
         }
 
         public List<MonthlyReportListDto> Reports { get; set; } = new();
-        public int? ClubId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public int? FilterMonth { get; set; }
@@ -31,40 +30,19 @@ namespace WebFE.Pages.ClubManager.MonthlyReports
 
         public async Task<IActionResult> OnGetAsync()
         {
+            // Initialize club context from TempData
+            var result = await InitializeClubContextAsync();
+            if (result is RedirectResult)
+            {
+                return result;
+            }
+
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return RedirectToPage("/Auth/Login");
-                }
-
                 var client = _httpClientFactory.CreateClient("ApiClient");
 
-                // Get club ID first
-                var clubRequest = new HttpRequestMessage(HttpMethod.Get, "api/club/my-managed-club");
-                foreach (var cookie in Request.Cookies)
-                {
-                    clubRequest.Headers.Add("Cookie", $"{cookie.Key}={cookie.Value}");
-                }
-
-                var clubResponse = await client.SendAsync(clubRequest);
-                if (!clubResponse.IsSuccessStatusCode)
-                {
-                    TempData["Error"] = "You are not managing any club";
-                    return Page();
-                }
-
-                var club = await clubResponse.Content.ReadFromJsonAsync<ClubDto>();
-                if (club == null)
-                {
-                    return Page();
-                }
-
-                ClubId = club.Id;
-
-                // Get monthly reports
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/monthly-reports?clubId={club.Id}");
+                // Get monthly reports using ClubId from TempData
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/monthly-reports?clubId={ClubId}");
                 foreach (var cookie in Request.Cookies)
                 {
                     request.Headers.Add("Cookie", $"{cookie.Key}={cookie.Value}");
@@ -98,7 +76,7 @@ namespace WebFE.Pages.ClubManager.MonthlyReports
         {
             try
             {
-                if (!ClubId.HasValue)
+                if (ClubId <= 0)
                 {
                     TempData["Error"] = "Club not found";
                     return RedirectToPage();
@@ -115,7 +93,7 @@ namespace WebFE.Pages.ClubManager.MonthlyReports
                 var now = DateTime.Now;
                 var createDto = new
                 {
-                    clubId = ClubId.Value,
+                    clubId = ClubId,
                     month = now.Month,
                     year = now.Year
                 };
@@ -142,12 +120,6 @@ namespace WebFE.Pages.ClubManager.MonthlyReports
 
             return RedirectToPage();
         }
-    }
-
-    public class ClubDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = null!;
     }
 
     public class MonthlyReportListDto

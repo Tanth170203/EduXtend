@@ -7,6 +7,7 @@ namespace Services.Activities
     {
         Task<List<ActivityListItemDto>> GetAllActivitiesAsync();
         Task<List<ActivityListItemDto>> SearchActivitiesAsync(string? searchTerm, string? type, string? status, bool? isPublic, int? clubId);
+        Task<BusinessObject.DTOs.Common.PaginatedResultDto<ActivityListItemDto>> SearchActivitiesAsync(string? searchTerm, string? type, string? status, bool? isPublic, int? clubId, int page, int pageSize);
         Task<ActivityDetailDto?> GetActivityByIdAsync(int id);
         Task<ActivityDetailDto?> GetActivityByIdAsync(int id, int? currentUserId);
         Task<List<ActivityListItemDto>> GetActivitiesByClubIdAsync(int clubId);

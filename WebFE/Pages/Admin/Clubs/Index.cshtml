@@ -1,0 +1,573 @@
+@page
+@model WebFE.Pages.Admin.Clubs.IndexModel
+@{
+    ViewData["Title"] = "Club List";
+    ViewData["Breadcrumb"] = "Club List";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+@section Scripts {
+    <script src="~/js/pagination.js"></script>
+}
+
+<style>
+    /* Gradient Header */
+    .clubs-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .clubs-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .clubs-header p {
+        opacity: 0.9;
+        margin: 0;
+    }
+    
+    /* Stats Cards */
+    .stats-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s;
+        border: 2px solid transparent;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        border-color: #667eea;
+    }
+    
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-icon.gradient-1 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .stats-icon.gradient-2 {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+    
+    .stats-icon.gradient-3 {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+    
+    /* Filter Card */
+    .filter-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+    }
+    
+    .filter-card .form-label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+    
+    .filter-card .form-control,
+    .filter-card .form-select {
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .filter-card .form-control:focus,
+    .filter-card .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* Buttons */
+    .btn-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-clear {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #6b7280;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-clear:hover {
+        border-color: #667eea;
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+    }
+    
+    /* Table Card */
+    .table-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .table-card table {
+        margin: 0;
+    }
+    
+    .table-card thead {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .table-card thead th {
+        font-weight: 700;
+        color: #374151;
+        padding: 1.25rem 1rem;
+        border: none;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+    }
+    
+    .table-card tbody tr {
+        transition: all 0.2s;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .table-card tbody tr:hover {
+        background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        transform: scale(1.01);
+    }
+    
+    .table-card tbody td {
+        padding: 1.25rem 1rem;
+        vertical-align: middle;
+    }
+    
+    /* Club Name Badge */
+    .club-name {
+        font-weight: 700;
+        color: #1f2937;
+        font-size: 1rem;
+    }
+    
+    .club-subname {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+    
+    /* Status Badges */
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .status-badge.active {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3);
+    }
+    
+    .status-badge.inactive {
+        background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3);
+    }
+    
+    /* Action Button */
+    .btn-view {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .btn-view:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+        color: white;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+    
+    .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .empty-state h3 {
+        color: #6b7280;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        color: #9ca3af;
+    }
+    
+    /* Pagination */
+    .pagination {
+        gap: 0.5rem;
+    }
+    
+    .pagination .page-item .page-link {
+        border-radius: 10px;
+        border: 2px solid #e5e7eb;
+        color: #6b7280;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: transparent;
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .pagination .page-item .page-link:hover:not(.active) {
+        border-color: #667eea;
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+    }
+    
+    /* Results Summary */
+    .results-summary {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #667eea;
+    }
+    
+    .results-summary p {
+        margin: 0;
+        color: #374151;
+        font-weight: 500;
+    }
+    
+    .results-summary strong {
+        color: #667eea;
+        font-weight: 700;
+    }
+</style>
+
+<div class="clubs-header">
+    <h1>
+        <i data-lucide="users-2" style="width: 32px; height: 32px;"></i>
+        Club Management
+    </h1>
+    <p>View and manage all clubs in the system</p>
+</div>
+
+<div class="admin-page-content">
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-icon gradient-1">
+                    <i data-lucide="building-2" style="width: 28px; height: 28px;" class="text-white"></i>
+                </div>
+                <h3 class="mb-1 fw-bold">@Model.TotalCount</h3>
+                <p class="text-muted mb-0">Total Clubs</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-icon gradient-2">
+                    <i data-lucide="check-circle" style="width: 28px; height: 28px;" class="text-white"></i>
+                </div>
+                <h3 class="mb-1 fw-bold">@Model.Clubs.Count(c => c.IsActive)</h3>
+                <p class="text-muted mb-0">Active Clubs</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-card">
+                <div class="stats-icon gradient-3">
+                    <i data-lucide="pause-circle" style="width: 28px; height: 28px;" class="text-white"></i>
+                </div>
+                <h3 class="mb-1 fw-bold">@Model.Clubs.Count(c => !c.IsActive)</h3>
+                <p class="text-muted mb-0">Inactive Clubs</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="filter-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">
+                    <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                    Search by club name
+                </label>
+                <input type="text" 
+                       name="searchTerm" 
+                       value="@Model.SearchTerm" 
+                       class="form-control" 
+                       placeholder="Enter club name...">
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                    Status
+                </label>
+                <select name="isActive" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="true" selected="@(Model.IsActive == true)">Active</option>
+                    <option value="false" selected="@(Model.IsActive == false)">Inactive</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4 d-flex align-items-end gap-2">
+                <button type="submit" class="btn-gradient">
+                    <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                    Search
+                </button>
+                
+                @if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.IsActive.HasValue)
+                {
+                    <a asp-page="/Admin/Clubs/Index" class="btn-clear">
+                        <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                        Clear
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+    
+    <!-- Results Summary -->
+    <div class="results-summary">
+        <p>
+            <i data-lucide="info" style="width: 18px; height: 18px;"></i>
+            Found <strong>@Model.TotalCount</strong> club@(Model.TotalCount != 1 ? "s" : "")
+            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+            {
+                <span> matching "<strong>@Model.SearchTerm</strong>"</span>
+            }
+            @if (Model.TotalPages > 1)
+            {
+                <span> - Page <strong>@Model.CurrentPage</strong> of <strong>@Model.TotalPages</strong></span>
+            }
+        </p>
+    </div>
+
+    <!-- Club Table -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:50px;">#</th>
+                        <th>Club Name</th>
+                        <th>Sub Name</th>
+                        <th>Description</th>
+                        <th>Founded</th>
+                        <th>Status</th>
+                        <th style="width:120px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Clubs.Any())
+                    {
+                        int i = ((Model.CurrentPage - 1) * Model.PageSize) + 1;
+                        foreach (var c in Model.Clubs)
+                        {
+                            <tr>
+                                <td class="text-muted fw-bold">@(i++)</td>
+                                <td>
+                                    <div class="club-name">@c.Name</div>
+                                </td>
+                                <td>
+                                    <span class="club-subname">@c.SubName</span>
+                                </td>
+                                <td class="text-truncate text-muted" style="max-width:300px;">@c.Description</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i data-lucide="calendar" style="width: 16px; height: 16px;" class="text-muted"></i>
+                                        <span>@c.FoundedDate.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (c.IsActive)
+                                    {
+                                        <span class="status-badge active">
+                                            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge inactive">
+                                            <i data-lucide="pause-circle" style="width: 16px; height: 16px;"></i>
+                                            Inactive
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-page="/Clubs/Details" asp-route-id="@c.Id"
+                                       class="btn-view" title="View Details">
+                                        <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i data-lucide="inbox" style="width: 40px; height: 40px;" class="text-muted"></i>
+                                    </div>
+                                    <h3>No clubs found</h3>
+                                    <p>Try adjusting your search filters</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Club pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <!-- Previous Button -->
+                <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" 
+                       href="javascript:void(0)"
+                       onclick="goToPage(@(Model.CurrentPage - 1))"
+                       aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+
+                @{
+                    var startPage = Math.Max(1, Model.CurrentPage - 2);
+                    var endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                    
+                    if (startPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="javascript:void(0)" onclick="goToPage(1)">1</a>
+                        </li>
+                        if (startPage > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                    }
+                    
+                    for (int i = startPage; i <= endPage; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="javascript:void(0)" onclick="goToPage(@i)">@i</a>
+                        </li>
+                    }
+                    
+                    if (endPage < Model.TotalPages)
+                    {
+                        if (endPage < Model.TotalPages - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" href="javascript:void(0)" onclick="goToPage(@Model.TotalPages)">@Model.TotalPages</a>
+                        </li>
+                    }
+                }
+
+                <!-- Next Button -->
+                <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" 
+                       href="javascript:void(0)"
+                       onclick="goToPage(@(Model.CurrentPage + 1))"
+                       aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<script>
+    // Initialize Lucide icons after page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+</script>

@@ -24,6 +24,11 @@ namespace WebFE.Pages.Admin.Activities
         [BindProperty(SupportsGet = true)] public string? Type { get; set; }
         [BindProperty(SupportsGet = true)] public string? Status { get; set; }
         [BindProperty(SupportsGet = true)] public bool? IsPublic { get; set; }
+        [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
+        
+        public int PageSize { get; set; } = 10;
+        public int TotalPages { get; set; }
+        public int TotalItems { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -34,23 +39,32 @@ namespace WebFE.Pages.Admin.Activities
             var client = _httpClientFactory.CreateClient("ApiClient");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            // Always show only Approved items in Admin list view
+            // Show all activities regardless of status
             var qs = new List<string>();
             if (!string.IsNullOrWhiteSpace(SearchTerm)) qs.Add($"searchTerm={Uri.EscapeDataString(SearchTerm)}");
             if (!string.IsNullOrWhiteSpace(Type)) qs.Add($"type={Uri.EscapeDataString(Type)}");
-            qs.Add("status=Approved");
+            if (!string.IsNullOrWhiteSpace(Status)) qs.Add($"status={Uri.EscapeDataString(Status)}");
             if (IsPublic.HasValue) qs.Add($"isPublic={(IsPublic.Value ? "true" : "false")}");
             var endpoint = $"/api/admin/activities?{string.Join("&", qs)}";
 
-            Items = await client.GetFromJsonAsync<List<ActivityListItemDto>>(endpoint) ?? new();
+            var allItems = await client.GetFromJsonAsync<List<ActivityListItemDto>>(endpoint) ?? new();
             
-            // Calculate statistics
-            TotalActivities = Items.Count;
-            ApprovedActivities = Items.Count(a => a.Status == "Approved");
-            // Fetch pending approvals count separately (table shows only approved)
-            var pending = await client.GetFromJsonAsync<List<ActivityListItemDto>>("/api/admin/activities?status=PendingApproval");
-            PendingActivities = pending?.Count ?? 0;
-            UpcomingActivities = Items.Count(a => a.StartTime > DateTime.Now && a.Status == "Approved");
+            // Calculate pagination
+            TotalItems = allItems.Count;
+            TotalPages = (int)Math.Ceiling(TotalItems / (double)PageSize);
+            
+            // Apply pagination
+            Items = allItems
+                .Skip((PageNumber - 1) * PageSize)
+                .Take(PageSize)
+                .ToList();
+            
+            // Calculate statistics from all activities
+            var allActivities = await client.GetFromJsonAsync<List<ActivityListItemDto>>("/api/admin/activities") ?? new();
+            TotalActivities = allActivities.Count;
+            ApprovedActivities = allActivities.Count(a => a.Status == "Approved");
+            PendingActivities = allActivities.Count(a => a.Status == "PendingApproval");
+            UpcomingActivities = allActivities.Count(a => a.StartTime > DateTime.Now);
             
             return Page();
         }

@@ -125,6 +125,26 @@ namespace Services.Clubs
             return await GetClubByIdAsync(club.Id);
         }
 
+        public async Task<List<ClubListItemDto>> GetAllManagedClubsByUserIdAsync(int userId)
+        {
+            var clubs = await _repo.GetAllManagedClubsByUserIdAsync(userId);
+            
+            return clubs.Select(c => new ClubListItemDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                SubName = c.SubName,
+                Description = c.Description,
+                LogoUrl = c.LogoUrl,
+                IsActive = c.IsActive,
+                IsRecruitmentOpen = c.IsRecruitmentOpen,
+                FoundedDate = c.FoundedDate,
+                CategoryName = c.Category?.Name ?? "Unknown",
+                MemberCount = c.Members?.Count(m => m.IsActive) ?? 0,
+                ActivityCount = c.Activities?.Count ?? 0
+            }).ToList();
+        }
+
         public async Task<bool> ToggleRecruitmentAsync(int clubId, bool isOpen)
         {
             return await _repo.ToggleRecruitmentAsync(clubId, isOpen);

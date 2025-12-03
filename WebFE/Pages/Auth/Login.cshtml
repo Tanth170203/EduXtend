@@ -7,48 +7,12 @@
 
 @section Styles {
     <style>
-        .login-page-container {
-            margin: 0 !important;
-            padding: 0 !important;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-            .login-page-container footer {
-                margin-top: 0 !important;
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-            }
-
-            .login-page-container .min-h-screen {
-                height: 100vh !important;
-                padding-top: 80px !important;
-            }
-
-            .login-page-container main {
-                padding-top: 0 !important;
-                margin: 0 !important;
-            }
-
-            .login-page-container header {
-                position: fixed !important;
-                display: block !important;
-            }
-
         #googleSignInDiv iframe {
             border-radius: 12px !important;
             overflow: hidden !important;
         }
     </style>
 }
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        document.body.classList.add('login-page-container');
-    });
-</script>
 
 <!-- ✅ UI giữ nguyên, không thay đổi -->
 <div class="min-h-screen d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #003366 0%, #007ACC 100%); padding: 3rem 1rem;">
@@ -80,9 +44,9 @@
                             <div class="text-center" style="background-color: #f8fafc; border-radius: 12px; padding: 1.5rem;">
                                 <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
                                     <i data-lucide="shield-check" style="width: 20px; height: 20px; color: #10b981;"></i>
-                                    <span style="font-size: 1rem; font-weight: 600;">High Security</span>
+                                    <span style="font-size: 1rem; font-weight: 600; color: #1a202c;">High Security</span>
                                 </div>
-                                <p>Only registered emails are accepted</p>
+                                <p class="mb-0" style="font-size: 0.875rem; color: #64748b;">Only registered emails are accepted</p>
                             </div>
                         </div>
                     </div>

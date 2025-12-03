@@ -1,0 +1,171 @@
+<!-- CV Viewer Modal -->
+<div class="modal fade" id="cvViewerModal" tabindex="-1" aria-labelledby="cvViewerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border: none; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 1.5rem;">
+                <h5 class="modal-title d-flex align-items-center gap-2" id="cvViewerModalLabel" style="font-weight: 600;">
+                    <i data-lucide="file-text" style="width: 24px; height: 24px;"></i>
+                    <span>CV Preview</span>
+                </h5>
+                <div class="d-flex align-items-center gap-3 me-3">
+                    <!-- Page Navigation -->
+                    <div id="cvPageControls" class="d-flex align-items-center gap-2" style="display: none !important; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 8px;">
+                        <button type="button" class="btn btn-sm" id="cvPrevPage" title="Previous Page" style="background: rgba(255,255,255,0.3); border: none; color: white; padding: 0.25rem 0.5rem; border-radius: 6px;">
+                            <i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i>
+                        </button>
+                        <span id="cvPageInfo" class="small" style="color: white; font-weight: 500; min-width: 80px; text-align: center;">Page 1 of 1</span>
+                        <button type="button" class="btn btn-sm" id="cvNextPage" title="Next Page" style="background: rgba(255,255,255,0.3); border: none; color: white; padding: 0.25rem 0.5rem; border-radius: 6px;">
+                            <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Zoom Controls -->
+                    <div id="cvZoomControls" class="d-flex align-items-center gap-2" style="display: none !important; background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 8px;">
+                        <button type="button" class="btn btn-sm" id="cvZoomOut" title="Zoom Out" style="background: rgba(255,255,255,0.3); border: none; color: white; padding: 0.25rem 0.5rem; border-radius: 6px;">
+                            <i data-lucide="zoom-out" style="width: 16px; height: 16px;"></i>
+                        </button>
+                        <span id="cvZoomLevel" class="small" style="color: white; font-weight: 500; min-width: 50px; text-align: center;">100%</span>
+                        <button type="button" class="btn btn-sm" id="cvZoomIn" title="Zoom In" style="background: rgba(255,255,255,0.3); border: none; color: white; padding: 0.25rem 0.5rem; border-radius: 6px;">
+                            <i data-lucide="zoom-in" style="width: 16px; height: 16px;"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="min-height: 500px; background-color: #f8f9fa;">
+                <!-- Loading Indicator -->
+                <div id="cvViewerLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted">Loading CV...</p>
+                </div>
+                
+                <!-- Error Message -->
+                <div id="cvViewerError" class="alert alert-danger d-none" role="alert">
+                    <div class="d-flex align-items-start gap-2">
+                        <i data-lucide="alert-circle" style="width: 20px; height: 20px; flex-shrink: 0;"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="alert-heading mb-1">Failed to load CV</h6>
+                            <p class="mb-2" id="cvErrorMessage">The CV file could not be loaded. Please try opening it in a new tab.</p>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="cvErrorOpenNewTab">
+                                <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
+                                Open in New Tab
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- PDF Canvas Container -->
+                <div id="cvCanvasContainer" class="d-flex justify-content-center align-items-center" style="display: none !important;">
+                    <canvas id="cvViewerCanvas"></canvas>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #e9ecef; padding: 1.25rem; background: #f8f9fa;">
+                <button type="button" class="btn btn-outline-primary" id="cvOpenNewTab" style="border-radius: 8px; padding: 0.5rem 1.5rem; font-weight: 500; transition: all 0.3s;">
+                    <i data-lucide="external-link" style="width: 16px; height: 16px;"></i>
+                    Open in New Tab
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px; padding: 0.5rem 1.5rem; font-weight: 500;">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #cvViewerCanvas {
+        max-width: 100%;
+        height: auto;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        border-radius: 8px;
+        transition: transform 0.3s ease;
+    }
+    
+    #cvViewerCanvas:hover {
+        transform: scale(1.01);
+    }
+    
+    #cvCanvasContainer {
+        min-height: 500px;
+        padding: 30px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    
+    .modal-xl {
+        max-width: 90%;
+    }
+    
+    #cvViewerModal .modal-content {
+        animation: slideUp 0.3s ease-out;
+    }
+    
+    @@keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    #cvViewerModal .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    #cvViewerModal .btn {
+        transition: all 0.3s ease;
+    }
+    
+    #cvViewerLoading {
+        animation: fadeIn 0.5s ease;
+    }
+    
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .view-cv-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        color: white !important;
+        padding: 0.6rem 1.5rem !important;
+        border-radius: 10px !important;
+        font-weight: 500 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    .view-cv-btn:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6) !important;
+    }
+    
+    .view-cv-btn i {
+        margin-right: 0.5rem;
+    }
+    
+    @@media (max-width: 768px) {
+        .modal-xl {
+            max-width: 95%;
+            margin: 0.5rem;
+        }
+        
+        #cvPageControls, #cvZoomControls {
+            flex-wrap: wrap;
+            padding: 0.4rem 0.8rem !important;
+        }
+        
+        #cvCanvasContainer {
+            padding: 15px;
+        }
+        
+        .view-cv-btn {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.9rem !important;
+        }
+    }
+</style>

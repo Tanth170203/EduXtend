@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace WebFE.Pages.ClubManager.Activities
 {
-    public class CreateModel : PageModel
+    public class CreateModel : ClubManagerPageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<CreateModel> _logger;
@@ -27,8 +27,15 @@ namespace WebFE.Pages.ClubManager.Activities
         public string? ErrorMessage { get; set; }
         public string ApiBaseUrl { get; set; } = string.Empty;
 
-        public void OnGet()
+        public async Task<IActionResult> OnGetAsync()
         {
+            // Initialize club context from TempData
+            var result = await InitializeClubContextAsync();
+            if (result is RedirectResult)
+            {
+                return result;
+            }
+
             // Set default values
             Activity.StartTime = DateTime.Now.AddDays(7);
             Activity.EndTime = DateTime.Now.AddDays(7).AddHours(2);
@@ -36,6 +43,8 @@ namespace WebFE.Pages.ClubManager.Activities
             Activity.RequiresApproval = true; // Always true for ClubManager
             Activity.Type = "AcademicClub";
             ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "";
+            
+            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
@@ -83,23 +92,15 @@ namespace WebFE.Pages.ClubManager.Activities
                 Activity.RequiresApproval = !isClubActivity;
 
                 var client = _httpClientFactory.CreateClient("ApiClient");
-                // Fetch managed club id
-                var clubReq = new HttpRequestMessage(HttpMethod.Get, "api/club/my-managed-club");
-                foreach (var ck in Request.Cookies) clubReq.Headers.Add("Cookie", $"{ck.Key}={ck.Value}");
-                var clubResp = await client.SendAsync(clubReq);
-                int clubId = 0;
-                if (clubResp.IsSuccessStatusCode)
-                {
-                    using var doc = JsonDocument.Parse(await clubResp.Content.ReadAsStringAsync());
-                    clubId = doc.RootElement.GetProperty("id").GetInt32();
-                }
-                if (clubId <= 0)
+                
+                // Use ClubId from TempData (already set by InitializeClubContextAsync)
+                if (ClubId <= 0)
                 {
                     ModelState.AddModelError(string.Empty, "You are not managing any club.");
                     return Page();
                 }
 
-                var request = new HttpRequestMessage(HttpMethod.Post, $"api/activity/club-manager?clubId={clubId}");
+                var request = new HttpRequestMessage(HttpMethod.Post, $"api/activity/club-manager?clubId={ClubId}");
                 
                 foreach (var cookie in Request.Cookies)
                 {

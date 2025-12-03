@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace WebFE.Pages.ClubManager.Proposals
 {
-    public class IndexModel : PageModel
+    public class IndexModel : ClubManagerPageModel
     {
         private readonly ILogger<IndexModel> _logger;
 
@@ -17,13 +17,14 @@ namespace WebFE.Pages.ClubManager.Proposals
         }
 
         public List<ProposalDTO> Proposals { get; set; } = new();
-        public int ClubId { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
-            if (User.Identity?.IsAuthenticated != true)
+            // Initialize club context from TempData
+            var result = await InitializeClubContextAsync();
+            if (result is RedirectResult)
             {
-                return RedirectToPage("/Auth/Login");
+                return result;
             }
 
             try
@@ -44,27 +45,11 @@ namespace WebFE.Pages.ClubManager.Proposals
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
                 }
 
-                // Get club ID from user's managed club
-                var clubResponse = await client.GetAsync("api/club/my-managed-club");
-                if (clubResponse.IsSuccessStatusCode)
+                // Get all proposals for this club using ClubId from TempData
+                var proposalsResponse = await client.GetAsync($"api/proposal/club/{ClubId}");
+                if (proposalsResponse.IsSuccessStatusCode)
                 {
-                    var club = await clubResponse.Content.ReadFromJsonAsync<BusinessObject.DTOs.Club.ClubDetailDto>();
-                    if (club != null)
-                    {
-                        ClubId = club.Id;
-                        
-                        // Get all proposals for this club
-                        var proposalsResponse = await client.GetAsync($"api/proposal/club/{ClubId}");
-                        if (proposalsResponse.IsSuccessStatusCode)
-                        {
-                            Proposals = await proposalsResponse.Content.ReadFromJsonAsync<List<ProposalDTO>>() ?? new();
-                        }
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "You don't manage any club";
-                        return RedirectToPage("/ClubManager/Index");
-                    }
+                    Proposals = await proposalsResponse.Content.ReadFromJsonAsync<List<ProposalDTO>>() ?? new();
                 }
 
                 return Page();

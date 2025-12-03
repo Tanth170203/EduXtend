@@ -12,6 +12,12 @@ namespace WebFE.Pages.Clubs
         public ActiveModel(IHttpClientFactory http) => _http = http;
 
         public List<ClubListItemDto> Clubs { get; private set; } = new();
+        
+        // Pagination properties
+        public int CurrentPage { get; set; } = 1;
+        public int PageSize { get; set; } = 6;
+        public int TotalPages { get; set; }
+        public int TotalCount { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public string? SearchTerm { get; set; }
@@ -22,16 +28,27 @@ namespace WebFE.Pages.Clubs
         [BindProperty(SupportsGet = true)]
         public string? SortBy { get; set; }
 
+        [BindProperty(SupportsGet = true, Name = "page")]
+        public int Page { get; set; } = 1;
+
         public List<string> Categories { get; set; } = new();
+
+
 
         public async Task OnGetAsync()
         {
             var client = CreateAuthenticatedClient();
             
+            // Read page from query string as fallback
+            if (Request.Query.ContainsKey("page") && int.TryParse(Request.Query["page"], out int pageFromQuery))
+            {
+                Page = pageFromQuery;
+            }
+            
             // Load categories for dropdown
             Categories = await client.GetFromJsonAsync<List<string>>("api/club/categories") ?? new();
             
-            // Use search endpoint if filters are applied
+            // Build query string for search
             var queryParams = new List<string>();
             if (!string.IsNullOrWhiteSpace(SearchTerm))
                 queryParams.Add($"searchTerm={Uri.EscapeDataString(SearchTerm)}");
@@ -47,20 +64,29 @@ namespace WebFE.Pages.Clubs
             var clubs = await client.GetFromJsonAsync<List<ClubListItemDto>>(endpoint) ?? new();
 
             // Apply sorting
-            Clubs = SortBy switch
+            var sortedClubs = SortBy switch
             {
                 "newest" => clubs.OrderByDescending(c => c.FoundedDate).ToList(),
                 "members" => clubs.OrderByDescending(c => c.MemberCount).ToList(),
                 "az" => clubs.OrderBy(c => c.Name).ToList(),
                 _ => clubs.OrderBy(c => c.Name).ToList()
             };
+
+            // Pagination
+            CurrentPage = Page > 0 ? Page : 1;
+            TotalCount = sortedClubs.Count;
+            TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
+            
+            if (CurrentPage > TotalPages && TotalPages > 0)
+                CurrentPage = TotalPages;
+            
+            Clubs = sortedClubs
+                .Skip((CurrentPage - 1) * PageSize)
+                .Take(PageSize)
+                .ToList();
         }
 
-        public string Img(string? url, string fallback) =>
-            string.IsNullOrWhiteSpace(url)
-                ? Url.Content(fallback)
-                : (Uri.IsWellFormedUriString(url, UriKind.Absolute) ? url :
-                    (url!.StartsWith("/") ? url : "/" + url));
+
 
         private HttpClient CreateAuthenticatedClient()
         {

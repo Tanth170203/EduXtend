@@ -6,7 +6,7 @@ using System.Security.Claims;
 
 namespace WebFE.Pages.ClubManager.CommunicationPlans
 {
-    public class IndexModel : PageModel
+    public class IndexModel : ClubManagerPageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _config;
@@ -33,38 +33,19 @@ namespace WebFE.Pages.ClubManager.CommunicationPlans
 
         public async Task<IActionResult> OnGetAsync()
         {
+            // Initialize club context from TempData
+            var result = await InitializeClubContextAsync();
+            if (result is RedirectResult)
+            {
+                return result;
+            }
+
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return RedirectToPage("/Auth/Login");
-                }
-
                 var client = _httpClientFactory.CreateClient("ApiClient");
-                
-                // Get club ID first
-                var clubRequest = new HttpRequestMessage(HttpMethod.Get, "api/club/my-managed-club");
-                foreach (var cookie in Request.Cookies)
-                {
-                    clubRequest.Headers.Add("Cookie", $"{cookie.Key}={cookie.Value}");
-                }
 
-                var clubResponse = await client.SendAsync(clubRequest);
-                if (!clubResponse.IsSuccessStatusCode)
-                {
-                    TempData["Error"] = "You are not managing any club";
-                    return Page();
-                }
-
-                var club = await clubResponse.Content.ReadFromJsonAsync<ClubDto>();
-                if (club == null)
-                {
-                    return Page();
-                }
-
-                // Get communication plans
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/communication-plans/club/{club.Id}");
+                // Get communication plans using ClubId from TempData
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/communication-plans/club/{ClubId}");
                 foreach (var cookie in Request.Cookies)
                 {
                     request.Headers.Add("Cookie", $"{cookie.Key}={cookie.Value}");
@@ -141,11 +122,5 @@ namespace WebFE.Pages.ClubManager.CommunicationPlans
 
             return RedirectToPage();
         }
-    }
-
-    public class ClubDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = null!;
     }
 }

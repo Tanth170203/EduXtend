@@ -8,7 +8,7 @@ using System.Text.Json;
 
 namespace WebFE.Pages.ClubManager.Activities
 {
-    public class EditModel : PageModel
+    public class EditModel : ClubManagerPageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<EditModel> _logger;
@@ -32,6 +32,13 @@ namespace WebFE.Pages.ClubManager.Activities
 
         public async Task<IActionResult> OnGetAsync()
         {
+            // Initialize club context from TempData
+            var result = await InitializeClubContextAsync();
+            if (result is RedirectResult)
+            {
+                return result;
+            }
+
             try
             {
                 ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "";

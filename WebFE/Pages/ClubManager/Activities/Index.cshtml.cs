@@ -1,13 +1,10 @@
 using BusinessObject.DTOs.Activity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Net.Http;
 using System.Net.Http.Json;
-using System.Security.Claims;
 
 namespace WebFE.Pages.ClubManager.Activities
 {
-    public class IndexModel : PageModel
+    public class IndexModel : ClubManagerPageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _config;
@@ -25,18 +22,19 @@ namespace WebFE.Pages.ClubManager.Activities
 
         public async Task<IActionResult> OnGetAsync()
         {
+            // Initialize club context from TempData
+            var result = await InitializeClubContextAsync();
+            if (result is RedirectResult)
+            {
+                return result;
+            }
+
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return RedirectToPage("/Auth/Login");
-                }
-
                 var client = _httpClientFactory.CreateClient("ApiClient");
                 
-                // Forward cookies
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/activity/my-club-activities");
+                // Get activities for the selected club only
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/activity/club/{ClubId}");
                 foreach (var cookie in Request.Cookies)
                 {
                     request.Headers.Add("Cookie", $"{cookie.Key}={cookie.Value}");
