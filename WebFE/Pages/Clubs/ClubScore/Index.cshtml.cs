@@ -4,10 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net;
 using System.Text.Json;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
-namespace WebFE.Pages.ClubManager.MyScore
+namespace WebFE.Pages.Clubs.ClubScore
 {
     public class IndexModel : PageModel
     {
@@ -25,6 +23,8 @@ namespace WebFE.Pages.ClubManager.MyScore
         public int? CurrentSemesterId { get; set; }
         public int ClubId { get; set; }
         public string ClubName { get; set; } = string.Empty;
+        public List<ClubListItemDto> MyClubs { get; set; } = new();
+        public int SelectedClubId { get; set; }
 
         [TempData]
         public string? ErrorMessage { get; set; }
@@ -62,22 +62,30 @@ namespace WebFE.Pages.ClubManager.MyScore
             return client;
         }
 
-        public async Task<IActionResult> OnGetAsync()
+        public async Task<IActionResult> OnGetAsync(int? clubId)
         {
             try
             {
-                // Get ClubId from managed club
-                ClubId = await GetCurrentClubIdAsync();
+                MyClubs = await GetUserClubsAsync();
                 
-                if (ClubId <= 0)
+                if (!MyClubs.Any())
                 {
-                    _logger.LogWarning("❌ ClubId is 0 or invalid! ClubManager needs to manage a club.");
-                    ErrorMessage = "Unable to identify your club. Please ensure you are assigned as President or Manager of a club. If you believe this is an error, please contact the administrator.";
+                    ErrorMessage = "You are not a member of any club. Please join a club to view club movement scores.";
                     return Page();
                 }
 
-                _logger.LogInformation("Loading club movement records for ClubId: {ClubId}", ClubId);
+                if (clubId.HasValue && MyClubs.Any(c => c.Id == clubId.Value))
+                {
+                    ClubId = clubId.Value;
+                }
+                else
+                {
+                    ClubId = MyClubs.First().Id;
+                }
                 
+                SelectedClubId = ClubId;
+                ClubName = MyClubs.FirstOrDefault(c => c.Id == ClubId)?.Name ?? string.Empty;
+
                 using var httpClient = CreateHttpClient();
                 var response = await httpClient.GetAsync($"/api/club-movement-records/club/{ClubId}");
 
@@ -91,13 +99,9 @@ namespace WebFE.Pages.ClubManager.MyScore
 
                     if (records != null && records.Any())
                     {
-                        // Determine current semester based on latest updated record
-                        var latestRecord = records
-                            .OrderByDescending(r => r.LastUpdated ?? r.CreatedAt)
-                            .FirstOrDefault();
+                        var latestRecord = records.OrderByDescending(r => r.LastUpdated ?? r.CreatedAt).FirstOrDefault();
                         CurrentSemesterId = latestRecord?.SemesterId;
 
-                        // Group records by semester
                         SemesterSummaries = records
                             .GroupBy(r => new { r.SemesterId, r.SemesterName })
                             .Select(g => new SemesterSummary
@@ -113,7 +117,6 @@ namespace WebFE.Pages.ClubManager.MyScore
                             .OrderByDescending(s => s.SemesterId)
                             .ToList();
 
-                        // Calculate summary stats from all records
                         Summary = new ClubMovementSummaryDto
                         {
                             ClubId = ClubId,
@@ -127,7 +130,6 @@ namespace WebFE.Pages.ClubManager.MyScore
                     }
                     else
                     {
-                        CurrentSemesterId = null;
                         Summary = new ClubMovementSummaryDto
                         {
                             ClubId = ClubId,
@@ -138,13 +140,10 @@ namespace WebFE.Pages.ClubManager.MyScore
                             LowestScore = 0,
                             Records = new List<ClubMovementRecordDto>()
                         };
-                        SemesterSummaries = new List<SemesterSummary>();
                     }
-                    _logger.LogInformation("✅ Loaded {Count} club movement records for ClubId: {ClubId}, grouped into {SemesterCount} semesters", records?.Count ?? 0, ClubId, SemesterSummaries.Count);
                 }
-                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                else if (response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    CurrentSemesterId = null;
                     Summary = new ClubMovementSummaryDto
                     {
                         ClubId = ClubId,
@@ -155,21 +154,14 @@ namespace WebFE.Pages.ClubManager.MyScore
                         LowestScore = 0,
                         Records = new List<ClubMovementRecordDto>()
                     };
-                    _logger.LogInformation("No club movement records found for ClubId: {ClubId}", ClubId);
                 }
                 else
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    CurrentSemesterId = null;
-                    SemesterSummaries = new List<SemesterSummary>();
-                    _logger.LogError("Failed to load club movement records: {StatusCode} - {Error}", response.StatusCode, errorContent);
                     ErrorMessage = "Unable to load club movement scores.";
                 }
             }
             catch (Exception ex)
             {
-                CurrentSemesterId = null;
-                SemesterSummaries = new List<SemesterSummary>();
                 _logger.LogError(ex, "Error loading club movement records");
                 ErrorMessage = "Error loading data.";
             }
@@ -177,55 +169,28 @@ namespace WebFE.Pages.ClubManager.MyScore
             return Page();
         }
 
-        private async Task<int> GetCurrentClubIdAsync()
+        private async Task<List<ClubListItemDto>> GetUserClubsAsync()
         {
             try
             {
                 using var httpClient = CreateHttpClient();
-                var response = await httpClient.GetAsync("/api/club/my-managed-club");
-                
-                _logger.LogInformation("🔷 GetCurrentClubIdAsync - Response Status: {StatusCode}", response.StatusCode);
-                
-                var content = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("🔷 GetCurrentClubIdAsync - Response Content: {Content}", content);
+                var response = await httpClient.GetAsync("/api/club/my-clubs");
                 
                 if (response.IsSuccessStatusCode)
                 {
-                    var club = JsonSerializer.Deserialize<ClubDetailDto>(content, new JsonSerializerOptions
+                    var content = await response.Content.ReadAsStringAsync();
+                    var clubs = JsonSerializer.Deserialize<List<ClubListItemDto>>(content, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
-                    
-                    if (club != null)
-                    {
-                        _logger.LogInformation("✅ Found club: Id={ClubId}, Name={ClubName}", club.Id, club.Name);
-                        ClubName = club.Name;
-                        return club.Id;
-                    }
-                    else
-                    {
-                        _logger.LogWarning("⚠️ Deserialized club is null");
-                    }
+                    return clubs ?? new List<ClubListItemDto>();
                 }
-                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    _logger.LogWarning("⚠️ API returned NotFound - User may not be managing any club");
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    _logger.LogWarning("⚠️ API returned Unauthorized - User authentication issue");
-                }
-                else
-                {
-                    _logger.LogWarning("⚠️ API returned error: {StatusCode} - {Content}", response.StatusCode, content);
-                }
-                
-                return 0;
+                return new List<ClubListItemDto>();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error getting current club ID");
-                return 0;
+                _logger.LogError(ex, "Error getting user clubs");
+                return new List<ClubListItemDto>();
             }
         }
     }

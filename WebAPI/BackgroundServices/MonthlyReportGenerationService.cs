@@ -25,6 +25,17 @@ namespace WebAPI.BackgroundServices
         {
             _logger.LogInformation("Monthly Report Generation Service started");
 
+            // On startup, immediately check and generate reports for current month if missing
+            try
+            {
+                _logger.LogInformation("Checking for missing monthly reports on startup...");
+                await GenerateMonthlyReportsAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating reports on startup");
+            }
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try

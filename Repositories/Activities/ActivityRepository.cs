@@ -444,8 +444,6 @@ namespace Repositories.Activities
 				.OrderBy(a => a.StartTime)
 				.ToListAsync();
 		}
-    }
-		}
 
 		public async Task<List<(int Id, string Name, string? LogoUrl, int MemberCount)>> GetAvailableCollaboratingClubsAsync(int excludeClubId)
 		{

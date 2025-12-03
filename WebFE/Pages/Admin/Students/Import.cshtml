@@ -1,0 +1,135 @@
+@page
+@model WebFE.Pages.Admin.Students.ImportModel
+@{
+    ViewData["Title"] = "Import Students";
+    ViewData["Breadcrumb"] = "Import Students";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<div class="page-header">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h1 class="page-title">Import Students</h1>
+            <p class="page-description">Import students from Excel file</p>
+        </div>
+        <a href="/Admin/Students" class="btn btn-outline-secondary">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back to List
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.ImportResult != null)
+{
+    <div class="alert @(Model.ImportResult.FailureCount == 0 ? "alert-success" : "alert-warning") alert-dismissible fade show">
+        <h5 class="alert-heading">
+            <i data-lucide="@(Model.ImportResult.FailureCount == 0 ? "check-circle" : "alert-triangle")" style="width: 20px; height: 20px;"></i>
+            Import Results
+        </h5>
+        <ul class="mb-0">
+            <li><strong>Total Rows:</strong> @Model.ImportResult.TotalRows</li>
+            <li><strong>Success:</strong> @Model.ImportResult.SuccessCount</li>
+            <li><strong>Failed:</strong> @Model.ImportResult.FailureCount</li>
+        </ul>
+        
+        @if (Model.ImportResult.Errors.Any())
+        {
+            <hr>
+            <h6>Errors:</h6>
+            <div style="max-height: 300px; overflow-y: auto;">
+                <ul>
+                    @foreach (var error in Model.ImportResult.Errors)
+                    {
+                        <li><strong>Row @error.RowNumber</strong> (@error.Email): @error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="content-card">
+    <div class="content-card-header">
+        <h2 class="content-card-title">Upload Excel File</h2>
+    </div>
+    <div class="content-card-body">
+        <div class="alert alert-info">
+            <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+            <strong>Instructions:</strong>
+            <ol class="mb-0 mt-2">
+                <li>Download the template Excel file below</li>
+                <li>Fill in student information following the template format</li>
+                <li>Upload the completed file</li>
+                <li>Review the import results</li>
+            </ol>
+        </div>
+
+        <div class="alert alert-warning">
+            <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+            <strong>Excel Format:</strong>
+            <ul class="mb-0 mt-2">
+                <li><strong>Required columns:</strong> Email, Full Name, Student Code, Cohort, Major Code</li>
+                <li><strong>Optional columns:</strong> Phone Number, Roles, Is Active, Date of Birth, Gender, Enrollment Date, Student Status</li>
+                <li><strong>Status values:</strong> Active, Inactive, Graduated, Suspended</li>
+                <li><strong>Gender values:</strong> Male, Female, Other</li>
+            </ul>
+        </div>
+
+        <!-- Download Template -->
+        <div class="mb-4">
+            <h5>Step 1: Download Template</h5>
+            <p class="text-muted">Download the Excel template with sample data</p>
+            <a href="/Admin/Students/Import?handler=DownloadTemplate" class="btn btn-outline-primary">
+                <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                Download Excel Template
+            </a>
+        </div>
+
+        <hr>
+
+        <!-- Upload Form -->
+        <form method="post" enctype="multipart/form-data">
+            <h5>Step 2: Upload File</h5>
+            <p class="text-muted">Select the completed Excel file to import</p>
+            
+            <div class="mb-3">
+                <label for="file" class="form-label">Select Excel File</label>
+                <input type="file" class="form-control" id="file" name="file" accept=".xlsx,.xls" required>
+                <div class="form-text">Accepted formats: .xlsx, .xls (Max size: 5MB)</div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
+                    Upload & Import
+                </button>
+                <a href="/Admin/Students" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}

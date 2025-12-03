@@ -19,13 +19,6 @@
                 <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
                 Back
             </a>
-            @if (Model.Record != null)
-            {
-                <a href="/Admin/StudentScoring/AddScore?studentId=@Model.Record.StudentId&studentName=@Uri.EscapeDataString(Model.Record.StudentName ?? string.Empty)&studentCode=@Model.Record.StudentCode" class="btn btn-warning ms-2">
-                    <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                    ➕ Add Score
-                </a>
-            }
         </div>
     </div>
 </div>
@@ -75,7 +68,6 @@
                                 <th>Criterion</th>
                                 <th>Max score</th>
                                 <th>Score achieved</th>
-                                <th>Source</th>
                                 <th>Note</th>
                                 <th>Date awarded</th>
                             </tr>
@@ -90,7 +82,6 @@
                                     <td>
                                         <strong class="text-success">@detail.Score</strong>
                                     </td>
-                                    <td>@(string.IsNullOrWhiteSpace(detail.ScoreType) ? "Auto" : detail.ScoreType)</td>
                                     <td>@detail.Note</td>
                                     <td>@detail.AwardedAt.ToString("dd/MM/yyyy HH:mm")</td>
                                 </tr>

@@ -25,9 +25,48 @@ namespace WebFE
                 options.Cookie.IsEssential = true;
             });
             
-            // Add Authentication and Authorization services
-            builder.Services.AddAuthentication();
-            builder.Services.AddAuthorization();
+            // Add Authentication and Authorization services with Cookie Authentication
+            builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Auth/Login";
+                    options.AccessDeniedPath = "/AccessDenied";
+                    options.ExpireTimeSpan = TimeSpan.FromHours(24);
+                    options.SlidingExpiration = true;
+                    
+                    // Handle 401/403 responses properly
+                    options.Events.OnRedirectToAccessDenied = context =>
+                    {
+                        // For AJAX requests, return status code instead of redirect
+                        if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        {
+                            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                            return Task.CompletedTask;
+                        }
+                        context.Response.Redirect(context.RedirectUri);
+                        return Task.CompletedTask;
+                    };
+                    
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        // For AJAX requests, return status code instead of redirect
+                        if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        {
+                            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            return Task.CompletedTask;
+                        }
+                        context.Response.Redirect(context.RedirectUri);
+                        return Task.CompletedTask;
+                    };
+                });
+            
+            // Add Authorization with policies
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+                options.AddPolicy("ClubManagerOrAdmin", policy => policy.RequireRole("Admin", "ClubManager"));
+                options.AddPolicy("Authenticated", policy => policy.RequireAuthenticatedUser());
+            });
             
             builder.Services.AddRazorPages()
                 .AddJsonOptions(options =>
@@ -87,8 +126,11 @@ namespace WebFE
             app.UseRouting();
             app.UseSession();
 
-            // JWT Authentication & Authorization Middleware
-            app.UseJwtAuthentication();
+            // JWT Authentication & Authorization Middleware - MUST be before UseAuthorization
+            // This middleware validates JWT from cookie and checks role-based access
+            app.UseMiddleware<JwtAuthenticationMiddleware>();
+            
+            app.UseAuthentication(); // Required for Cookie Authentication
             app.UseAuthorization(); // Required for [Authorize] attributes
 
             // API Proxy: Forward /api/* requests to WebAPI server

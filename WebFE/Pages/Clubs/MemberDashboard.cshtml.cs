@@ -1,11 +1,13 @@
 using BusinessObject.DTOs.Activity;
 using BusinessObject.DTOs.Club;
+using BusinessObject.DTOs.ClubMovementRecord;
 using BusinessObject.DTOs.JoinRequest;
 using BusinessObject.DTOs.Proposal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace WebFE.Pages.Clubs
 {
@@ -24,12 +26,40 @@ namespace WebFE.Pages.Clubs
         [BindProperty(SupportsGet = true)]
         public string Section { get; set; } = "overview";
 
+        [BindProperty(SupportsGet = true)]
+        public int? SemesterId { get; set; }
+
         public ClubDetailDto? Club { get; private set; }
         public List<ClubMemberDto> Members { get; private set; } = new();
         public List<DepartmentDto> Departments { get; private set; } = new();
         public List<ActivityListItemDto> Activities { get; private set; } = new();
         public List<ClubAwardDto> Awards { get; private set; } = new();
         public List<ProposalDTO> Proposals { get; private set; } = new();
+
+        // Club Score properties
+        public ClubMovementSummaryDto? ScoreSummary { get; private set; }
+        public List<SemesterScoreSummary> SemesterSummaries { get; private set; } = new();
+        public int? CurrentSemesterId { get; private set; }
+
+        // Club Score Detail properties
+        public List<ClubMovementRecordDto> ScoreDetailRecords { get; private set; } = new();
+        public string DetailSemesterName { get; private set; } = string.Empty;
+        public string DetailPresidentName { get; private set; } = string.Empty;
+        public string DetailPresidentCode { get; private set; } = string.Empty;
+        public double DetailTotalScore { get; private set; }
+        public int DetailTotalCriteria { get; private set; }
+        public bool IsDetailCurrentSemester { get; private set; }
+
+        public class SemesterScoreSummary
+        {
+            public int SemesterId { get; set; }
+            public string SemesterName { get; set; } = string.Empty;
+            public double TotalScore { get; set; }
+            public int TotalCriteria { get; set; }
+            public int MonthCount { get; set; }
+            public DateTime? LastUpdated { get; set; }
+            public DateTime CreatedAt { get; set; }
+        }
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -94,6 +124,18 @@ namespace WebFE.Pages.Clubs
                 Awards = await client.GetFromJsonAsync<List<ClubAwardDto>>($"api/club/{Id}/awards") ?? new();
                 Proposals = await client.GetFromJsonAsync<List<ProposalDTO>>($"api/proposal/club/{Id}") ?? new();
 
+                // Fetch club score data if on score section
+                if (Section == "score")
+                {
+                    await LoadClubScoreDataAsync(client);
+                }
+
+                // Fetch club score detail data if on score-detail section
+                if (Section == "score-detail" && SemesterId.HasValue)
+                {
+                    await LoadClubScoreDetailAsync(client, SemesterId.Value);
+                }
+
                 return Page();
             }
             catch (Exception ex)
@@ -101,6 +143,98 @@ namespace WebFE.Pages.Clubs
                 _logger.LogError(ex, "Error loading member dashboard for club {ClubId}", Id);
                 TempData["ErrorMessage"] = "An error occurred while loading the dashboard";
                 return RedirectToPage("/Clubs/Details", new { id = Id });
+            }
+        }
+
+        private async Task LoadClubScoreDataAsync(HttpClient client)
+        {
+            try
+            {
+                var response = await client.GetAsync($"/api/club-movement-records/club/{Id}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var records = JsonSerializer.Deserialize<List<ClubMovementRecordDto>>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (records != null && records.Any())
+                    {
+                        var latestRecord = records.OrderByDescending(r => r.LastUpdated ?? r.CreatedAt).FirstOrDefault();
+                        CurrentSemesterId = latestRecord?.SemesterId;
+
+                        SemesterSummaries = records
+                            .GroupBy(r => new { r.SemesterId, r.SemesterName })
+                            .Select(g => new SemesterScoreSummary
+                            {
+                                SemesterId = g.Key.SemesterId,
+                                SemesterName = g.Key.SemesterName,
+                                TotalScore = g.Sum(r => r.TotalScore),
+                                TotalCriteria = g.Sum(r => r.Details.Count),
+                                MonthCount = g.Count(),
+                                LastUpdated = g.Max(r => r.LastUpdated ?? r.CreatedAt),
+                                CreatedAt = g.Min(r => r.CreatedAt)
+                            })
+                            .OrderByDescending(s => s.SemesterId)
+                            .ToList();
+
+                        ScoreSummary = new ClubMovementSummaryDto
+                        {
+                            ClubId = Id,
+                            ClubName = records.First().ClubName,
+                            TotalRecords = SemesterSummaries.Count,
+                            AverageScore = SemesterSummaries.Any() ? SemesterSummaries.Average(s => s.TotalScore) : 0,
+                            HighestScore = SemesterSummaries.Any() ? SemesterSummaries.Max(s => s.TotalScore) : 0,
+                            LowestScore = SemesterSummaries.Any() ? SemesterSummaries.Min(s => s.TotalScore) : 0,
+                            Records = records
+                        };
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading club score data for club {ClubId}", Id);
+            }
+        }
+
+        private async Task LoadClubScoreDetailAsync(HttpClient client, int semesterId)
+        {
+            try
+            {
+                var response = await client.GetAsync($"/api/club-movement-records/club/{Id}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var allRecords = JsonSerializer.Deserialize<List<ClubMovementRecordDto>>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (allRecords != null)
+                    {
+                        ScoreDetailRecords = allRecords.Where(r => r.SemesterId == semesterId).OrderBy(r => r.Month).ToList();
+
+                        if (ScoreDetailRecords.Any())
+                        {
+                            var firstRecord = ScoreDetailRecords.First();
+                            DetailSemesterName = firstRecord.SemesterName;
+                            DetailPresidentName = firstRecord.PresidentName;
+                            DetailPresidentCode = firstRecord.PresidentCode;
+                            DetailTotalScore = ScoreDetailRecords.Sum(r => r.TotalScore);
+                            DetailTotalCriteria = ScoreDetailRecords.Sum(r => r.Details.Count);
+
+                            var latestOverallRecord = allRecords.OrderByDescending(r => r.LastUpdated ?? r.CreatedAt).FirstOrDefault();
+                            IsDetailCurrentSemester = latestOverallRecord?.SemesterId == semesterId;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading club score detail for club {ClubId}, semester {SemesterId}", Id, semesterId);
             }
         }
     }

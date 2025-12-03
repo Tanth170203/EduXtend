@@ -276,7 +276,13 @@ namespace WebAPI.Controllers
                 
                 // Get report info for filename
                 var report = await _service.GetReportByIdAsync(id);
-                var fileName = $"BaoCaoThang_{report.ClubName.Replace(" ", "_")}_{report.ReportMonth}_{report.ReportYear}.pdf";
+                
+                // Calculate next month for filename
+                var nextMonth = report.ReportMonth == 12 ? 1 : report.ReportMonth + 1;
+                var clubNameSafe = report.ClubName.Replace(" ", "_").Replace("/", "_").Replace("\\", "_");
+                
+                // Format: BÁO CÁO HOẠT ĐỘNG THÁNG 12 VÀ KẾ HOẠCH HOẠT ĐỘNG THÁNG 1_ClubName.pdf
+                var fileName = $"BAO_CAO_HOAT_DONG_THANG_{report.ReportMonth}_VA_KE_HOACH_HOAT_DONG_THANG_{nextMonth}_{clubNameSafe}.pdf";
                 
                 return File(pdfBytes, "application/pdf", fileName);
             }

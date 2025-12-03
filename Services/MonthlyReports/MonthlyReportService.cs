@@ -2,7 +2,9 @@ using BusinessObject.DTOs.MonthlyReport;
 using BusinessObject.Models;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Repositories.MonthlyReports;
+using Services.Emails;
 using Services.Notifications;
 
 namespace Services.MonthlyReports;
@@ -12,17 +14,26 @@ public class MonthlyReportService : IMonthlyReportService
     private readonly IMonthlyReportRepository _reportRepo;
     private readonly IMonthlyReportDataAggregator _dataAggregator;
     private readonly INotificationService _notificationService;
+    private readonly IEmailService _emailService;
+    private readonly IMonthlyReportPdfService _pdfService;
+    private readonly ILogger<MonthlyReportService> _logger;
     private readonly EduXtendContext _context;
 
     public MonthlyReportService(
         IMonthlyReportRepository reportRepo,
         IMonthlyReportDataAggregator dataAggregator,
         INotificationService notificationService,
+        IEmailService emailService,
+        IMonthlyReportPdfService pdfService,
+        ILogger<MonthlyReportService> logger,
         EduXtendContext context)
     {
         _reportRepo = reportRepo;
         _dataAggregator = dataAggregator;
         _notificationService = notificationService;
+        _emailService = emailService;
+        _pdfService = pdfService;
+        _logger = logger;
         _context = context;
     }
 
@@ -178,7 +189,28 @@ public class MonthlyReportService : IMonthlyReportService
 
         await _reportRepo.UpdateAsync(plan);
 
-        // Create notification for all Admins
+        // Get submitter name
+        var submitter = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId);
+        var submitterName = submitter?.FullName ?? "Unknown";
+
+        // Generate PDF for email attachment
+        // Requirements: 1.1, 2.3
+        byte[]? pdfData = null;
+        try
+        {
+            pdfData = await _pdfService.ExportToPdfAsync(reportId);
+            _logger.LogInformation("PDF generated successfully for report {ReportId}", reportId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to generate PDF for report {ReportId}", reportId);
+            // Continue without PDF - email will be sent without attachment
+        }
+
+        // Query all active Admin users
+        // Requirements: 1.2
         var admins = await _context.Users
             .AsNoTracking()
             .Include(u => u.Role)
@@ -187,6 +219,7 @@ public class MonthlyReportService : IMonthlyReportService
 
         foreach (var admin in admins)
         {
+            // Create in-app notification
             var message = $"Báo cáo tháng {plan.ReportMonth}/{plan.ReportYear} từ CLB {plan.Club?.Name} đã được nộp và đang chờ phê duyệt.";
             await _notificationService.SendNotificationAsync(
                 admin.Id,
@@ -194,6 +227,37 @@ public class MonthlyReportService : IMonthlyReportService
                 message,
                 reportId
             );
+
+            // Send email notification with PDF attachment
+            // Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2
+            try
+            {
+                if (!string.IsNullOrEmpty(admin.Email) && pdfData != null)
+                {
+                    await _emailService.SendMonthlyReportSubmissionEmailAsync(
+                        admin.Email,
+                        admin.FullName ?? "Admin",
+                        plan.Club?.Name ?? "Unknown Club",
+                        plan.ReportMonth ?? 0,
+                        plan.ReportYear ?? 0,
+                        submitterName,
+                        plan.SubmittedAt ?? DateTime.UtcNow,
+                        reportId,
+                        pdfData
+                    );
+                    _logger.LogInformation(
+                        "Email sent successfully to {AdminEmail} for report {ReportId} at {Timestamp}",
+                        admin.Email, reportId, DateTime.UtcNow);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't throw - email failure shouldn't block submission
+                // Requirements: 2.1
+                _logger.LogError(ex,
+                    "[ERROR] MonthlyReportEmailNotification: Failed to send email - ReportId: {ReportId}, Recipient: {Email}, Error: {ErrorMessage}, Timestamp: {Timestamp}",
+                    reportId, admin.Email, ex.Message, DateTime.UtcNow);
+            }
         }
     }
 

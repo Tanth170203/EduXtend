@@ -20,67 +20,107 @@ namespace WebFE.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             var path = context.Request.Path.Value?.ToLower() ?? "";
+            
+            _logger.LogWarning("JwtAuthMiddleware: Processing path {Path}", path);
 
-            // Always try to parse JWT token if available (even on public pages)
-            if (context.Request.Cookies.TryGetValue("AccessToken", out var token))
+            // Skip static files and public pages early
+            if (IsPublicPage(path))
             {
-                try
+                // Still try to set user context if token exists
+                if (context.Request.Cookies.TryGetValue("AccessToken", out var publicToken))
                 {
-                    var handler = new JwtSecurityTokenHandler();
-                    if (handler.CanReadToken(token))
-                    {
-                        var jwt = handler.ReadJwtToken(token);
-                        
-                        // Check if token is expired
-                        if (jwt.ValidTo < DateTime.UtcNow)
-                        {
-                            // Only redirect to login if this is a protected page
-                            if (IsProtectedPage(path))
-                            {
-                                context.Response.Redirect("/Auth/Login");
-                                return;
-                            }
-                            // For public pages, just don't set user context
-                        }
-                        else
-                        {
-                            // Token is valid, set user context
-                            SetUserContext(context, jwt);
-
-                            // Check access only for protected pages
-                            if (!IsPublicPage(path))
-                            {
-                                var roles = jwt.Claims
-                                    .Where(c => c.Type == ClaimTypes.Role || 
-                                               c.Type == "role" || 
-                                               c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
-                                    .Select(c => c.Value)
-                                    .ToList();
-
-                                if (!HasAccess(path, roles))
-                                {
-                                    _logger.LogWarning("Access denied for user with roles [{Roles}] to {Path}", string.Join(", ", roles), path);
-                                    context.Response.Redirect("/Error?code=403");
-                                    return;
-                                }
-                            }
-                        }
-                    }
+                    TrySetUserContext(context, publicToken);
                 }
-                catch (Exception ex)
+                await _next(context);
+                return;
+            }
+
+            // For protected pages, require valid token
+            if (!context.Request.Cookies.TryGetValue("AccessToken", out var token) || string.IsNullOrEmpty(token))
+            {
+                _logger.LogWarning("JwtAuthMiddleware: No token found for protected path {Path}", path);
+                if (IsAjaxRequest(context.Request))
                 {
-                    _logger.LogError(ex, "Error validating JWT token");
-                    // Only redirect to login if this is a protected page
-                    if (IsProtectedPage(path))
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("Unauthorized - No token");
+                    return;
+                }
+                context.Response.Redirect("/Auth/Login");
+                return;
+            }
+
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                if (!handler.CanReadToken(token))
+                {
+                    _logger.LogWarning("JwtAuthMiddleware: Invalid token format for path {Path}", path);
+                    if (IsAjaxRequest(context.Request))
                     {
-                        context.Response.Redirect("/Auth/Login");
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        await context.Response.WriteAsync("Unauthorized - Invalid token");
                         return;
                     }
+                    context.Response.Redirect("/Auth/Login");
+                    return;
                 }
+
+                var jwt = handler.ReadJwtToken(token);
+                
+                // Check if token is expired
+                if (jwt.ValidTo < DateTime.UtcNow)
+                {
+                    _logger.LogWarning("JwtAuthMiddleware: Token expired for path {Path}", path);
+                    if (IsAjaxRequest(context.Request))
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        await context.Response.WriteAsync("Unauthorized - Token expired");
+                        return;
+                    }
+                    context.Response.Redirect("/Auth/Login");
+                    return;
+                }
+
+                // Token is valid, set user context
+                SetUserContext(context, jwt);
+
+                // Get all roles from token
+                var roles = jwt.Claims
+                    .Where(c => c.Type == ClaimTypes.Role || 
+                               c.Type == "role" || 
+                               c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+                    .Select(c => c.Value)
+                    .ToList();
+
+                _logger.LogWarning("JwtAuthMiddleware: User roles [{Roles}] accessing {Path}", string.Join(", ", roles), path);
+
+                // Check role-based access
+                if (!HasAccess(path, roles))
+                {
+                    _logger.LogWarning("JwtAuthMiddleware: ACCESS DENIED for user with roles [{Roles}] to {Path}", string.Join(", ", roles), path);
+                    
+                    if (IsAjaxRequest(context.Request))
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        await context.Response.WriteAsync("Access Denied - Insufficient permissions");
+                        return;
+                    }
+                    
+                    context.Response.Redirect("/AccessDenied");
+                    return;
+                }
+
+                _logger.LogWarning("JwtAuthMiddleware: Access GRANTED for path {Path}", path);
             }
-            else if (IsProtectedPage(path))
+            catch (Exception ex)
             {
-                // No token and trying to access protected page
+                _logger.LogError(ex, "JwtAuthMiddleware: Error validating JWT token for path {Path}", path);
+                if (IsAjaxRequest(context.Request))
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    await context.Response.WriteAsync("Unauthorized - Token error");
+                    return;
+                }
                 context.Response.Redirect("/Auth/Login");
                 return;
             }
@@ -88,41 +128,84 @@ namespace WebFE.Middleware
             await _next(context);
         }
 
+        private void TrySetUserContext(HttpContext context, string token)
+        {
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                if (handler.CanReadToken(token))
+                {
+                    var jwt = handler.ReadJwtToken(token);
+                    if (jwt.ValidTo >= DateTime.UtcNow)
+                    {
+                        SetUserContext(context, jwt);
+                    }
+                }
+            }
+            catch { /* Ignore errors for public pages */ }
+        }
+
         private bool IsPublicPage(string path)
         {
-            var publicPages = new[]
+            // Exact match pages
+            var exactMatchPages = new[]
             {
                 "/",
                 "/index",
-                "/auth/login",
                 "/error",
-                "/privacy",
+                "/accessdenied",
+                "/privacy"
+            };
+
+            // Prefix match pages (paths that start with these)
+            var prefixMatchPages = new[]
+            {
+                "/auth/",
+                "/news",
                 "/lib/",
                 "/css/",
                 "/js/",
                 "/images/",
+                "/img/",
                 "/favicon.ico",
-                "/_framework/"
+                "/_framework/",
+                "/.well-known/"
             };
 
-            return publicPages.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+            // Check exact matches first
+            if (exactMatchPages.Contains(path, StringComparer.OrdinalIgnoreCase))
+                return true;
+
+            // Check prefix matches
+            return prefixMatchPages.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase));
         }
 
         private bool IsProtectedPage(string path)
         {
-            var protectedPrefixes = new[] { "/admin/", "/club/", "/student/", "/clubmanager/" };
+            // All pages that require authentication
+            var protectedPrefixes = new[] 
+            { 
+                "/admin/",      // Admin dashboard
+                "/club/",       // Legacy club pages
+                "/clubs/",      // Club pages (MemberDashboard, ClubScore, etc.)
+                "/student/",    // Student pages
+                "/clubmanager/", // Club manager pages
+                "/activities/", // Activity pages (some may need auth)
+                "/profile",     // User profile
+                "/settings"     // User settings
+            };
             return protectedPrefixes.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase));
         }
 
         private bool HasAccess(string path, List<string> userRoles)
         {
-            // Admin pages - only Admin
+            // Admin pages - only Admin role
             if (path.StartsWith("/admin/", StringComparison.OrdinalIgnoreCase))
             {
                 return userRoles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
             }
 
-            // ClubManager pages - only ClubManager and Admin
+            // ClubManager pages - ClubManager and Admin roles
             if (path.StartsWith("/clubmanager/", StringComparison.OrdinalIgnoreCase))
             {
                 return userRoles.Any(r => 
@@ -130,17 +213,30 @@ namespace WebFE.Middleware
                     r.Equals("ClubManager", StringComparison.OrdinalIgnoreCase));
             }
 
-            // Club pages - Admin, ClubManager, ClubMember
-            if (path.StartsWith("/club/", StringComparison.OrdinalIgnoreCase))
+            // Club pages (both /club/ and /clubs/) - All authenticated users
+            // Note: Specific membership checks are done at page level
+            if (path.StartsWith("/club/", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/clubs/", StringComparison.OrdinalIgnoreCase))
             {
-                return userRoles.Any(r => 
-                    r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
-                    r.Equals("ClubManager", StringComparison.OrdinalIgnoreCase) ||
-                    r.Equals("ClubMember", StringComparison.OrdinalIgnoreCase));
+                // Allow all authenticated users - membership verification is done at page level
+                return userRoles.Any();
             }
 
             // Student pages - All authenticated users
             if (path.StartsWith("/student/", StringComparison.OrdinalIgnoreCase))
+            {
+                return userRoles.Any();
+            }
+
+            // Activities pages - All authenticated users
+            if (path.StartsWith("/activities/", StringComparison.OrdinalIgnoreCase))
+            {
+                return userRoles.Any();
+            }
+
+            // Profile and Settings - All authenticated users
+            if (path.StartsWith("/profile", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/settings", StringComparison.OrdinalIgnoreCase))
             {
                 return userRoles.Any();
             }
@@ -155,6 +251,12 @@ namespace WebFE.Middleware
             var identity = new ClaimsIdentity(claims, "jwt");
             var principal = new ClaimsPrincipal(identity);
             context.User = principal;
+        }
+
+        private bool IsAjaxRequest(HttpRequest request)
+        {
+            return request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                   request.Headers["Accept"].ToString().Contains("application/json");
         }
     }
 

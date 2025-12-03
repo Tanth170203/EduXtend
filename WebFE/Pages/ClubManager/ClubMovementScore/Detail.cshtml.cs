@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net;
 using System.Text.Json;
 
-namespace WebFE.Pages.ClubManager.MyScore
+namespace WebFE.Pages.ClubManager.ClubMovementScore
 {
     public class DetailModel : PageModel
     {
@@ -25,6 +25,8 @@ namespace WebFE.Pages.ClubManager.MyScore
         public double TotalScore { get; set; }
         public int TotalCriteria { get; set; }
         public bool IsCurrentSemester { get; set; }
+        public int ClubId { get; set; }
+        public int SemesterId { get; set; }
 
         [TempData]
         public string? ErrorMessage { get; set; }
@@ -51,11 +53,25 @@ namespace WebFE.Pages.ClubManager.MyScore
             return client;
         }
 
+
         public async Task<IActionResult> OnGetAsync(int clubId, int semesterId)
         {
+            ClubId = clubId;
+            SemesterId = semesterId;
+
             try
             {
                 using var httpClient = CreateHttpClient();
+
+                // Verify membership before loading data
+                var isMember = await IsUserMemberOfClubAsync(httpClient, clubId);
+                if (!isMember)
+                {
+                    _logger.LogWarning("User attempted to access club {ClubId} scores without membership", clubId);
+                    ErrorMessage = "You are not authorized to view scores for this club. You must be an active member.";
+                    return RedirectToPage("./Index");
+                }
+
                 var response = await httpClient.GetAsync($"/api/club-movement-records/club/{clubId}");
 
                 if (response.IsSuccessStatusCode)
@@ -111,6 +127,48 @@ namespace WebFE.Pages.ClubManager.MyScore
             }
 
             return Page();
+        }
+
+        /// <summary>
+        /// Verifies if the current user is an active member of the specified club
+        /// </summary>
+        /// <param name="httpClient">The HTTP client to use for the API call</param>
+        /// <param name="clubId">The club ID to check membership for</param>
+        /// <returns>True if user is a member, false otherwise</returns>
+        private async Task<bool> IsUserMemberOfClubAsync(HttpClient httpClient, int clubId)
+        {
+            try
+            {
+                var response = await httpClient.GetAsync($"/api/club/{clubId}/is-member");
+
+                _logger.LogInformation("Membership check for club {ClubId}: {StatusCode}", clubId, response.StatusCode);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<MembershipCheckResponse>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    return result?.IsMember ?? false;
+                }
+
+                // If API returns 404 or other error, user is not a member
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking membership for club {ClubId}", clubId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Response DTO for membership check API
+        /// </summary>
+        private class MembershipCheckResponse
+        {
+            public bool IsMember { get; set; }
         }
     }
 }

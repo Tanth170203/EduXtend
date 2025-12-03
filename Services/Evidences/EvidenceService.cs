@@ -130,6 +130,19 @@ public class EvidenceService : IEvidenceService
         if (existing.Status != "Pending")
             throw new InvalidOperationException("Evidence has already been reviewed");
 
+        // Admin can change criterion when reviewing
+        if (dto.CriterionId.HasValue && dto.CriterionId != existing.CriterionId)
+        {
+            var criterionExists = await _criterionRepository.ExistsAsync(dto.CriterionId.Value);
+            if (!criterionExists)
+                throw new KeyNotFoundException($"Criterion with ID {dto.CriterionId.Value} not found");
+            
+            existing.CriterionId = dto.CriterionId.Value;
+            _logger.LogInformation(
+                "Admin changed criterion for evidence: EvidenceId={EvidenceId}, NewCriterionId={CriterionId}",
+                id, dto.CriterionId.Value);
+        }
+
         existing.Status = dto.Status;
         existing.ReviewerComment = dto.ReviewerComment;
         existing.Points = dto.Points;

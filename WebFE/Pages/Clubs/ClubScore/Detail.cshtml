@@ -1,26 +1,24 @@
-@page
+@page "{clubId:int}/{semesterId:int}"
 @using BusinessObject.DTOs.ClubMovementRecord
-@model WebFE.Pages.ClubManager.MyScore.DetailModel
+@model WebFE.Pages.Clubs.ClubScore.DetailModel
 @{
     ViewData["Title"] = "Club Activity Score Details";
-    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
 <section class="container my-5">
-    <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
         <div>
             <h1 class="fw-bold mb-1">Club Activity Score Details</h1>
             <p class="text-muted mb-0">View scores by group and criterion</p>
         </div>
-        <a href="/ClubManager/MyScore" class="btn btn-outline-secondary rounded-pill">
+        <a href="/Clubs/ClubScore?clubId=@Model.ClubId" class="btn btn-outline-secondary rounded-pill">
             <i class="bi bi-arrow-left"></i> Back
         </a>
     </div>
 
     @if (Model.Records.Any())
     {
-        <!-- Summary -->
         <div class="card shadow-sm border-0 mb-4 @(Model.IsCurrentSemester ? "border border-warning" : string.Empty)">
             <div class="card-body">
                 <div class="row g-3">
@@ -94,7 +92,7 @@
             </div>
         </div>
 
-        <!-- Category Scores (Total for Semester) -->
+        <!-- Category Scores -->
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white border-0 pt-4">
                 <h5 class="mb-0 fw-semibold"><i class="bi bi-bar-chart me-1"></i> Total Scores by Category (Semester)</h5>
@@ -104,38 +102,38 @@
                     @{
                         var totalClubMeeting = Model.Records.Sum(r => r.ClubMeetingScore);
                         var totalEvent = Model.Records.Sum(r => r.EventScore);
+                        var totalCollaboration = Model.Records.Sum(r => r.CollaborationScore);
                         var totalCompetition = Model.Records.Sum(r => r.CompetitionScore);
                         var totalPlan = Model.Records.Sum(r => r.PlanScore);
-                        var totalCollaboration = Model.Records.Sum(r => r.CollaborationScore);
                     }
                     <div class="col-md-2">
                         <div class="p-3 border rounded text-center">
-                            <div class="text-muted small">Club Meeting</div>
+                            <div class="text-muted small">Meetings</div>
                             <div class="fs-5 fw-bold text-primary">@totalClubMeeting.ToString("F1")</div>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="p-3 border rounded text-center">
-                            <div class="text-muted small">Event</div>
+                            <div class="text-muted small">Events</div>
                             <div class="fs-5 fw-bold text-primary">@totalEvent.ToString("F1")</div>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="p-3 border rounded text-center">
-                            <div class="text-muted small">Competition</div>
+                            <div class="text-muted small">Collaborations</div>
+                            <div class="fs-5 fw-bold text-primary">@totalCollaboration.ToString("F1")</div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="p-3 border rounded text-center">
+                            <div class="text-muted small">Competitions</div>
                             <div class="fs-5 fw-bold text-primary">@totalCompetition.ToString("F1")</div>
                         </div>
                     </div>
                     <div class="col-md-2">
                         <div class="p-3 border rounded text-center">
-                            <div class="text-muted small">Plan</div>
+                            <div class="text-muted small">Plans</div>
                             <div class="fs-5 fw-bold text-primary">@totalPlan.ToString("F1")</div>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="p-3 border rounded text-center">
-                            <div class="text-muted small">Collaboration</div>
-                            <div class="fs-5 fw-bold text-primary">@totalCollaboration.ToString("F1")</div>
                         </div>
                     </div>
                 </div>
@@ -161,7 +159,6 @@
                                         <th>Criterion</th>
                                         <th class="text-center">Max score</th>
                                         <th class="text-center">Score achieved</th>
-                                        <th>Score type</th>
                                         <th>Date awarded</th>
                                     </tr>
                                 </thead>
@@ -172,19 +169,7 @@
                                             <td><span class="badge bg-secondary">@d.GroupName</span></td>
                                             <td class="fw-semibold">@d.CriterionTitle</td>
                                             <td class="text-center">@d.CriterionMaxScore</td>
-                                            <td class="text-center">
-                                                <div class="fw-semibold">@d.Score.ToString("F1")</div>
-                                            </td>
-                                            <td>
-                                                @if (d.ScoreType == "Auto")
-                                                {
-                                                    <span class="badge bg-success">Auto</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-warning">Manual</span>
-                                                }
-                                            </td>
+                                            <td class="text-center"><div class="fw-semibold">@d.Score.ToString("F1")</div></td>
                                             <td>@d.AwardedAt.ToString("dd/MM/yyyy")</td>
                                         </tr>
                                     }
@@ -203,7 +188,7 @@
             </div>
         }
 
-        <!-- Summary by Group (Total for Semester) -->
+        <!-- Summary by Group -->
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white border-0 pt-4">
                 <h5 class="mb-0 fw-semibold"><i class="bi bi-bar-chart-line me-1"></i> Summary by Criterion Group (Semester Total)</h5>
@@ -213,8 +198,7 @@
                     var allDetails = Model.Records.SelectMany(r => r.Details).ToList();
                     if (allDetails.Any())
                     {
-                        var groups = allDetails
-                            .GroupBy(g => g.GroupName)
+                        var groups = allDetails.GroupBy(g => g.GroupName)
                             .Select(g => new { Group = g.Key, Score = g.Sum(x => x.Score), Count = g.Count() })
                             .OrderByDescending(x => x.Score);
                         <div class="row">

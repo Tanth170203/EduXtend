@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="~/WebFE.styles.css" asp-append-version="true" />
     <!-- Lucide Icons (local) -->
     <script src="~/lib/lucide/lucide.min.js"></script>
+    <!-- Modal Fix CSS -->
+    <link rel="stylesheet" href="~/css/modal-fix.css" asp-append-version="true" />
     
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -266,6 +268,48 @@
                 }
             }
         }
+
+        // FIX: Di chuyển modal ra body để đảm bảo căn giữa viewport
+        (function() {
+            function moveModalToBody(modal) {
+                if (modal && modal.classList.contains('modal') && modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+            }
+
+            function moveAllModalsToBody() {
+                document.querySelectorAll('.modal').forEach(moveModalToBody);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', moveAllModalsToBody);
+            } else {
+                moveAllModalsToBody();
+            }
+
+            setTimeout(moveAllModalsToBody, 500);
+
+            document.addEventListener('show.bs.modal', function(event) {
+                moveModalToBody(event.target);
+            });
+
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            if (node.classList && node.classList.contains('modal')) {
+                                moveModalToBody(node);
+                            }
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll('.modal').forEach(moveModalToBody);
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

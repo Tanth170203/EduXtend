@@ -154,11 +154,20 @@
                             <div class="d-flex align-items-center gap-3">
                                 <i data-lucide="file" style="width: 32px; height: 32px; color: #0dcaf0;"></i>
                                 <div>
-                                    <p class="mb-0 fw-bold">Cloudinary URL</p>
-                                    <small class="text-muted">Click to preview</small>
+                                    <p class="mb-0 fw-bold">Evidence File</p>
+                                    <small class="text-muted">Click button to preview or download</small>
                                 </div>
                             </div>
-                            <!-- Preview button intentionally omitted since index page already shows preview info -->
+                            <div class="d-flex gap-2">
+                                <a href="@previewUrl" target="_blank" class="btn btn-info btn-sm">
+                                    <i data-lucide="eye" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.3rem;"></i>
+                                    Preview
+                                </a>
+                                <a href="@Model.Evidence.FilePath" target="_blank" class="btn btn-outline-primary btn-sm">
+                                    <i data-lucide="download" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.3rem;"></i>
+                                    Download
+                                </a>
+                            </div>
                         </div>
                     }
                     else
@@ -186,60 +195,78 @@
                     <form method="post">
                         <input type="hidden" asp-for="Input.Id" />
 
-                        @* Status Selection *@
+                        @* Criterion Selection (Admin can change) *@
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i data-lucide="target" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 0.3rem;"></i>
+                                Criterion
+                            </label>
+                            <select asp-for="Input.CriterionId" class="form-select" id="criterionSelect" onchange="onCriterionChange(this)">
+                                <option value="">-- Select criterion --</option>
+                                @foreach (var criterion in Model.Criteria)
+                                {
+                                    <option value="@criterion.Id" 
+                                            data-max-score="@criterion.MaxScore"
+                                            selected="@(Model.Input.CriterionId == criterion.Id)">
+                                        @criterion.Title (@criterion.MaxScore pts)
+                                        @if (!string.IsNullOrEmpty(criterion.GroupName))
+                                        {
+                                            <text> - @criterion.GroupName</text>
+                                        }
+                                    </option>
+                                }
+                            </select>
+                            <small class="text-muted">Admin can change the criterion if needed</small>
+                        </div>
+
+                        @* Status Selection - Default to Approved *@
                         <div class="mb-3">
                             <label asp-for="Input.Status" class="form-label fw-bold">Status <span class="text-danger">*</span></label>
                             <select asp-for="Input.Status" class="form-select form-select-lg" required onchange="togglePointsFieldOnChange(this)">
                                 <option value="">-- Select status --</option>
-                                <option value="Approved">✅ Approve (Approved)</option>
-                                <option value="Rejected">❌ Reject (Rejected)</option>
+                                <option value="Approved" selected>Approve</option>
+                                <option value="Rejected">Reject</option>
                             </select>
                             <span asp-validation-for="Input.Status" class="text-danger small"></span>
                         </div>
 
-                        @* Points Field *@
+                        @* Points Field - Show by default since status defaults to Approved *@
                         @{
                             var maxScore = Model.Evidence?.CriterionMaxScore ?? 0;
-                            var pointsValue = Model.Input?.Points > 0 ? Model.Input.Points.ToString() : "";
+                            // Default points to max score
+                            var pointsValue = maxScore > 0 ? maxScore.ToString() : (Model.Input?.Points > 0 ? Model.Input.Points.ToString() : "");
                         }
 
-                        <div class="mb-3" id="pointsField" style="display: none;">
+                        <div class="mb-3" id="pointsField" style="display: block;">
                             <label class="form-label fw-bold">Awarded points</label>
 
-                            @if (maxScore > 0)
-                            {
-                                <div class="alert alert-info mb-2">
-                                    <small class="mb-0">
-                                        <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"></i>
-                                        <strong>Criterion:</strong> @Model.Evidence.CriterionTitle<br />
-                                        <strong>Range:</strong> 0 - @maxScore pts
-                                    </small>
-                                </div>
-                            }
+                            <div class="alert alert-info mb-2" id="criterionInfo">
+                                <small class="mb-0">
+                                    <i data-lucide="info" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"></i>
+                                    <span id="criterionInfoText">
+                                        @if (maxScore > 0)
+                                        {
+                                            <text><strong>Criterion:</strong> @Model.Evidence.CriterionTitle<br />
+                                            <strong>Range:</strong> 0 - @maxScore pts</text>
+                                        }
+                                        else
+                                        {
+                                            <text>Please select a criterion to see max points</text>
+                                        }
+                                    </span>
+                                </small>
+                            </div>
 
-                            @if (maxScore > 0)
-                            {
-                                <input type="number"
-                                       id="Input_Points"
-                                       name="Input.Points"
-                                       value="@pointsValue"
-                                       step="0.5"
-                                       min="0"
-                                       max="@maxScore"
-                                       class="form-control form-control-lg"
-                                       placeholder="Enter points" />
-                            }
-                            else
-                            {
-                                <input type="number"
-                                       id="Input_Points"
-                                       name="Input.Points"
-                                       value="@pointsValue"
-                                       step="0.5"
-                                       min="0"
-                                       class="form-control form-control-lg"
-                                       placeholder="Enter points" />
-                            }
+                            <input type="number"
+                                   id="Input_Points"
+                                   name="Input.Points"
+                                   value="@pointsValue"
+                                   step="0.5"
+                                   min="0"
+                                   max="@maxScore"
+                                   data-max-score="@maxScore"
+                                   class="form-control form-control-lg"
+                                   placeholder="Enter points" />
                             <span asp-validation-for="Input.Points" class="text-danger small"></span>
                         </div>
 
@@ -352,10 +379,47 @@ else
             }
         }
 
+        // Global function to handle criterion change
+        function onCriterionChange(selectElement) {
+            console.log('onCriterionChange called');
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            const maxScore = selectedOption && selectedOption.value ? parseInt(selectedOption.getAttribute('data-max-score')) || 0 : 0;
+            const criterionText = selectedOption && selectedOption.value ? selectedOption.text : '';
+            
+            console.log('  → Selected criterion:', criterionText, 'Max score:', maxScore);
+            
+            // Update points input max attribute and value
+            const pointsInput = document.getElementById('Input_Points');
+            if (pointsInput) {
+                pointsInput.setAttribute('max', maxScore);
+                pointsInput.setAttribute('data-max-score', maxScore);
+                
+                // If status is Approved, always set points to max score when criterion changes
+                const statusSelect = document.getElementById('Input_Status');
+                if (statusSelect && statusSelect.value === 'Approved' && maxScore > 0) {
+                    pointsInput.value = maxScore;
+                    console.log('  → Updated points to new max score:', maxScore);
+                }
+            }
+            
+            // Update criterion info text
+            const criterionInfoText = document.getElementById('criterionInfoText');
+            if (criterionInfoText) {
+                if (maxScore > 0) {
+                    const criterionName = criterionText.split('(')[0].trim();
+                    criterionInfoText.innerHTML = '<strong>Criterion:</strong> ' + criterionName + '<br /><strong>Range:</strong> 0 - ' + maxScore + ' pts';
+                } else {
+                    criterionInfoText.innerHTML = 'Please select a criterion to see max points';
+                }
+            }
+        }
+
         // Global function to toggle points field
         function togglePointsFieldOnChange(selectElement) {
             console.log('togglePointsFieldOnChange called with value:', selectElement.value);
             const pointsField = document.getElementById('pointsField');
+            const pointsInput = document.getElementById('Input_Points');
+            
             if (!pointsField) {
                 console.warn('pointsField element not found');
                 return;
@@ -364,15 +428,29 @@ else
             if (selectElement.value === 'Approved') {
                 console.log('  → Showing points field');
                 pointsField.style.display = 'block';
+                
+                // Set default points to max score of selected criterion
+                const criterionSelect = document.getElementById('criterionSelect');
+                if (criterionSelect && pointsInput) {
+                    const selectedOption = criterionSelect.options[criterionSelect.selectedIndex];
+                    const maxScore = selectedOption ? parseInt(selectedOption.getAttribute('data-max-score')) || 0 : 0;
+                    console.log('  → Criterion max score:', maxScore);
+                    
+                    // Always set to max score when switching to Approved
+                    if (maxScore > 0) {
+                        pointsInput.value = maxScore;
+                        pointsInput.setAttribute('max', maxScore);
+                        console.log('  → Set default points to max score:', maxScore);
+                    }
+                }
+                
                 // Focus on the points input after showing
                 setTimeout(() => {
-                    const pointsInput = document.getElementById('Input_Points');
                     if (pointsInput) pointsInput.focus();
                 }, 100);
             } else {
                 console.log('  → Hiding points field');
                 pointsField.style.display = 'none';
-                const pointsInput = document.getElementById('Input_Points');
                 if (pointsInput) pointsInput.value = '0';
             }
         }
