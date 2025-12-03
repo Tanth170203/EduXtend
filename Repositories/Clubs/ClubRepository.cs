@@ -99,6 +99,31 @@ namespace Repositories.Clubs
             return club;
         }
 
+        public async Task<List<Club>> GetAllManagedClubsByUserIdAsync(int userId)
+        {
+            // Find all clubs where user is President or Manager
+            var clubIds = await _ctx.ClubMembers
+                .AsNoTracking()
+                .Include(cm => cm.Student)
+                .Where(cm => cm.Student.UserId == userId 
+                    && cm.IsActive
+                    && (cm.RoleInClub == "President" || cm.RoleInClub == "Manager"))
+                .Select(cm => cm.ClubId)
+                .Distinct()
+                .ToListAsync();
+
+            // Load clubs with necessary includes
+            var clubs = await _ctx.Clubs
+                .AsNoTracking()
+                .Include(c => c.Category)
+                .Include(c => c.Members)
+                .Include(c => c.Activities)
+                .Where(c => clubIds.Contains(c.Id))
+                .ToListAsync();
+
+            return clubs;
+        }
+
         public async Task<bool> ToggleRecruitmentAsync(int clubId, bool isOpen)
         {
             var club = await _ctx.Clubs.FindAsync(clubId);

@@ -52,4 +52,7 @@ public interface INotificationService
     // Join request notifications
     Task NotifyUserAboutJoinRequestApprovalAsync(int userId, int clubId, string clubName);
     Task NotifyUserAboutJoinRequestRejectionAsync(int userId, int clubId, string clubName);
+    
+    // Attendance evaluation notifications
+    Task NotifyAdminsAsync(string title, string message, int createdById);
 }

@@ -165,10 +165,10 @@
                                 <td>
                                     @if (!string.IsNullOrEmpty(request.CvUrl))
                                     {
-                                        <a href="@request.CvUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <button type="button" class="btn btn-sm btn-outline-primary view-cv-btn" data-cv-url="@request.CvUrl" data-cv-title="@request.UserName - CV">
                                             <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
-                                            View CV (PDF)
-                                        </a>
+                                            View CV
+                                        </button>
                                     }
                                     else
                                     {
@@ -501,6 +501,17 @@
                 const studentName = this.getAttribute('data-student-name');
                 const motivation = this.getAttribute('data-motivation');
                 showMotivation(requestId, studentName, motivation);
+            });
+        });
+
+        // Attach event listeners to view CV buttons
+        document.querySelectorAll('.view-cv-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const cvUrl = this.getAttribute('data-cv-url');
+                const cvTitle = this.getAttribute('data-cv-title');
+                if (window.cvViewer) {
+                    window.cvViewer.showCV(cvUrl, { title: cvTitle });
+                }
             });
         });
     </script>

@@ -6,139 +6,139 @@
     Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
 }
 
+<link rel="stylesheet" href="~/css/financial-dashboard.css" />
+
 <div class="admin-page-header">
     <div>
-        <h1 class="admin-page-title">Financial Dashboard</h1>
-        <p class="admin-page-subtitle">Overview of club finances</p>
+        <h1 class="admin-page-title">📊 Financial Dashboard</h1>
+        <p class="admin-page-subtitle">Overview of club finances with beautiful insights</p>
     </div>
 </div>
 
-<!-- Financial Summary Cards -->
+<!-- Financial Summary Cards with Gradients -->
 <div class="row g-4 mb-4">
     <!-- Total Income -->
     <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="stat-card financial-card-gradient-4 border-0 shadow-sm h-100">
             <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="flex-shrink-0">
-                        <div class="stat-icon bg-success bg-opacity-10 text-success">
-                            <i data-lucide="trending-up" style="width: 24px; height: 24px;"></i>
-                        </div>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="stat-icon bg-white bg-opacity-20 float-animation">
+                        <i data-lucide="trending-up" style="width: 28px; height: 28px;" class="text-white"></i>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <span class="badge bg-success bg-opacity-10 text-success">+12.5%</span>
-                    </div>
+                    <span class="badge bg-white bg-opacity-20 text-white">+12.5%</span>
                 </div>
-                <h6 class="text-muted mb-2">Total Income</h6>
-                <h3 class="mb-0" id="totalIncome">-</h3>
+                <h6 class="text-white mb-2 opacity-90">Total Income</h6>
+                <h2 class="mb-0 text-white fw-bold" id="totalIncome">-</h2>
             </div>
         </div>
     </div>
 
     <!-- Total Expenses -->
     <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="stat-card financial-card-gradient-2 border-0 shadow-sm h-100">
             <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="flex-shrink-0">
-                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
-                            <i data-lucide="trending-down" style="width: 24px; height: 24px;"></i>
-                        </div>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="stat-icon bg-white bg-opacity-20 float-animation">
+                        <i data-lucide="trending-down" style="width: 28px; height: 28px;" class="text-white"></i>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <span class="badge bg-danger bg-opacity-10 text-danger">-8.3%</span>
-                    </div>
+                    <span class="badge bg-white bg-opacity-20 text-white">-8.3%</span>
                 </div>
-                <h6 class="text-muted mb-2">Total Expenses</h6>
-                <h3 class="mb-0" id="totalExpenses">-</h3>
+                <h6 class="text-white mb-2 opacity-90">Total Expenses</h6>
+                <h2 class="mb-0 text-white fw-bold" id="totalExpenses">-</h2>
             </div>
         </div>
     </div>
 
     <!-- Balance -->
     <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="stat-card financial-card-gradient-3 border-0 shadow-sm h-100">
             <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="flex-shrink-0">
-                        <div class="stat-icon bg-info bg-opacity-10 text-info">
-                            <i data-lucide="wallet" style="width: 24px; height: 24px;"></i>
-                        </div>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="stat-icon bg-white bg-opacity-20 float-animation">
+                        <i data-lucide="wallet" style="width: 28px; height: 28px;" class="text-white"></i>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <span class="badge bg-info bg-opacity-10 text-info">Current</span>
-                    </div>
+                    <span class="badge bg-white bg-opacity-20 text-white">Current</span>
                 </div>
-                <h6 class="text-muted mb-2">Balance</h6>
-                <h3 class="mb-0" id="balance">-</h3>
+                <h6 class="text-white mb-2 opacity-90">Balance</h6>
+                <h2 class="mb-0 text-white fw-bold" id="balance">-</h2>
             </div>
         </div>
     </div>
 
     <!-- Member Funds -->
     <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="stat-card financial-card-gradient-1 border-0 shadow-sm h-100">
             <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="flex-shrink-0">
-                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                            <i data-lucide="users" style="width: 24px; height: 24px;"></i>
-                        </div>
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="stat-icon bg-white bg-opacity-20 float-animation">
+                        <i data-lucide="users" style="width: 28px; height: 28px;" class="text-white"></i>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <span class="badge bg-primary bg-opacity-10 text-primary">4/5</span>
-                    </div>
+                    <span class="badge bg-white bg-opacity-20 text-white">4/5</span>
                 </div>
-                <h6 class="text-muted mb-2">Member Funds</h6>
-                <h3 class="mb-0" id="memberFunds">-</h3>
+                <h6 class="text-white mb-2 opacity-90">Member Funds</h6>
+                <h2 class="mb-0 text-white fw-bold" id="memberFunds">-</h2>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-        <h5 class="card-title mb-3">Quick Actions</h5>
-        <p class="text-muted small mb-4">Manage your club finances</p>
-        <div class="row g-3">
-            <div class="col-md-3 col-sm-6">
-                <a href="/ClubManager/Financial/Transactions?action=income" class="btn btn-primary w-100">
-                    <i data-lucide="arrow-up-right" class="me-2" style="width: 16px; height: 16px;"></i>
-                    Record Income
-                </a>
+<!-- Quick Actions with Colorful Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <a href="/ClubManager/Financial/Transactions?action=income" class="text-decoration-none">
+            <div class="quick-action-card neon-card">
+                <div class="quick-action-icon financial-card-gradient-4">
+                    <i data-lucide="arrow-up-right" style="width: 28px; height: 28px;"></i>
+                </div>
+                <h6 class="fw-bold mb-1">Record Income</h6>
+                <p class="text-muted small mb-0">Add new income</p>
             </div>
-            <div class="col-md-3 col-sm-6">
-                <a href="/ClubManager/Financial/Transactions?action=expense" class="btn btn-outline-secondary w-100">
-                    <i data-lucide="arrow-down-left" class="me-2" style="width: 16px; height: 16px;"></i>
-                    Record Expense
-                </a>
+        </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <a href="/ClubManager/Financial/Transactions?action=expense" class="text-decoration-none">
+            <div class="quick-action-card neon-card">
+                <div class="quick-action-icon financial-card-gradient-2">
+                    <i data-lucide="arrow-down-left" style="width: 28px; height: 28px;"></i>
+                </div>
+                <h6 class="fw-bold mb-1">Record Expense</h6>
+                <p class="text-muted small mb-0">Track spending</p>
             </div>
-            <div class="col-md-3 col-sm-6">
-                <a href="/ClubManager/Financial/MemberFunds" class="btn btn-outline-secondary w-100">
-                    <i data-lucide="send" class="me-2" style="width: 16px; height: 16px;"></i>
-                    Collect Funds
-                </a>
+        </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <a href="/ClubManager/Financial/MemberFunds" class="text-decoration-none">
+            <div class="quick-action-card neon-card">
+                <div class="quick-action-icon financial-card-gradient-1">
+                    <i data-lucide="send" style="width: 28px; height: 28px;"></i>
+                </div>
+                <h6 class="fw-bold mb-1">Collect Funds</h6>
+                <p class="text-muted small mb-0">Member payments</p>
             </div>
-            <div class="col-md-3 col-sm-6">
-                <a href="/ClubManager/Financial/Reports" class="btn btn-outline-secondary w-100">
-                    <i data-lucide="download" class="me-2" style="width: 16px; height: 16px;"></i>
-                    Export Report
-                </a>
+        </a>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <a href="/ClubManager/Financial/Reports" class="text-decoration-none">
+            <div class="quick-action-card neon-card">
+                <div class="quick-action-icon financial-card-gradient-5">
+                    <i data-lucide="download" style="width: 28px; height: 28px;"></i>
+                </div>
+                <h6 class="fw-bold mb-1">Export Report</h6>
+                <p class="text-muted small mb-0">Download data</p>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
-<!-- Charts -->
+<!-- Charts with Gradient Backgrounds -->
 <div class="row g-4">
     <!-- Income vs Expenses Chart -->
     <div class="col-lg-7">
-        <div class="card border-0 shadow-sm">
+        <div class="glass-card">
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h5 class="card-title mb-1">Income vs Expenses</h5>
+                        <h5 class="card-title mb-1 fw-bold">📈 Income vs Expenses</h5>
                         <p class="text-muted small mb-0">Monthly comparison</p>
                     </div>
                     <div style="width: 120px;">
@@ -156,9 +156,9 @@
 
     <!-- Income Sources Chart -->
     <div class="col-lg-5">
-        <div class="card border-0 shadow-sm">
+        <div class="glass-card">
             <div class="card-body">
-                <h5 class="card-title mb-2">Income Sources</h5>
+                <h5 class="card-title mb-2 fw-bold">🎯 Income Sources</h5>
                 <p class="text-muted small mb-4">Distribution by category</p>
                 <div style="position: relative; height: 300px;">
                     <canvas id="incomeSourcesChart"></canvas>
@@ -179,11 +179,20 @@
 
         // Load all data on page load
         document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize icons immediately
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
             populateYearFilter();
             await loadFinancialOverview();
             await loadIncomeExpenseChart();
             await loadIncomeSources();
-            lucide.createIcons();
+            
+            // Reinitialize icons after loading data
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         });
 
         // Populate year filter (5 years back to 2 years forward)
@@ -411,13 +420,15 @@
 }
 
 <style>
-    .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* Ensure icons render properly */
+    [data-lucide] {
+        display: inline-block;
+    }
+    
+    /* Additional hover effects */
+    .quick-action-card:hover .quick-action-icon {
+        transform: scale(1.1) rotate(5deg);
+        transition: transform 0.3s ease;
     }
 </style>
 

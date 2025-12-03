@@ -6,94 +6,317 @@
     Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
 }
 
-<div class="admin-page-header">
-    <div>
-        <h1 class="admin-page-title">Transaction History</h1>
-        <p class="admin-page-subtitle">All income and expense records</p>
-    </div>
-    <div class="admin-page-actions">
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
-            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-            Add Income
-        </button>
-        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
-            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-            Add Expense
-        </button>
+<link rel="stylesheet" href="~/css/financial-dashboard.css" asp-append-version="true" />
+
+<style>
+    .transaction-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+    }
+    
+    .transaction-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .transaction-header p {
+        opacity: 0.9;
+        margin-bottom: 0;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .btn-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-outline-gradient {
+        background: white;
+        border: 2px solid #667eea;
+        color: #667eea;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-outline-gradient:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: transparent;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .filter-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+    }
+    
+    .filter-card .form-control,
+    .filter-card .form-select {
+        border-radius: 10px;
+        border: 2px solid #e5e7eb;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s;
+    }
+    
+    .filter-card .form-control:focus,
+    .filter-card .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .transaction-table-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .transaction-table-card table {
+        margin-bottom: 0;
+    }
+    
+    .transaction-table-card thead {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .transaction-table-card thead th {
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        padding: 1rem;
+    }
+    
+    .transaction-table-card tbody tr {
+        transition: all 0.3s;
+    }
+    
+    .transaction-table-card tbody tr:hover {
+        background: #f8f9fa;
+        transform: scale(1.01);
+    }
+    
+    .badge-type-income {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    
+    .badge-type-expense {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    
+    .badge-status-completed {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    
+    .badge-status-pending {
+        background: #fef3c7;
+        color: #92400e;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    
+    .amount-positive {
+        color: #10b981;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    
+    .amount-negative {
+        color: #ef4444;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    
+    .action-btn {
+        background: transparent;
+        border: none;
+        color: #6b7280;
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    
+    .action-btn:hover {
+        background: #f3f4f6;
+        color: #667eea;
+    }
+</style>
+
+<div class="transaction-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1>💰 Transaction History</h1>
+            <p>Track all your club's income and expenses</p>
+        </div>
+        <div class="action-buttons d-none d-md-flex">
+            <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
+                <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i>
+                Add Income
+            </button>
+            <button class="btn btn-outline-gradient" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                <i data-lucide="minus-circle" style="width: 18px; height: 18px;"></i>
+                Add Expense
+            </button>
+        </div>
     </div>
 </div>
 
 <!-- Filters -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0">
-                        <i data-lucide="search" style="width: 18px; height: 18px;"></i>
-                    </span>
-                    <input type="text" class="form-control border-start-0" id="searchTransactions" placeholder="Search by title, description, category...">
-                </div>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select" id="filterType">
-                    <option value="">All Types</option>
-                    <option value="Income">Income</option>
-                    <option value="Expense">Expense</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select class="form-select" id="filterStatus">
-                    <option value="">All Status</option>
-                    <option value="completed">Completed</option>
-                    <option value="pending">Pending</option>
-                    <option value="cancelled">Cancelled</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
-                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-                    Clear
-                </button>
-            </div>
+<div class="filter-card">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label fw-semibold mb-2">
+                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                Search Transactions
+            </label>
+            <input type="text" class="form-control" id="searchTransactions" placeholder="Search by title, description, category...">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold mb-2">
+                <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                Type
+            </label>
+            <select class="form-select" id="filterType">
+                <option value="">All Types</option>
+                <option value="Income">Income</option>
+                <option value="Expense">Expense</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-semibold mb-2">
+                <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                Status
+            </label>
+            <select class="form-select" id="filterStatus">
+                <option value="">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" onclick="applyFilters()">
+                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                Search
+            </button>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                Clear
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Transaction Table -->
-<div class="card border-0 shadow-sm">
+<div class="transaction-table-card">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-            <thead class="bg-light">
+            <thead>
                 <tr>
-                    <th class="px-4 py-3">Date</th>
-                    <th class="py-3">Type</th>
-                    <th class="py-3">Source/Title</th>
-                    <th class="py-3">Category</th>
+                    <th class="px-4 py-3">
+                        <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                        Date
+                    </th>
+                    <th class="py-3">
+                        <i data-lucide="tag" style="width: 16px; height: 16px;"></i>
+                        Type
+                    </th>
+                    <th class="py-3">
+                        <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
+                        Source/Title
+                    </th>
+                    <th class="py-3">
+                        <i data-lucide="folder" style="width: 16px; height: 16px;"></i>
+                        Category
+                    </th>
                     <th class="py-3">Description</th>
-                    <th class="py-3 text-end">Amount</th>
-                    <th class="py-3">Status</th>
+                    <th class="py-3 text-end">
+                        <i data-lucide="dollar-sign" style="width: 16px; height: 16px;"></i>
+                        Amount
+                    </th>
+                    <th class="py-3">
+                        <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                        Status
+                    </th>
                     <th class="py-3 text-center">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td class="px-4">2024-01-15</td>
-                    <td>
-                        <span class="badge bg-primary">income</span>
+                    <td class="px-4">
+                        <div class="fw-semibold">22/11/2025</div>
+                        <small class="text-muted">10:30 AM</small>
                     </td>
-                    <td>University Sponsorship</td>
                     <td>
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary">sponsorship</span>
+                        <span class="badge-type-income">
+                            <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                            Income
+                        </span>
                     </td>
-                    <td class="text-muted">Annual club sponsorship from university</td>
-                    <td class="text-end text-success fw-bold">+5.000.000 ₫</td>
                     <td>
-                        <span class="badge bg-success">completed</span>
+                        <div class="fw-semibold">Fund Collection: Testpaymen3</div>
+                        <small class="text-muted">Auto-completed fund collection</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-info bg-opacity-10 text-info">
+                            <i data-lucide="users" style="width: 12px; height: 12px;"></i>
+                            member_fees
+                        </span>
+                    </td>
+                    <td class="text-muted">Total collected from 4 members</td>
+                    <td class="text-end amount-positive">+1.800.000 ₫</td>
+                    <td>
+                        <span class="badge-status-completed">
+                            <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                            Completed
+                        </span>
                     </td>
                     <td class="text-center">
-                        <button class="btn btn-sm btn-link text-secondary">
-                            <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                        <button class="action-btn" title="View Details">
+                            <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                        </button>
+                        <button class="action-btn" title="Edit">
+                            <i data-lucide="edit" style="width: 18px; height: 18px;"></i>
                         </button>
                     </td>
                 </tr>

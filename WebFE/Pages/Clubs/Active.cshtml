@@ -5,6 +5,10 @@
     Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
+@section Scripts {
+    <script src="~/js/pagination.js"></script>
+}
+
 
 <section class="container my-5">
     <div class="text-center mb-5">
@@ -13,7 +17,7 @@
     </div>
 
     <!-- Search + Filters -->
-    <form method="get" class="d-flex flex-wrap align-items-center gap-2 mb-4">
+    <form method="get" id="filterForm" class="d-flex flex-wrap align-items-center gap-2 mb-4">
         <input type="text" 
                name="searchTerm" 
                value="@Model.SearchTerm" 
@@ -46,6 +50,18 @@
             </a>
         }
     </form>
+
+    <!-- Results Summary -->
+    <div class="mb-3">
+        <h5 class="text-muted">
+            <i class="bi bi-people-fill"></i> Found <strong>@Model.TotalCount</strong> 
+            club@(Model.TotalCount != 1 ? "s" : "")
+            @if (Model.TotalPages > 1)
+            {
+                <span class="small">- Page @Model.CurrentPage of @Model.TotalPages</span>
+            }
+        </h5>
+    </div>
 
     <!-- Club cards -->
     <div class="row g-4">
@@ -114,4 +130,119 @@
             </div>
         }
     </div>
-    </section>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Club pagination" class="mt-5">
+            <ul class="pagination justify-content-center">
+                <!-- Previous Button -->
+                <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" 
+                       href="javascript:void(0)"
+                       onclick="goToPage(@(Model.CurrentPage - 1))"
+                       aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+
+                @{
+                    var startPage = Math.Max(1, Model.CurrentPage - 2);
+                    var endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                    
+                    // Show first page
+                    if (startPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="javascript:void(0)" onclick="goToPage(1)">1</a>
+                        </li>
+                        if (startPage > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                    }
+                    
+                    // Show page numbers
+                    for (int i = startPage; i <= endPage; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="javascript:void(0)" onclick="goToPage(@i)">@i</a>
+                        </li>
+                    }
+                    
+                    // Show last page
+                    if (endPage < Model.TotalPages)
+                    {
+                        if (endPage < Model.TotalPages - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" href="javascript:void(0)" onclick="goToPage(@Model.TotalPages)">@Model.TotalPages</a>
+                        </li>
+                    }
+                }
+
+                <!-- Next Button -->
+                <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" 
+                       href="javascript:void(0)"
+                       onclick="goToPage(@(Model.CurrentPage + 1))"
+                       aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+
+</section>
+
+<style>
+    /* Card Styling */
+    .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-radius: 12px;
+    }
+    
+    .card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+    }
+    
+    .card-img-top {
+        border-radius: 12px 12px 0 0;
+    }
+    
+    /* Pagination Styling */
+    .pagination {
+        gap: 0.5rem;
+    }
+    
+    .page-link {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        padding: 0.5rem 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .page-link:hover {
+        background-color: #e9ecef;
+        border-color: #dee2e6;
+        color: #0d6efd;
+    }
+    
+    .page-item.active .page-link {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .page-item.disabled .page-link {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+</style>

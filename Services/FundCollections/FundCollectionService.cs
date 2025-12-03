@@ -419,13 +419,18 @@ namespace Services.FundCollections
             var allPayments = requests.SelectMany(r => r.Payments).ToList();
 
             var totalMembers = await _requestRepo.GetTotalMembersAsync(clubId);
-            var paidMembers = allPayments.Count(p => p.Status == "paid" || p.Status == "confirmed");
-            var pendingMembers = allPayments.Count(p => p.Status == "pending");
-            var unconfirmedMembers = allPayments.Count(p => p.Status == "unconfirmed");
-            var overdueMembers = allPayments.Count(p => 
+            
+            // Count unique members by status (a member may have multiple payments across different requests)
+            // Group by ClubMemberId and check if they have ANY payment with each status
+            var memberPaymentGroups = allPayments.GroupBy(p => p.ClubMemberId).ToList();
+            
+            var paidMembers = memberPaymentGroups.Count(g => g.Any(p => p.Status == "paid" || p.Status == "confirmed"));
+            var pendingMembers = memberPaymentGroups.Count(g => g.Any(p => p.Status == "pending"));
+            var unconfirmedMembers = memberPaymentGroups.Count(g => g.Any(p => p.Status == "unconfirmed"));
+            var overdueMembers = memberPaymentGroups.Count(g => g.Any(p => 
                 (p.Status == "pending" || p.Status == "unconfirmed") && 
                 p.FundCollectionRequest.DueDate < DateTime.UtcNow &&
-                p.FundCollectionRequest.Status == "active");
+                p.FundCollectionRequest.Status == "active"));
 
             var totalCollected = allPayments.Where(p => p.Status == "paid" || p.Status == "confirmed").Sum(p => p.Amount);
             var totalPending = allPayments.Where(p => p.Status == "pending" || p.Status == "unconfirmed").Sum(p => p.Amount);

@@ -79,6 +79,42 @@ namespace Services.Activities
             return await MapToListDto(activities);
         }
 
+        public async Task<BusinessObject.DTOs.Common.PaginatedResultDto<ActivityListItemDto>> SearchActivitiesAsync(
+            string? searchTerm, 
+            string? type, 
+            string? status, 
+            bool? isPublic, 
+            int? clubId,
+            int page,
+            int pageSize)
+        {
+            // Get total count first
+            var allActivities = await _repo.SearchActivitiesAsync(searchTerm, type, status, isPublic, clubId);
+            var totalCount = allActivities.Count;
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            
+            // Ensure page is within bounds
+            if (page < 1) page = 1;
+            if (page > totalPages && totalPages > 0) page = totalPages;
+            
+            // Get paginated data
+            var pagedActivities = allActivities
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+            
+            var items = await MapToListDto(pagedActivities);
+            
+            return new BusinessObject.DTOs.Common.PaginatedResultDto<ActivityListItemDto>
+            {
+                Items = items,
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages
+            };
+        }
+
         public async Task<ActivityDetailDto?> GetActivityByIdAsync(int id)
         {
             var activity = await _repo.GetByIdWithDetailsAsync(id);

@@ -29,11 +29,20 @@ namespace WebFE.Pages.Clubs
         [BindProperty(SupportsGet = true)]
         public int? SemesterId { get; set; }
 
+        [BindProperty(SupportsGet = true, Name = "page")]
+        public int Page { get; set; } = 1;
+
         public ClubDetailDto? Club { get; private set; }
         public List<ClubMemberDto> Members { get; private set; } = new();
         public List<DepartmentDto> Departments { get; private set; } = new();
         public List<ActivityListItemDto> Activities { get; private set; } = new();
         public List<ClubAwardDto> Awards { get; private set; } = new();
+        
+        // Pagination properties for activities
+        public int CurrentPage { get; set; } = 1;
+        public int PageSize { get; set; } = 6;
+        public int TotalPages { get; set; }
+        public int TotalActivities { get; set; }
         public List<ProposalDTO> Proposals { get; private set; } = new();
 
         // Club Score properties
@@ -120,7 +129,29 @@ namespace WebFE.Pages.Clubs
                 // Fetch all data
                 Members = await client.GetFromJsonAsync<List<ClubMemberDto>>($"api/club/{Id}/members") ?? new();
                 Departments = await client.GetFromJsonAsync<List<DepartmentDto>>($"api/club/{Id}/departments") ?? new();
-                Activities = await client.GetFromJsonAsync<List<ActivityListItemDto>>($"api/activity/club/{Id}") ?? new();
+                
+                // Fetch activities with pagination
+                var allActivities = await client.GetFromJsonAsync<List<ActivityListItemDto>>($"api/activity/club/{Id}") ?? new();
+                
+                // Read page from query string as fallback
+                if (Request.Query.ContainsKey("page") && int.TryParse(Request.Query["page"], out int pageFromQuery))
+                {
+                    Page = pageFromQuery;
+                }
+                
+                // Apply pagination to activities
+                CurrentPage = Page > 0 ? Page : 1;
+                TotalActivities = allActivities.Count;
+                TotalPages = (int)Math.Ceiling(TotalActivities / (double)PageSize);
+                
+                if (CurrentPage > TotalPages && TotalPages > 0)
+                    CurrentPage = TotalPages;
+                
+                Activities = allActivities
+                    .Skip((CurrentPage - 1) * PageSize)
+                    .Take(PageSize)
+                    .ToList();
+                
                 Awards = await client.GetFromJsonAsync<List<ClubAwardDto>>($"api/club/{Id}/awards") ?? new();
                 Proposals = await client.GetFromJsonAsync<List<ProposalDTO>>($"api/proposal/club/{Id}") ?? new();
 

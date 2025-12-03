@@ -106,7 +106,7 @@ public class NotificationService : INotificationService
             CreatedAt = DateTime.UtcNow
         };
 
-        return await _repo.CreateNotificationAsync(notification);
+        return await _repo.CreateAsync(notification);
     }
 
     public async Task<List<Notification>> GetUnreadNotificationsAsync(int userId)
@@ -308,5 +308,33 @@ public class NotificationService : INotificationService
         };
 
         await _repo.CreateAsync(notification);
+    }
+
+    public async Task NotifyAdminsAsync(string title, string message, int createdById)
+    {
+        // Get all admin users
+        var adminRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Admin");
+        if (adminRole == null) return;
+
+        var adminUsers = await _context.Users
+            .Where(u => u.RoleId == adminRole.Id && u.IsActive)
+            .ToListAsync();
+
+        // Create notification for each admin
+        foreach (var admin in adminUsers)
+        {
+            var notification = new Notification
+            {
+                Title = title,
+                Message = message,
+                Scope = "System",
+                TargetUserId = admin.Id,
+                CreatedById = createdById,
+                IsRead = false,
+                CreatedAt = DateTimeHelper.Now
+            };
+
+            await _repo.CreateAsync(notification);
+        }
     }
 }
