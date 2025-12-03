@@ -1,21 +1,32 @@
 @page
 @using BusinessObject.DTOs.ClubMovementRecord
-@model WebFE.Pages.ClubManager.MyScore.IndexModel
+@model WebFE.Pages.Clubs.ClubScore.IndexModel
 @{
     ViewData["Title"] = "Club Activity Scores";
-    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
 <section class="container my-5">
-    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h1 class="fw-bold mb-1">Club Activity Scores</h1>
             <p class="text-muted mb-0">View summary and detailed scores by semester</p>
         </div>
+        @if (Model.MyClubs.Count > 1)
+        {
+            <div class="d-flex align-items-center gap-2">
+                <label for="clubSelector" class="form-label mb-0 fw-medium">Select Club:</label>
+                <select id="clubSelector" class="form-select" style="width: auto; min-width: 200px;" 
+                        onchange="window.location.href='/Clubs/ClubScore?clubId=' + this.value">
+                    @foreach (var club in Model.MyClubs)
+                    {
+                        <option value="@club.Id" selected="@(club.Id == Model.SelectedClubId)">@club.Name</option>
+                    }
+                </select>
+            </div>
+        }
     </div>
 
-    <!-- Alert -->
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
         <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
@@ -24,9 +35,21 @@
         </div>
     }
 
-    @if (Model.Summary != null)
+    @if (!Model.MyClubs.Any())
     {
-        <!-- Quick Stats -->
+        <div class="alert alert-info shadow-sm">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle me-3" style="font-size: 2rem;"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">You are not a member of any club</h5>
+                    <p class="mb-2">Join a club to view club movement scores.</p>
+                    <a href="/Clubs" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i> Browse Clubs</a>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.Summary != null)
+    {
         <div class="row g-3 mb-4">
             <div class="col-xl-3 col-md-6">
                 <div class="card border-0 shadow-sm h-100">
@@ -74,7 +97,6 @@
             </div>
         </div>
 
-        <!-- Summary -->
         <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
             <h5 class="text-muted mb-0"><i class="bi bi-bar-chart-line"></i> <strong>@Model.SemesterSummaries.Count</strong> recorded semesters</h5>
             @if (Model.CurrentSemesterId.HasValue)
@@ -83,14 +105,12 @@
                 if (currentSemester != null)
                 {
                     <div class="badge bg-warning text-dark px-3 py-2">
-                        <i class="bi bi-star-fill me-1"></i>
-                        Current Semester: <strong>@currentSemester.SemesterName</strong>
+                        <i class="bi bi-star-fill me-1"></i> Current Semester: <strong>@currentSemester.SemesterName</strong>
                     </div>
                 }
             }
         </div>
 
-        <!-- Table -->
         <div class="card shadow-sm border-0">
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -137,7 +157,7 @@
                                     <td><span class="badge bg-@cls">@eval</span></td>
                                     <td>@(semester.LastUpdated?.ToString("dd/MM/yyyy") ?? semester.CreatedAt.ToString("dd/MM/yyyy"))</td>
                                     <td class="text-end">
-                                        <a href="/ClubManager/MyScore/Detail?clubId=@Model.ClubId&semesterId=@semester.SemesterId" class="btn btn-sm btn-primary rounded-pill @(isCurrent ? "btn-warning text-dark border-0" : string.Empty)">
+                                        <a href="/Clubs/ClubScore/Detail/@Model.ClubId/@semester.SemesterId" class="btn btn-sm btn-primary rounded-pill @(isCurrent ? "btn-warning text-dark border-0" : string.Empty)">
                                             <i class="bi bi-eye"></i> View Details
                                         </a>
                                     </td>
@@ -150,7 +170,6 @@
             </div>
         </div>
 
-        <!-- Progress cards -->
         <div class="mt-4">
             <h6 class="mb-3 text-muted">Progress by Semester</h6>
             <div class="row">

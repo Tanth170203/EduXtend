@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Modal Fix CSS -->
+    <link rel="stylesheet" href="~/css/modal-fix.css" asp-append-version="true" />
     
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -77,6 +79,10 @@
                     <a class="sidebar-link @(current.StartsWith("/ClubManager/MonthlyReports") ? "active" : "")" href="/ClubManager/MonthlyReports">
                         <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
                         <span>Monthly Reports</span>
+                    </a>
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/ClubMovementScore") ? "active" : "")" href="/ClubManager/ClubMovementScore">
+                        <i data-lucide="trophy" style="width: 20px; height: 20px;"></i>
+                        <span>Club Movement Score</span>
                     </a>
                 </div>
                 
@@ -289,6 +295,50 @@
         if (localStorage.getItem('sidebarCollapsed') === 'true') {
             document.body.classList.add('sidebar-collapsed');
         }
+
+        // FIX: Di chuyển modal ra body để tránh bị ảnh hưởng bởi sidebar layout
+        // Khi modal nằm trong .admin-main (có margin-left), nó sẽ bị lệch
+        (function() {
+            function moveModalToBody(modal) {
+                if (modal && modal.classList.contains('modal') && modal.parentElement !== document.body) {
+                    console.log('Moving modal to body:', modal.id || modal.className);
+                    document.body.appendChild(modal);
+                }
+            }
+
+            function moveAllModalsToBody() {
+                document.querySelectorAll('.modal').forEach(moveModalToBody);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', moveAllModalsToBody);
+            } else {
+                moveAllModalsToBody();
+            }
+
+            setTimeout(moveAllModalsToBody, 500);
+
+            document.addEventListener('show.bs.modal', function(event) {
+                moveModalToBody(event.target);
+            });
+
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            if (node.classList && node.classList.contains('modal')) {
+                                moveModalToBody(node);
+                            }
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll('.modal').forEach(moveModalToBody);
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

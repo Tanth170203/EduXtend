@@ -13,8 +13,10 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    @await RenderSectionAsync("Styles", required: false)
-</head>
+    <!-- Modal Fix CSS -->
+    <link rel="stylesheet" href="~/css/modal-fix.css" asp-append-version="true" />
+    
+    @await RenderSectionAsync("Styles", required: false)</head>
 <body class="admin-body">
     <!-- Sidebar -->
     <div class="admin-sidebar" id="adminSidebar">
@@ -353,6 +355,58 @@
         if (localStorage.getItem('sidebarCollapsed') === 'true') {
             document.body.classList.add('sidebar-collapsed');
         }
+
+        // FIX: Di chuyển modal ra body để tránh bị ảnh hưởng bởi sidebar layout
+        // Khi modal nằm trong .admin-main (có margin-left), nó sẽ bị lệch
+        // Sử dụng MutationObserver để bắt tất cả modal được thêm vào DOM
+        (function() {
+            // Di chuyển modal ra body
+            function moveModalToBody(modal) {
+                if (modal && modal.classList.contains('modal') && modal.parentElement !== document.body) {
+                    console.log('Moving modal to body:', modal.id || modal.className);
+                    document.body.appendChild(modal);
+                }
+            }
+
+            // Di chuyển tất cả modal hiện có ra body
+            function moveAllModalsToBody() {
+                document.querySelectorAll('.modal').forEach(moveModalToBody);
+            }
+
+            // Chạy ngay khi DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', moveAllModalsToBody);
+            } else {
+                moveAllModalsToBody();
+            }
+
+            // Chạy lại sau 500ms để bắt modal được render muộn
+            setTimeout(moveAllModalsToBody, 500);
+
+            // Lắng nghe event show.bs.modal
+            document.addEventListener('show.bs.modal', function(event) {
+                moveModalToBody(event.target);
+            });
+
+            // Sử dụng MutationObserver để bắt modal mới được thêm vào DOM
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) { // Element node
+                            if (node.classList && node.classList.contains('modal')) {
+                                moveModalToBody(node);
+                            }
+                            // Kiểm tra cả các modal con
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll('.modal').forEach(moveModalToBody);
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

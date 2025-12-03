@@ -142,8 +142,7 @@ namespace Services.Activities
                 IsRegistered = false,
                 HasAttended = false,
                 AttendanceCode = activity.AttendanceCode,
-                HasEvaluation = hasEvaluation
-                AttendanceCode = activity.AttendanceCode,
+                HasEvaluation = hasEvaluation,
                 Schedules = schedules
             };
         }

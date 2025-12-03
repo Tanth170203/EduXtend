@@ -82,7 +82,7 @@
                         <span>Finance</span>
                     </a>
                     <a class="sidebar-link @(section == "score" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=score">
-                        <i data-lucide="trophy" style="width: 20px; height: 20px;"></i>
+                        <i data-lucide="bar-chart-2" style="width: 20px; height: 20px;"></i>
                         <span>Club Score</span>
                     </a>
                     <a class="sidebar-link @(section == "proposals" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=proposals">
@@ -127,6 +127,7 @@
                                 case "awards": <text>Awards</text>; break;
                                 case "finance": <text>Finance</text>; break;
                                 case "score": <text>Club Score</text>; break;
+                                case "score-detail": <text>Score Details</text>; break;
                                 case "proposals": <text>Proposals</text>; break;
                             }
                         </span>
@@ -859,49 +860,413 @@
                     break;
 
                 case "score":
-                    <!-- Score -->
-                    <div class="row g-4">
-                        <div class="col-md-3">
-                            <div class="card bg-primary text-white border-0 shadow-sm">
-                                <div class="card-body text-center">
-                                    <i data-lucide="users" style="width: 32px; height: 32px;"></i>
-                                    <h3 class="mt-2 mb-0">@Model.Club?.MemberCount</h3>
-                                    <small>Members</small>
+                    <!-- Club Movement Score Section -->
+                    @if (Model.ScoreSummary != null)
+                    {
+                        <!-- Summary Cards -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-4 d-flex justify-content-between">
+                                        <div>
+                                            <p class="text-muted mb-2 fw-medium">Average Score</p>
+                                            <h2 class="mb-0 fw-bold">@Model.ScoreSummary.AverageScore.ToString("F1")</h2>
+                                        </div>
+                                        <div class="rounded-3 p-3" style="background:#e3f2fd">
+                                            <i data-lucide="trending-up" style="width: 24px; height: 24px; color: #1976d2;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-4 d-flex justify-content-between">
+                                        <div>
+                                            <p class="text-muted mb-2 fw-medium">Highest Score</p>
+                                            <h2 class="mb-0 fw-bold">@Model.ScoreSummary.HighestScore.ToString("F1")</h2>
+                                        </div>
+                                        <div class="rounded-3 p-3" style="background:#e8f5e9">
+                                            <i data-lucide="arrow-up-circle" style="width: 24px; height: 24px; color: #388e3c;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-4 d-flex justify-content-between">
+                                        <div>
+                                            <p class="text-muted mb-2 fw-medium">Lowest Score</p>
+                                            <h2 class="mb-0 fw-bold">@Model.ScoreSummary.LowestScore.ToString("F1")</h2>
+                                        </div>
+                                        <div class="rounded-3 p-3" style="background:#fff3e0">
+                                            <i data-lucide="arrow-down-circle" style="width: 24px; height: 24px; color: #f57c00;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-4 d-flex justify-content-between">
+                                        <div>
+                                            <p class="text-muted mb-2 fw-medium">Total Records</p>
+                                            <h2 class="mb-0 fw-bold">@Model.ScoreSummary.TotalRecords</h2>
+                                        </div>
+                                        <div class="rounded-3 p-3" style="background:#f3e5f5">
+                                            <i data-lucide="calendar" style="width: 24px; height: 24px; color: #7b1fa2;"></i>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-success text-white border-0 shadow-sm">
-                                <div class="card-body text-center">
-                                    <i data-lucide="calendar" style="width: 32px; height: 32px;"></i>
-                                    <h3 class="mt-2 mb-0">@Model.Club?.ActivityCount</h3>
-                                    <small>Activities</small>
+
+                        <!-- Semester Info -->
+                        <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+                            <h5 class="text-muted mb-0">
+                                <i data-lucide="bar-chart" style="width: 20px; height: 20px;"></i>
+                                <strong>@Model.SemesterSummaries.Count</strong> recorded semesters
+                            </h5>
+                            @if (Model.CurrentSemesterId.HasValue)
+                            {
+                                var currentSemester = Model.SemesterSummaries.FirstOrDefault(s => s.SemesterId == Model.CurrentSemesterId);
+                                if (currentSemester != null)
+                                {
+                                    <div class="badge bg-warning text-dark px-3 py-2">
+                                        <i data-lucide="star" style="width: 14px; height: 14px;"></i>
+                                        Current Semester: <strong>@currentSemester.SemesterName</strong>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Semester Table -->
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-striped align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Semester</th>
+                                                <th>Total Score</th>
+                                                <th>Months</th>
+                                                <th>Criteria Achieved</th>
+                                                <th>Evaluation</th>
+                                                <th>Last Updated</th>
+                                                <th class="text-end" style="width:160px;">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        @if (!Model.SemesterSummaries.Any())
+                                        {
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted py-5">
+                                                    <i data-lucide="inbox" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+                                                    <div class="mt-3">No activity score data available</div>
+                                                </td>
+                                            </tr>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var semester in Model.SemesterSummaries)
+                                            {
+                                                var percent = (semester.TotalScore / 100.0) * 100.0;
+                                                var cls = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
+                                                var eval = percent >= 80 ? "Excellent" : percent >= 60 ? "Good" : "Needs Improvement";
+                                                var isCurrent = Model.CurrentSemesterId.HasValue && semester.SemesterId == Model.CurrentSemesterId.Value;
+                                                <tr class="@(isCurrent ? "table-warning" : string.Empty)">
+                                                    <td class="fw-semibold">@semester.SemesterName</td>
+                                                    <td>
+                                                        <div class="d-flex flex-column">
+                                                            <span class="fw-bold text-@cls">@semester.TotalScore.ToString("F1")</span>
+                                                            <small class="text-muted">/ 100</small>
+                                                        </div>
+                                                    </td>
+                                                    <td><span class="badge bg-secondary">@semester.MonthCount months</span></td>
+                                                    <td><span class="badge bg-info">@semester.TotalCriteria criteria</span></td>
+                                                    <td><span class="badge bg-@cls">@eval</span></td>
+                                                    <td>@(semester.LastUpdated?.ToString("dd/MM/yyyy") ?? semester.CreatedAt.ToString("dd/MM/yyyy"))</td>
+                                                    <td class="text-end">
+                                                        <a href="/Clubs/MemberDashboard/@Model.Id?section=score-detail&semesterId=@semester.SemesterId" class="btn btn-sm btn-primary rounded-pill @(isCurrent ? "btn-warning text-dark border-0" : string.Empty)">
+                                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i> View Details
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-warning text-dark border-0 shadow-sm">
-                                <div class="card-body text-center">
-                                    <i data-lucide="folder" style="width: 32px; height: 32px;"></i>
-                                    <h3 class="mt-2 mb-0">@Model.Club?.DepartmentCount</h3>
-                                    <small>Departments</small>
+
+                        <!-- Progress by Semester -->
+                        <h6 class="mb-3 text-muted">Progress by Semester</h6>
+                        <div class="row">
+                            @foreach (var semester in Model.SemesterSummaries.OrderBy(s => s.SemesterId))
+                            {
+                                var percent = (semester.TotalScore / 100.0) * 100.0;
+                                var progressClass = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
+                                var isCurrent = Model.CurrentSemesterId.HasValue && semester.SemesterId == Model.CurrentSemesterId.Value;
+                                <div class="col-md-4 mb-3">
+                                    <div class="card border-0 shadow-sm h-100 @(isCurrent ? "border border-warning" : string.Empty)">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between mb-2 align-items-center">
+                                                <h6 class="mb-0">@semester.SemesterName</h6>
+                                                @if (isCurrent)
+                                                {
+                                                    <span class="badge bg-warning text-dark">Current</span>
+                                                }
+                                                <span class="small text-muted">@percent.ToString("F1")%</span>
+                                            </div>
+                                            <div class="progress" style="height: 16px;">
+                                                <div class="progress-bar bg-@progressClass" style="width:@percent%" role="progressbar"></div>
+                                            </div>
+                                            <small class="text-muted d-block mt-2">Total Score: @semester.TotalScore.ToString("F1") / 100</small>
+                                            <small class="text-muted d-block">@semester.MonthCount months recorded</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info shadow-sm">
+                            <div class="d-flex align-items-center">
+                                <i data-lucide="info" style="width: 32px; height: 32px;" class="me-3"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-1">No activity scores yet</h5>
+                                    <p class="mb-0">Club activity scores will appear here once activities are completed and scored.</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-info text-white border-0 shadow-sm">
-                                <div class="card-body text-center">
-                                    <i data-lucide="award" style="width: 32px; height: 32px;"></i>
-                                    <h3 class="mt-2 mb-0">@Model.Club?.AwardCount</h3>
-                                    <small>Awards</small>
+                    }
+                    break;
+
+                case "score-detail":
+                    <!-- Club Score Detail Section -->
+                    @if (Model.ScoreDetailRecords.Any())
+                    {
+                        <!-- Header with Back Button -->
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div>
+                                <h4 class="mb-1">@Model.DetailSemesterName - Detailed Scores</h4>
+                                <p class="text-muted mb-0">Club: @Model.Club?.Name</p>
+                            </div>
+                            <a href="/Clubs/MemberDashboard/@Model.Id?section=score" class="btn btn-outline-secondary">
+                                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back to Overview
+                            </a>
+                        </div>
+
+                        <!-- Summary Cards -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-3 text-center">
+                                        <div class="rounded-3 p-2 mb-2" style="background:#e3f2fd; display: inline-block;">
+                                            <i data-lucide="trophy" style="width: 20px; height: 20px; color: #1976d2;"></i>
+                                        </div>
+                                        <h5 class="mb-1 fw-bold text-primary">@Model.DetailTotalScore.ToString("F1")</h5>
+                                        <small class="text-muted">Total Score</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-3 text-center">
+                                        <div class="rounded-3 p-2 mb-2" style="background:#e8f5e9; display: inline-block;">
+                                            <i data-lucide="calendar" style="width: 20px; height: 20px; color: #388e3c;"></i>
+                                        </div>
+                                        <h5 class="mb-1 fw-bold text-success">@Model.ScoreDetailRecords.Count</h5>
+                                        <small class="text-muted">Months Recorded</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-3 text-center">
+                                        <div class="rounded-3 p-2 mb-2" style="background:#fff3e0; display: inline-block;">
+                                            <i data-lucide="clipboard-list" style="width: 20px; height: 20px; color: #f57c00;"></i>
+                                        </div>
+                                        <h5 class="mb-1 fw-bold text-warning">@Model.DetailTotalCriteria</h5>
+                                        <small class="text-muted">Total Criteria</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-3 text-center">
+                                        <div class="rounded-3 p-2 mb-2" style="background:#f3e5f5; display: inline-block;">
+                                            <i data-lucide="user" style="width: 20px; height: 20px; color: #7b1fa2;"></i>
+                                        </div>
+                                        <h6 class="mb-1 fw-bold">@Model.DetailPresidentName</h6>
+                                        <small class="text-muted">@Model.DetailPresidentCode</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="alert alert-info mt-4">
-                        <i data-lucide="info" style="width: 16px; height: 16px;"></i>
-                        <strong>Note:</strong> Detailed scoring system and rankings coming soon!
-                    </div>
+
+                        <!-- Monthly Records Table -->
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-light border-0 py-3">
+                                <h6 class="mb-0 fw-bold">
+                                    <i data-lucide="calendar-days" style="width: 18px; height: 18px;"></i>
+                                    Monthly Score Records
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-striped align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 60px;">#</th>
+                                                <th>Month</th>
+                                                <th>Total Score</th>
+                                                <th>Criteria Count</th>
+                                                <th>Evaluation</th>
+                                                <th>Last Updated</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        @{
+                                            int recordIndex = 1;
+                                        }
+                                        @foreach (var record in Model.ScoreDetailRecords)
+                                        {
+                                            var percent = (record.TotalScore / 100.0) * 100.0;
+                                            var cls = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
+                                            var eval = percent >= 80 ? "Excellent" : percent >= 60 ? "Good" : "Needs Improvement";
+                                            <tr>
+                                                <td class="text-muted">@recordIndex</td>
+                                                <td class="fw-semibold">Month @record.Month</td>
+                                                <td>
+                                                    <span class="fw-bold text-@cls">@record.TotalScore.ToString("F1")</span>
+                                                    <small class="text-muted">/ 100</small>
+                                                </td>
+                                                <td><span class="badge bg-info">@record.Details.Count criteria</span></td>
+                                                <td><span class="badge bg-@cls">@eval</span></td>
+                                                <td>@(record.LastUpdated?.ToString("dd/MM/yyyy HH:mm") ?? record.CreatedAt.ToString("dd/MM/yyyy HH:mm"))</td>
+                                            </tr>
+                                            recordIndex++;
+                                        }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Breakdown by Category -->
+                        @foreach (var record in Model.ScoreDetailRecords)
+                        {
+                            <div class="card shadow-sm border-0 mb-4">
+                                <div class="card-header bg-light border-0 py-3">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i data-lucide="list" style="width: 18px; height: 18px;"></i>
+                                        Month @record.Month - Detailed Breakdown
+                                    </h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 40px;">#</th>
+                                                    <th>Category</th>
+                                                    <th>Criteria</th>
+                                                    <th class="text-center">Max Score</th>
+                                                    <th class="text-center">Score</th>
+                                                    <th>Date Awarded</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            @if (record.Details != null && record.Details.Any())
+                                            {
+                                                int detailIndex = 1;
+                                                @foreach (var detail in record.Details.OrderBy(d => d.GroupName).ThenBy(d => d.CriterionTitle))
+                                                {
+                                                    <tr>
+                                                        <td class="text-muted">@detailIndex</td>
+                                                        <td>
+                                                            <span class="badge bg-secondary">@detail.GroupName</span>
+                                                        </td>
+                                                        <td class="fw-medium">@detail.CriterionTitle</td>
+                                                        <td class="text-center text-muted">@detail.CriterionMaxScore</td>
+                                                        <td class="text-center">
+                                                            <span class="fw-bold">@detail.Score.ToString("F1")</span>
+                                                        </td>
+                                                        <td>@detail.AwardedAt.ToString("dd/MM/yyyy")</td>
+                                                    </tr>
+                                                    detailIndex++;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <tr>
+                                                    <td colspan="6" class="text-center text-muted py-4">
+                                                        <i data-lucide="inbox" style="width: 32px; height: 32px; opacity: 0.3;"></i>
+                                                        <div class="mt-2">No detailed score data available</div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Performance Summary -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body p-3">
+                                        <h6 class="mb-2">Semester Information</h6>
+                                        <p class="mb-1"><strong>Semester:</strong> @Model.DetailSemesterName</p>
+                                        <p class="mb-1"><strong>President:</strong> @Model.DetailPresidentName (@Model.DetailPresidentCode)</p>
+                                        <p class="mb-0"><strong>Status:</strong> 
+                                            @if (Model.IsDetailCurrentSemester)
+                                            {
+                                                <span class="badge bg-warning text-dark">Current Semester</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Past Semester</span>
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body p-3">
+                                        <h6 class="mb-2">Performance Summary</h6>
+                                        @{
+                                            var totalPercentage = Model.DetailTotalScore;
+                                            var performanceLevel = totalPercentage >= 80 ? "Excellent" : totalPercentage >= 60 ? "Good" : "Needs Improvement";
+                                            var performanceClass = totalPercentage >= 80 ? "success" : totalPercentage >= 60 ? "warning" : "danger";
+                                        }
+                                        <p class="mb-1"><strong>Overall Rating:</strong> <span class="badge bg-@performanceClass">@performanceLevel</span></p>
+                                        <p class="mb-1"><strong>Total Criteria:</strong> @Model.DetailTotalCriteria</p>
+                                        <p class="mb-0"><strong>Average per Month:</strong> @((Model.ScoreDetailRecords.Count > 0 ? Model.DetailTotalScore / Model.ScoreDetailRecords.Count : 0).ToString("F1"))</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning shadow-sm">
+                            <div class="d-flex align-items-center">
+                                <i data-lucide="alert-triangle" style="width: 32px; height: 32px;" class="me-3"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-1">Score details not found</h5>
+                                    <p class="mb-0">The requested semester score details could not be loaded.</p>
+                                    <a href="/Clubs/MemberDashboard/@Model.Id?section=score" class="btn btn-sm btn-outline-warning mt-2">
+                                        <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Score Overview
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
                     break;
 
                 case "proposals":
