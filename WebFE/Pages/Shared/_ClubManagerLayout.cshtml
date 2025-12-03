@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
     <title>@ViewData["Title"] - Club Manager - EduXtend</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
@@ -159,7 +160,7 @@
                 <!-- User Menu -->
                 <div class="dropdown">
                     <button class="user-menu-btn" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img id="clubManagerUserAvatar" src="" alt="Avatar" class="user-avatar" />
+                        <img id="clubManagerUserAvatar" src="" alt="Avatar" referrerpolicy="no-referrer" crossorigin="anonymous" class="user-avatar" />
                         <div class="user-info d-none d-md-block">
                             <div class="user-name" id="clubManagerUserName">Club Manager</div>
                             <div class="user-role">Club Manager</div>
@@ -223,15 +224,8 @@
     <script src="~/js/notifications.js" asp-append-version="true"></script>
 
     <script>
-
+        // Initialize Lucide Icons
         lucide.createIcons();
-
-            // Re-run when DOM changes (e.g., partial updates)
-            try {
-                const observer = new MutationObserver(() => run());
-                observer.observe(document.body, { childList: true, subtree: true });
-            } catch {}
-        })();
 
         // Check authentication status and update UI
         document.addEventListener('DOMContentLoaded', async function() {
@@ -243,8 +237,21 @@
 
         async function updateClubManagerAuthUI() {
             const user = await getUser();
+            console.log('[ClubManager Auth Debug] User data:', user);
+            console.log('[ClubManager Auth Debug] Avatar URL:', user?.avatar);
+            
             if (user && user.avatar) {
-                document.getElementById('clubManagerUserAvatar').src = user.avatar;
+                const avatarUrl = user.avatar || '/images/default-avatar.png';
+                console.log('[ClubManager Auth Debug] Setting avatar to:', avatarUrl);
+                const avatarImg = document.getElementById('clubManagerUserAvatar');
+                avatarImg.src = avatarUrl;
+                avatarImg.onerror = function() {
+                    console.error('[ClubManager Auth Debug] Failed to load avatar from:', avatarUrl);
+                    this.src = '/images/default-avatar.png';
+                };
+                avatarImg.onload = function() {
+                    console.log('[ClubManager Auth Debug] Avatar loaded successfully!');
+                };
             }
             if (user && user.name) {
                 document.getElementById('clubManagerUserName').textContent = user.name;

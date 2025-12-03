@@ -2,6 +2,7 @@
 using BusinessObject.Enum;
 using BusinessObject.Models;
 using Google.Apis.Auth;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Services.GGLogin;
 using System;
@@ -15,15 +16,20 @@ namespace Repositories.Users
     public class GoogleAuthService : IGoogleAuthService
     {
         private readonly IUserRepository _userRepo;
+        private readonly ILogger<GoogleAuthService> _logger;
 
-        public GoogleAuthService(IUserRepository userRepo)
+        public GoogleAuthService(IUserRepository userRepo, ILogger<GoogleAuthService> logger)
         {
             _userRepo = userRepo;
+            _logger = logger;
         }
 
         public async Task<User> LoginWithGoogleAsync(string idToken, string deviceInfo)
         {
             var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings());
+
+            _logger.LogInformation("[Google Auth] Payload - Email: {Email}, Name: {Name}, Picture: {Picture}", 
+                payload.Email, payload.Name, payload.Picture);
 
             // Tìm user theo GoogleSubject trước, nếu không có thì tìm theo Email
             var existingUser = await _userRepo.FindByGoogleSubAsync(payload.Subject)
@@ -36,6 +42,8 @@ namespace Repositories.Users
             else
             {
                 // User đã tồn tại (có thể từ import hoặc Google login trước đó)
+                
+                _logger.LogInformation("[Google Auth] Existing user found - Current AvatarUrl: {AvatarUrl}", existingUser.AvatarUrl);
                 
                 // ✅ CẬP NHẬT GOOGLESUBJECT nếu thiếu hoặc sai
                 if (string.IsNullOrWhiteSpace(existingUser.GoogleSubject) || 
@@ -50,9 +58,29 @@ namespace Repositories.Users
                     existingUser.FullName = payload.Name;
                 }
                 
-                if (string.IsNullOrWhiteSpace(existingUser.AvatarUrl) && !string.IsNullOrEmpty(payload.Picture))
+                // ✅ CẬP NHẬT AVATAR từ Google CHỈ KHI:
+                // - User chưa có avatar (null/empty)
+                // - Hoặc avatar hiện tại cũng là từ Google (để cập nhật avatar Google mới nhất)
+                // => Không ghi đè avatar tùy chỉnh của user
+                if (!string.IsNullOrEmpty(payload.Picture))
                 {
-                    existingUser.AvatarUrl = payload.Picture;
+                    bool isCurrentAvatarFromGoogle = !string.IsNullOrEmpty(existingUser.AvatarUrl) && 
+                                                     existingUser.AvatarUrl.Contains("googleusercontent.com");
+                    bool hasNoAvatar = string.IsNullOrEmpty(existingUser.AvatarUrl);
+                    
+                    if (hasNoAvatar || isCurrentAvatarFromGoogle)
+                    {
+                        existingUser.AvatarUrl = payload.Picture;
+                        _logger.LogInformation("[Google Auth] Updated AvatarUrl to: {AvatarUrl}", payload.Picture);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("[Google Auth] Keeping custom avatar: {AvatarUrl}", existingUser.AvatarUrl);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("[Google Auth] No picture in Google payload!");
                 }
 
                 // ✅ ĐẢM BẢO USER CÓ ROLE (nếu user từ import có thể thiếu role)

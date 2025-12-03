@@ -229,42 +229,175 @@
                 await loadAdminNews();
             }
         }
-        function confirmDeleteModal(title, message) {
-            return new Promise((resolve) => {
-                if (window.notificationManager && typeof notificationManager.confirm === 'function') {
-                    notificationManager.confirm(title, message,
-                        () => resolve(true),
-                        () => resolve(false)
-                    );
-                } else if (typeof window.confirm === 'function' && window.confirm.length < 2) {
-                    resolve(window.confirm(title));
-                } else {
-                    // Last resort: simple prompt
-                    resolve(window.confirm(title));
-                }
+        function showConfirmModal(title, message, onConfirm) {
+            // Remove any existing modal first
+            const existingModal = document.getElementById('custom-confirm-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Create a completely new modal element
+            const modalOverlay = document.createElement('div');
+            modalOverlay.id = 'custom-confirm-modal';
+            modalOverlay.setAttribute('data-confirm-modal', 'true');
+            
+            // Set styles directly on the element
+            Object.assign(modalOverlay.style, {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                right: '0',
+                bottom: '0',
+                width: '100vw',
+                height: '100vh',
+                margin: '0',
+                padding: '0',
+                zIndex: '99999',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backdropFilter: 'blur(4px)'
             });
+            
+            modalOverlay.innerHTML = `
+                <div id="confirm-modal-content" style="
+                    background: #ffffff;
+                    border-radius: 16px;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                    max-width: 500px;
+                    width: 90%;
+                    overflow: hidden;
+                    transform: scale(0.9);
+                    opacity: 0;
+                    transition: all 0.3s ease;
+                ">
+                    <div style="
+                        padding: 24px;
+                        border-bottom: 1px solid #e5e7eb;
+                        display: flex;
+                        align-items: center;
+                        gap: 16px;
+                        background: #ffffff;
+                    ">
+                        <div style="
+                            width: 48px;
+                            height: 48px;
+                            border-radius: 12px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-size: 24px;
+                            background: #f59e0b;
+                            flex-shrink: 0;
+                        ">⚠</div>
+                        <h3 style="
+                            font-size: 20px;
+                            font-weight: 700;
+                            color: #1f2937;
+                            margin: 0;
+                            flex: 1;
+                        ">${title}</h3>
+                    </div>
+                    <div style="
+                        padding: 24px;
+                        background: #ffffff;
+                    ">
+                        <p style="
+                            font-size: 16px;
+                            color: #6b7280;
+                            line-height: 1.5;
+                            margin: 0 0 24px 0;
+                        ">${message}</p>
+                        <div style="
+                            display: flex;
+                            gap: 12px;
+                            justify-content: flex-end;
+                        ">
+                            <button id="confirm-cancel-btn" style="
+                                padding: 10px 20px;
+                                border-radius: 8px;
+                                font-weight: 600;
+                                font-size: 14px;
+                                border: none;
+                                cursor: pointer;
+                                min-width: 80px;
+                                background: #f3f4f6;
+                                color: #374151;
+                            ">Hủy</button>
+                            <button id="confirm-ok-btn" style="
+                                padding: 10px 20px;
+                                border-radius: 8px;
+                                font-weight: 600;
+                                font-size: 14px;
+                                border: none;
+                                cursor: pointer;
+                                min-width: 80px;
+                                background: #ef4444;
+                                color: white;
+                            ">Xác nhận</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modalOverlay);
+
+            // Add event listeners
+            document.getElementById('confirm-cancel-btn').addEventListener('click', closeConfirmModal);
+            document.getElementById('confirm-ok-btn').addEventListener('click', async () => {
+                closeConfirmModal();
+                if (onConfirm) await onConfirm();
+            });
+
+            // Animate in
+            setTimeout(() => {
+                const content = document.getElementById('confirm-modal-content');
+                if (content) {
+                    content.style.transform = 'scale(1)';
+                    content.style.opacity = '1';
+                }
+            }, 10);
+        }
+
+        function closeConfirmModal() {
+            const modalOverlay = document.getElementById('custom-confirm-modal');
+            if (modalOverlay) {
+                const content = document.getElementById('confirm-modal-content');
+                if (content) {
+                    content.style.transform = 'scale(0.9)';
+                    content.style.opacity = '0';
+                }
+                setTimeout(() => {
+                    modalOverlay.remove();
+                }, 300);
+            }
         }
 
         async function remove(id) {
-            const ok = await confirmDeleteModal('Delete this news?', 'Are you sure you want to delete this news?');
-            if (!ok) return;
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/news/${id}`, { method: 'DELETE', credentials: 'include' });
-                if (res.status === 204) {
-                    if (typeof success === 'function') success('Delete success', 'News deleted successfully.', 2500);
-                    await loadAdminNews();
-                } else {
-                    let msg = 'Unable to delete this news.';
-                    try { const b = await res.json(); if (b?.message) msg = b.message; } catch {}
-                    if (typeof error === 'function') error('Delete failed', msg, 5000);
+            showConfirmModal(
+                'Xác nhận xóa',
+                'Bạn có chắc chắn muốn xóa tin tức này? Hành động này không thể hoàn tác.',
+                async () => {
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/api/news/${id}`, { method: 'DELETE', credentials: 'include' });
+                        if (res.status === 204) {
+                            if (typeof success === 'function') success('Thành công', 'Đã xóa tin tức thành công', 2500);
+                            await loadAdminNews();
+                        } else {
+                            let msg = 'Không thể xóa tin tức này.';
+                            try { const b = await res.json(); if (b?.message) msg = b.message; } catch {}
+                            if (typeof error === 'function') error('Lỗi', msg, 5000);
+                        }
+                    } catch (e) {
+                        console.error('Delete error', e);
+                        if (typeof error === 'function') error('Lỗi', 'Lỗi kết nối mạng.', 5000);
+                    } finally {
+                        closeAllOverlays();
+                    }
                 }
-            } catch (e) {
-                console.error('Delete error', e);
-                if (typeof error === 'function') error('Delete failed', 'Network error.', 5000);
-            } finally {
-                // Ensure any modal/backdrop from overlays are closed
-                closeAllOverlays();
-            }
+            );
         }
         let allNews = [];
         let filteredNews = [];
