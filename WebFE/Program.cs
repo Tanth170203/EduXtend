@@ -12,8 +12,8 @@ namespace WebFE
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            //chạy localhost comment cái này
-            builder.WebHost.UseUrls("http://*:80");
+            //deploy ( chạy nhớ comment lần nây )
+            //builder.WebHost.UseUrls($"http://*:80");
 
             // Add services to the container.
             builder.Services.AddHttpContextAccessor();
@@ -89,8 +89,7 @@ namespace WebFE
             // API endpoints are protected by JWT [Authorize] attributes in WebAPI
 
 
-            //deploy ( chạy nhớ comment lần nây )
-            builder.WebHost.UseUrls($"http://*:80");
+
             // Register HttpClient with cookie forwarding
             builder.Services.AddHttpClient("ApiClient", client =>
             {

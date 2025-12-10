@@ -52,6 +52,7 @@ using WebAPI.Middleware;
 using Microsoft.OpenApi.Models;
 using VNPAY.Extensions;
 using AspNetCoreRateLimit;
+using Utils;
 
 namespace WebAPI
 {
@@ -63,8 +64,8 @@ namespace WebAPI
             TimeZoneInfo vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             
             var builder = WebApplication.CreateBuilder(args);
-            //chạy localhost comment cái này
-            builder.WebHost.UseUrls("http://*:80");
+            //deploy ( chạy nhớ comment lần nây )
+            //builder.WebHost.UseUrls($"http://*:80");
 
             // DbContext
             builder.Services.AddDbContext<EduXtendContext>(options =>
@@ -79,12 +80,12 @@ namespace WebAPI
             builder.Services.AddInMemoryRateLimiting();
             builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
-            //deploy ( chạy nhớ comment lần nây )
-            builder.WebHost.UseUrls($"http://*:80");
+
             // Options
             builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
             builder.Services.Configure<GoogleAuthOptions>(builder.Configuration.GetSection("GoogleAuth"));
             builder.Services.Configure<Services.Chatbot.GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
+            builder.Services.Configure<AppUrlsConfig>(builder.Configuration.GetSection("AppUrls"));
 
             // HttpClient for Gemini AI
             builder.Services.AddHttpClient("GeminiAI", client =>
