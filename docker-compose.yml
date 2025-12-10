@@ -1,0 +1,24 @@
+services:
+  web:
+    container_name: eduxtend-be
+    image: eduxtend-be
+    build:
+      context: .
+      dockerfile: ./WebAPI/Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      
+  frontend:
+    container_name: eduxtend-fe
+    image: eduxtend-fe
+    build:
+      context: .
+      dockerfile: ./WebFE/Dockerfile
+    ports:
+      - "7045:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - web

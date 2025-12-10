@@ -77,6 +77,8 @@ namespace WebAPI
             builder.Services.AddInMemoryRateLimiting();
             builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
+            //deploy ( chạy nhớ comment lần nây )
+            builder.WebHost.UseUrls($"http://*:80");
             // Options
             builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
             builder.Services.Configure<GoogleAuthOptions>(builder.Configuration.GetSection("GoogleAuth"));

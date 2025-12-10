@@ -82,10 +82,13 @@ namespace WebFE
             builder.Services.AddScoped<IClubMovementRecordRepository, ClubMovementRecordRepository>();
             builder.Services.AddScoped<IClubMovementRecordDetailRepository, ClubMovementRecordDetailRepository>();
             builder.Services.AddScoped<IClubScoringService, ClubScoringService>();
-            
+
             // Note: Pages are protected by JwtAuthenticationMiddleware
             // API endpoints are protected by JWT [Authorize] attributes in WebAPI
 
+
+            //deploy ( chạy nhớ comment lần nây )
+            builder.WebHost.UseUrls($"http://*:80");
             // Register HttpClient with cookie forwarding
             builder.Services.AddHttpClient("ApiClient", client =>
             {
