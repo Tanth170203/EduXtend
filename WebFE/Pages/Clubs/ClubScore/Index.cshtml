@@ -1,0 +1,216 @@
+@page
+@using BusinessObject.DTOs.ClubMovementRecord
+@model WebFE.Pages.Clubs.ClubScore.IndexModel
+@{
+    ViewData["Title"] = "Club Activity Scores";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<section class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h1 class="fw-bold mb-1">Club Activity Scores</h1>
+            <p class="text-muted mb-0">View summary and detailed scores by semester</p>
+        </div>
+        @if (Model.MyClubs.Count > 1)
+        {
+            <div class="d-flex align-items-center gap-2">
+                <label for="clubSelector" class="form-label mb-0 fw-medium">Select Club:</label>
+                <select id="clubSelector" class="form-select" style="width: auto; min-width: 200px;" 
+                        onchange="window.location.href='/Clubs/ClubScore?clubId=' + this.value">
+                    @foreach (var club in Model.MyClubs)
+                    {
+                        <option value="@club.Id" selected="@(club.Id == Model.SelectedClubId)">@club.Name</option>
+                    }
+                </select>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>@Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.MyClubs.Any())
+    {
+        <div class="alert alert-info shadow-sm">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle me-3" style="font-size: 2rem;"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">You are not a member of any club</h5>
+                    <p class="mb-2">Join a club to view club movement scores.</p>
+                    <a href="/Clubs" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i> Browse Clubs</a>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.Summary != null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Average Score</p>
+                            <h2 class="mb-0 fw-bold">@Model.Summary.AverageScore.ToString("F1")</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background:#e3f2fd"><i class="bi bi-graph-up" style="font-size:1.5rem;"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Highest Score</p>
+                            <h2 class="mb-0 fw-bold">@Model.Summary.HighestScore.ToString("F1")</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background:#e8f5e9"><i class="bi bi-arrow-up-circle" style="font-size:1.5rem;"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Lowest Score</p>
+                            <h2 class="mb-0 fw-bold">@Model.Summary.LowestScore.ToString("F1")</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background:#fff3e0"><i class="bi bi-arrow-down-circle" style="font-size:1.5rem;"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 d-flex justify-content-between">
+                        <div>
+                            <p class="text-muted mb-2 fw-medium">Total Records</p>
+                            <h2 class="mb-0 fw-bold">@Model.Summary.TotalRecords</h2>
+                        </div>
+                        <div class="rounded-3 p-3" style="background:#f3e5f5"><i class="bi bi-calendar-event" style="font-size:1.5rem;"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+            <h5 class="text-muted mb-0"><i class="bi bi-bar-chart-line"></i> <strong>@Model.SemesterSummaries.Count</strong> recorded semesters</h5>
+            @if (Model.CurrentSemesterId.HasValue)
+            {
+                var currentSemester = Model.SemesterSummaries.FirstOrDefault(s => s.SemesterId == Model.CurrentSemesterId);
+                if (currentSemester != null)
+                {
+                    <div class="badge bg-warning text-dark px-3 py-2">
+                        <i class="bi bi-star-fill me-1"></i> Current Semester: <strong>@currentSemester.SemesterName</strong>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Semester</th>
+                                <th>Total Score</th>
+                                <th>Months</th>
+                                <th>Criteria Achieved</th>
+                                <th>Evaluation</th>
+                                <th>Last Updated</th>
+                                <th class="text-end" style="width:160px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @if (!Model.SemesterSummaries.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <i class="bi bi-inbox" style="font-size:3rem;"></i>
+                                    <div class="mt-3">No activity score data available</div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var semester in Model.SemesterSummaries)
+                            {
+                                var percent = (semester.TotalScore / 100.0) * 100.0;
+                                var cls = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
+                                var eval = percent >= 80 ? "Excellent" : percent >= 60 ? "Good" : "Needs Improvement";
+                                var isCurrent = Model.CurrentSemesterId.HasValue && semester.SemesterId == Model.CurrentSemesterId.Value;
+                                <tr class="@(isCurrent ? "table-warning" : string.Empty)">
+                                    <td class="fw-semibold">@semester.SemesterName</td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-bold text-@cls">@semester.TotalScore.ToString("F1")</span>
+                                            <small class="text-muted">/ 100</small>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-secondary">@semester.MonthCount months</span></td>
+                                    <td><span class="badge bg-info">@semester.TotalCriteria criteria</span></td>
+                                    <td><span class="badge bg-@cls">@eval</span></td>
+                                    <td>@(semester.LastUpdated?.ToString("dd/MM/yyyy") ?? semester.CreatedAt.ToString("dd/MM/yyyy"))</td>
+                                    <td class="text-end">
+                                        <a href="/Clubs/ClubScore/Detail/@Model.ClubId/@semester.SemesterId" class="btn btn-sm btn-primary rounded-pill @(isCurrent ? "btn-warning text-dark border-0" : string.Empty)">
+                                            <i class="bi bi-eye"></i> View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <h6 class="mb-3 text-muted">Progress by Semester</h6>
+            <div class="row">
+                @foreach (var semester in Model.SemesterSummaries.OrderBy(s => s.SemesterId))
+                {
+                    var percent = (semester.TotalScore / 100.0) * 100.0;
+                    var progressClass = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
+                    var isCurrent = Model.CurrentSemesterId.HasValue && semester.SemesterId == Model.CurrentSemesterId.Value;
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-0 shadow-sm h-100 @(isCurrent ? "border border-warning" : string.Empty)">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2 align-items-center">
+                                    <h6 class="mb-0">@semester.SemesterName</h6>
+                                    @if (isCurrent)
+                                    {
+                                        <span class="badge bg-warning text-dark">Current</span>
+                                    }
+                                    <span class="small text-muted">@percent.ToString("F1")%</span>
+                                </div>
+                                <div class="progress" style="height: 16px;">
+                                    <div class="progress-bar bg-@progressClass" style="width:@percent%" role="progressbar"></div>
+                                </div>
+                                <small class="text-muted d-block mt-2">Total Score: @semester.TotalScore.ToString("F1") / 100</small>
+                                <small class="text-muted d-block">@semester.MonthCount months recorded</small>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info shadow-sm">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle me-3"></i>
+                <div>
+                    <h5 class="alert-heading mb-1">No activity scores yet</h5>
+                    <p class="mb-0">Club activity scores will appear here once activities are completed and scored.</p>
+                </div>
+            </div>
+        </div>
+    }
+</section>

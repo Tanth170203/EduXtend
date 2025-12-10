@@ -1,67 +1,133 @@
 @page
 @model WebFE.Pages.Admin.ClubScoring.IndexModel
 @{
-    ViewData["Title"] = "Chấm điểm CLB";
+    ViewData["Title"] = "Club Scoring";
+    ViewData["Breadcrumb"] = "Club Scoring";
     Layout = "~/Pages/Shared/_AdminLayout.cshtml";
 }
 
-<!-- Breadcrumb -->
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="/Admin">Admin</a></li>
-        <li class="breadcrumb-item active">Club Scoring</li>
-    </ol>
-</nav>
-
 <!-- Page Header -->
-<div class="page-header mb-3">
+<div class="page-header">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
             <h1 class="page-title">
                 <i data-lucide="trophy" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                Chấm điểm CLB
+                Club Scoring
             </h1>
-            <p class="page-description">Danh sách điểm CLB theo tháng</p>
+            <p class="page-description">Manage and view club activity scores by month</p>
         </div>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-success" onclick="window.open('@Model.ExportUrl', '_blank')">
+            <button type="button" class="btn btn-success" onclick="exportToExcel()">
                 <i data-lucide="download" style="width: 16px; height: 16px;"></i>
-                Xuất Excel
+                Export to Excel
             </button>
-            <a class="btn btn-primary" href="#" onclick="window.print(); return false;">
-                <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
-                In báo cáo
-            </a>
         </div>
     </div>
 </div>
 
-<!-- Filter Card -->
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-light d-flex align-items-center justify-content-center py-3">
-        <i data-lucide="filter" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
-        <strong>Bộ lọc</strong>
+<!-- Statistics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Total Clubs</p>
+                        <h3 class="mb-0 fw-bold">@Model.TotalClubs</h3>
+                        <small class="text-success">
+                            <i data-lucide="trending-up" style="width: 12px; height: 12px;"></i>
+                            In selected period
+                        </small>
+                    </div>
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                        <i data-lucide="users" style="width: 32px; height: 32px; color: #0d6efd;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Average Score</p>
+                        <h3 class="mb-0 fw-bold text-success">
+                            @(Model.ClubScores?.Any() == true ? Model.ClubScores.Average(r => r.TotalScore).ToString("F1") : "0")
+                        </h3>
+                        <small class="text-muted">/ 100 points</small>
+                    </div>
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                        <i data-lucide="trending-up" style="width: 32px; height: 32px; color: #198754;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Scored Clubs</p>
+                        <h3 class="mb-0 fw-bold text-info">@Model.ScoredClubs</h3>
+                        <small class="text-muted">
+                            @(Model.TotalClubs > 0 ? ((double)Model.ScoredClubs / Model.TotalClubs * 100).ToString("F1") : "0")% completed
+                        </small>
+                    </div>
+                    <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                        <i data-lucide="check-circle" style="width: 32px; height: 32px; color: #0dcaf0;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1 small">Not Scored</p>
+                        <h3 class="mb-0 fw-bold text-warning">@Model.UnscoredClubs</h3>
+                        <small class="text-muted">Pending review</small>
+                    </div>
+                    <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                        <i data-lucide="clock" style="width: 32px; height: 32px; color: #ffc107;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
+        <form method="get" id="filterForm" class="row g-3 align-items-end">
             <div class="col-md-4">
-                <label class="form-label">
-                    <i data-lucide="calendar" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
-                    <strong>Kỳ học</strong>
+                <label for="semesterSelect" class="form-label fw-semibold">
+                    <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                    Semester
                 </label>
-                <select class="form-select" name="semesterId" asp-for="SelectedSemesterId">
+                <select class="form-select" id="semesterSelect" name="semesterId" onchange="this.form.submit()">
                     @foreach (var s in Model.Semesters)
                     {
-                        <option value="@s.Id" selected="@(Model.SelectedSemesterId == s.Id)">@s.Name</option>
+                        <option value="@s.Id" selected="@(Model.SelectedSemesterId == s.Id)">
+                            @s.Name
+                            @(s.IsActive ? "✓ Active" : "")
+                        </option>
                     }
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">
-                    <i data-lucide="calendar-days" style="width: 16px; height: 16px; margin-right: 0.5rem;"></i>
-                    <strong>Tháng</strong>
+                <label for="monthSelect" class="form-label fw-semibold">
+                    <i data-lucide="calendar-days" style="width: 14px; height: 14px;"></i>
+                    Month
                 </label>
-                <select class="form-select" name="month" asp-for="SelectedMonth">
+                <select class="form-select" id="monthSelect" name="month" onchange="this.form.submit()">
                     @foreach (var mo in Model.MonthOptions)
                     {
                         <option value="@mo.Month" selected="@(Model.SelectedMonth == mo.Month)">@mo.Display</option>
@@ -69,148 +135,116 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <button type="submit" class="btn btn-primary">
-                    <i data-lucide="search"></i> Lọc
+                <label class="form-label fw-semibold">
+                    <i data-lucide="search" style="width: 14px; height: 14px;"></i>
+                    Search
+                </label>
+                <input type="text" class="form-control" id="searchInput" placeholder="Club name...">
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="resetFilters()">
+                    <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i>
+                    Reset
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- KPIs -->
-<div class="row g-3 mt-3">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted">
-                            <i data-lucide="users" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
-                            Tổng CLB
-                        </div>
-                        <div class="fs-3 fw-bold text-primary">@Model.TotalClubs</div>
-                    </div>
-                    <i data-lucide="users" style="width: 32px; height: 32px; color: #0d6efd;"></i>
-                </div>
-            </div>
+<!-- Club Scores Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">
+                <i data-lucide="list" style="width: 18px; height: 18px;"></i>
+                Club Scoring List
+            </h5>
+            <span class="badge bg-primary">@(Model.ClubScores?.Count ?? 0) clubs</span>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted">
-                            <i data-lucide="check-circle" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
-                            Đã chấm
-                        </div>
-                        <div class="fs-3 fw-bold text-success">@Model.ScoredClubs</div>
-                    </div>
-                    <i data-lucide="check-circle" style="width: 32px; height: 32px; color: #198754;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted">
-                            <i data-lucide="clock" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
-                            Chưa chấm
-                        </div>
-                        <div class="fs-3 fw-bold text-warning">@Model.UnscoredClubs</div>
-                    </div>
-                    <i data-lucide="clock" style="width: 32px; height: 32px; color: #ffc107;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Top 5 Chart -->
-<div class="card border-0 shadow-sm mt-3">
-    <div class="card-header bg-info text-white d-flex align-items-center justify-content-center py-3">
-        <i data-lucide="trending-up" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
-        <strong>TOP 5 CLB THÁNG @Model.SelectedMonth</strong>
-    </div>
-    <div class="card-body">
-        @if (Model.Top5.Any())
-        {
-            <div class="vstack gap-2">
-                @foreach (var t in Model.Top5)
-                {
-                    var pct = (int)Math.Round(t.TotalScore);
-                    <div>
-                        <div class="d-flex justify-content-between">
-                            <div><strong>@t.ClubName</strong></div>
-                            <div class="text-primary fw-bold">@t.TotalScore.ToString("0") điểm</div>
-                        </div>
-                        <div class="progress" style="height:10px;">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width:@pct%"></div>
-                        </div>
-                    </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="text-center text-muted py-3">
-                <i data-lucide="inbox" style="width: 32px; height: 32px; margin-bottom: 0.5rem;"></i>
-                <div>Chưa có dữ liệu</div>
-            </div>
-        }
-    </div>
-</div>
-
-<!-- Clubs Table -->
-<div class="card border-0 shadow-sm mt-3">
-    <div class="card-header bg-warning text-dark d-flex align-items-center justify-content-center py-3">
-        <i data-lucide="table" style="width: 20px; height: 20px; margin-right: 0.5rem;"></i>
-        <strong>Danh sách CLB</strong>
-    </div>
-    <div class="card-body">
+    <div class="card-body p-0">
         @if (Model.ClubScores?.Any() == true)
         {
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
+                <table class="table table-hover align-middle mb-0" id="clubsTable">
+                    <thead class="table-light">
                         <tr>
-                            <th><i data-lucide="hash" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>#</th>
-                            <th><i data-lucide="users" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>CLB</th>
-                            <th><i data-lucide="calendar" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>SH</th>
-                            <th><i data-lucide="calendar-days" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>SK</th>
-                            <th><i data-lucide="handshake" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>PH</th>
-                            <th><i data-lucide="trophy" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Thi</th>
-                            <th><i data-lucide="clipboard" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>KH</th>
-                            <th><i data-lucide="star" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Tổng</th>
-                            <th><i data-lucide="eye" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Thao tác</th>
+                            <th class="ps-4" style="width: 60px;">#</th>
+                            <th style="width: 80px;">Rank</th>
+                            <th>Club Name</th>
+                            <th class="text-center">Meetings</th>
+                            <th class="text-center">Events</th>
+                            <th class="text-center">Collaborations</th>
+                            <th class="text-center">Competitions</th>
+                            <th class="text-center">Plans</th>
+                            <th class="text-center">Total Score</th>
+                            <th class="text-center pe-4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @for (int i = 0; i < Model.ClubScores.Count; i++)
+                        @{
+                            var sortedClubs = Model.ClubScores.OrderByDescending(c => c.TotalScore).ToList();
+                            int rank = 1;
+                            double previousScore = -1;
+                            int displayRank = 1;
+                        }
+                        @foreach (var club in sortedClubs)
                         {
-                            var r = Model.ClubScores[i];
-                            <tr>
-                                <td><span class="badge bg-secondary">@(i + 1)</span></td>
-                                <td><strong>@r.ClubName</strong></td>
-                                <td><span class="badge bg-info">@r.ClubMeetingScore</span></td>
-                                <td><span class="badge bg-info">@r.EventScore</span></td>
-                                <td><span class="badge bg-info">@r.CollaborationScore</span></td>
-                                <td><span class="badge bg-info">@r.CompetitionScore</span></td>
-                                <td><span class="badge bg-info">@r.PlanScore</span></td>
-                                <td><strong class="text-primary fs-5">@r.TotalScore</strong></td>
+                            if (club.TotalScore != previousScore)
+                            {
+                                displayRank = rank;
+                                previousScore = club.TotalScore;
+                            }
+
+                            var scoreClass = club.TotalScore >= 80 ? "success" : club.TotalScore >= 60 ? "warning" : "danger";
+                            var medalIcon = displayRank == 1 ? "🥇" : displayRank == 2 ? "🥈" : displayRank == 3 ? "🥉" : "";
+
+                            <tr class="club-row" data-name="@club.ClubName.ToLower()">
+                                <td class="ps-4 text-muted">@rank</td>
                                 <td>
-                                    <a class="btn btn-sm btn-outline-primary"
-                                       asp-page="Detail"
-                                       asp-route-clubId="@r.ClubId"
-                                       asp-route-semesterId="@Model.SelectedSemesterId"
-                                       asp-route-month="@Model.SelectedMonth">
-                                        <i data-lucide="external-link"></i> Chi tiết
+                                    @if (displayRank <= 3)
+                                    {
+                                        <span class="badge bg-warning text-dark px-3 py-2">
+                                            @medalIcon #@displayRank
+                                        </span>
+                                    }
+                                    else if (displayRank <= 10)
+                                    {
+                                        <span class="badge bg-info px-3 py-2">#@displayRank</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">#@displayRank</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-2">
+                                            @(string.IsNullOrEmpty(club.ClubName) ? "?" : club.ClubName.Substring(0, 1).ToUpper())
+                                        </div>
+                                        <strong>@club.ClubName</strong>
+                                    </div>
+                                </td>
+                                <td class="text-center"><span class="badge bg-light text-dark">@club.ClubMeetingScore</span></td>
+                                <td class="text-center"><span class="badge bg-light text-dark">@club.EventScore</span></td>
+                                <td class="text-center"><span class="badge bg-light text-dark">@club.CollaborationScore</span></td>
+                                <td class="text-center"><span class="badge bg-light text-dark">@club.CompetitionScore</span></td>
+                                <td class="text-center"><span class="badge bg-light text-dark">@club.PlanScore</span></td>
+                                <td class="text-center">
+                                    <div class="score-display">
+                                        <strong class="fs-5 text-@scoreClass">@club.TotalScore.ToString("F1")</strong>
+                                        <small class="text-muted d-block">/100</small>
+                                    </div>
+                                </td>
+                                <td class="text-center pe-4">
+                                    <a href="/Admin/ClubScoring/Detail?clubId=@club.ClubId&semesterId=@Model.SelectedSemesterId&month=@Model.SelectedMonth"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="View Details">
+                                        <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Details
                                     </a>
                                 </td>
                             </tr>
+                            rank++;
                         }
                     </tbody>
                 </table>
@@ -218,17 +252,102 @@
         }
         else
         {
-            <div class="text-center text-muted py-5">
-                <i data-lucide="inbox" style="width: 48px; height: 48px; margin-bottom: 1rem;"></i>
-                <div>Chưa có dữ liệu</div>
+            <div class="text-center py-5">
+                <i data-lucide="inbox" style="width: 64px; height: 64px; color: #9ca3af;"></i>
+                <p class="text-muted mt-3 mb-0">No club scoring data available</p>
+                <p class="text-muted">Select a different semester or month to view data</p>
             </div>
         }
     </div>
 </div>
 
+<style>
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+
+    .score-display {
+        padding: 8px;
+        border-radius: 8px;
+        background: #f8f9fa;
+    }
+
+    .club-row:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>
+
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function(){ if (typeof lucide !== 'undefined') lucide.createIcons(); });
+        // Initialize Lucide icons
+        (function(){ if (window.lucide && typeof lucide.createIcons==='function'){ try{ lucide.createIcons(lucide.icons||{});}catch{}} })();
+
+        const searchInput = document.getElementById('searchInput');
+        const clubsTable = document.getElementById('clubsTable');
+
+        // Submit filter form when select changes - data changes immediately
+        function submitFilter() {
+            document.getElementById('filterForm').submit();
+        }
+
+        // Filter rows by search input (client-side)
+        function filterRows() {
+            if (!clubsTable) return;
+            const term = (searchInput?.value || '').trim().toLowerCase();
+            const rows = clubsTable.querySelectorAll('tbody tr.club-row');
+            
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const visible = !term || name.includes(term);
+                row.style.display = visible ? '' : 'none';
+            });
+        }
+
+        // Reset search filter
+        function resetFilters() {
+            if (searchInput) searchInput.value = '';
+            filterRows();
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            const exportUrl = '@Model.ExportUrl';
+            if (exportUrl) {
+                window.open(exportUrl, '_blank');
+            } else {
+                alert('Export URL not available');
+            }
+        }
+
+        // Bind events
+        if (searchInput) {
+            searchInput.addEventListener('input', filterRows);
+        }
+
+        // Expose functions globally
+        window.submitFilter = submitFilter;
+        window.resetFilters = resetFilters;
+        window.exportToExcel = exportToExcel;
+
+        // Initial run
+        document.addEventListener('DOMContentLoaded', filterRows);
     </script>
 }
-

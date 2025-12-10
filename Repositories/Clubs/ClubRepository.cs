@@ -193,6 +193,12 @@ namespace Repositories.Clubs
                 .OrderByDescending(ca => ca.AwardedAt)
                 .ToListAsync();
         }
+
+        public async Task UpdateAsync(Club club)
+        {
+            _ctx.Clubs.Update(club);
+            await _ctx.SaveChangesAsync();
+        }
     }
 }
 

@@ -79,6 +79,56 @@ namespace WebFE.Pages.Admin.Evidences
         }
 
         /// <summary>
+        /// Get current UserId from JWT claims
+        /// </summary>
+        private int GetCurrentUserId()
+        {
+            try
+            {
+                // Try to get UserId from JWT claims first
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrWhiteSpace(userIdClaim) && int.TryParse(userIdClaim, out var userId) && userId > 0)
+                {
+                    _logger.LogInformation("✅ Got UserId from JWT claim: {UserId}", userId);
+                    return userId;
+                }
+
+                _logger.LogWarning("⚠️ UserId claim not found in HttpContext.User. Trying fallback method...");
+
+                // Fallback: try to read JWT token from cookie if claims not available
+                if (Request.Cookies.TryGetValue("AccessToken", out var token))
+                {
+                    try
+                    {
+                        var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                        if (handler.CanReadToken(token))
+                        {
+                            var jwt = handler.ReadJwtToken(token);
+                            var userIdFromToken = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                            if (userIdFromToken != null && int.TryParse(userIdFromToken, out var userIdFromJwt) && userIdFromJwt > 0)
+                            {
+                                _logger.LogInformation("✅ Got UserId from JWT token cookie: {UserId}", userIdFromJwt);
+                                return userIdFromJwt;
+                            }
+                        }
+                    }
+                    catch (Exception jwtEx)
+                    {
+                        _logger.LogError(jwtEx, "Error parsing JWT token from cookie");
+                    }
+                }
+
+                _logger.LogError("❌ Could not determine UserId");
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current UserId");
+                return 0;
+            }
+        }
+
+        /// <summary>
         /// Load evidences based on filter
         /// </summary>
         public async Task<IActionResult> OnGetAsync(string? filter)
@@ -96,12 +146,12 @@ namespace WebFE.Pages.Admin.Evidences
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "HTTP request error while loading evidences");
-                ErrorMessage = "Không thể kết nối đến server. Vui lòng thử lại sau.";
+                ErrorMessage = "Unable to connect to the server. Please try again later.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error loading evidences");
-                ErrorMessage = "Đã xảy ra lỗi khi tải dữ liệu. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred while loading data. Please try again.";
             }
 
             return Page();
@@ -186,7 +236,7 @@ namespace WebFE.Pages.Admin.Evidences
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogError("Failed to load evidences: {StatusCode} - {Error}",
                         response.StatusCode, errorContent);
-                    ErrorMessage = "Không thể tải danh sách minh chứng. Vui lòng thử lại.";
+                    ErrorMessage = "Unable to load the evidence list. Please try again.";
                 }
             }
             catch (Exception ex)
@@ -204,7 +254,7 @@ namespace WebFE.Pages.Admin.Evidences
         {
             if (id <= 0)
             {
-                ErrorMessage = "ID không hợp lệ.";
+                ErrorMessage = "Invalid ID.";
                 return RedirectToPage();
             }
 
@@ -215,21 +265,21 @@ namespace WebFE.Pages.Admin.Evidences
 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "✅ Đã xóa minh chứng thành công!";
+                    SuccessMessage = "✅ Evidence deleted successfully!";
                     _logger.LogInformation("Deleted evidence {EvidenceId}", id);
                 }
                 else
                 {
                     _logger.LogWarning("Delete failed: {StatusCode}", response.StatusCode);
                     ErrorMessage = response.StatusCode == HttpStatusCode.NotFound
-                        ? "Không tìm thấy minh chứng cần xóa."
-                        : "Không thể xóa minh chứng. Vui lòng thử lại.";
+                        ? "Evidence to delete not found."
+                        : "Unable to delete evidence. Please try again.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting evidence {EvidenceId}", id);
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage(new { filter = CurrentFilter });
@@ -242,12 +292,21 @@ namespace WebFE.Pages.Admin.Evidences
         {
             if (evidenceIds == null || evidenceIds.Length == 0)
             {
-                ErrorMessage = "Chưa chọn minh chứng nào.";
+                ErrorMessage = "No evidences selected.";
                 return RedirectToPage();
             }
 
             try
             {
+                // ===== GET ReviewedById FROM CURRENT USER =====
+                int reviewedById = GetCurrentUserId();
+                if (reviewedById <= 0)
+                {
+                    ErrorMessage = "❌ Error: Unable to determine reviewer. Please log out and log in again.";
+                    _logger.LogError("Bulk approve failed: ReviewedById is invalid ({ReviewedById})", reviewedById);
+                    return RedirectToPage(new { filter = "pending" });
+                }
+
                 int successCount = 0;
                 int failCount = 0;
 
@@ -260,7 +319,7 @@ namespace WebFE.Pages.Admin.Evidences
                         Id = id,
                         Status = "Approved",
                         Points = defaultPoints,
-                        ReviewedById = 1, // TODO: Get from current user
+                        ReviewedById = reviewedById, // ✅ NOW USING CURRENT USER INSTEAD OF HARDCODED 1
                         ReviewerComment = "Bulk approved"
                     };
 
@@ -277,21 +336,21 @@ namespace WebFE.Pages.Admin.Evidences
 
                 if (successCount > 0)
                 {
-                    SuccessMessage = $"✅ Đã duyệt thành công {successCount} minh chứng!";
+                    SuccessMessage = $"✅ Successfully approved {successCount} evidences!";
                 }
 
                 if (failCount > 0)
                 {
-                    ErrorMessage = $"⚠️ Có {failCount} minh chứng không thể duyệt.";
+                    ErrorMessage = $"⚠️ {failCount} evidences failed to approve.";
                 }
 
-                _logger.LogInformation("Bulk approved evidences: Success={Success}, Failed={Failed}",
-                    successCount, failCount);
+                _logger.LogInformation("Bulk approved evidences: Success={Success}, Failed={Failed}, ReviewedById={ReviewedById}",
+                    successCount, failCount, reviewedById);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in bulk approve");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage(new { filter = "pending" });

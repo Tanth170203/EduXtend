@@ -30,6 +30,28 @@
         </a>
     </div>
 
+    <!-- Quick Actions -->
+    @if (isEnded && activity.Status == "Approved")
+    {
+        <div class="card shadow-sm border-0 mb-4 border-start border-success border-4">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-lightning-charge text-success"></i> Quick Actions
+                </h5>
+                <button type="button" 
+                        class="btn btn-success" 
+                        id="completeActivityBtn"
+                        onclick="completeActivity(@activity.Id)"
+                        title="Mark this activity as completed and award movement points to the organizing club">
+                    <i class="bi bi-check-circle-fill"></i> Complete Activity
+                </button>
+                <p class="text-muted small mb-0 mt-2">
+                    <i class="bi bi-info-circle"></i> This will mark the activity as completed and automatically award movement points to the organizing club.
+                </p>
+            </div>
+        </div>
+    }
+
     <!-- Header with image/banner -->
     <div class="position-relative mb-4">
         @if (!string.IsNullOrWhiteSpace(activity.ImageUrl))
@@ -57,12 +79,24 @@
                         <i class="bi bi-shield-check"></i> Requires Approval
                     </span>
                 }
+                @if (activity.ClubCollaborationId.HasValue)
+                {
+                    <span class="badge bg-gradient-collaboration">
+                        <i class="bi bi-diagram-3"></i> Collaboration
+                    </span>
+                }
             </div>
             <h1 class="fw-bold mb-2">@activity.Title</h1>
             @if (!string.IsNullOrWhiteSpace(activity.ClubName))
             {
                 <p class="mb-0">
                     <i class="bi bi-people"></i> Organized by <strong>@activity.ClubName</strong>
+                </p>
+            }
+            @if (activity.ClubCollaborationId.HasValue && !string.IsNullOrWhiteSpace(activity.CollaboratingClubName))
+            {
+                <p class="mb-0">
+                    <i class="bi bi-diagram-3"></i> In collaboration with <strong>@activity.CollaboratingClubName</strong>
                 </p>
             }
         </div>
@@ -177,6 +211,19 @@
                             </div>
                         </div>
                         
+                        @if (activity.CollaborationPoint.HasValue)
+                        {
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-star text-info me-3 fs-5"></i>
+                                    <div>
+                                        <small class="text-muted d-block">Collaboration Points</small>
+                                        <strong class="text-info">+@activity.CollaborationPoint points</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        
                         <div class="col-md-6">
                             <div class="d-flex align-items-start">
                                 <i class="bi bi-people text-primary me-3 fs-5"></i>
@@ -186,6 +233,19 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Timeline -->
+            <div id="scheduleDisplaySection" class="card shadow-sm border-0 mb-4" style="display: none;">
+                <div class="card-body p-4">
+                    <h5 class="fw-semibold mb-3">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Activity Timeline
+                    </h5>
+                    <div id="timelineContainer" class="timeline">
+                        <!-- Timeline items will be rendered here by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -218,6 +278,78 @@
                                 </a>
                             </div>
                         </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Collaboration Info -->
+            @if (activity.ClubCollaborationId.HasValue && !string.IsNullOrWhiteSpace(activity.CollaboratingClubName))
+            {
+                var isClubCollaboration = activity.Type == "ClubCollaboration";
+                var isSchoolCollaboration = activity.Type == "SchoolCollaboration";
+                
+                <div class="card shadow-sm border-0 mb-4 border-start border-info border-4">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-diagram-3 text-info"></i> 
+                            @if (isClubCollaboration)
+                            {
+                                <span>Club Collaboration</span>
+                            }
+                            else if (isSchoolCollaboration)
+                            {
+                                <span>School Collaboration</span>
+                            }
+                            else
+                            {
+                                <span>Collaboration</span>
+                            }
+                        </h5>
+                        
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Collaborative Activity</strong>
+                            <p class="mb-0 small mt-1">
+                                @if (isClubCollaboration)
+                                {
+                                    <span>This activity is organized in collaboration with another club. Members from both clubs can participate.</span>
+                                }
+                                else if (isSchoolCollaboration)
+                                {
+                                    <span>This activity is organized in collaboration with the school administration.</span>
+                                }
+                            </p>
+                        </div>
+                        
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-info text-white me-3 d-flex align-items-center justify-content-center"
+                                 style="width: 60px; height: 60px;">
+                                <i class="bi bi-people fs-4"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block">Collaborating Partner</small>
+                                <h6 class="mb-1">@activity.CollaboratingClubName</h6>
+                                <a asp-page="/Clubs/Details" asp-route-id="@activity.ClubCollaborationId" class="text-decoration-none small">
+                                    View Club Profile <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        @if (activity.CollaborationPoint.HasValue)
+                        {
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted d-block">Collaboration Points</small>
+                                        <strong class="text-info">+@activity.CollaborationPoint points</strong>
+                                    </div>
+                                    <i class="bi bi-star-fill text-info fs-4"></i>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    Members of @activity.CollaboratingClubName will receive @activity.CollaborationPoint collaboration point@(activity.CollaborationPoint != 1 ? "s" : "") for attending.
+                                </small>
+                            </div>
+                        }
                     </div>
                 </div>
             }
@@ -326,7 +458,16 @@
                             <i class="bi bi-patch-check-fill"></i> Your attendance has been taken
                         </button>
                     }
-                    else if (activity.IsRegistered)
+                    else if (activity.IsRegistered && isOngoing)
+                    {
+                        <button class="btn btn-warning w-100 mb-2" id="attendanceBtn" data-bs-toggle="modal" data-bs-target="#attendanceModal">
+                            <i class="bi bi-qr-code-scan"></i> Attendance
+                        </button>
+                        <div class="alert alert-info mb-0 mt-2">
+                            <small><i class="bi bi-info-circle"></i> Cannot unregister while activity is ongoing</small>
+                        </div>
+                    }
+                    else if (activity.IsRegistered && isUpcoming)
                     {
                         <button class="btn btn-primary w-100 mb-2" id="registeredBtn" disabled>
                             <i class="bi bi-check-circle-fill"></i> Activity registered
@@ -334,6 +475,15 @@
                         <button class="btn btn-outline-danger w-100 btn-sm" onclick="unregisterActivity(@activity.Id)">
                             <i class="bi bi-x-circle"></i> Unregister
                         </button>
+                    }
+                    else if (activity.IsRegistered)
+                    {
+                        <button class="btn btn-primary w-100 mb-2" id="registeredBtn" disabled>
+                            <i class="bi bi-check-circle-fill"></i> Activity registered
+                        </button>
+                        <div class="alert alert-info mb-0 mt-2">
+                            <small><i class="bi bi-info-circle"></i> Cannot unregister after activity has started</small>
+                        </div>
                     }
                     else if (!isAuth)
                     {
@@ -398,9 +548,46 @@
     </div>
 </div>
 
+<!-- Attendance Modal -->
+<div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceModalLabel">
+                    <i class="bi bi-qr-code-scan"></i> Điểm danh
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="attendanceCode" class="form-label">Nhập mã điểm danh (6 ký tự)</label>
+                    <input type="text" 
+                           class="form-control form-control-lg text-center" 
+                           id="attendanceCode" 
+                           maxlength="6" 
+                           placeholder="Ví dụ: aB3xY9"
+                           style="letter-spacing: 0.5em; font-weight: bold;">
+                    <div class="form-text">Nhập mã điểm danh mà giảng viên/quản lý cung cấp</div>
+                </div>
+                <div id="attendanceError" class="alert alert-danger d-none"></div>
+                <div id="attendanceSuccess" class="alert alert-success d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="submitAttendanceBtn" onclick="submitAttendance(@activity.Id)">
+                    <i class="bi bi-check-circle"></i> Xác nhận điểm danh
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .bg-gradient-primary {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .bg-gradient-collaboration {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
     }
 </style>
 
@@ -425,13 +612,11 @@
                 return;
             }
 
-            const btn = document.getElementById('registerBtn');
-            if (btn) {
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-primary');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Activity registered';
-            }
+            // Show success message
+            alert(data?.message || 'Registration successful');
+            
+            // Reload to refresh state and update UI
+            location.reload();
         } catch (e) {
             alert('Registration failed. Please try again.');
         }
@@ -460,5 +645,491 @@
             alert('Unregister failed. Please try again.');
         }
     }
+
+    async function submitAttendance(activityId) {
+        const codeInput = document.getElementById('attendanceCode');
+        const code = codeInput.value.trim();
+        const errorDiv = document.getElementById('attendanceError');
+        const successDiv = document.getElementById('attendanceSuccess');
+        const submitBtn = document.getElementById('submitAttendanceBtn');
+        
+        // Reset messages
+        errorDiv.classList.add('d-none');
+        successDiv.classList.add('d-none');
+        
+        // Validate code
+        if (!code || code.length !== 6) {
+            errorDiv.textContent = 'Vui lòng nhập đầy đủ 6 ký tự mã điểm danh';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+        
+        // Disable button while processing
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+        
+        try {
+            const baseUrl = '@Model.ApiBaseUrl';
+            const url = (baseUrl ? baseUrl : '') + `/api/activity/${activityId}/check-in`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ attendanceCode: code })
+            });
+
+            const data = await res.json().catch(() => ({}));
+            
+            if (!res.ok) {
+                const msg = data?.message || 'Điểm danh thất bại';
+                errorDiv.textContent = msg;
+                errorDiv.classList.remove('d-none');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận điểm danh';
+                return;
+            }
+
+            // Success
+            successDiv.textContent = data?.message || 'Điểm danh thành công!';
+            successDiv.classList.remove('d-none');
+            
+            // Reload page after 1.5 seconds
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+            
+        } catch (e) {
+            errorDiv.textContent = 'Có lỗi xảy ra. Vui lòng thử lại.';
+            errorDiv.classList.remove('d-none');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận điểm danh';
+        }
+    }
+    
+    // Auto-focus on code input when modal opens
+    document.getElementById('attendanceModal')?.addEventListener('shown.bs.modal', function () {
+        document.getElementById('attendanceCode')?.focus();
+    });
+    
+    // Allow Enter key to submit
+    document.getElementById('attendanceCode')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            submitAttendance(@activity.Id);
+        }
+    });
+
+    async function completeActivity(activityId) {
+        const btn = document.getElementById('completeActivityBtn');
+        
+        // Confirm action
+        if (!confirm('Are you sure you want to complete this activity? This will award movement points to the organizing club.')) {
+            return;
+        }
+        
+        // Disable button and show loading state
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Completing...';
+        
+        try {
+            const baseUrl = '@Model.ApiBaseUrl';
+            const url = (baseUrl ? baseUrl : '') + `/api/admin/activities/${activityId}/complete`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+
+            const data = await res.json().catch(() => ({}));
+            
+            if (!res.ok) {
+                const msg = data?.message || 'Failed to complete activity';
+                alert('Error: ' + msg);
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Complete Activity';
+                return;
+            }
+
+            // Success - show toast notification with point details
+            let successMessage = data?.message || 'Activity completed successfully!';
+            
+            if (data?.organizingClubPoints !== undefined && data.organizingClubPoints > 0) {
+                successMessage += ` Organizing club earned ${data.organizingClubPoints} points.`;
+            }
+            
+            if (data?.collaboratingClubPoints !== undefined && data.collaboratingClubPoints > 0) {
+                successMessage += ` Collaborating club earned ${data.collaboratingClubPoints} points.`;
+            }
+            
+            alert(successMessage);
+            
+            // Refresh page to show updated status
+            location.reload();
+            
+        } catch (e) {
+            alert('Failed to complete activity. Please try again.');
+            // Re-enable button
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Complete Activity';
+        }
+    }
 </script>
 
+
+
+@section Scripts {
+<style>
+    .timeline {
+        position: relative;
+<<<<<<< HEAD
+    }
+    
+    .timeline-item {
+        display: flex;
+        gap: 16px;
+        padding-bottom: 24px;
+        position: relative;
+    }
+    
+    .timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 47px;
+        top: 48px;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, #0d6efd 0%, #e9ecef 100%);
+    }
+    
+    .timeline-time {
+        flex-shrink: 0;
+        width: 95px;
+        text-align: center;
+    }
+    
+    .timeline-time-badge {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        min-width: 85px;
+    }
+    
+    .timeline-time-badge .time-range {
+        font-size: 0.75rem;
+        opacity: 0.9;
+    }
+    
+    .timeline-time-badge .time-start {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    
+    .timeline-marker-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    
+    .timeline-marker {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid #0d6efd;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.15);
+        z-index: 1;
+    }
+    
+    .timeline-item:first-child .timeline-marker {
+        background: #0d6efd;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25);
+    }
+    
+    .timeline-content {
+        flex: 1;
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 16px 20px;
+        border: 1px solid #e9ecef;
+        transition: all 0.2s ease;
+    }
+    
+    .timeline-content:hover {
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        border-color: #0d6efd;
+    }
+    
+    .timeline-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 4px;
+    }
+    
+    .timeline-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    
+    .timeline-notes {
+        background: #e7f1ff;
+        border-left: 3px solid #0d6efd;
+        padding: 8px 12px;
+        border-radius: 0 8px 8px 0;
+        margin-top: 10px;
+        font-size: 0.85rem;
+    }
+    
+    .timeline-assignments {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px dashed #dee2e6;
+    }
+    
+    .assignment-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #e9ecef;
+        color: #495057;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin: 2px;
+    }
+    
+    .assignment-badge i {
+        color: #0d6efd;
+=======
+        padding-left: 30px;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 30px;
+        border-left: 2px solid #e9ecef;
+    }
+    
+    .timeline-item-last {
+        border-left-color: transparent;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -7px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #0d6efd;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px #0d6efd;
+    }
+    
+    .timeline-content {
+        padding-left: 20px;
+        padding-bottom: 10px;
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
+    }
+</style>
+
+<script>
+    // Check if activity type is complex (requires schedules)
+    function isComplexActivity(type) {
+        const complexTypes = ['LargeEvent', 'MediumEvent', 'SmallEvent', 
+                            'SchoolCompetition', 'ProvincialCompetition', 'NationalCompetition',
+                            'ClubCollaboration', 'SchoolCollaboration'];
+        return complexTypes.includes(type);
+    }
+    
+    // Format time from TimeSpan
+    function formatTime(timeSpan) {
+        if (!timeSpan) return '';
+        const parts = timeSpan.split(':');
+        if (parts.length >= 2) {
+            return `${parts[0]}:${parts[1]}`;
+        }
+        return timeSpan;
+    }
+    
+    // Render timeline
+    function renderTimeline(schedules) {
+        const container = document.getElementById('timelineContainer');
+        
+        if (!schedules || schedules.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-calendar-x fs-1 mb-3 d-block"></i>
+                    <p class="mb-0">No schedule items available for this activity.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const sortedSchedules = [...schedules].sort((a, b) => {
+            const aTime = a.startTime || a.StartTime || '';
+            const bTime = b.startTime || b.StartTime || '';
+            return aTime.localeCompare(bTime);
+        });
+        
+        let html = '<div class="timeline">';
+        
+        sortedSchedules.forEach((schedule, index) => {
+            const startTime = formatTime(schedule.startTime || schedule.StartTime);
+            const endTime = formatTime(schedule.endTime || schedule.EndTime);
+            const title = schedule.title || schedule.Title || '';
+            const description = schedule.description || schedule.Description;
+            const notes = schedule.notes || schedule.Notes;
+            const assignments = schedule.assignments || schedule.Assignments || [];
+            
+            html += `
+<<<<<<< HEAD
+                <div class="timeline-item">
+                    <!-- Time Badge on the left -->
+                    <div class="timeline-time">
+                        <div class="timeline-time-badge">
+                            <span class="time-start">${startTime}</span>
+                            <span class="time-range">đến ${endTime}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Marker -->
+                    <div class="timeline-marker-wrapper">
+                        <div class="timeline-marker"></div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="timeline-content">
+                        <h6 class="timeline-title">${escapeHtml(title)}</h6>
+            `;
+            
+            if (description) {
+                html += `<p class="timeline-description">${escapeHtml(description)}</p>`;
+=======
+                <div class="timeline-item ${index === sortedSchedules.length - 1 ? 'timeline-item-last' : ''}">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0 fw-semibold">${escapeHtml(title)}</h6>
+                            <span class="badge bg-primary">
+                                <i class="bi bi-clock me-1"></i>
+                                ${startTime} - ${endTime}
+                            </span>
+                        </div>
+            `;
+            
+            if (description) {
+                html += `<p class="text-muted mb-2">${escapeHtml(description)}</p>`;
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
+            }
+            
+            if (notes) {
+                html += `
+<<<<<<< HEAD
+                    <div class="timeline-notes">
+                        <i class="bi bi-sticky me-1"></i>
+                        <strong>Ghi chú:</strong> ${escapeHtml(notes)}
+=======
+                    <div class="alert alert-info py-2 px-3 mb-2">
+                        <small>
+                            <i class="bi bi-sticky me-1"></i>
+                            <strong>Notes:</strong> ${escapeHtml(notes)}
+                        </small>
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
+                    </div>
+                `;
+            }
+            
+            if (assignments.length > 0) {
+                html += `
+<<<<<<< HEAD
+                    <div class="timeline-assignments">
+                        <small class="text-muted d-block mb-2">
+                            <i class="bi bi-people-fill me-1"></i>
+                            <strong>Phân công:</strong>
+                        </small>
+                        <div class="d-flex flex-wrap">
+=======
+                    <div class="mt-2">
+                        <small class="text-muted d-block mb-1">
+                            <i class="bi bi-people me-1"></i>
+                            <strong>Assigned to:</strong>
+                        </small>
+                        <div class="d-flex flex-wrap gap-2">
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
+                `;
+                
+                assignments.forEach(assignment => {
+                    const name = assignment.responsibleName || assignment.ResponsibleName || 'Unknown';
+                    const role = assignment.role || assignment.Role;
+<<<<<<< HEAD
+                    const roleText = role ? ` (${escapeHtml(role)})` : '';
+                    
+                    html += `
+                        <span class="assignment-badge">
+                            <i class="bi bi-person-fill"></i>
+=======
+                    const roleText = role ? ` - ${escapeHtml(role)}` : '';
+                    
+                    html += `
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-person me-1"></i>
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
+                            ${escapeHtml(name)}${roleText}
+                        </span>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const activityType = '@activity.Type';
+        const activitySchedules = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(activity.Schedules ?? new List<BusinessObject.DTOs.Activity.ActivityScheduleDto>()));
+        
+        if (isComplexActivity(activityType) && activitySchedules && activitySchedules.length > 0) {
+            const scheduleSection = document.getElementById('scheduleDisplaySection');
+            if (scheduleSection) {
+                scheduleSection.style.display = 'block';
+                renderTimeline(activitySchedules);
+            }
+        }
+    });
+</script>
+}

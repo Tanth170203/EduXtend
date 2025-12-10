@@ -102,12 +102,12 @@ namespace WebFE.Pages.Admin.StudentScoring
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "HTTP request error while loading movement reports");
-                ErrorMessage = "Không thể kết nối đến server. Vui lòng thử lại sau.";
+                ErrorMessage = "Unable to connect to the server. Please try again later.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error loading movement reports");
-                ErrorMessage = "Đã xảy ra lỗi khi tải dữ liệu. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred while loading data. Please try again.";
             }
 
             return Page();
@@ -175,7 +175,7 @@ namespace WebFE.Pages.Admin.StudentScoring
                     var errorContent = await response.Content.ReadAsStringAsync();
                     _logger.LogError("Failed to load movement records: {StatusCode} - {Error}",
                         response.StatusCode, errorContent);
-                    ErrorMessage = "Không thể tải danh sách điểm phong trào. Vui lòng thử lại.";
+                    ErrorMessage = "Unable to load activity score list. Please try again.";
                 }
             }
             catch (Exception ex)
@@ -192,7 +192,7 @@ namespace WebFE.Pages.Admin.StudentScoring
         {
             if (studentId <= 0 || semesterId <= 0)
             {
-                ErrorMessage = "Thông tin không hợp lệ.";
+                ErrorMessage = "Invalid information.";
                 return RedirectToPage();
             }
 
@@ -212,7 +212,7 @@ namespace WebFE.Pages.Admin.StudentScoring
 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "✅ Tạo bản ghi điểm phong trào thành công!";
+                    SuccessMessage = "✅ Movement record created successfully!";
                     _logger.LogInformation("Created movement record for student {StudentId} in semester {SemesterId}",
                         studentId, semesterId);
                 }
@@ -224,16 +224,16 @@ namespace WebFE.Pages.Admin.StudentScoring
 
                     ErrorMessage = response.StatusCode switch
                     {
-                        HttpStatusCode.Conflict => "Sinh viên đã có bản ghi điểm trong học kỳ này.",
-                        HttpStatusCode.NotFound => "Không tìm thấy sinh viên hoặc học kỳ.",
-                        _ => "Không thể tạo bản ghi điểm. Vui lòng thử lại."
+                        HttpStatusCode.Conflict => "The student already has a record for this semester.",
+                        HttpStatusCode.NotFound => "Student or semester not found.",
+                        _ => "Unable to create record. Please try again."
                     };
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating movement record");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage();
@@ -249,7 +249,7 @@ namespace WebFE.Pages.Admin.StudentScoring
         {
             if (movementRecordId <= 0 || criterionId <= 0 || score < 0)
             {
-                ErrorMessage = "Thông tin không hợp lệ.";
+                ErrorMessage = "Invalid information.";
                 return RedirectToPage();
             }
 
@@ -270,7 +270,7 @@ namespace WebFE.Pages.Admin.StudentScoring
 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = $"✅ Đã cộng {score} điểm thành công!";
+                    SuccessMessage = $"✅ Successfully added {score} points!";
                     _logger.LogInformation("Added {Score} points to record {RecordId} for criterion {CriterionId}",
                         score, movementRecordId, criterionId);
                 }
@@ -282,16 +282,16 @@ namespace WebFE.Pages.Admin.StudentScoring
 
                     ErrorMessage = response.StatusCode switch
                     {
-                        HttpStatusCode.NotFound => "Không tìm thấy bản ghi hoặc tiêu chí.",
-                        HttpStatusCode.BadRequest => "Điểm vượt quá giới hạn cho phép.",
-                        _ => "Không thể cộng điểm. Vui lòng thử lại."
+                        HttpStatusCode.NotFound => "Record or criterion not found.",
+                        HttpStatusCode.BadRequest => "Score exceeds allowed limit.",
+                        _ => "Unable to add score. Please try again."
                     };
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding score");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage();
@@ -304,7 +304,7 @@ namespace WebFE.Pages.Admin.StudentScoring
         {
             if (id <= 0)
             {
-                ErrorMessage = "ID không hợp lệ.";
+                ErrorMessage = "Invalid ID.";
                 return RedirectToPage();
             }
 
@@ -315,21 +315,21 @@ namespace WebFE.Pages.Admin.StudentScoring
 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = "✅ Đã xóa bản ghi điểm phong trào thành công!";
+                    SuccessMessage = "✅ Movement record deleted successfully!";
                     _logger.LogInformation("Deleted movement record {RecordId}", id);
                 }
                 else
                 {
                     _logger.LogWarning("Delete failed: {StatusCode}", response.StatusCode);
                     ErrorMessage = response.StatusCode == HttpStatusCode.NotFound
-                        ? "Không tìm thấy bản ghi cần xóa."
-                        : "Không thể xóa bản ghi. Vui lòng thử lại.";
+                        ? "Record to delete not found."
+                        : "Unable to delete record. Please try again.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting movement record");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage();
@@ -346,7 +346,7 @@ namespace WebFE.Pages.Admin.StudentScoring
         {
             if (studentId <= 0 || categoryId <= 0 || score < 0)
             {
-                ErrorMessage = "Thông tin không hợp lệ.";
+                ErrorMessage = "Invalid information.";
                 return RedirectToPage();
             }
 
@@ -400,7 +400,7 @@ namespace WebFE.Pages.Admin.StudentScoring
 
                 if (response.IsSuccessStatusCode)
                 {
-                    SuccessMessage = $"✅ Đã cộng {score} điểm cho sinh viên thành công!";
+                    SuccessMessage = $"✅ Successfully added {score} points to the student!";
                     _logger.LogInformation("Added {Score} points to student {StudentId}. Comments: {Comments}",
                         score, studentId, comments);
                 }
@@ -412,16 +412,16 @@ namespace WebFE.Pages.Admin.StudentScoring
 
                     ErrorMessage = response.StatusCode switch
                     {
-                        HttpStatusCode.NotFound => "Không tìm thấy sinh viên hoặc tiêu chí.",
-                        HttpStatusCode.BadRequest => "Điểm vượt quá giới hạn cho phép.",
-                        _ => "Không thể cộng điểm. Vui lòng thử lại."
+                        HttpStatusCode.NotFound => "Student or criterion not found.",
+                        HttpStatusCode.BadRequest => "Score exceeds allowed limit.",
+                        _ => "Unable to add score. Please try again."
                     };
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding manual score");
-                ErrorMessage = "Đã xảy ra lỗi. Vui lòng thử lại.";
+                ErrorMessage = "An error occurred. Please try again.";
             }
 
             return RedirectToPage();
@@ -433,7 +433,7 @@ namespace WebFE.Pages.Admin.StudentScoring
         public IActionResult OnPostExportExcel(int? semesterId)
         {
             // TODO: Implement Excel export
-            ErrorMessage = "Chức năng xuất Excel đang được phát triển.";
+            ErrorMessage = "Excel export feature is under development.";
             return RedirectToPage(new { semesterId });
         }
 
@@ -443,7 +443,7 @@ namespace WebFE.Pages.Admin.StudentScoring
         public IActionResult OnPostExportPdf()
         {
             // TODO: Implement PDF export
-            ErrorMessage = "Chức năng xuất PDF đang được phát triển.";
+            ErrorMessage = "PDF export feature is under development.";
             return RedirectToPage();
         }
     }

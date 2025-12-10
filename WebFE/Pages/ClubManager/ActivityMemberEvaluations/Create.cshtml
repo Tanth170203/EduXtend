@@ -1,0 +1,179 @@
+@page
+@model WebFE.Pages.ClubManager.ActivityMemberEvaluations.CreateModel
+@{
+    ViewData["Title"] = "Đánh giá thành viên";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Đánh giá thành viên</h1>
+        <p class="page-description">Đánh giá hiệu suất làm việc của thành viên</p>
+    </div>
+    <a href="/ClubManager/ActivityMemberEvaluations?activityId=@Model.ActivityId" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        Quay lại
+    </a>
+</div>
+
+<form method="post" class="needs-validation" novalidate>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Tiêu chí đánh giá</h5>
+                </div>
+                <div class="content-card-body">
+                    <div class="alert alert-info">
+                        <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                        Đánh giá theo thang điểm từ 1-10 (1: Kém, 5: Trung bình, 10: Xuất sắc)
+                    </div>
+
+                    <!-- Responsibility Score -->
+                    <div class="mb-4">
+                        <label asp-for="ResponsibilityScore" class="form-label">
+                            Trách nhiệm <span class="text-danger">*</span>
+                        </label>
+                        <input type="range" asp-for="ResponsibilityScore" class="form-range" min="1" max="10" 
+                               oninput="document.getElementById('responsibilityValue').textContent = this.value" />
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">1 - Kém</small>
+                            <strong id="responsibilityValue">@Model.ResponsibilityScore</strong>
+                            <small class="text-muted">10 - Xuất sắc</small>
+                        </div>
+                        <span asp-validation-for="ResponsibilityScore" class="text-danger"></span>
+                    </div>
+
+                    <!-- Skill Score -->
+                    <div class="mb-4">
+                        <label asp-for="SkillScore" class="form-label">
+                            Kỹ năng <span class="text-danger">*</span>
+                        </label>
+                        <input type="range" asp-for="SkillScore" class="form-range" min="1" max="10" 
+                               oninput="document.getElementById('skillValue').textContent = this.value" />
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">1 - Kém</small>
+                            <strong id="skillValue">@Model.SkillScore</strong>
+                            <small class="text-muted">10 - Xuất sắc</small>
+                        </div>
+                        <span asp-validation-for="SkillScore" class="text-danger"></span>
+                    </div>
+
+                    <!-- Attitude Score -->
+                    <div class="mb-4">
+                        <label asp-for="AttitudeScore" class="form-label">
+                            Thái độ <span class="text-danger">*</span>
+                        </label>
+                        <input type="range" asp-for="AttitudeScore" class="form-range" min="1" max="10" 
+                               oninput="document.getElementById('attitudeValue').textContent = this.value" />
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">1 - Kém</small>
+                            <strong id="attitudeValue">@Model.AttitudeScore</strong>
+                            <small class="text-muted">10 - Xuất sắc</small>
+                        </div>
+                        <span asp-validation-for="AttitudeScore" class="text-danger"></span>
+                    </div>
+
+                    <!-- Effectiveness Score -->
+                    <div class="mb-4">
+                        <label asp-for="EffectivenessScore" class="form-label">
+                            Hiệu quả <span class="text-danger">*</span>
+                        </label>
+                        <input type="range" asp-for="EffectivenessScore" class="form-range" min="1" max="10" 
+                               oninput="document.getElementById('effectivenessValue').textContent = this.value" />
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">1 - Kém</small>
+                            <strong id="effectivenessValue">@Model.EffectivenessScore</strong>
+                            <small class="text-muted">10 - Xuất sắc</small>
+                        </div>
+                        <span asp-validation-for="EffectivenessScore" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Nhận xét chi tiết</h5>
+                </div>
+                <div class="content-card-body">
+                    <!-- Strengths -->
+                    <div class="mb-3">
+                        <label asp-for="Strengths" class="form-label">Điểm mạnh</label>
+                        <textarea asp-for="Strengths" class="form-control" rows="3" 
+                                  placeholder="Những điểm mạnh của thành viên..." maxlength="1000"></textarea>
+                        <span asp-validation-for="Strengths" class="text-danger"></span>
+                    </div>
+
+                    <!-- Improvements -->
+                    <div class="mb-3">
+                        <label asp-for="Improvements" class="form-label">Cần cải thiện</label>
+                        <textarea asp-for="Improvements" class="form-control" rows="3" 
+                                  placeholder="Những điểm cần cải thiện..." maxlength="1000"></textarea>
+                        <span asp-validation-for="Improvements" class="text-danger"></span>
+                    </div>
+
+                    <!-- Comments -->
+                    <div class="mb-3">
+                        <label asp-for="Comments" class="form-label">Nhận xét chung</label>
+                        <textarea asp-for="Comments" class="form-control" rows="4" 
+                                  placeholder="Nhận xét tổng quan về hiệu suất làm việc..." maxlength="2000"></textarea>
+                        <span asp-validation-for="Comments" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                    Lưu đánh giá
+                </button>
+                <a href="/ClubManager/ActivityMemberEvaluations?activityId=@Model.ActivityId" class="btn btn-outline-secondary">
+                    Hủy
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Hướng dẫn đánh giá</h5>
+                </div>
+                <div class="content-card-body">
+                    <h6>Trách nhiệm</h6>
+                    <p class="small text-muted">Đánh giá mức độ hoàn thành nhiệm vụ được giao, sự cam kết và tận tâm trong công việc.</p>
+
+                    <h6>Kỹ năng</h6>
+                    <p class="small text-muted">Đánh giá năng lực chuyên môn, kỹ năng thực hiện công việc được giao.</p>
+
+                    <h6>Thái độ</h6>
+                    <p class="small text-muted">Đánh giá thái độ làm việc, tinh thần hợp tác, giao tiếp với đồng đội.</p>
+
+                    <h6>Hiệu quả</h6>
+                    <p class="small text-muted">Đánh giá kết quả công việc, đóng góp vào thành công chung của hoạt động.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        // Form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
+    <partial name="_ValidationScriptsPartial" />
+}

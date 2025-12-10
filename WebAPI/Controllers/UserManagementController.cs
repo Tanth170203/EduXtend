@@ -2,6 +2,7 @@ using BusinessObject.DTOs.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Users;
+using Repositories.Clubs;
 
 namespace WebAPI.Controllers;
 
@@ -11,10 +12,12 @@ namespace WebAPI.Controllers;
 public class UserManagementController : ControllerBase
 {
     private readonly IUserManagementService _userService;
+    private readonly IClubRepository _clubRepo;
 
-    public UserManagementController(IUserManagementService userService)
+    public UserManagementController(IUserManagementService userService, IClubRepository clubRepo)
     {
         _userService = userService;
+        _clubRepo = clubRepo;
     }
 
     /// <summary>
@@ -111,7 +114,7 @@ public class UserManagementController : ControllerBase
                 return BadRequest(new { message = "User ID mismatch" });
 
             // UpdateUserRolesAsync now takes a list but uses only the first role
-            await _userService.UpdateUserRolesAsync(id, new List<int> { request.RoleId });
+            await _userService.UpdateUserRolesAsync(id, new List<int> { request.RoleId }, request.ClubId);
             return Ok(new { message = "User role updated successfully" });
         }
         catch (KeyNotFoundException ex)
@@ -133,6 +136,7 @@ public class UserManagementController : ControllerBase
     {
         public int UserId { get; set; }
         public int RoleId { get; set; }
+        public int? ClubId { get; set; } // Required when role is ClubMember or ClubManager
     }
 
     /// <summary>
@@ -150,6 +154,36 @@ public class UserManagementController : ControllerBase
         {
             return StatusCode(500, new { message = "Error retrieving roles", error = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Get all active clubs for role assignment
+    /// </summary>
+    [HttpGet("clubs")]
+    public async Task<ActionResult<IEnumerable<ClubSimpleDto>>> GetAllClubs()
+    {
+        try
+        {
+            var clubs = await _clubRepo.GetAllAsync();
+            var activeClubs = clubs.Where(c => c.IsActive).Select(c => new ClubSimpleDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                SubName = c.SubName
+            }).ToList();
+            return Ok(activeClubs);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error retrieving clubs", error = ex.Message });
+        }
+    }
+
+    public class ClubSimpleDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = null!;
+        public string SubName { get; set; } = null!;
     }
 }
 

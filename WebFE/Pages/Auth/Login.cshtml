@@ -56,17 +56,14 @@
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6 col-xl-5">
                 <div class="card shadow-lg border-0 login-card" style="border-radius: 20px;">
-                    <div class="card-header text-center bg-white border-0" style="padding: 3rem 2.5rem 2rem;">
+                    <div class="card-body text-center" style="padding: 3rem 2.5rem; background-color: white;">
+                        <!-- Logo and Welcome Text -->
                         <div class="mb-4">
-                            <div class="mx-auto" style="width: 90px; height: 90px; background: linear-gradient(135deg, #003366 0%, #007ACC 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.75rem; font-weight: 700; color: white;">
+                            <div class="mx-auto mb-3" style="width: 90px; height: 90px; background: linear-gradient(135deg, #003366 0%, #007ACC 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.75rem; font-weight: 700; color: white;">
                                 E
                             </div>
+                            <h1 class="text-center mb-4" style="font-size: 2rem; font-weight: 700; color: #1a202c; margin: 0;">Welcome to EduXtend</h1>
                         </div>
-                        <h1 class="mb-3" style="font-size: 2rem; font-weight: 700; color: #1a202c;">Chào mừng đến EduXtend</h1>
-                        <p class="text-muted mb-0">Đăng nhập để tiếp tục sử dụng hệ thống</p>
-                    </div>
-
-                    <div class="card-body" style="padding: 0 2.5rem 3rem; background-color: white;">
                         @if (!string.IsNullOrEmpty(Model.ErrorMessage))
                         {
                             <div class="alert alert-danger">@Model.ErrorMessage</div>

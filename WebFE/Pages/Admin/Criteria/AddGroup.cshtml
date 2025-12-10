@@ -1,7 +1,7 @@
 @page
 @model WebFE.Pages.Admin.Criteria.AddGroupModel
 @{
-    ViewData["Title"] = "Thêm nhóm tiêu chí";
+    ViewData["Title"] = "Add Criterion Group";
     ViewData["Breadcrumb"] = "Add Criterion Group";
     Layout = "~/Pages/Shared/_AdminLayout.cshtml";
 }
@@ -12,14 +12,14 @@
         <div>
             <h1 class="page-title">
                 <i data-lucide="plus-circle" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                Thêm nhóm tiêu chí
+                Add Criterion Group
             </h1>
-            <p class="page-description">Tạo nhóm tiêu chí đánh giá mới</p>
+            <p class="page-description">Create a new evaluation criterion group</p>
         </div>
         <div>
             <a href="/Admin/Criteria" class="btn btn-outline-secondary">
                 <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
-                Quay lại
+                Back
             </a>
         </div>
     </div>
@@ -42,7 +42,7 @@
             <div class="card-header bg-success text-white">
                 <h5 class="mb-0 fw-semibold">
                     <i data-lucide="file-plus" style="width: 20px; height: 20px;"></i>
-                    Thông tin nhóm tiêu chí mới
+                    New Criterion Group Details
                 </h5>
             </div>
             <div class="card-body p-4">
@@ -52,13 +52,13 @@
                     <div class="mb-4">
                         <label asp-for="Name" class="form-label fw-bold">
                             <i data-lucide="type" style="width: 16px; height: 16px; margin-right: 6px;"></i>
-                            Tên nhóm tiêu chí <span class="text-danger">*</span>
+                            Group Name <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="Name" type="text" class="form-control form-control-lg" 
-                               placeholder="VD: I. HOẠT ĐỘNG CÂU LẠC BỘ" required />
+                        <input asp-for="Name" type="text" class="form-control form-control-lg"
+                               placeholder="e.g.: I. CLUB ACTIVITIES" required />
                         <small class="form-text text-muted">
                             <i data-lucide="info" style="width: 12px; height: 12px;"></i>
-                            Tên nhóm sẽ hiển thị trong hệ thống đánh giá
+                            The group name will be displayed in the evaluation system
                         </small>
                     </div>
 
@@ -66,13 +66,13 @@
                     <div class="mb-4">
                         <label asp-for="Description" class="form-label fw-bold">
                             <i data-lucide="file-text" style="width: 16px; height: 16px; margin-right: 6px;"></i>
-                            Mô tả
+                            Description
                         </label>
-                        <textarea asp-for="Description" class="form-control" rows="4" 
-                                  placeholder="Mô tả chi tiết về nhóm tiêu chí này..."></textarea>
+                        <textarea asp-for="Description" class="form-control" rows="4"
+                                  placeholder="Detailed description about this criterion group..."></textarea>
                         <small class="form-text text-muted">
                             <i data-lucide="info" style="width: 12px; height: 12px;"></i>
-                            Mô tả sẽ giúp người dùng hiểu rõ hơn về nhóm tiêu chí
+                            The description helps users better understand the group
                         </small>
                     </div>
 
@@ -81,20 +81,20 @@
                         <div class="col-md-6">
                             <label asp-for="MaxScore" class="form-label fw-bold">
                                 <i data-lucide="award" style="width: 16px; height: 16px; margin-right: 6px;"></i>
-                                Điểm tối đa <span class="text-danger">*</span>
+                                Max Score <span class="text-danger">*</span>
                             </label>
-                            <input asp-for="MaxScore" type="number" class="form-control" 
+                            <input asp-for="MaxScore" type="number" class="form-control"
                                    min="0" max="1000" value="100" required />
-                            <small class="form-text text-muted">Phạm vi: 0-1000 điểm</small>
+                            <small class="form-text text-muted">Range: 0-1000 points</small>
                         </div>
                         <div class="col-md-6">
                             <label asp-for="TargetType" class="form-label fw-bold">
                                 <i data-lucide="target" style="width: 16px; height: 16px; margin-right: 6px;"></i>
-                                Đối tượng áp dụng <span class="text-danger">*</span>
+                                Target Type <span class="text-danger">*</span>
                             </label>
                             <select asp-for="TargetType" class="form-select" required>
-                                <option value="Student">Sinh viên (Student)</option>
-                                <option value="Club">Câu lạc bộ (Club)</option>
+                                <option value="Student">Student</option>
+                                <option value="Club">Club</option>
                             </select>
                         </div>
                     </div>
@@ -104,12 +104,12 @@
                         <div class="d-flex">
                             <i data-lucide="alert-circle" style="width: 18px; height: 18px; margin-right: 10px; color: #0d6efd; flex-shrink: 0; margin-top: 2px;"></i>
                             <div>
-                                <strong>Lưu ý:</strong>
+                                <strong>Notes:</strong>
                                 <ul class="mb-0 mt-2 ms-2">
-                                    <li>Tên nhóm tiêu chí nên rõ ràng và dễ hiểu</li>
-                                    <li>Điểm tối đa phải phù hợp với quy định đánh giá</li>
-                                    <li>Target Type xác định nhóm này dùng cho Sinh viên hay Câu lạc bộ</li>
-                                    <li>Sau khi tạo nhóm, bạn có thể thêm các tiêu chí cụ thể vào nhóm</li>
+                                    <li>Group name should be clear and easy to understand</li>
+                                    <li>Max score should comply with evaluation rules</li>
+                                    <li>Target Type determines whether the group applies to Students or Clubs</li>
+                                    <li>After creating the group, you can add specific criteria into it</li>
                                 </ul>
                             </div>
                         </div>
@@ -121,11 +121,11 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <a href="/Admin/Criteria" class="btn btn-secondary">
                             <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-                            Hủy
+                            Cancel
                         </a>
                         <button type="submit" class="btn btn-success btn-lg fw-bold">
                             <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i>
-                            Thêm nhóm tiêu chí
+                            Add Criterion Group
                         </button>
                     </div>
                 </form>
@@ -166,4 +166,3 @@
         margin-bottom: 0.5rem;
     }
 </style>
-

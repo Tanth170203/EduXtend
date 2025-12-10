@@ -70,8 +70,10 @@ namespace WebFE.Pages.ClubManager.Activities
                     EndTime = detail.EndTime,
                     Type = detail.Type,
                     IsPublic = detail.IsPublic,
-                    MaxParticipants = detail.MaxParticipants,
-                    MovementPoint = detail.MovementPoint
+                    MaxParticipants = detail.MaxParticipants ?? 1,
+                    MovementPoint = detail.MovementPoint,
+                    ClubCollaborationId = detail.ClubCollaborationId,
+                    CollaborationPoint = detail.CollaborationPoint
                 };
 
                 return Page();
@@ -115,11 +117,8 @@ namespace WebFE.Pages.ClubManager.Activities
                     "SchoolCompetition" => 6,
                     "ProvincialCompetition" => 7,
                     "NationalCompetition" => 8,
-                    "Volunteer" => 9,
                     "ClubCollaboration" => 10,
                     "SchoolCollaboration" => 11,
-                    "EnterpriseCollaboration" => 12,
-                    "Other" => 13,
                     _ => 0
                 };
 
@@ -134,7 +133,9 @@ namespace WebFE.Pages.ClubManager.Activities
                     Type = typeValue,
                     IsPublic = Activity.IsPublic,
                     MaxParticipants = Activity.MaxParticipants,
-                    MovementPoint = Activity.MovementPoint
+                    MovementPoint = Activity.MovementPoint,
+                    ClubCollaborationId = Activity.ClubCollaborationId,
+                    CollaborationPoint = Activity.CollaborationPoint
                 };
 
                 var request = new HttpRequestMessage(HttpMethod.Put, $"api/activity/club-manager/{Id}");
@@ -172,7 +173,7 @@ namespace WebFE.Pages.ClubManager.Activities
         }
     }
 
-    public class EditActivityDto
+    public class EditActivityDto : IValidatableObject
     {
         [Required]
         public string Title { get; set; } = string.Empty;
@@ -189,10 +190,38 @@ namespace WebFE.Pages.ClubManager.Activities
         
         public string Type { get; set; } = "ClubMeeting";
         public bool IsPublic { get; set; }
-        public int? MaxParticipants { get; set; }
+        [Required] [Range(1, int.MaxValue, ErrorMessage = "Max Participants is required")] public int MaxParticipants { get; set; }
         
         [Range(0, 1000)]
         public double MovementPoint { get; set; }
+        
+        public int? ClubCollaborationId { get; set; }
+        public int? CollaborationPoint { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (MaxParticipants > 0)
+            {
+                if (Type == "LargeEvent" && (MaxParticipants < 100 || MaxParticipants > 200))
+                {
+                    yield return new ValidationResult(
+                        "Large Event phải có số người tham gia từ 100-200 người",
+                        new[] { nameof(MaxParticipants) });
+                }
+                else if (Type == "MediumEvent" && (MaxParticipants < 50 || MaxParticipants > 100))
+                {
+                    yield return new ValidationResult(
+                        "Medium Event phải có số người tham gia từ 50-100 người",
+                        new[] { nameof(MaxParticipants) });
+                }
+                else if (Type == "SmallEvent" && MaxParticipants >= 50)
+                {
+                    yield return new ValidationResult(
+                        "Small Event phải có số người tham gia dưới 50 người",
+                        new[] { nameof(MaxParticipants) });
+                }
+            }
+        }
     }
 }
 

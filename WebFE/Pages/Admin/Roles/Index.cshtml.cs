@@ -17,6 +17,7 @@ public class IndexModel : PageModel
 
     public List<UserWithRolesViewModel> Users { get; set; } = new();
     public List<RoleViewModel> AllRoles { get; set; } = new();
+    public List<ClubViewModel> AllClubs { get; set; } = new();
     public int TotalUsers { get; set; }
     public int AdminCount { get; set; }
     public int StudentCount { get; set; }
@@ -54,6 +55,17 @@ public class IndexModel : PageModel
                     PropertyNameCaseInsensitive = true
                 }) ?? new();
             }
+
+            // Get all clubs for ClubMember/ClubManager role assignment
+            var clubsResponse = await client.GetAsync("/api/user-management/clubs");
+            if (clubsResponse.IsSuccessStatusCode)
+            {
+                var content = await clubsResponse.Content.ReadAsStringAsync();
+                AllClubs = JsonSerializer.Deserialize<List<ClubViewModel>>(content, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new();
+            }
         }
         catch { }
 
@@ -66,7 +78,7 @@ public class IndexModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostUpdateRolesAsync(int userId, int[] roleIds)
+    public async Task<IActionResult> OnPostUpdateRolesAsync(int userId, int[] roleIds, int? clubId)
     {
         var token = Request.Cookies["AccessToken"];
         var client = _httpClientFactory.CreateClient("ApiClient");
@@ -82,15 +94,21 @@ public class IndexModel : PageModel
                 return RedirectToPage();
             }
 
-            var dto = new { UserId = userId, RoleId = roleId };
+            var dto = new { UserId = userId, RoleId = roleId, ClubId = clubId };
             var json = JsonSerializer.Serialize(dto);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var response = await client.PutAsync($"/api/user-management/{userId}/role", content);
             if (response.IsSuccessStatusCode)
+            {
                 TempData["SuccessMessage"] = "User role updated successfully";
+            }
             else
-                TempData["ErrorMessage"] = "Failed to update role";
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                var errorObj = JsonSerializer.Deserialize<ErrorResponse>(errorContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                TempData["ErrorMessage"] = errorObj?.Message ?? "Failed to update role";
+            }
         }
         catch (Exception ex)
         {
@@ -98,6 +116,11 @@ public class IndexModel : PageModel
         }
 
         return RedirectToPage();
+    }
+
+    private class ErrorResponse
+    {
+        public string? Message { get; set; }
     }
 }
 
@@ -116,5 +139,12 @@ public class RoleViewModel
     public int Id { get; set; }
     public string RoleName { get; set; } = null!;
     public string? Description { get; set; }
+}
+
+public class ClubViewModel
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = null!;
+    public string SubName { get; set; } = null!;
 }
 

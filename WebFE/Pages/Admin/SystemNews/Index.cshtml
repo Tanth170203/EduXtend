@@ -1,0 +1,623 @@
+@page
+@{
+    ViewData["Title"] = "System News";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<div class="admin-page-header">
+    <h3>System News</h3>
+    <div class="text-muted">Create, publish, and manage news.</div>
+    <div class="mt-3">
+        <a class="btn btn-primary" href="#" onclick="openCreate(); return false;">Create News</a>
+    </div>
+ </div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="input-group">
+            <span class="input-group-text bg-white">
+                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+            </span>
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by title or content..." onkeyup="filterNews()" />
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width:60px">ID</th>
+                        <th>Title</th>
+                        <th style="width:140px">Status</th>
+                        <th style="width:240px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="newsRows"></tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <nav aria-label="News pagination" class="mt-3">
+            <ul class="pagination justify-content-center mb-0" id="pagination"></ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal" tabindex="-1" id="newsModal" style="display:none;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Create News</h5>
+                <button type="button" class="btn-close" onclick="closeModal()"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="newsId" />
+                <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    <input class="form-control" id="newsTitle" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Image</label>
+                    <div class="input-group mb-2">
+                        <input type="file" class="form-control" id="newsImageFile" accept="image/*" style="display: none;" />
+                        <input type="text" class="form-control" id="fileNameDisplay" readonly placeholder="No file chosen" />
+                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('newsImageFile').click()">
+                            Choose File
+                        </button>
+                    </div>
+                    <input type="hidden" id="newsImage" />
+                    <div id="newsImagePreview" class="mt-2" style="display:none;">
+                        <img id="newsPreviewImg" src="#" class="rounded" style="max-width: 100%; max-height: 200px;" />
+                        <button type="button" class="btn btn-sm btn-outline-danger mt-2" id="removeNewsImageBtn">Remove</button>
+                    </div>
+                    <div class="form-text">Upload an image from your device. We will store it on Cloudinary.</div>
+                    <div id="newsImageUploadStatus" class="small text-muted mt-1"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Facebook URL</label>
+                    <input class="form-control" id="newsFb" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Content</label>
+                    <textarea class="form-control" id="newsContent" rows="6"></textarea>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="newsPublish">
+                    <label class="form-check-label" for="newsPublish">Publish</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                <button class="btn btn-primary" onclick="saveNews()">Save</button>
+            </div>
+        </div>
+    </div>
+ </div>
+
+@section Scripts {
+    <style>
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 12px;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+        .status-active { background: #16a34a; color: #fff; }
+        .status-draft { background: #6b7280; color: #fff; }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background: transparent;
+            margin-right: 8px;
+        }
+        .action-view { border-color: #06b6d4; color: #06b6d4; }
+        .action-edit { border-color: #3b82f6; color: #3b82f6; }
+        .action-delete { border-color: #ef4444; color: #ef4444; }
+        .action-btn:hover { opacity: .85; }
+    </style>
+    <script>
+        function closeAllOverlays() {
+            try {
+                if (window.notificationManager && typeof notificationManager.hideModal === 'function') {
+                    notificationManager.hideModal();
+                }
+            } catch {}
+            try {
+                const mc = document.getElementById('modal-container');
+                if (mc) mc.style.display = 'none';
+            } catch {}
+            try {
+                document.body.classList.remove('modal-open');
+                const bds = document.querySelectorAll('.modal-backdrop');
+                bds.forEach(b => b.parentElement && b.parentElement.removeChild(b));
+            } catch {}
+        }
+
+        function showModal() {
+            const m = document.getElementById('newsModal');
+            m.style.display = 'block';
+            m.classList.add('show');
+        }
+        function closeModal() {
+            const m = document.getElementById('newsModal');
+            m.classList.remove('show');
+            setTimeout(() => m.style.display = 'none', 150);
+        }
+        function openCreate() {
+            document.getElementById('modalTitle').textContent = 'Create News';
+            document.getElementById('newsId').value = '';
+            document.getElementById('newsTitle').value = '';
+            document.getElementById('newsImage').value = '';
+            document.getElementById('newsImageFile').value = '';
+            document.getElementById('fileNameDisplay').value = 'No file chosen';
+            document.getElementById('newsFb').value = '';
+            document.getElementById('newsContent').value = '';
+            document.getElementById('newsPublish').checked = false;
+            document.getElementById('newsImagePreview').style.display = 'none';
+            document.getElementById('newsImageUploadStatus').textContent = '';
+            showModal();
+        }
+        function openEdit(n) {
+            document.getElementById('modalTitle').textContent = 'Edit News';
+            document.getElementById('newsId').value = n.id;
+            document.getElementById('newsTitle').value = n.title || '';
+            document.getElementById('newsImage').value = n.imageUrl || '';
+            document.getElementById('newsImageFile').value = '';
+            document.getElementById('fileNameDisplay').value = n.imageUrl ? 'Image uploaded' : 'No file chosen';
+            document.getElementById('newsFb').value = n.facebookUrl || '';
+            document.getElementById('newsContent').value = n.content || '';
+            document.getElementById('newsPublish').checked = !!n.isPublished;
+            
+            // Show preview if image exists
+            const preview = document.getElementById('newsImagePreview');
+            const previewImg = document.getElementById('newsPreviewImg');
+            if (n.imageUrl) {
+                previewImg.src = n.imageUrl;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+            document.getElementById('newsImageUploadStatus').textContent = '';
+            showModal();
+        }
+        async function saveNews() {
+            const id = document.getElementById('newsId').value;
+            const payload = {
+                title: document.getElementById('newsTitle').value.trim(),
+                imageUrl: document.getElementById('newsImage').value.trim() || null,
+                facebookUrl: document.getElementById('newsFb').value.trim() || null,
+                content: document.getElementById('newsContent').value.trim() || null,
+                publish: document.getElementById('newsPublish').checked
+            };
+            const url = id ? `${API_BASE_URL}/api/news/${id}` : `${API_BASE_URL}/api/news`;
+            const method = id ? 'PUT' : 'POST';
+            const res = await fetch(url, {
+                method,
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                closeModal();
+                if (typeof success === 'function') success('Saved', 'News saved successfully', 2500);
+                await loadAdminNews();
+            } else {
+                if (typeof error === 'function') error('Save failed', 'Please check your inputs', 4000);
+            }
+        }
+        async function publish(id, publish) {
+            const res = await fetch(`${API_BASE_URL}/api/news/${id}/publish`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ publish })
+            });
+            if (res.ok) {
+                await loadAdminNews();
+            }
+        }
+        function showConfirmModal(title, message, onConfirm) {
+            // Remove any existing modal first
+            const existingModal = document.getElementById('custom-confirm-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Create a completely new modal element
+            const modalOverlay = document.createElement('div');
+            modalOverlay.id = 'custom-confirm-modal';
+            modalOverlay.setAttribute('data-confirm-modal', 'true');
+            
+            // Set styles directly on the element
+            Object.assign(modalOverlay.style, {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                right: '0',
+                bottom: '0',
+                width: '100vw',
+                height: '100vh',
+                margin: '0',
+                padding: '0',
+                zIndex: '99999',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backdropFilter: 'blur(4px)'
+            });
+            
+            modalOverlay.innerHTML = `
+                <div id="confirm-modal-content" style="
+                    background: #ffffff;
+                    border-radius: 16px;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                    max-width: 500px;
+                    width: 90%;
+                    overflow: hidden;
+                    transform: scale(0.9);
+                    opacity: 0;
+                    transition: all 0.3s ease;
+                ">
+                    <div style="
+                        padding: 24px;
+                        border-bottom: 1px solid #e5e7eb;
+                        display: flex;
+                        align-items: center;
+                        gap: 16px;
+                        background: #ffffff;
+                    ">
+                        <div style="
+                            width: 48px;
+                            height: 48px;
+                            border-radius: 12px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-size: 24px;
+                            background: #f59e0b;
+                            flex-shrink: 0;
+                        ">⚠</div>
+                        <h3 style="
+                            font-size: 20px;
+                            font-weight: 700;
+                            color: #1f2937;
+                            margin: 0;
+                            flex: 1;
+                        ">${title}</h3>
+                    </div>
+                    <div style="
+                        padding: 24px;
+                        background: #ffffff;
+                    ">
+                        <p style="
+                            font-size: 16px;
+                            color: #6b7280;
+                            line-height: 1.5;
+                            margin: 0 0 24px 0;
+                        ">${message}</p>
+                        <div style="
+                            display: flex;
+                            gap: 12px;
+                            justify-content: flex-end;
+                        ">
+                            <button id="confirm-cancel-btn" style="
+                                padding: 10px 20px;
+                                border-radius: 8px;
+                                font-weight: 600;
+                                font-size: 14px;
+                                border: none;
+                                cursor: pointer;
+                                min-width: 80px;
+                                background: #f3f4f6;
+                                color: #374151;
+                            ">Hủy</button>
+                            <button id="confirm-ok-btn" style="
+                                padding: 10px 20px;
+                                border-radius: 8px;
+                                font-weight: 600;
+                                font-size: 14px;
+                                border: none;
+                                cursor: pointer;
+                                min-width: 80px;
+                                background: #ef4444;
+                                color: white;
+                            ">Xác nhận</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modalOverlay);
+
+            // Add event listeners
+            document.getElementById('confirm-cancel-btn').addEventListener('click', closeConfirmModal);
+            document.getElementById('confirm-ok-btn').addEventListener('click', async () => {
+                closeConfirmModal();
+                if (onConfirm) await onConfirm();
+            });
+
+            // Animate in
+            setTimeout(() => {
+                const content = document.getElementById('confirm-modal-content');
+                if (content) {
+                    content.style.transform = 'scale(1)';
+                    content.style.opacity = '1';
+                }
+            }, 10);
+        }
+
+        function closeConfirmModal() {
+            const modalOverlay = document.getElementById('custom-confirm-modal');
+            if (modalOverlay) {
+                const content = document.getElementById('confirm-modal-content');
+                if (content) {
+                    content.style.transform = 'scale(0.9)';
+                    content.style.opacity = '0';
+                }
+                setTimeout(() => {
+                    modalOverlay.remove();
+                }, 300);
+            }
+        }
+
+        async function remove(id) {
+            showConfirmModal(
+                'Xác nhận xóa',
+                'Bạn có chắc chắn muốn xóa tin tức này? Hành động này không thể hoàn tác.',
+                async () => {
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/api/news/${id}`, { method: 'DELETE', credentials: 'include' });
+                        if (res.status === 204) {
+                            if (typeof success === 'function') success('Thành công', 'Đã xóa tin tức thành công', 2500);
+                            await loadAdminNews();
+                        } else {
+                            let msg = 'Không thể xóa tin tức này.';
+                            try { const b = await res.json(); if (b?.message) msg = b.message; } catch {}
+                            if (typeof error === 'function') error('Lỗi', msg, 5000);
+                        }
+                    } catch (e) {
+                        console.error('Delete error', e);
+                        if (typeof error === 'function') error('Lỗi', 'Lỗi kết nối mạng.', 5000);
+                    } finally {
+                        closeAllOverlays();
+                    }
+                }
+            );
+        }
+        let allNews = [];
+        let filteredNews = [];
+        let currentPage = 1;
+        const itemsPerPage = 6;
+
+        async function loadAdminNews() {
+            const res = await fetch(`${API_BASE_URL}/api/news?publishedOnly=false`, { credentials: 'include' });
+            const rows = document.getElementById('newsRows');
+            if (!res.ok) { 
+                rows.innerHTML = '<tr><td colspan="4">Failed to load.</td></tr>'; 
+                document.getElementById('pagination').innerHTML = '';
+                return; 
+            }
+            allNews = await res.json();
+            filterNews();
+        }
+
+        function filterNews() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (searchTerm) {
+                filteredNews = allNews.filter(n => 
+                    n.title.toLowerCase().includes(searchTerm) ||
+                    (n.content && n.content.toLowerCase().includes(searchTerm))
+                );
+            } else {
+                filteredNews = [...allNews];
+            }
+            
+            currentPage = 1;
+            renderTable();
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        function renderTable() {
+            const rows = document.getElementById('newsRows');
+            
+            if (filteredNews.length === 0) {
+                rows.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted">No news found.</td></tr>';
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+            
+            // Pagination
+            const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedNews = filteredNews.slice(startIndex, endIndex);
+            
+            rows.innerHTML = paginatedNews.map(n => `
+                <tr>
+                    <td>${n.id}</td>
+                    <td>${n.title}</td>
+                    <td>
+                        <span class="status-badge ${n.isPublished ? 'status-active' : 'status-draft'}">
+                            ${n.isPublished ? 'Active' : 'Draft'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="action-btn action-view" title="View" onclick="view(${n.id})">
+                            <i data-lucide="eye" style="width:18px;height:18px;"></i>
+                        </button>
+                        <button class="action-btn action-edit" title="Edit" onclick="edit(${n.id})">
+                             <i data-lucide="square-pen" style="width:18px;height:18px;"></i>
+                        </button>
+                        <button class="action-btn action-delete" title="Delete" onclick="remove(${n.id})">
+                            <i data-lucide="trash-2" style="width:18px;height:18px;"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            // Re-render lucide icons after injecting HTML
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                try { lucide.createIcons(); } catch {}
+            }
+            
+            renderPagination(totalPages);
+        }
+
+        function renderPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // Previous
+            html += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">&laquo;</a>
+                </li>`;
+            
+            // Pages
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+            
+            if (startPage > 1) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(1); return false;">1</a></li>`;
+                if (startPage > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                    </li>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a></li>`;
+            }
+            
+            // Next
+            html += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">&raquo;</a>
+                </li>`;
+            
+            pagination.innerHTML = html;
+        }
+        async function edit(id) {
+            const res = await fetch(`${API_BASE_URL}/api/news/${id}?includeUnpublished=true`, { credentials: 'include' });
+            if (!res.ok) return;
+            const n = await res.json();
+            openEdit(n);
+        }
+        function view(id) {
+            window.open(`/News/Details?id=${id}`, '_blank');
+        }
+        // ===== Image upload to Cloudinary =====
+        const newsImageFileInput = document.getElementById('newsImageFile');
+        const newsImageUploadStatus = document.getElementById('newsImageUploadStatus');
+        const newsImagePreview = document.getElementById('newsImagePreview');
+        const newsPreviewImg = document.getElementById('newsPreviewImg');
+        const removeNewsImageBtn = document.getElementById('removeNewsImageBtn');
+
+        newsImageFileInput?.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) {
+                document.getElementById('fileNameDisplay').value = 'No file chosen';
+                return;
+            }
+            
+            // Display file name
+            document.getElementById('fileNameDisplay').value = file.name;
+            
+            newsImageUploadStatus.textContent = 'Uploading...';
+            newsImageUploadStatus.classList.remove('text-danger', 'text-success');
+            newsImageUploadStatus.classList.add('text-primary');
+
+            try {
+                const form = new FormData();
+                form.append('file', file);
+                
+                console.log('Uploading news image:', file.name);
+                
+                const res = await fetch(`${API_BASE_URL}/api/news/upload-image`, {
+                    method: 'POST',
+                    body: form,
+                    credentials: 'include'
+                });
+                
+                console.log('Upload response status:', res.status);
+                
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({ message: 'Upload failed' }));
+                    console.error('Upload error:', errorData);
+                    throw new Error(errorData.message || `Upload failed: ${res.status}`);
+                }
+                
+                const data = await res.json();
+                console.log('Upload response data:', data);
+                
+                if (!data.url) {
+                    throw new Error('No URL returned from server');
+                }
+
+                // Set hidden field and preview
+                document.getElementById('newsImage').value = data.url;
+                newsPreviewImg.src = data.url;
+                newsImagePreview.style.display = 'block';
+                newsImageUploadStatus.textContent = '✓ Uploaded successfully';
+                newsImageUploadStatus.classList.remove('text-primary', 'text-danger');
+                newsImageUploadStatus.classList.add('text-success');
+            } catch (err) {
+                console.error('Upload error:', err);
+                newsImageUploadStatus.textContent = '✗ ' + (err.message || 'Upload failed');
+                newsImageUploadStatus.classList.remove('text-primary', 'text-success');
+                newsImageUploadStatus.classList.add('text-danger');
+                newsImageFileInput.value = '';
+                document.getElementById('fileNameDisplay').value = 'Upload failed';
+            }
+        });
+
+        removeNewsImageBtn?.addEventListener('click', () => {
+            document.getElementById('newsImage').value = '';
+            newsPreviewImg.src = '#';
+            newsImagePreview.style.display = 'none';
+            newsImageFileInput.value = '';
+            document.getElementById('fileNameDisplay').value = 'No file chosen';
+            newsImageUploadStatus.textContent = '';
+        });
+
+        document.addEventListener('DOMContentLoaded', loadAdminNews);
+    </script>
+}
+
+

@@ -1,0 +1,254 @@
+@page
+@{
+    ViewData["Title"] = "News";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container py-4">
+    <h2 class="mb-4">News</h2>
+    
+    <!-- Search Box -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="input-group">
+                <span class="input-group-text bg-white">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control" id="searchInput" placeholder="Search news by title or content..." onkeyup="applyFilters()" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-4" id="newsTypeTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab" onclick="filterNews('all')">
+                All News
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system" type="button" role="tab" onclick="filterNews('system')">
+                System News
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="club-tab" data-bs-toggle="tab" data-bs-target="#club" type="button" role="tab" onclick="filterNews('club')">
+                Club News
+            </button>
+        </li>
+    </ul>
+    
+    <div id="newsList" class="row g-4"></div>
+    
+    <!-- Pagination -->
+    <nav aria-label="News pagination" class="mt-4">
+        <ul class="pagination justify-content-center" id="pagination"></ul>
+    </nav>
+</div>
+
+@section Scripts {
+    <script>
+        let allNews = [];
+        let currentFilter = 'all';
+        let currentPage = 1;
+        const itemsPerPage = 6;
+
+        async function loadNews() {
+            try {
+                // Load System News
+                const systemRes = await fetch(`${API_BASE_URL}/api/news?publishedOnly=true`, { credentials: 'include' });
+                const systemNews = systemRes.ok ? await systemRes.json() : [];
+                
+                // Load Club News (approved only)
+                const clubRes = await fetch(`${API_BASE_URL}/api/club-news?approvedOnly=true`, { credentials: 'include' });
+                const clubNews = clubRes.ok ? await clubRes.json() : [];
+                
+                // Combine and sort by date
+                allNews = [
+                    ...systemNews.map(n => ({ ...n, type: 'system', detailUrl: `/News/Details?id=${n.id}` })),
+                    ...clubNews.map(n => ({ ...n, type: 'club', detailUrl: `/News/ClubDetails?id=${n.id}` }))
+                ].sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+                
+                renderNews();
+            } catch (e) {
+                console.error('Error loading news:', e);
+                document.getElementById('newsList').innerHTML = '<div class="col-12"><div class="alert alert-danger">Error loading news</div></div>';
+            }
+        }
+
+        function filterNews(type) {
+            currentFilter = type;
+            currentPage = 1; // Reset to first page when filter changes
+            applyFilters();
+        }
+
+        function applyFilters() {
+            currentPage = 1;
+            renderNews();
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderNews();
+            // Scroll to top of news list
+            document.getElementById('newsList').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function renderNews() {
+            const list = document.getElementById('newsList');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            // Filter news based on current filter
+            let filteredNews = allNews;
+            if (currentFilter === 'system') {
+                filteredNews = allNews.filter(n => n.type === 'system');
+            } else if (currentFilter === 'club') {
+                filteredNews = allNews.filter(n => n.type === 'club');
+            }
+            
+            // Apply search filter
+            if (searchTerm) {
+                filteredNews = filteredNews.filter(n => 
+                    n.title.toLowerCase().includes(searchTerm) ||
+                    (n.content && n.content.toLowerCase().includes(searchTerm)) ||
+                    (n.clubName && n.clubName.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            if (filteredNews.length === 0) {
+                list.innerHTML = '<div class="col-12 text-center py-5 text-muted">No news available.</div>';
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+            
+            // Calculate pagination
+            const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedNews = filteredNews.slice(startIndex, endIndex);
+            
+            // Render news items
+            list.innerHTML = '';
+            paginatedNews.forEach(n => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6 col-lg-4';
+                
+                const badge = n.type === 'club' 
+                    ? `<span class="badge bg-primary mb-2">${n.clubName || 'Club'}</span>`
+                    : '<span class="badge bg-info mb-2">System</span>';
+                
+                const imageSection = n.imageUrl 
+                    ? `<div style="width:100%;max-width:100%;overflow:hidden;background:#f8f9fa;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;">
+                        <img src="${n.imageUrl}" class="card-img-top" alt="${n.title}" style="width:100%;height:100%;object-fit:cover;object-position:center;display:block;" 
+                             onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);\\\'><i class=\\'bi bi-newspaper\\'  style=\\'font-size:4rem;color:white;opacity:0.8;\\'></i></div>';">
+                    </div>`
+                    : `<div style="width:100%;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="bi bi-newspaper" style="font-size:4rem;color:white;opacity:0.8;"></i>
+                    </div>`;
+                
+                col.innerHTML = `
+                    <div class="card h-100 shadow-sm border-0">
+                        ${imageSection}
+                        <div class="card-body d-flex flex-column">
+                            ${badge}
+                            <h5 class="card-title">${n.title}</h5>
+                            <p class="text-muted small mb-3">
+                                <i class="bi bi-calendar"></i>
+                                ${formatDate(n.publishedAt)}
+                            </p>
+                            <div class="mt-auto pt-3">
+                                <a class="btn btn-sm btn-primary" href="${n.detailUrl}">Read more</a>
+                            </div>
+                        </div>
+                    </div>`;
+                list.appendChild(col);
+            });
+            
+            // Render pagination
+            renderPagination(totalPages);
+        }
+
+        function renderPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // Previous button
+            html += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>`;
+            
+            // Page numbers
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            // Adjust start page if we're near the end
+            if (endPage - startPage < maxVisiblePages - 1) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            // First page + ellipsis
+            if (startPage > 1) {
+                html += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(1); return false;">1</a>
+                    </li>`;
+                if (startPage > 2) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+            
+            // Page numbers
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                    </li>`;
+            }
+            
+            // Ellipsis + last page
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+                html += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a>
+                    </li>`;
+            }
+            
+            // Next button
+            html += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>`;
+            
+            pagination.innerHTML = html;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit'
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadNews);
+    </script>
+}
+
+

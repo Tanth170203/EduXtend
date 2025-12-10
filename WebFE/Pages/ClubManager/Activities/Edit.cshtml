@@ -104,6 +104,30 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Activity Schedule & Task Assignments -->
+            <div id="scheduleManagementSection" style="display: none;">
+                <div class="content-card mb-4">
+                    <div class="content-card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="content-card-title mb-0">Activity Schedule & Task Assignments</h5>
+                            <button type="button" id="addScheduleBtn" class="btn btn-sm btn-primary">
+                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                                Add Schedule Item
+                            </button>
+                        </div>
+                    </div>
+                    <div class="content-card-body">
+                        <div id="scheduleList">
+                            <!-- Schedule items will be dynamically added here -->
+                        </div>
+                        <div id="noSchedulesMessage" class="text-muted text-center py-3">
+                            <i data-lucide="calendar" style="width: 32px; height: 32px;"></i>
+                            <p class="mt-2">No schedule items yet. Click "Add Schedule Item" to create a timeline for this activity.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Sidebar -->
@@ -133,16 +157,9 @@
                                 <option value="ProvincialCompetition">Provincial Competition - 20 points</option>
                                 <option value="NationalCompetition">National Competition - 30 points</option>
                             </optgroup>
-                            <optgroup label="Community">
-                                <option value="Volunteer">Volunteer (1-5 points)</option>
-                            </optgroup>
                             <optgroup label="Collaboration">
                                 <option value="ClubCollaboration">Club Collaboration (1-10 points)</option>
                                 <option value="SchoolCollaboration">School Collaboration (1-10 points)</option>
-                                <option value="EnterpriseCollaboration">Enterprise Collaboration (1-10 points)</option>
-                            </optgroup>
-                            <optgroup label="Other">
-                                <option value="Other">Other (1-5 points)</option>
                             </optgroup>
                         </select>
                         <span asp-validation-for="Activity.Type" class="text-danger"></span>
@@ -150,13 +167,38 @@
 
                     <!-- Max Participants -->
                     <div class="mb-3">
-                        <label asp-for="Activity.MaxParticipants" class="form-label">Max Participants</label>
-                        <input asp-for="Activity.MaxParticipants" type="number" class="form-control" min="1" placeholder="Leave empty for unlimited" />
+                        <label asp-for="Activity.MaxParticipants" class="form-label">Max Participants <span class="text-danger">*</span></label>
+                        <input asp-for="Activity.MaxParticipants" type="number" class="form-control" id="maxParticipantsInput" min="1" required />
                         <span asp-validation-for="Activity.MaxParticipants" class="text-danger"></span>
+                        <span class="text-danger small d-block" id="maxParticipantsError"></span>
+                    </div>
+
+                    <!-- Collaborating Club Selection (ClubCollaboration only) -->
+                    <div class="mb-3" id="clubCollaborationSection" style="display: none;">
+                        <label class="form-label">Collaborating Club</label>
+                        <input type="hidden" asp-for="Activity.ClubCollaborationId" id="ClubCollaborationIdInput" />
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="selectedClubName" placeholder="No club selected" readonly />
+                            <button type="button" class="btn btn-outline-primary" id="selectClubBtn">
+                                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                                Select Club
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">Select a club to collaborate with</small>
+                        <span class="text-danger small d-block" id="ClubCollaborationError"></span>
+                    </div>
+
+                    <!-- Collaboration Points (ClubCollaboration only) -->
+                    <div class="mb-3" id="collaborationPointSection" style="display: none;">
+                        <label asp-for="Activity.CollaborationPoint" class="form-label">Collaboration Points</label>
+                        <input asp-for="Activity.CollaborationPoint" type="number" class="form-control" id="CollaborationPointInput" placeholder="1-3" min="1" max="3" />
+                        <small class="form-text text-muted">Points for collaborating club members (1-3)</small>
+                        <span asp-validation-for="Activity.CollaborationPoint" class="text-danger"></span>
+                        <span class="text-danger small d-block" id="CollaborationPointError"></span>
                     </div>
 
                     <!-- Movement Points -->
-                    <div class="mb-3">
+                    <div class="mb-3" id="movementPointSection">
                         <label asp-for="Activity.MovementPoint" class="form-label">Movement Points <span class="text-danger">*</span></label>
                         <input asp-for="Activity.MovementPoint" type="number" step="0.5" class="form-control" min="0" id="movementPointInput" required />
                         <span asp-validation-for="Activity.MovementPoint" class="text-danger"></span>
@@ -242,16 +284,9 @@
             'ProvincialCompetition': { fixed: 20, hint: 'Provincial Competition: 20 points' },
             'NationalCompetition': { fixed: 30, hint: 'National Competition: 30 points' },
             
-            // Volunteer
-            'Volunteer': { min: 1, max: 5, hint: 'Volunteer: 1-5 points (manual input required)' },
-            
             // Collaboration
             'ClubCollaboration': { min: 1, max: 10, hint: 'Club Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' },
-            'SchoolCollaboration': { min: 1, max: 10, hint: 'School Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' },
-            'EnterpriseCollaboration': { min: 1, max: 10, hint: 'Enterprise Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' },
-            
-            // Other
-            'Other': { min: 1, max: 5, hint: 'Other activities: 1-5 points (manual input required)' }
+            'SchoolCollaboration': { min: 1, max: 10, hint: 'School Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' }
         };
 
         function updateMovementPointsAuto() {
@@ -300,6 +335,7 @@
 
         activityTypeSelect?.addEventListener('change', function() {
             updateMovementPointsAuto();
+            validateMaxParticipants();
             // Auto-fill on type change in edit mode
             const pointsConfig = activityPoints[this.value];
             if (pointsConfig) {
@@ -315,6 +351,526 @@
 
         // Initial update (don't change value, just update hints)
         updateMovementPointsAuto();
+
+        // ===== Max Participants Validation =====
+        const maxParticipantsInput = document.getElementById('maxParticipantsInput');
+        const maxParticipantsError = document.getElementById('maxParticipantsError');
+
+        function validateMaxParticipants() {
+            const selectedType = activityTypeSelect?.value;
+            const value = parseInt(maxParticipantsInput?.value);
+            
+            // Required for all activity types
+            if (!maxParticipantsInput?.value || isNaN(value) || value < 1) {
+                maxParticipantsError.textContent = 'Max Participants là bắt buộc';
+                return false;
+            }
+
+            // Large Event (100-200 people)
+            if (selectedType === 'LargeEvent') {
+                if (value < 100 || value > 200) {
+                    maxParticipantsError.textContent = 'Large Event phải có số người tham gia từ 100-200 người';
+                    return false;
+                }
+            }
+            // Medium Event (50-100 people)
+            else if (selectedType === 'MediumEvent') {
+                if (value < 50 || value > 100) {
+                    maxParticipantsError.textContent = 'Medium Event phải có số người tham gia từ 50-100 người';
+                    return false;
+                }
+            }
+            // Small Event (<50 people)
+            else if (selectedType === 'SmallEvent') {
+                if (value >= 50) {
+                    maxParticipantsError.textContent = 'Small Event phải có số người tham gia dưới 50 người';
+                    return false;
+                }
+            }
+
+            maxParticipantsError.textContent = '';
+            return true;
+        }
+
+        maxParticipantsInput?.addEventListener('change', validateMaxParticipants);
+        maxParticipantsInput?.addEventListener('input', validateMaxParticipants);
+        
+        // Initial validation
+        validateMaxParticipants();
+
+        // ===== Collaboration Fields Management =====
+        const clubCollaborationSection = document.getElementById('clubCollaborationSection');
+        const collaborationPointSection = document.getElementById('collaborationPointSection');
+        const movementPointSection = document.getElementById('movementPointSection');
+        const clubCollaborationIdInput = document.getElementById('ClubCollaborationIdInput');
+        const collaborationPointInput = document.getElementById('CollaborationPointInput');
+        const selectedClubNameInput = document.getElementById('selectedClubName');
+        const selectClubBtn = document.getElementById('selectClubBtn');
+        const clubCollaborationError = document.getElementById('ClubCollaborationError');
+        const collaborationPointError = document.getElementById('CollaborationPointError');
+        
+        function updateCollaborationFieldsVisibility() {
+            const selectedType = activityTypeSelect.value;
+            const isClubCollaboration = selectedType === 'ClubCollaboration';
+            const isSchoolCollaboration = selectedType === 'SchoolCollaboration';
+            
+            // For Club Manager:
+            // - ClubCollaboration: Show club selection, collaboration point, and movement point
+            // - SchoolCollaboration: Show only movement point (no club selection or collaboration point)
+            // - Other types: Show only movement point
+            
+            if (isClubCollaboration) {
+                clubCollaborationSection.style.display = 'block';
+                collaborationPointSection.style.display = 'block';
+                movementPointSection.style.display = 'block';
+            } else {
+                clubCollaborationSection.style.display = 'none';
+                collaborationPointSection.style.display = 'none';
+                movementPointSection.style.display = 'block';
+                
+                // Clear collaboration fields when not ClubCollaboration
+                if (selectedType !== 'ClubCollaboration') {
+                    clubCollaborationIdInput.value = '';
+                    collaborationPointInput.value = '';
+                    selectedClubNameInput.value = '';
+                    clubCollaborationError.textContent = '';
+                    collaborationPointError.textContent = '';
+                }
+            }
+        }
+        
+        // Load existing collaboration data on page load
+        async function loadExistingCollaborationData() {
+            if (clubCollaborationIdInput.value) {
+                try {
+                    const res = await fetch('@Model.ApiBaseUrl/api/club/' + clubCollaborationIdInput.value, {
+                        credentials: 'include'
+                    });
+                    if (res.ok) {
+                        const club = await res.json();
+                        selectedClubNameInput.value = club.name || '';
+                    }
+                } catch (err) {
+                    console.error('Failed to load collaborating club:', err);
+                }
+            }
+        }
+        
+        // Club Selection Modal Integration
+        selectClubBtn?.addEventListener('click', async function() {
+            // Get current club ID to exclude it from selection
+            let currentClubId = 0;
+            try {
+                const res = await fetch('@Model.ApiBaseUrl/api/club/my-managed-club', {
+                    credentials: 'include'
+                });
+                if (res.ok) {
+                    const club = await res.json();
+                    currentClubId = club.id || 0;
+                }
+            } catch (err) {
+                console.error('Failed to fetch current club:', err);
+            }
+            
+            if (window.ClubSelectionModal) {
+                window.ClubSelectionModal.show('@Model.ApiBaseUrl', currentClubId, function(selectedClub) {
+                    clubCollaborationIdInput.value = selectedClub.id;
+                    selectedClubNameInput.value = selectedClub.name;
+                    clubCollaborationError.textContent = '';
+                });
+            }
+        });
+        
+        // Collaboration Point Validation
+        collaborationPointInput?.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (this.value && (value < 1 || value > 3)) {
+                collaborationPointError.textContent = 'Collaboration points must be between 1 and 3';
+            } else {
+                collaborationPointError.textContent = '';
+            }
+        });
+        
+        // Update visibility on type change
+        activityTypeSelect?.addEventListener('change', function() {
+            updateCollaborationFieldsVisibility();
+        });
+        
+        // Initial setup
+        updateCollaborationFieldsVisibility();
+        loadExistingCollaborationData();
+
+        // ===== Schedule Management =====
+        const scheduleManagementSection = document.getElementById('scheduleManagementSection');
+        const scheduleList = document.getElementById('scheduleList');
+        const noSchedulesMessage = document.getElementById('noSchedulesMessage');
+        const addScheduleBtn = document.getElementById('addScheduleBtn');
+        let scheduleIndex = 0;
+
+        // Check if activity type is Club Activity
+        function isClubActivity(type) {
+            return type === 'ClubMeeting' || type === 'ClubTraining' || type === 'ClubWorkshop';
+        }
+
+        // Check if activity type is Complex Activity (requires schedules)
+        function isComplexActivity(type) {
+            return !isClubActivity(type);
+        }
+
+        // Show/hide schedule management section based on activity type
+        function updateScheduleManagementVisibility() {
+            const selectedType = activityTypeSelect.value;
+            if (isComplexActivity(selectedType)) {
+                scheduleManagementSection.style.display = 'block';
+            } else {
+                scheduleManagementSection.style.display = 'none';
+            }
+        }
+
+        // Update no schedules message visibility
+        function updateNoSchedulesMessage() {
+            const hasSchedules = scheduleList.children.length > 0;
+            noSchedulesMessage.style.display = hasSchedules ? 'none' : 'block';
+        }
+
+        // Add schedule item
+        function addScheduleItem(existingSchedule = null) {
+            scheduleIndex++;
+            const scheduleItem = document.createElement('div');
+            scheduleItem.className = 'schedule-item card mb-3';
+            scheduleItem.setAttribute('data-schedule-index', scheduleIndex);
+            if (existingSchedule && existingSchedule.id) {
+                scheduleItem.setAttribute('data-schedule-id', existingSchedule.id);
+            }
+            
+            scheduleItem.innerHTML = `
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                            Schedule Item #${scheduleIndex}
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-schedule-btn">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                            Remove
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Time inputs -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Start Time <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control schedule-start-time" value="${existingSchedule?.startTime || ''}" required />
+                            <div class="schedule-start-time-error text-danger small"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End Time <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control schedule-end-time" value="${existingSchedule?.endTime || ''}" required />
+                            <div class="schedule-end-time-error text-danger small"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Title -->
+                    <div class="mb-3">
+                        <label class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control schedule-title" maxlength="500" value="${existingSchedule?.title || ''}" required />
+                        <div class="schedule-title-error text-danger small"></div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control schedule-description" rows="2" maxlength="1000">${existingSchedule?.description || ''}</textarea>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control schedule-notes" rows="2" maxlength="1000">${existingSchedule?.notes || ''}</textarea>
+                    </div>
+                    
+                    <!-- Task Assignments -->
+                    <div class="assignments-section">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Task Assignments</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary add-assignment-btn">
+                                <i data-lucide="user-plus" style="width: 14px; height: 14px;"></i>
+                                Add Assignment
+                            </button>
+                        </div>
+                        <div class="assignment-list">
+                            <!-- Assignment items will be added here -->
+                        </div>
+                        <div class="no-assignments-message text-muted small">
+                            No assignments yet. Click "Add Assignment" to assign tasks.
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            scheduleList.appendChild(scheduleItem);
+            
+            // Add event listeners
+            const removeBtn = scheduleItem.querySelector('.remove-schedule-btn');
+            removeBtn.addEventListener('click', () => removeScheduleItem(scheduleItem));
+            
+            const addAssignmentBtn = scheduleItem.querySelector('.add-assignment-btn');
+            addAssignmentBtn.addEventListener('click', () => addAssignment(scheduleItem));
+            
+            // Add validation listeners
+            const startTimeInput = scheduleItem.querySelector('.schedule-start-time');
+            const endTimeInput = scheduleItem.querySelector('.schedule-end-time');
+            startTimeInput.addEventListener('change', () => validateScheduleTime(scheduleItem));
+            endTimeInput.addEventListener('change', () => validateScheduleTime(scheduleItem));
+            
+            // Load existing assignments if any
+            if (existingSchedule && existingSchedule.assignments) {
+                existingSchedule.assignments.forEach(assignment => {
+                    addAssignment(scheduleItem, assignment);
+                });
+            }
+            
+            updateNoSchedulesMessage();
+            lucide.createIcons();
+        }
+
+        // Remove schedule item
+        function removeScheduleItem(scheduleItem) {
+            scheduleItem.remove();
+            updateNoSchedulesMessage();
+            renumberScheduleItems();
+        }
+
+        // Renumber schedule items after removal
+        function renumberScheduleItems() {
+            const scheduleItems = scheduleList.querySelectorAll('.schedule-item');
+            scheduleItems.forEach((item, index) => {
+                const header = item.querySelector('.card-header h6');
+                header.innerHTML = `
+                    <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                    Schedule Item #${index + 1}
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        // Validate schedule time
+        function validateScheduleTime(scheduleItem) {
+            const startTimeInput = scheduleItem.querySelector('.schedule-start-time');
+            const endTimeInput = scheduleItem.querySelector('.schedule-end-time');
+            const startTimeError = scheduleItem.querySelector('.schedule-start-time-error');
+            const endTimeError = scheduleItem.querySelector('.schedule-end-time-error');
+            
+            startTimeError.textContent = '';
+            endTimeError.textContent = '';
+            
+            if (!startTimeInput.value || !endTimeInput.value) {
+                return true;
+            }
+            
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
+            
+            if (endTime <= startTime) {
+                endTimeError.textContent = 'End time must be after start time';
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Add assignment to schedule
+        function addAssignment(scheduleItem, existingAssignment = null) {
+            const assignmentList = scheduleItem.querySelector('.assignment-list');
+            const noAssignmentsMessage = scheduleItem.querySelector('.no-assignments-message');
+            
+            const assignmentItem = document.createElement('div');
+            assignmentItem.className = 'assignment-item border rounded p-2 mb-2';
+            if (existingAssignment && existingAssignment.id) {
+                assignmentItem.setAttribute('data-assignment-id', existingAssignment.id);
+            }
+            
+            assignmentItem.innerHTML = `
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <label class="form-label small">Responsible Person</label>
+                        <input type="text" class="form-control form-control-sm assignment-name" 
+                               placeholder="Name or select user" maxlength="200" value="${existingAssignment?.responsibleName || ''}" />
+                        <div class="assignment-name-error text-danger small"></div>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small">Role</label>
+                        <input type="text" class="form-control form-control-sm assignment-role" 
+                               placeholder="e.g., MC, Speaker" maxlength="100" value="${existingAssignment?.role || ''}" />
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-assignment-btn w-100">
+                            <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            assignmentList.appendChild(assignmentItem);
+            
+            // Add event listener for remove button
+            const removeBtn = assignmentItem.querySelector('.remove-assignment-btn');
+            removeBtn.addEventListener('click', () => removeAssignment(scheduleItem, assignmentItem));
+            
+            // Update no assignments message
+            updateNoAssignmentsMessage(scheduleItem);
+            lucide.createIcons();
+        }
+
+        // Remove assignment
+        function removeAssignment(scheduleItem, assignmentItem) {
+            assignmentItem.remove();
+            updateNoAssignmentsMessage(scheduleItem);
+        }
+
+        // Update no assignments message visibility
+        function updateNoAssignmentsMessage(scheduleItem) {
+            const assignmentList = scheduleItem.querySelector('.assignment-list');
+            const noAssignmentsMessage = scheduleItem.querySelector('.no-assignments-message');
+            const hasAssignments = assignmentList.children.length > 0;
+            noAssignmentsMessage.style.display = hasAssignments ? 'none' : 'block';
+        }
+
+        // Validate all schedules
+        function validateAllSchedules() {
+            const scheduleItems = scheduleList.querySelectorAll('.schedule-item');
+            let isValid = true;
+            
+            scheduleItems.forEach(scheduleItem => {
+                // Validate required fields
+                const startTime = scheduleItem.querySelector('.schedule-start-time');
+                const endTime = scheduleItem.querySelector('.schedule-end-time');
+                const title = scheduleItem.querySelector('.schedule-title');
+                const titleError = scheduleItem.querySelector('.schedule-title-error');
+                
+                if (!startTime.value) {
+                    scheduleItem.querySelector('.schedule-start-time-error').textContent = 'Start time is required';
+                    isValid = false;
+                }
+                
+                if (!endTime.value) {
+                    scheduleItem.querySelector('.schedule-end-time-error').textContent = 'End time is required';
+                    isValid = false;
+                }
+                
+                if (!title.value) {
+                    titleError.textContent = 'Title is required';
+                    isValid = false;
+                } else {
+                    titleError.textContent = '';
+                }
+                
+                // Validate time
+                if (!validateScheduleTime(scheduleItem)) {
+                    isValid = false;
+                }
+                
+                // Validate assignments
+                const assignments = scheduleItem.querySelectorAll('.assignment-item');
+                assignments.forEach(assignment => {
+                    const nameInput = assignment.querySelector('.assignment-name');
+                    const nameError = assignment.querySelector('.assignment-name-error');
+                    
+                    if (!nameInput.value.trim()) {
+                        nameError.textContent = 'Responsible person is required';
+                        isValid = false;
+                    } else {
+                        nameError.textContent = '';
+                    }
+                });
+            });
+            
+            return isValid;
+        }
+
+        // Collect schedule data from form
+        function collectScheduleData() {
+            const schedules = [];
+            const scheduleItems = scheduleList.querySelectorAll('.schedule-item');
+            
+            scheduleItems.forEach(scheduleItem => {
+                const scheduleId = scheduleItem.getAttribute('data-schedule-id');
+                const startTime = scheduleItem.querySelector('.schedule-start-time').value;
+                const endTime = scheduleItem.querySelector('.schedule-end-time').value;
+                const title = scheduleItem.querySelector('.schedule-title').value;
+                const description = scheduleItem.querySelector('.schedule-description').value;
+                const notes = scheduleItem.querySelector('.schedule-notes').value;
+                
+                // Collect assignments
+                const assignments = [];
+                const assignmentItems = scheduleItem.querySelectorAll('.assignment-item');
+                assignmentItems.forEach(assignmentItem => {
+                    const assignmentId = assignmentItem.getAttribute('data-assignment-id');
+                    const name = assignmentItem.querySelector('.assignment-name').value.trim();
+                    const role = assignmentItem.querySelector('.assignment-role').value.trim();
+                    
+                    if (name) {
+                        assignments.push({
+                            Id: assignmentId ? parseInt(assignmentId) : null,
+                            ResponsibleName: name,
+                            Role: role || null
+                        });
+                    }
+                });
+                
+                schedules.push({
+                    Id: scheduleId ? parseInt(scheduleId) : null,
+                    StartTime: startTime,
+                    EndTime: endTime,
+                    Title: title,
+                    Description: description || null,
+                    Notes: notes || null,
+                    Assignments: assignments
+                });
+            });
+            
+            return schedules;
+        }
+
+        // Load existing schedules
+        async function loadExistingSchedules() {
+            const activityId = @Model.Id;
+            const selectedType = activityTypeSelect.value;
+            
+            if (!isComplexActivity(selectedType)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`@Model.ApiBaseUrl/api/activity/${activityId}`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const activity = await response.json();
+                    if (activity.schedules && activity.schedules.length > 0) {
+                        activity.schedules.forEach(schedule => {
+                            addScheduleItem(schedule);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading schedules:', error);
+            }
+        }
+
+        // Event listener for add schedule button
+        addScheduleBtn?.addEventListener('click', () => addScheduleItem());
+
+        // Update visibility on type change
+        activityTypeSelect?.addEventListener('change', function() {
+            updateScheduleManagementVisibility();
+        });
+
+        // Initial setup
+        updateScheduleManagementVisibility();
+        loadExistingSchedules();
 
         // ===== Image upload to Cloudinary via backend helper =====
         const fileInput = document.getElementById('imageFile');
@@ -381,7 +937,212 @@
             fileInput.value = '';
             statusEl.textContent = '';
         });
+        
+        // ===== Date/Time Validation =====
+        const startTimeInput = document.getElementById('Activity_StartTime');
+        const endTimeInput = document.getElementById('Activity_EndTime');
+        const startTimeError = document.createElement('div');
+        const endTimeError = document.createElement('div');
+        
+        startTimeError.className = 'text-danger small mt-1';
+        endTimeError.className = 'text-danger small mt-1';
+        
+        startTimeInput?.parentElement.appendChild(startTimeError);
+        endTimeInput?.parentElement.appendChild(endTimeError);
+        
+        function clearErrors() {
+            startTimeError.textContent = '';
+            endTimeError.textContent = '';
+        }
+        
+        function setError(element, message) {
+            element.textContent = message;
+        }
+        
+        // Validate dates on change
+        startTimeInput?.addEventListener('change', function() {
+            clearErrors();
+            const startDate = new Date(this.value);
+            const currentDate = new Date();
+            
+            if (this.value && startDate < currentDate) {
+                setError(startTimeError, 'Start time cannot be in the past');
+                this.value = '';
+                return;
+            }
+            
+            // Update end time minimum to start time
+            if (this.value) endTimeInput.setAttribute('min', this.value);
+            
+            // Check if end time is before or equal to start time
+            if (endTimeInput.value && new Date(endTimeInput.value) <= startDate) {
+                setError(endTimeError, 'End time must be after start time');
+                endTimeInput.value = '';
+            }
+        });
+        
+        endTimeInput?.addEventListener('change', function() {
+            clearErrors();
+            const endDate = new Date(this.value);
+            const currentDate = new Date();
+            
+            if (this.value && endDate < currentDate) {
+                setError(endTimeError, 'End time cannot be in the past');
+                this.value = '';
+                return;
+            }
+            
+            if (startTimeInput.value && endDate <= new Date(startTimeInput.value)) {
+                setError(endTimeError, 'End time must be after start time');
+                this.value = '';
+            }
+        });
+        
+        // Validate before form submit
+        document.querySelector('form')?.addEventListener('submit', async function(e) {
+            e.preventDefault(); // Always prevent default to handle with AJAX
+            
+            clearErrors();
+            const startDate = startTimeInput.value ? new Date(startTimeInput.value) : null;
+            const endDate = endTimeInput.value ? new Date(endTimeInput.value) : null;
+            const currentDate = new Date();
+            let hasError = false;
+            
+            if (startDate && startDate < currentDate) {
+                setError(startTimeError, 'Start time cannot be in the past');
+                hasError = true;
+            }
+            
+            if (endDate && endDate < currentDate) {
+                setError(endTimeError, 'End time cannot be in the past');
+                hasError = true;
+            }
+            
+            if (startDate && endDate && endDate <= startDate) {
+                setError(endTimeError, 'End time must be after start time');
+                hasError = true;
+            }
+            
+            // Validate movement points
+            if (!validateMovementPointsAuto()) {
+                hasError = true;
+            }
+            
+            // Validate collaboration fields for ClubCollaboration
+            const selectedType = activityTypeSelect.value;
+            const isClubCollaboration = selectedType === 'ClubCollaboration';
+            
+            if (isClubCollaboration) {
+                // Validate club selection
+                if (!clubCollaborationIdInput.value) {
+                    clubCollaborationError.textContent = 'Please select a collaborating club';
+                    hasError = true;
+                }
+                
+                // Validate collaboration point
+                const collabPoint = parseInt(collaborationPointInput.value);
+                if (!collaborationPointInput.value || collabPoint < 1 || collabPoint > 3) {
+                    collaborationPointError.textContent = 'Collaboration points must be between 1 and 3';
+                    hasError = true;
+                }
+                
+                // Validate movement point (1-10 for collaboration)
+                const movementPoint = parseFloat(movementPointInput.value);
+                if (!movementPointInput.value || movementPoint < 1 || movementPoint > 10) {
+                    movementPointError.textContent = 'Movement points must be between 1 and 10 for collaboration activities';
+                    hasError = true;
+                }
+            }
+
+            // Validate schedules for complex activities
+            if (isComplexActivity(selectedType)) {
+                if (!validateAllSchedules()) {
+                    hasError = true;
+                }
+            }
+            
+            if (hasError) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return false;
+            }
+
+            // Submit form with schedules
+            try {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+
+                const activityId = @Model.Id;
+
+                // Convert Type string to enum int value
+                const typeValue = {
+                    'ClubMeeting': 0,
+                    'ClubTraining': 1,
+                    'ClubWorkshop': 2,
+                    'LargeEvent': 3,
+                    'MediumEvent': 4,
+                    'SmallEvent': 5,
+                    'SchoolCompetition': 6,
+                    'ProvincialCompetition': 7,
+                    'NationalCompetition': 8,
+                    'ClubCollaboration': 10,
+                    'SchoolCollaboration': 11
+                }[selectedType] || 0;
+
+                // Build payload
+                const payload = {
+                    Activity: {
+                        Title: document.getElementById('Activity_Title').value,
+                        Description: document.getElementById('Activity_Description').value || null,
+                        Location: document.getElementById('Activity_Location').value || null,
+                        ImageUrl: document.getElementById('Activity_ImageUrl').value || null,
+                        StartTime: startTimeInput.value,
+                        EndTime: endTimeInput.value,
+                        Type: typeValue,
+                        IsPublic: document.getElementById('Activity_IsPublic').checked,
+                        MaxParticipants: maxParticipantsInput.value ? parseInt(maxParticipantsInput.value) : null,
+                        MovementPoint: parseFloat(movementPointInput.value),
+                        ClubCollaborationId: clubCollaborationIdInput.value ? parseInt(clubCollaborationIdInput.value) : null,
+                        CollaborationPoint: collaborationPointInput.value ? parseInt(collaborationPointInput.value) : null
+                    },
+                    Schedules: isComplexActivity(selectedType) ? collectScheduleData() : []
+                };
+
+                console.log('Submitting payload:', payload);
+
+                // Submit to API
+                const response = await fetch(`@Model.ApiBaseUrl/api/activity/club-manager/${activityId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    // Success - redirect to index
+                    window.location.href = '/ClubManager/Activities?success=Activity updated successfully';
+                } else {
+                    const errorText = await response.text();
+                    console.error('API error:', errorText);
+                    alert('Failed to update activity: ' + errorText);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Update Activity';
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                alert('An error occurred while updating the activity: ' + error.message);
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="check" style="width: 16px; height: 16px;"></i> Update Activity';
+                lucide.createIcons();
+            }
+        });
     </script>
     <partial name="_ValidationScriptsPartial" />
 }
+
+<partial name="_ClubSelectionModal" />
 

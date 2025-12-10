@@ -1,170 +1,182 @@
-@page
-@model WebFE.Pages.Admin.Criteria.EditGroupModel
-@{
-    ViewData["Title"] = "Chỉnh sửa nhóm tiêu chí";
-    ViewData["Breadcrumb"] = "Edit Criterion Group";
-    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
-}
+using BusinessObject.DTOs.MovementCriteria;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net;
+using System.Text;
+using System.Text.Json;
 
-<!-- Page Header -->
-<div class="page-header mb-4">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-        <div>
-            <h1 class="page-title">
-                <i data-lucide="edit-3" style="width: 28px; height: 28px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-                Chỉnh sửa tiêu chí
-            </h1>
-            <p class="page-description">Cập nhật thông tin nhóm tiêu chí đánh giá</p>
-        </div>
-        <div>
-            <a href="/Admin/Criteria" class="btn btn-outline-secondary">
-                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
-                Quay lại
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- Alert Messages -->
-@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+namespace WebFE.Pages.Admin.Criteria
 {
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i data-lucide="alert-circle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.5rem;"></i>
-        @Model.ErrorMessage
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
+    public class EditGroupModel : PageModel
+    {
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<EditGroupModel> _logger;
+        private readonly IConfiguration _configuration;
 
-<!-- Edit Form Card -->
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0 fw-semibold">
-                    <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
-                    Thông tin nhóm tiêu chí
-                </h5>
-            </div>
-            <div class="card-body p-4">
-                <form method="post">
-                    <input type="hidden" asp-for="Id" />
+        public EditGroupModel(
+            IHttpClientFactory httpClientFactory,
+            ILogger<EditGroupModel> logger,
+            IConfiguration configuration)
+        {
+            _httpClientFactory = httpClientFactory;
+            _logger = logger;
+            _configuration = configuration;
+        }
 
-                    <!-- Group Name -->
-                    <div class="mb-4">
-                        <label asp-for="Name" class="form-label fw-bold">
-                            <i data-lucide="type" style="width: 16px; height: 16px; margin-right: 6px;"></i>
-                            Tên nhóm tiêu chí <span class="text-danger">*</span>
-                        </label>
-                        <input asp-for="Name" type="text" class="form-control form-control-lg" 
-                               placeholder="VD: I. HOẠT ĐỘNG CÂU LẠC BỘ" required />
-                        <small class="form-text text-muted">
-                            <i data-lucide="info" style="width: 12px; height: 12px;"></i>
-                            Tên nhóm sẽ hiển thị trong hệ thống đánh giá
-                        </small>
-                    </div>
+        [BindProperty]
+        public int Id { get; set; }
 
-                    <!-- Description -->
-                    <div class="mb-4">
-                        <label asp-for="Description" class="form-label fw-bold">
-                            <i data-lucide="file-text" style="width: 16px; height: 16px; margin-right: 6px;"></i>
-                            Mô tả
-                        </label>
-                        <textarea asp-for="Description" class="form-control" rows="4" 
-                                  placeholder="Mô tả chi tiết về nhóm tiêu chí này..."></textarea>
-                        <small class="form-text text-muted">
-                            <i data-lucide="info" style="width: 12px; height: 12px;"></i>
-                            Mô tả sẽ giúp người dùng hiểu rõ hơn về nhóm tiêu chí
-                        </small>
-                    </div>
+        [BindProperty]
+        public string Name { get; set; } = string.Empty;
 
-                    <!-- Max Score & Target Type Row -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label asp-for="MaxScore" class="form-label fw-bold">
-                                <i data-lucide="award" style="width: 16px; height: 16px; margin-right: 6px;"></i>
-                                Điểm tối đa <span class="text-danger">*</span>
-                            </label>
-                            <input asp-for="MaxScore" type="number" class="form-control" 
-                                   min="0" max="1000" required />
-                            <small class="form-text text-muted">Phạm vi: 0-1000 điểm</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="TargetType" class="form-label fw-bold">
-                                <i data-lucide="target" style="width: 16px; height: 16px; margin-right: 6px;"></i>
-                                Đối tượng áp dụng <span class="text-danger">*</span>
-                            </label>
-                            <select asp-for="TargetType" class="form-select" required>
-                                <option value="Student">Sinh viên (Student)</option>
-                                <option value="Club">Câu lạc bộ (Club)</option>
-                            </select>
-                        </div>
-                    </div>
+        [BindProperty]
+        public string? Description { get; set; }
 
-                    <!-- Info Alert -->
-                    <div class="alert alert-info bg-info bg-opacity-10 border-0 mb-4">
-                        <div class="d-flex">
-                            <i data-lucide="alert-circle" style="width: 18px; height: 18px; margin-right: 10px; color: #0d6efd; flex-shrink: 0; margin-top: 2px;"></i>
-                            <div>
-                                <strong>Lưu ý:</strong>
-                                <ul class="mb-0 mt-2 ms-2">
-                                    <li>Tên nhóm tiêu chí nên rõ ràng và dễ hiểu</li>
-                                    <li>Điểm tối đa phải phù hợp với quy định đánh giá</li>
-                                    <li>Target Type xác định nhóm này dùng cho Sinh viên hay Câu lạc bộ</li>
-                                    <li>Sau khi cập nhật, các tiêu chí con sẽ được áp dụng theo điểm tối đa mới</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+        [BindProperty]
+        public int MaxScore { get; set; }
 
-                    <hr class="my-4">
+        [BindProperty]
+        public string TargetType { get; set; } = "Student";
 
-                    <!-- Form Actions -->
-                    <div class="d-flex justify-content-between align-items-center">
-                        <a href="/Admin/Criteria" class="btn btn-secondary">
-                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-                            Hủy
-                        </a>
-                        <button type="submit" class="btn btn-primary btn-lg fw-bold">
-                            <i data-lucide="save" style="width: 18px; height: 18px;"></i>
-                            Cập nhật nhóm tiêu chí
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+        [TempData]
+        public string? SuccessMessage { get; set; }
 
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+        [TempData]
+        public string? ErrorMessage { get; set; }
+
+        private HttpClient CreateHttpClient()
+        {
+            var handler = new HttpClientHandler
+            {
+                UseCookies = true,
+                CookieContainer = new CookieContainer(),
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+
+            foreach (var cookie in Request.Cookies)
+            {
+                handler.CookieContainer.Add(
+                    new Uri(_configuration["ApiSettings:BaseUrl"] ?? "https://localhost:5001"),
+                    new Cookie(cookie.Key, cookie.Value)
+                );
             }
-        });
-    </script>
+
+            var client = new HttpClient(handler)
+            {
+                BaseAddress = new Uri(_configuration["ApiSettings:BaseUrl"] ?? "https://localhost:5001")
+            };
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json")
+            );
+
+            return client;
+        }
+
+        public async Task<IActionResult> OnGetAsync(int id)
+        {
+            if (id <= 0)
+            {
+                ErrorMessage = "Invalid ID.";
+                return RedirectToPage("./Index");
+            }
+
+            try
+            {
+                using var httpClient = CreateHttpClient();
+                var response = await httpClient.GetAsync($"/api/movement-criterion-groups/{id}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var group = JsonSerializer.Deserialize<MovementCriterionGroupDto>(
+                        content,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
+
+                    if (group != null)
+                    {
+                        Id = group.Id;
+                        Name = group.Name ?? string.Empty;
+                        Description = group.Description;
+                        MaxScore = group.MaxScore;
+                        TargetType = group.TargetType ?? "Student";
+                    }
+                }
+                else
+                {
+                    ErrorMessage = "Criterion group not found.";
+                    return RedirectToPage("./Index");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading criterion group");
+                ErrorMessage = "An error occurred while loading data.";
+                return RedirectToPage("./Index");
+            }
+
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostAsync()
+        {
+            if (!ModelState.IsValid)
+            {
+                ErrorMessage = "Invalid input.";
+                return Page();
+            }
+
+            if (string.IsNullOrWhiteSpace(Name))
+            {
+                ErrorMessage = "Group name must not be empty.";
+                return Page();
+            }
+
+            if (MaxScore <= 0)
+            {
+                ErrorMessage = "Max score must be greater than 0.";
+                return Page();
+            }
+
+            try
+            {
+                using var httpClient = CreateHttpClient();
+
+                var updateDto = new
+                {
+                    id = Id,
+                    name = Name,
+                    description = Description,
+                    maxScore = MaxScore,
+                    targetType = TargetType
+                };
+
+                var json = JsonSerializer.Serialize(updateDto);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                _logger.LogInformation("Updating criterion group: {Json}", json);
+
+                var response = await httpClient.PutAsync($"/api/movement-criterion-groups/{Id}", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    SuccessMessage = "✅ Criterion group updated successfully!";
+                    return RedirectToPage("./Index");
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Update failed: {StatusCode} - {Error}", response.StatusCode, errorContent);
+                    ErrorMessage = $"Unable to update criterion group: {errorContent}";
+                    return Page();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating criterion group");
+                ErrorMessage = $"An error occurred: {ex.Message}";
+                return Page();
+            }
+        }
+    }
 }
-
-<style>
-    .page-header {
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .card {
-        transition: all 0.3s ease;
-    }
-
-    .form-label {
-        margin-bottom: 0.5rem;
-    }
-
-    .alert ul {
-        padding-left: 1rem;
-    }
-
-    .alert li {
-        margin-bottom: 0.5rem;
-    }
-</style>
-

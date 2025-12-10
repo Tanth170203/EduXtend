@@ -1,0 +1,425 @@
+@* Member Selection Modal Component *@
+<div class="modal fade" id="memberSelectionModal" tabindex="-1" aria-labelledby="memberSelectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="memberSelectionModalLabel">Select Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="memberSearchInput" placeholder="Search members by name or student code...">
+                </div>
+                <div id="memberListContainer">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mt-2">Loading members...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmMemberSelection" disabled>Select</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        let allMembers = [];
+        let selectedMemberId = null;
+        let onMemberSelectedCallback = null;
+        
+        const modal = document.getElementById('memberSelectionModal');
+        const searchInput = document.getElementById('memberSearchInput');
+        const memberListContainer = document.getElementById('memberListContainer');
+        const confirmBtn = document.getElementById('confirmMemberSelection');
+        
+        // Initialize modal instance
+        let modalInstance = null;
+        
+        // Wait for Bootstrap to be loaded
+        function initModal() {
+            if (typeof bootstrap !== 'undefined' && modal && !modalInstance) {
+                modalInstance = new bootstrap.Modal(modal);
+            }
+        }
+        
+        // Try to initialize immediately
+        initModal();
+        
+        // Also try after DOM is fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initModal);
+        }
+        
+        // Update modal title
+        function updateModalTitle(source) {
+            const modalTitle = document.getElementById('memberSelectionModalLabel');
+            if (!modalTitle) return;
+            
+            if (source === 'my-club') {
+                modalTitle.textContent = 'Select Club Member';
+            } else if (source.startsWith('club:')) {
+                modalTitle.textContent = 'Select Club Member';
+            } else if (source === 'all-students') {
+                modalTitle.textContent = 'Select Student';
+            }
+        }
+        
+        // Public API
+        window.MemberSelectionModal = {
+            show: function(apiBaseUrl, onSelected) {
+                onMemberSelectedCallback = onSelected;
+                selectedMemberId = null;
+                if (confirmBtn) confirmBtn.disabled = true;
+                if (searchInput) searchInput.value = '';
+                
+                // Ensure modal is initialized
+                initModal();
+                
+                // Update title
+                updateModalTitle('my-club');
+                
+                // Show modal
+                if (modalInstance) {
+                    modalInstance.show();
+                } else if (modal) {
+                    // Fallback: use vanilla JS
+                    modal.classList.add('show');
+                    modal.style.display = 'block';
+                    modal.setAttribute('aria-modal', 'true');
+                    modal.removeAttribute('aria-hidden');
+                    
+                    // Add backdrop
+                    const backdrop = document.createElement('div');
+                    backdrop.className = 'modal-backdrop fade show';
+                    backdrop.id = 'memberModalBackdrop';
+                    document.body.appendChild(backdrop);
+                    document.body.classList.add('modal-open');
+                }
+                
+                // Load members from current user's managed club
+                loadMembers(apiBaseUrl, 'my-club');
+            },
+            
+            showForClub: function(apiBaseUrl, clubId, onSelected) {
+                onMemberSelectedCallback = onSelected;
+                selectedMemberId = null;
+                if (confirmBtn) confirmBtn.disabled = true;
+                if (searchInput) searchInput.value = '';
+                
+                // Ensure modal is initialized
+                initModal();
+                
+                // Update title
+                updateModalTitle('club:' + clubId);
+                
+                // Show modal
+                if (modalInstance) {
+                    modalInstance.show();
+                } else if (modal) {
+                    // Fallback: use vanilla JS
+                    modal.classList.add('show');
+                    modal.style.display = 'block';
+                    modal.setAttribute('aria-modal', 'true');
+                    modal.removeAttribute('aria-hidden');
+                    
+                    // Add backdrop
+                    const backdrop = document.createElement('div');
+                    backdrop.className = 'modal-backdrop fade show';
+                    backdrop.id = 'memberModalBackdrop';
+                    document.body.appendChild(backdrop);
+                    document.body.classList.add('modal-open');
+                }
+                
+                // Load members from specific club
+                loadMembers(apiBaseUrl, 'club:' + clubId);
+            },
+            
+            showAllStudents: function(apiBaseUrl, onSelected) {
+                onMemberSelectedCallback = onSelected;
+                selectedMemberId = null;
+                if (confirmBtn) confirmBtn.disabled = true;
+                if (searchInput) searchInput.value = '';
+                
+                // Ensure modal is initialized
+                initModal();
+                
+                // Update title
+                updateModalTitle('all-students');
+                
+                // Show modal
+                if (modalInstance) {
+                    modalInstance.show();
+                } else if (modal) {
+                    // Fallback: use vanilla JS
+                    modal.classList.add('show');
+                    modal.style.display = 'block';
+                    modal.setAttribute('aria-modal', 'true');
+                    modal.removeAttribute('aria-hidden');
+                    
+                    // Add backdrop
+                    const backdrop = document.createElement('div');
+                    backdrop.className = 'modal-backdrop fade show';
+                    backdrop.id = 'memberModalBackdrop';
+                    document.body.appendChild(backdrop);
+                    document.body.classList.add('modal-open');
+                }
+                
+                // Load all active students
+                loadMembers(apiBaseUrl, 'all-students');
+            }
+        };
+        
+        async function loadMembers(apiBaseUrl, source) {
+            try {
+                if (memberListContainer) {
+                    memberListContainer.innerHTML = `
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted mt-2">Loading members...</p>
+                        </div>
+                    `;
+                }
+                
+                let url;
+                let isStudentList = false;
+                
+                // Determine URL based on source
+                if (source === 'my-club') {
+                    // Load from current user's managed club
+                    url = `${apiBaseUrl}/api/club/my-club-members`;
+                } else if (source.startsWith('club:')) {
+                    // Load from specific club
+                    const clubId = source.substring(5);
+                    url = `${apiBaseUrl}/api/club/${clubId}/members`;
+                } else if (source === 'all-students') {
+                    // Load all active students
+                    url = `${apiBaseUrl}/api/students/active`;
+                    isStudentList = true;
+                }
+                    
+                console.log('[MemberSelectionModal] Loading members from:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('[MemberSelectionModal] Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('[MemberSelectionModal] Error response:', errorText);
+                    throw new Error(`Failed to load members: ${response.status} ${errorText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Normalize data structure
+                if (isStudentList) {
+                    // Convert StudentDropdownDto to ClubMemberDto format
+                    allMembers = data.map(s => ({
+                        id: s.id,
+                        studentId: s.id,
+                        studentName: s.fullName,
+                        studentCode: s.studentCode,
+                        email: s.email,
+                        avatarUrl: null,
+                        roleInClub: s.cohort ? `Cohort ${s.cohort}` : 'Student',
+                        departmentId: null,
+                        departmentName: null,
+                        joinedAt: null,
+                        isActive: true
+                    }));
+                } else {
+                    allMembers = data;
+                }
+                
+                console.log('[MemberSelectionModal] Loaded members:', allMembers.length);
+                renderMembers(allMembers);
+            } catch (error) {
+                console.error('[MemberSelectionModal] Error loading members:', error);
+                if (memberListContainer) {
+                    memberListContainer.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Failed to load members: ${error.message}
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        function renderMembers(members) {
+            if (members.length === 0) {
+                memberListContainer.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="text-muted mt-2">No members available</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const html = members.map(member => `
+                <div class="member-item border rounded p-3 mb-2" data-member-id="${member.id}" data-member-name="${escapeHtml(member.studentName)}" style="cursor: pointer; transition: all 0.2s;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            ${member.avatarUrl 
+                                ? `<img src="${member.avatarUrl}" alt="${member.studentName}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">` 
+                                : `<div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                     <i class="bi bi-person-fill text-white"></i>
+                                   </div>`
+                            }
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1 fw-semibold">${escapeHtml(member.studentName)}</h6>
+                            <small class="text-muted">
+                                <i class="bi bi-card-text me-1"></i>${escapeHtml(member.studentCode || 'N/A')}
+                                ${member.roleInClub ? ` • <span class="badge bg-primary">${escapeHtml(member.roleInClub)}</span>` : ''}
+                                ${member.departmentName ? ` • ${escapeHtml(member.departmentName)}` : ''}
+                            </small>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="form-check">
+                                <input class="form-check-input member-radio" type="radio" name="memberSelection" value="${member.id}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            memberListContainer.innerHTML = html;
+            
+            // Add click handlers
+            document.querySelectorAll('.member-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const memberId = parseInt(this.dataset.memberId);
+                    selectMember(memberId);
+                });
+            });
+            
+            document.querySelectorAll('.member-radio').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.checked) {
+                        selectMember(parseInt(this.value));
+                    }
+                });
+            });
+        }
+        
+        function selectMember(memberId) {
+            selectedMemberId = memberId;
+            confirmBtn.disabled = false;
+            
+            // Update UI
+            document.querySelectorAll('.member-item').forEach(item => {
+                const itemMemberId = parseInt(item.dataset.memberId);
+                if (itemMemberId === memberId) {
+                    item.style.backgroundColor = '#e7f3ff';
+                    item.style.borderColor = '#0d6efd';
+                    item.querySelector('.member-radio').checked = true;
+                } else {
+                    item.style.backgroundColor = '';
+                    item.style.borderColor = '';
+                    item.querySelector('.member-radio').checked = false;
+                }
+            });
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Search functionality
+        searchInput?.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                renderMembers(allMembers);
+                return;
+            }
+            
+            const filtered = allMembers.filter(member => 
+                member.studentName.toLowerCase().includes(searchTerm) ||
+                (member.studentCode && member.studentCode.toLowerCase().includes(searchTerm))
+            );
+            
+            renderMembers(filtered);
+        });
+        
+        // Confirm selection
+        confirmBtn?.addEventListener('click', function() {
+            if (selectedMemberId && onMemberSelectedCallback) {
+                const selectedMember = allMembers.find(m => m.id === selectedMemberId);
+                onMemberSelectedCallback(selectedMember);
+                
+                // Close modal
+                if (modalInstance) {
+                    modalInstance.hide();
+                } else if (modal) {
+                    // Fallback: use vanilla JS
+                    modal.classList.remove('show');
+                    modal.style.display = 'none';
+                    modal.setAttribute('aria-hidden', 'true');
+                    modal.removeAttribute('aria-modal');
+                    
+                    // Remove backdrop
+                    const backdrop = document.getElementById('memberModalBackdrop');
+                    if (backdrop) backdrop.remove();
+                    document.body.classList.remove('modal-open');
+                }
+            }
+        });
+        
+        // Handle close buttons (fallback for when Bootstrap is not available)
+        const closeButtons = modal?.querySelectorAll('[data-bs-dismiss="modal"]');
+        closeButtons?.forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!modalInstance && modal) {
+                    // Fallback: use vanilla JS
+                    modal.classList.remove('show');
+                    modal.style.display = 'none';
+                    modal.setAttribute('aria-hidden', 'true');
+                    modal.removeAttribute('aria-modal');
+                    
+                    // Remove backdrop
+                    const backdrop = document.getElementById('memberModalBackdrop');
+                    if (backdrop) backdrop.remove();
+                    document.body.classList.remove('modal-open');
+                }
+            });
+        });
+        
+        // Reset on modal close
+        modal?.addEventListener('hidden.bs.modal', function() {
+            selectedMemberId = null;
+            if (confirmBtn) confirmBtn.disabled = true;
+            if (searchInput) searchInput.value = '';
+            allMembers = [];
+        });
+    })();
+</script>
+
+<style>
+    .member-item:hover {
+        background-color: #f8f9fa !important;
+    }
+    
+    .member-item[style*="background-color: rgb(231, 243, 255)"] {
+        background-color: #e7f3ff !important;
+    }
+</style>

@@ -160,7 +160,9 @@
                     {
                         <div class="form-check mb-2">
                             <input class="form-check-input role-radio" type="radio" 
-                                   name="roleIds" value="@role.Id" id="role_@role.Id">
+                                   name="roleIds" value="@role.Id" id="role_@role.Id"
+                                   data-role-name="@role.RoleName"
+                                   onchange="onRoleChange(this)">
                             <label class="form-check-label" for="role_@role.Id">
                                 <strong>@role.RoleName</strong>
                                 @if (!string.IsNullOrEmpty(role.Description))
@@ -170,6 +172,20 @@
                             </label>
                         </div>
                     }
+                    
+                    <!-- Club Selection (shown only for ClubMember/ClubManager) -->
+                    <div id="clubSelectionDiv" class="mt-3" style="display: none;">
+                        <hr />
+                        <label for="clubId" class="form-label"><strong>Select Club <span class="text-danger">*</span></strong></label>
+                        <select name="clubId" id="clubId" class="form-select">
+                            <option value="">-- Select a Club --</option>
+                            @foreach (var club in Model.AllClubs)
+                            {
+                                <option value="@club.Id">@club.Name (@club.SubName)</option>
+                            }
+                        </select>
+                        <small class="text-muted">User will be added as a member of this club</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -182,7 +198,8 @@
 
 @section Scripts {
     <script>
-        lucide.createIcons();
+        (function(){ if(window.lucide && typeof lucide.createIcons==='function'){ try{ lucide.createIcons(lucide.icons||{});}catch{}} })();
+        document.addEventListener('DOMContentLoaded', function(){ if(window.lucide && typeof lucide.createIcons==='function'){ try{ lucide.createIcons(lucide.icons||{});}catch{}}});
 
         document.getElementById('searchInput').addEventListener('keyup', function() {
             const searchValue = this.value.toLowerCase();
@@ -193,9 +210,29 @@
             });
         });
 
+        function onRoleChange(radio) {
+            const roleName = radio.getAttribute('data-role-name');
+            const clubDiv = document.getElementById('clubSelectionDiv');
+            const clubSelect = document.getElementById('clubId');
+            
+            if (roleName === 'ClubMember' || roleName === 'ClubManager') {
+                clubDiv.style.display = 'block';
+                clubSelect.required = true;
+            } else {
+                clubDiv.style.display = 'none';
+                clubSelect.required = false;
+                clubSelect.value = '';
+            }
+        }
+
         function editRoles(userId, userName, roleIdsStr) {
             document.getElementById('userId').value = userId;
             document.getElementById('userName').textContent = userName;
+            
+            // Reset club selection
+            document.getElementById('clubSelectionDiv').style.display = 'none';
+            document.getElementById('clubId').value = '';
+            document.getElementById('clubId').required = false;
             
             // Uncheck all radio buttons
             document.querySelectorAll('.role-radio').forEach(rb => rb.checked = false);
@@ -205,12 +242,15 @@
                 const roleIds = roleIdsStr.split(',').map(id => parseInt(id));
                 if (roleIds.length > 0) {
                     const radio = document.getElementById('role_' + roleIds[0]);
-                    if (radio) radio.checked = true;
+                    if (radio) {
+                        radio.checked = true;
+                        // Trigger role change to show/hide club selection
+                        onRoleChange(radio);
+                    }
                 }
             }
             
             new bootstrap.Modal(document.getElementById('editRolesModal')).show();
-            lucide.createIcons();
         }
     </script>
 }

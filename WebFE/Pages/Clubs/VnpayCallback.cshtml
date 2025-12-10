@@ -1,0 +1,230 @@
+@page
+@model WebFE.Pages.Clubs.VnpayCallbackModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Result</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .result-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #28a745;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: scaleIn 0.5s ease-out;
+        }
+        .error-icon {
+            width: 80px;
+            height: 80px;
+            background: #dc3545;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: scaleIn 0.5s ease-out;
+        }
+        .success-icon i, .error-icon i {
+            font-size: 40px;
+            color: white;
+        }
+        .result-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .result-subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+        .btn-return {
+            margin-top: 30px;
+            padding: 12px 40px;
+            font-size: 16px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn-return:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3em;
+        }
+        @@keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+        #loading {
+            display: block;
+        }
+        #result {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="result-card">
+        <div id="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Đang xử lý kết quả thanh toán...</p>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://localhost:5001/api';
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('vi-VN');
+        }
+        
+        async function processCallback() {
+            try {
+                const queryString = window.location.search;
+                const response = await fetch(`${API_BASE}/Vnpay/callback${queryString}`, {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').style.display = 'block';
+                
+                if (result.success) {
+                    // Payment successful
+                    document.getElementById('result').innerHTML = `
+                        <div class="success-icon">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                        <div class="result-title text-success">Thanh toán thành công!</div>
+                        <div class="result-subtitle">Cảm ơn bạn đã hoàn tất thanh toán. Giao dịch của bạn đã được xử lý thành công.</div>
+                        
+                        <div class="mt-4">
+                            <div class="info-row">
+                                <span class="info-label">Mã giao dịch:</span>
+                                <span class="info-value">${result.transactionId}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Số tiền:</span>
+                                <span class="info-value">${result.description || 'N/A'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Nội dung:</span>
+                                <span class="info-value">Thanh toán đóng phí</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Mã ngân hàng:</span>
+                                <span class="info-value">${result.bankCode || 'NCB'}</span>
+                            </div>
+                            <div class="info-row" style="border-bottom: none;">
+                                <span class="info-label">Thời gian:</span>
+                                <span class="info-value">${formatDate(result.transactionDate)}</span>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-return" onclick="redirectToFinance()">
+                            Quay lại trang chủ
+                        </button>
+                    `;
+                    
+                    // Auto redirect after 5 seconds
+                    setTimeout(() => redirectToFinance(), 5000);
+                } else {
+                    // Payment failed
+                    document.getElementById('result').innerHTML = `
+                        <div class="error-icon">
+                            <i class="bi bi-x-lg"></i>
+                        </div>
+                        <div class="result-title text-danger">Thanh toán thất bại!</div>
+                        <div class="result-subtitle">${result.message || 'Giao dịch không thành công. Vui lòng thử lại.'}</div>
+                        
+                        <button class="btn btn-return" onclick="redirectToFinance()">
+                            Quay lại trang chủ
+                        </button>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error processing payment:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result').innerHTML = `
+                    <div class="error-icon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <div class="result-title text-warning">Có lỗi xảy ra!</div>
+                    <div class="result-subtitle">Không thể xử lý kết quả thanh toán. Vui lòng liên hệ hỗ trợ.</div>
+                    
+                    <button class="btn btn-return" onclick="redirectToFinance()">
+                        Quay lại trang chủ
+                    </button>
+                `;
+            }
+        }
+        
+        function redirectToFinance() {
+            window.location.href = '/Clubs/MemberDashboard/1?section=finance';
+        }
+        
+        processCallback();
+    </script>
+</body>
+</html>

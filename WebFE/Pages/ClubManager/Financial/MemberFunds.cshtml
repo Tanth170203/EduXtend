@@ -1,0 +1,1066 @@
+@page
+@model WebFE.Pages.ClubManager.Financial.MemberFundsModel
+@{
+    ViewData["Title"] = "Member Contributions";
+    ViewData["Breadcrumb"] = "Member Funds";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Member Contributions</h1>
+        <p class="admin-page-subtitle">Track member fund collection</p>
+    </div>
+    <div class="admin-page-actions">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#collectFundsModal">
+            <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+            Collect Funds
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4" id="statisticsCards">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #10b981 !important;">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                            <i data-lucide="users" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Paid Members</h6>
+                        <h3 class="mb-0" id="paidCount">-</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #f59e0b !important;">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                            <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Pending</h6>
+                        <h3 class="mb-0" id="pendingCount">-</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #dc3545 !important;">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                            <i data-lucide="alert-circle" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Unconfirmed</h6>
+                        <h3 class="mb-0" id="unconfirmedCount">-</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #003d7a !important;">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                            <i data-lucide="dollar-sign" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-1">Collected</h6>
+                        <h3 class="mb-0" id="collectedAmount">-</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fund Collection Requests Tabs -->
+<div class="card border-0 shadow-sm mb-4" id="requestsSection">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Fund Collection Requests</h5>
+        
+        <!-- Search for Requests -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="searchRequests" placeholder="Search by request title...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filterRequestStatus">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" onclick="clearRequestFilters()">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                    Clear
+                </button>
+            </div>
+        </div>
+        
+        <div id="requestsList">
+            <div class="text-center py-4 text-muted">
+                <i data-lucide="loader" style="width: 32px; height: 32px;" class="spin"></i>
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Member List -->
+<div class="card border-0 shadow-sm" id="membersSection" style="display: none;">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0" id="paymentTableTitle">Member Payments</h5>
+            <button class="btn btn-sm btn-outline-secondary" onclick="showAllRequests()">
+                <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i>
+                Back to Requests
+            </button>
+        </div>
+        
+        <!-- Search and Filter -->
+        <div class="row g-3 mb-3">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="searchPayments" placeholder="Search by student name or ID...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filterStatus">
+                    <option value="">All Status</option>
+                    <option value="paid">Paid</option>
+                    <option value="pending">Pending</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                    Clear
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="px-4 py-3">Student ID</th>
+                        <th class="py-3">Name</th>
+                        <th class="py-3 text-end">Amount</th>
+                        <th class="py-3">Status</th>
+                        <th class="py-3">Payment Date</th>
+                        <th class="py-3 text-center">Confirm</th>
+                        <th class="py-3 text-center">Remind</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTableBody">
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Collect Funds Modal -->
+<div class="modal fade" id="collectFundsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Fund Collection Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="collectFundsForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="fundTitle" class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="fundTitle" required minlength="5" maxlength="200" 
+                               placeholder="e.g., Q1 2024 Membership Fee">
+                        <div class="invalid-feedback">Please enter a title (5-200 characters)</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="fundDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="fundDescription" rows="3" maxlength="1000"
+                                  placeholder="Provide details about this fund collection..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="fundAmount" class="form-label">Amount per Member (VND) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="fundAmount" required min="1000" max="100000000" 
+                               placeholder="50000">
+                        <div class="invalid-feedback">Amount must be between 1,000 and 100,000,000 VND</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="fundDueDate" class="form-label">Due Date <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="fundDueDate" required>
+                        <div class="invalid-feedback">Please select a future date</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="fundPaymentMethods" class="form-label">Payment Methods</label>
+                        <select class="form-select" id="fundPaymentMethods" required>
+                            <option value="">Select payment method...</option>
+                            <option value="All">All (Member can choose)</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="VNPAY">VNPAY</option>
+                        </select>
+                        <div class="form-text">Select "All" to allow members to choose their preferred payment method</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="fundNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="fundNotes" rows="2" maxlength="1000"
+                                  placeholder="Additional information..."></textarea>
+                    </div>
+
+                    <div class="alert alert-info small mb-0">
+                        <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                        A payment request will be automatically created for all club members.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="send" style="width: 16px; height: 16px;"></i>
+                        Create Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Payment Modal -->
+<div class="modal fade" id="confirmPaymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="confirmPaymentForm">
+                <input type="hidden" id="confirmPaymentId">
+                <input type="hidden" id="confirmPaymentMethod">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Student</label>
+                        <input type="text" class="form-control" id="confirmStudentName" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <input type="text" class="form-control" id="confirmAmount" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <input type="text" class="form-control" id="displayPaymentMethod" readonly>
+                        <div class="form-text">Payment method selected by the member</div>
+                    </div>
+
+                    <div id="vnpayDetails" class="mb-3" style="display: none;">
+                        <div class="alert alert-info">
+                            <strong>VNPAY Transaction Details:</strong>
+                            <div class="mt-2">
+                                <small>Transaction ID: <span id="vnpayTxnId"></span></small><br>
+                                <small>Bank: <span id="vnpayBank"></span></small><br>
+                                <small>Status: <span id="vnpayStatus"></span></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="paymentDate" class="form-label">Payment Date <span class="text-danger">*</span></label>
+                        <input type="datetime-local" class="form-control" id="paymentDate" required>
+                        <div class="invalid-feedback">Payment date cannot be in the future</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="paymentNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="paymentNotes" rows="2" maxlength="500"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                        Confirm Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const CLUB_ID = @Model.ClubId;
+        const API_BASE = 'https://localhost:5001/api';
+        let currentRequestId = null;
+        let currentRequestTitle = '';
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check for success message after reload
+            if (sessionStorage.getItem('reminderSuccess') === 'true') {
+                sessionStorage.removeItem('reminderSuccess');
+                showToast('✅ Đã gửi email nhắc nhở thành công!', 'success');
+            }
+            
+            await loadStatistics();
+            await loadRequests();
+            lucide.createIcons();
+
+            // Set minimum due date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('fundDueDate').min = tomorrow.toISOString().slice(0, 16);
+
+            // Set default payment date to now
+            const now = new Date();
+            document.getElementById('paymentDate').value = now.toISOString().slice(0, 16);
+            document.getElementById('paymentDate').max = now.toISOString().slice(0, 16);
+        });
+
+        // Load Statistics
+        async function loadStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/FundCollection/club/${CLUB_ID}/statistics`, {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const stats = await response.json();
+                    console.log('Statistics:', stats); // Debug log
+                    
+                    document.getElementById('paidCount').textContent = stats.paidMembers || 0;
+                    document.getElementById('pendingCount').textContent = stats.pendingMembers || 0;
+                    document.getElementById('unconfirmedCount').textContent = stats.unconfirmedMembers || 0;
+                    document.getElementById('collectedAmount').textContent = formatCurrency(stats.totalCollected || 0);
+                } else {
+                    console.error('Statistics load failed:', response.status, response.statusText);
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+            lucide.createIcons();
+        }
+
+        // Store all requests for filtering
+        let allRequests = [];
+
+        // Load Requests
+        async function loadRequests() {
+            try {
+                const response = await fetch(`${API_BASE}/FundCollection/club/${CLUB_ID}`, {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const requests = await response.json();
+                    allRequests = [...requests]; // Store for filtering
+                    renderRequests(requests);
+                    setupRequestSearchAndFilter(); // Setup search after loading
+                } else {
+                    console.error('Requests load failed:', response.status, response.statusText);
+                    document.getElementById('requestsList').innerHTML = `
+                        <div class="alert alert-warning">
+                            <i data-lucide="alert-circle"></i>
+                            Failed to load requests (${response.status}). Please try again.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading requests:', error);
+                document.getElementById('requestsList').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i data-lucide="x-circle"></i>
+                        An error occurred: ${error.message}
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        // Setup search and filter for requests
+        function setupRequestSearchAndFilter() {
+            const searchInput = document.getElementById('searchRequests');
+            const statusFilter = document.getElementById('filterRequestStatus');
+
+            // Remove existing listeners to avoid duplicates
+            const newSearchInput = searchInput.cloneNode(true);
+            searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+            
+            const newStatusFilter = statusFilter.cloneNode(true);
+            statusFilter.parentNode.replaceChild(newStatusFilter, statusFilter);
+
+            // Debounced search
+            let searchTimeout;
+            newSearchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    filterRequests();
+                }, 300);
+            });
+
+            newStatusFilter.addEventListener('change', filterRequests);
+        }
+
+        // Filter requests based on search and filters
+        function filterRequests() {
+            const searchTerm = document.getElementById('searchRequests').value.toLowerCase();
+            const statusFilter = document.getElementById('filterRequestStatus').value;
+
+            let filtered = [...allRequests];
+
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(request => 
+                    request.title.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Apply status filter
+            if (statusFilter) {
+                filtered = filtered.filter(request => request.status === statusFilter);
+            }
+
+            renderRequests(filtered);
+        }
+
+        // Clear request filters
+        function clearRequestFilters() {
+            document.getElementById('searchRequests').value = '';
+            document.getElementById('filterRequestStatus').value = '';
+            renderRequests(allRequests);
+        }
+
+        // Render Requests
+        function renderRequests(requests) {
+            const container = document.getElementById('requestsList');
+            
+            if (!requests || requests.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5 text-muted">
+                        <i data-lucide="inbox" style="width: 48px; height: 48px;"></i>
+                        <p class="mt-2">No fund collection requests yet</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#collectFundsModal">
+                            Create First Request
+                        </button>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = requests.map(req => {
+                const statusClass = req.status === 'active' ? 'success' : req.status === 'completed' ? 'secondary' : 'danger';
+                const isOverdue = req.isOverdue;
+                const collectionRate = req.totalMembers > 0 ? (req.paidCount / req.totalMembers * 100).toFixed(1) : 0;
+                
+                // Get counts
+                const pendingCount = req.pendingCount || 0;
+                const unconfirmedCount = req.unconfirmedCount || 0;
+                const needsAttention = pendingCount + unconfirmedCount;
+                const hasUnconfirmed = unconfirmedCount > 0;
+
+                return `
+                    <div class="card border mb-3 ${hasUnconfirmed ? 'border-warning' : ''}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="fw-bold mb-1">
+                                        ${escapeHtml(req.title)}
+                                        ${hasUnconfirmed ? `<span class="badge bg-danger ms-2">${unconfirmedCount} unconfirmed</span>` : ''}
+                                        ${pendingCount > 0 && !hasUnconfirmed ? `<span class="badge bg-warning ms-2">${pendingCount} pending</span>` : ''}
+                                    </h6>
+                                    <span class="badge bg-${statusClass}">${req.status}</span>
+                                    ${isOverdue ? '<span class="badge bg-danger ms-1">Overdue</span>' : ''}
+                                </div>
+                                <h5 class="mb-0 text-primary">${formatCurrency(req.amountPerMember)} / member</h5>
+                            </div>
+                            
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <small class="text-muted">Due Date</small>
+                                    <div>${formatDate(req.dueDate)}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Collected</small>
+                                    <div class="fw-bold text-success">${formatCurrency(req.totalCollected)}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <small class="text-muted">Collection Rate</small>
+                                    <div>${req.paidCount}/${req.totalMembers} (${collectionRate}%)</div>
+                                </div>
+                            </div>
+
+                            <div class="progress mb-3" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: ${collectionRate}%"></div>
+                            </div>
+
+                            <button class="btn btn-sm btn-primary" onclick="viewPayments(${req.id}, '${escapeHtml(req.title)}')">
+                                <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                View Payments
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+        }
+
+        // View Payments for a Request
+        async function viewPayments(requestId, requestTitle) {
+            currentRequestId = requestId;
+            currentRequestTitle = requestTitle;
+
+            document.getElementById('paymentTableTitle').textContent = `Payments: ${requestTitle}`;
+            document.getElementById('requestsSection').style.display = 'none';
+            document.getElementById('membersSection').style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_BASE}/FundCollection/${requestId}/payments`, {
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const payments = await response.json();
+                    renderPayments(payments);
+                    setupSearchAndFilter(); // Setup search and filter after loading payments
+                } else {
+                    console.error('Payments load failed:', response.status, response.statusText);
+                    showToast(`Error loading payments: ${response.status}`, 'danger');
+                }
+            } catch (error) {
+                console.error('Error loading payments:', error);
+                showToast('Error loading payments', 'danger');
+            }
+        }
+
+        // Setup search and filter event listeners
+        function setupSearchAndFilter() {
+            const searchInput = document.getElementById('searchPayments');
+            const statusFilter = document.getElementById('filterStatus');
+
+            // Remove existing listeners to avoid duplicates
+            const newSearchInput = searchInput.cloneNode(true);
+            searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+            
+            const newStatusFilter = statusFilter.cloneNode(true);
+            statusFilter.parentNode.replaceChild(newStatusFilter, statusFilter);
+
+            // Debounced search
+            let searchTimeout;
+            newSearchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    filterPayments();
+                }, 300);
+            });
+
+            newStatusFilter.addEventListener('change', filterPayments);
+        }
+
+        // Filter payments based on search and filters
+        function filterPayments() {
+            const searchTerm = document.getElementById('searchPayments').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+
+            let filtered = [...allPayments];
+
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(payment => 
+                    payment.studentName.toLowerCase().includes(searchTerm) ||
+                    payment.studentCode.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Apply status filter
+            if (statusFilter) {
+                if (statusFilter === 'overdue') {
+                    // Overdue = pending status + past due date
+                    const now = new Date();
+                    filtered = filtered.filter(payment => {
+                        if (payment.status !== 'pending') return false;
+                        // Check if request has due date and it's past
+                        const request = allRequests.find(r => r.id === currentRequestId);
+                        if (request && request.dueDate) {
+                            return new Date(request.dueDate) < now;
+                        }
+                        return false;
+                    });
+                } else {
+                    filtered = filtered.filter(payment => payment.status === statusFilter);
+                }
+            }
+
+            renderPaymentsFiltered(filtered);
+        }
+
+        // Render filtered payments (without resetting allPayments)
+        function renderPaymentsFiltered(payments) {
+            currentPayments = payments; // Update current for modal
+            const tbody = document.getElementById('paymentsTableBody');
+            
+            if (!payments || payments.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No payments found</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = payments.map(payment => {
+                const initials = getInitials(payment.studentName);
+                const avatarColor = getAvatarColor(payment.studentName);
+                const isPaid = payment.status === 'paid' || payment.status === 'confirmed';
+                const canConfirm = payment.status === 'unconfirmed' || payment.status === 'pending';
+                
+                // Status badge colors
+                let statusBadge = '';
+                if (isPaid) {
+                    statusBadge = '<span class="badge bg-success">paid</span>';
+                } else if (payment.status === 'unconfirmed') {
+                    statusBadge = '<span class="badge bg-danger">unconfirmed</span>';
+                } else if (payment.status === 'pending') {
+                    statusBadge = '<span class="badge bg-warning text-dark">pending</span>';
+                } else {
+                    statusBadge = `<span class="badge bg-secondary">${payment.status}</span>`;
+                }
+
+                // Add VNPAY badge if payment method is VNPAY
+                const vnpayBadge = payment.paymentMethod === 'VNPAY' 
+                    ? '<span class="badge bg-info ms-1">VNPAY</span>' 
+                    : '';
+                
+                return `
+                    <tr>
+                        <td class="px-4">${payment.studentCode}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle ${avatarColor} me-2">
+                                    ${initials}
+                                </div>
+                                <span>${payment.studentName}</span>
+                            </div>
+                        </td>
+                        <td class="text-end">${formatCurrency(payment.amount)}</td>
+                        <td>${statusBadge}${vnpayBadge}</td>
+                        <td>${payment.paidAt ? new Date(payment.paidAt).toLocaleDateString('en-GB') : '-'}</td>
+                        <td class="text-center">
+                            ${canConfirm ? `
+                                <button class="btn btn-sm btn-success" onclick="showConfirmPaymentModal(${payment.id})">
+                                    <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            ` : `
+                                <i data-lucide="check-circle" class="text-success" style="width: 20px; height: 20px;"></i>
+                            `}
+                        </td>
+                        <td class="text-center">
+                            ${!isPaid ? `
+                                <button class="btn btn-sm btn-outline-primary" onclick="sendReminder(${payment.id}, this)">
+                                    <i data-lucide="send" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            ` : '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+            setupButtonEventListeners(); // Setup event listeners after rendering
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('searchPayments').value = '';
+            document.getElementById('filterStatus').value = '';
+            renderPaymentsFiltered(allPayments);
+        }
+
+        // Store all payments for filtering
+        let allPayments = [];
+
+        // Render Payments (initial load)
+        function renderPayments(payments) {
+            allPayments = [...payments]; // Store original data for filtering
+            renderPaymentsFiltered(payments); // Use the filtered render function
+        }
+        
+        // Setup event listeners using event delegation
+        function setupButtonEventListeners() {
+            // Remove old listeners first
+            const tbody = document.getElementById('paymentsTableBody');
+            const newTbody = tbody.cloneNode(true);
+            tbody.parentNode.replaceChild(newTbody, tbody);
+            
+            // Add new listeners
+            newTbody.addEventListener('click', function(e) {
+                // Find the button that was clicked
+                const confirmBtn = e.target.closest('.btn-confirm-payment');
+                const reminderBtn = e.target.closest('.btn-send-reminder');
+                
+                if (confirmBtn) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const paymentId = parseInt(confirmBtn.dataset.paymentId);
+                    console.log('Confirm button clicked for payment:', paymentId);
+                    showConfirmPaymentModal(paymentId);
+                    return false;
+                }
+                
+                if (reminderBtn) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const paymentId = parseInt(reminderBtn.dataset.paymentId);
+                    console.log('Reminder button clicked for payment:', paymentId);
+                    sendReminder(paymentId, reminderBtn);
+                    return false;
+                }
+            }, true); // Use capture phase
+        }
+
+        // Show All Requests
+        function showAllRequests() {
+            document.getElementById('requestsSection').style.display = 'block';
+            document.getElementById('membersSection').style.display = 'none';
+            currentRequestId = null;
+        }
+
+        // Create Fund Collection Request
+        document.getElementById('collectFundsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            const dueDate = new Date(document.getElementById('fundDueDate').value);
+            if (dueDate <= new Date()) {
+                showToast('Due date must be in the future', 'danger');
+                return;
+            }
+
+            const dto = {
+                title: document.getElementById('fundTitle').value,
+                description: document.getElementById('fundDescription').value,
+                amountPerMember: parseFloat(document.getElementById('fundAmount').value),
+                dueDate: dueDate.toISOString(),
+                paymentMethods: document.getElementById('fundPaymentMethods').value,
+                notes: document.getElementById('fundNotes').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/FundCollection/club/${CLUB_ID}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include', // Important: include cookies for authentication
+                    body: JSON.stringify(dto)
+                });
+
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('collectFundsModal')).hide();
+                    form.reset();
+                    form.classList.remove('was-validated');
+                    showToast('Fund collection request created successfully', 'success');
+                    await loadStatistics();
+                    await loadRequests();
+                } else {
+                    let errorMessage = 'Failed to create request';
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.message || error.title || JSON.stringify(error);
+                    } catch (e) {
+                        errorMessage = `Error ${response.status}: ${response.statusText}`;
+                    }
+                    console.error('Error response:', errorMessage);
+                    showToast(errorMessage, 'danger');
+                }
+            } catch (error) {
+                console.error('Error creating request:', error);
+                showToast(`An error occurred: ${error.message}`, 'danger');
+            }
+        });
+
+        // Show Confirm Payment Modal
+        // Store current payments for modal
+        let currentPayments = [];
+
+        // Store modal instance
+        let confirmPaymentModalInstance = null;
+        
+        function showConfirmPaymentModal(paymentId) {
+            console.log('showConfirmPaymentModal called with paymentId:', paymentId);
+            console.log('Stack trace:', new Error().stack);
+            
+            // Force cleanup first
+            forceCleanup();
+            
+            const payment = currentPayments.find(p => p.id === paymentId);
+            if (!payment) {
+                showToast('Payment not found', 'danger');
+                return;
+            }
+
+            // Set form values
+            document.getElementById('confirmPaymentId').value = paymentId;
+            document.getElementById('confirmPaymentMethod').value = payment.paymentMethod || 'Cash';
+            document.getElementById('confirmStudentName').value = payment.studentName;
+            document.getElementById('confirmAmount').value = formatCurrency(payment.amount);
+            document.getElementById('displayPaymentMethod').value = payment.paymentMethod || 'Cash';
+            
+            // Show VNPAY details if payment method is VNPAY
+            if (payment.paymentMethod === 'VNPAY' && payment.vnpayTransactionId) {
+                document.getElementById('vnpayDetails').style.display = 'block';
+                document.getElementById('vnpayTxnId').textContent = payment.vnpayTransactionId;
+                document.getElementById('vnpayBank').textContent = payment.vnpayBankCode || 'N/A';
+                document.getElementById('vnpayStatus').textContent = payment.vnpayTransactionStatus || 'N/A';
+            } else {
+                document.getElementById('vnpayDetails').style.display = 'none';
+            }
+            
+            // Set current datetime
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('paymentDate').value = now.toISOString().slice(0,16);
+
+            // Reuse or create modal instance
+            if (!confirmPaymentModalInstance) {
+                confirmPaymentModalInstance = new bootstrap.Modal(document.getElementById('confirmPaymentModal'));
+            }
+            confirmPaymentModalInstance.show();
+        }
+
+        // Confirm Payment
+        document.getElementById('confirmPaymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const form = e.target;
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            const paymentId = document.getElementById('confirmPaymentId').value;
+            const paymentDate = new Date(document.getElementById('paymentDate').value);
+            
+            if (paymentDate > new Date()) {
+                showToast('Payment date cannot be in the future', 'danger');
+                return;
+            }
+
+            const paymentNotes = document.getElementById('paymentNotes').value;
+            const paymentMethod = document.getElementById('confirmPaymentMethod').value;
+
+            const dto = {
+                paymentMethod: paymentMethod,
+                paidAt: paymentDate.toISOString(),
+                notes: paymentNotes
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/FundCollection/payment/${paymentId}/confirm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(dto)
+                });
+
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('confirmPaymentModal')).hide();
+                    form.reset();
+                    form.classList.remove('was-validated');
+                    showToast('Payment confirmed successfully', 'success');
+                    await loadStatistics();
+                    if (currentRequestId) {
+                        await viewPayments(currentRequestId, currentRequestTitle);
+                    }
+                } else {
+                    let errorMessage = 'Failed to confirm payment';
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.message || JSON.stringify(error);
+                    } catch (e) {
+                        errorMessage = `Error ${response.status}: ${response.statusText}`;
+                    }
+                    console.error('Error response:', errorMessage);
+                    showToast(errorMessage, 'danger');
+                }
+            } catch (error) {
+                console.error('Error confirming payment:', error);
+                showToast(`An error occurred: ${error.message}`, 'danger');
+            }
+        });
+
+        // Force clear all overlays and modals
+        function forceCleanup() {
+            // Remove all modal backdrops
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            
+            // Remove all modals
+            document.querySelectorAll('.modal.show').forEach(modal => {
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+            });
+            
+            // Reset body
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+        }
+
+        // Send Reminder
+        async function sendReminder(paymentId, buttonElement) {
+            console.log('sendReminder called with paymentId:', paymentId);
+            console.log('Button element:', buttonElement);
+            
+            if (!confirm('Gửi email nhắc nhở đóng phí cho thành viên này?\n\nThành viên sẽ nhận được email nhắc nhở.')) {
+                console.log('User cancelled');
+                return;
+            }
+
+            console.log('User confirmed, cleaning up...');
+            // Force cleanup after confirm
+            forceCleanup();
+
+            // Show loading state
+            const originalText = buttonElement.innerHTML;
+            buttonElement.disabled = true;
+            buttonElement.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang gửi...';
+
+            try {
+                const response = await fetch(`${API_BASE}/FundCollection/club/${CLUB_ID}/send-reminder`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ paymentIds: [paymentId] })
+                });
+
+                if (response.ok) {
+                    // Save success message to show after reload
+                    sessionStorage.setItem('reminderSuccess', 'true');
+                    
+                    // Reload page immediately
+                    location.reload();
+                } else {
+                    let errorMessage = 'Không thể gửi nhắc nhở';
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.message || JSON.stringify(error);
+                    } catch (e) {
+                        errorMessage = `Lỗi ${response.status}`;
+                    }
+                    console.error('Reminder error:', errorMessage);
+                    showToast(errorMessage, 'danger');
+                }
+            } catch (error) {
+                console.error('Error sending reminder:', error);
+                showToast(`Đã xảy ra lỗi: ${error.message}`, 'danger');
+            } finally {
+                // Restore button state
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = originalText;
+                
+                // Force cleanup again
+                forceCleanup();
+            }
+        }
+
+        // Utility Functions
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', { style: 'decimal' }).format(amount) + ' ₫';
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('vi-VN');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        }
+
+        function getAvatarColor(name) {
+            const colors = ['primary', 'success', 'info', 'warning', 'secondary'];
+            const index = name.charCodeAt(0) % colors.length;
+            return colors[index];
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+    </script>
+}
+
+<style>
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items-center;
+        justify-content: center;
+    }
+
+    @@keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+</style>

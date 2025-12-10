@@ -49,11 +49,35 @@ public class Activity
     public User? ApprovedBy { get; set; }
     public DateTime? ApprovedAt { get; set; }
 
+    // Lý do từ chối (nếu bị từ chối)
+    [MaxLength(500)]
+    public string? RejectionReason { get; set; }
+
     // Số lượng người tham gia tối đa
     public int? MaxParticipants { get; set; }
 
     // Cho phép hệ thống tự cộng điểm phong trào khi điểm danh
     public double MovementPoint { get; set; } = 0;
+    
+    // Collaboration fields for Club Collaboration and School Collaboration
+    public int? ClubCollaborationId { get; set; }
+    public Club? CollaboratingClub { get; set; }
+    public int? CollaborationPoint { get; set; }
+    
+    // Collaboration Invitation fields
+    [MaxLength(50)]
+    public string? CollaborationStatus { get; set; } // "Pending", "Accepted", "Rejected"
+    
+    [MaxLength(500)]
+    public string? CollaborationRejectionReason { get; set; }
+    
+    public DateTime? CollaborationRespondedAt { get; set; }
+    
+    public int? CollaborationRespondedBy { get; set; }
+    
+    // Mã code 6 ký tự để sinh viên tự điểm danh
+    [MaxLength(6)]
+    public string? AttendanceCode { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -62,4 +86,8 @@ public class Activity
     public ICollection<ActivityAttendance> Attendances { get; set; } = new List<ActivityAttendance>();
     public ICollection<ActivityFeedback> Feedbacks { get; set; } = new List<ActivityFeedback>();
     public ICollection<Evidence> Evidences { get; set; } = new List<Evidence>();
+    public ICollection<ActivitySchedule> Schedules { get; set; } = new List<ActivitySchedule>();
+    
+    // Activity evaluation (one-to-one)
+    public ActivityEvaluation? Evaluation { get; set; }
 }

@@ -1,0 +1,404 @@
+using BusinessObject.DTOs.Chatbot;
+using DataAccess;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Services.Chatbot.Models;
+using System.Text;
+
+namespace Services.Chatbot
+{
+    public class ChatbotService : IChatbotService
+    {
+        private readonly EduXtendContext _context;
+        private readonly IGeminiAIService _geminiAIService;
+        private readonly ILogger<ChatbotService> _logger;
+        private readonly IMemoryCache _cache;
+
+        public ChatbotService(
+            EduXtendContext context,
+            IGeminiAIService geminiAIService,
+            ILogger<ChatbotService> logger,
+            IMemoryCache cache)
+        {
+            _context = context;
+            _geminiAIService = geminiAIService;
+            _logger = logger;
+            _cache = cache;
+        }
+
+        public async Task<string> ProcessChatMessageAsync(
+            int userId,
+            string userMessage,
+            List<ChatMessageDto>? conversationHistory)
+        {
+            var correlationId = Guid.NewGuid().ToString();
+            _logger.LogInformation("[{CorrelationId}] Processing chat message for user {UserId}", 
+                correlationId, userId);
+
+            try
+            {
+                // Build student context
+                var studentContext = await BuildStudentContextAsync(userId);
+                _logger.LogInformation("[{CorrelationId}] Built student context for {StudentName}", 
+                    correlationId, studentContext.FullName);
+
+                // Get relevant clubs
+                var clubs = await GetRelevantClubsAsync(studentContext);
+                _logger.LogInformation("[{CorrelationId}] Found {ClubCount} relevant clubs", 
+                    correlationId, clubs.Count);
+
+                // Get upcoming activities
+                var activities = await GetUpcomingActivitiesAsync(studentContext);
+                _logger.LogInformation("[{CorrelationId}] Found {ActivityCount} upcoming activities", 
+                    correlationId, activities.Count);
+
+                // Build AI prompt
+                var prompt = BuildAIPrompt(studentContext, clubs, activities, userMessage, conversationHistory);
+                _logger.LogDebug("[{CorrelationId}] Built AI prompt (length: {Length})", 
+                    correlationId, prompt.Length);
+
+                // Call Gemini AI
+                var response = await _geminiAIService.GenerateResponseAsync(prompt);
+                _logger.LogInformation("[{CorrelationId}] Received AI response for user {UserId}", 
+                    correlationId, userId);
+
+                return response;
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException)
+            {
+                _logger.LogError(ex, "[{CorrelationId}] AI service authentication error for user {UserId}", 
+                    correlationId, userId);
+                throw new InvalidOperationException("Cấu hình AI Assistant không hợp lệ. Vui lòng liên hệ quản trị viên.", ex);
+            }
+            catch (Exception ex) when (ex is HttpRequestException || ex is TimeoutException)
+            {
+                _logger.LogError(ex, "[{CorrelationId}] AI service network error for user {UserId}: {Message}", 
+                    correlationId, userId, ex.Message);
+                throw new InvalidOperationException("Không thể kết nối đến AI Assistant. Vui lòng thử lại sau.", ex);
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "[{CorrelationId}] Database error for user {UserId}", 
+                    correlationId, userId);
+                throw new InvalidOperationException("Lỗi truy cập dữ liệu. Vui lòng thử lại sau.", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[{CorrelationId}] Unexpected error processing chat for user {UserId}: {Message}", 
+                    correlationId, userId, ex.Message);
+                throw new InvalidOperationException("Đã xảy ra lỗi. Vui lòng thử lại sau.", ex);
+            }
+        }
+
+        private async Task<StudentContext> BuildStudentContextAsync(int userId)
+        {
+            var cacheKey = $"student_context_{userId}";
+
+            // Try to get from cache
+            if (_cache.TryGetValue(cacheKey, out StudentContext? cachedContext) && cachedContext != null)
+            {
+                _logger.LogInformation("Retrieved student context for user {UserId} ({StudentName}) from cache", 
+                    userId, cachedContext.FullName);
+                return cachedContext;
+            }
+
+            // If not in cache, fetch from database using UserId
+            var student = await _context.Students
+                .Include(s => s.Major)
+                .Include(s => s.ClubMembers)
+                    .ThenInclude(cm => cm.Club)
+                        .ThenInclude(c => c.Category)
+                .FirstOrDefaultAsync(s => s.UserId == userId);
+
+            if (student == null)
+            {
+                _logger.LogError("Student with UserId {UserId} not found", userId);
+                throw new InvalidOperationException("Không tìm thấy thông tin sinh viên.");
+            }
+
+            // Get current active clubs
+            var currentClubs = student.ClubMembers
+                .Where(cm => cm.IsActive)
+                .Select(cm => cm.Club.Name)
+                .ToList();
+
+            // Get interests from club categories
+            var interests = student.ClubMembers
+                .Where(cm => cm.IsActive)
+                .Select(cm => cm.Club.Category.Name)
+                .Distinct()
+                .ToList();
+
+            var context = new StudentContext
+            {
+                StudentId = student.Id,
+                FullName = student.FullName,
+                MajorName = student.Major.Name,
+                Cohort = student.Cohort,
+                CurrentClubs = currentClubs,
+                Interests = interests
+            };
+
+            // Cache for 5 minutes
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
+
+            _cache.Set(cacheKey, context, cacheOptions);
+            _logger.LogInformation("Cached student context for user {UserId} ({StudentName}) for 5 minutes", 
+                userId, student.FullName);
+
+            return context;
+        }
+
+        private async Task<List<ClubRecommendation>> GetRelevantClubsAsync(StudentContext context)
+        {
+            var cacheKey = "active_clubs";
+
+            // Try to get from cache
+            if (_cache.TryGetValue(cacheKey, out List<ClubRecommendation>? cachedClubs) && cachedClubs != null)
+            {
+                _logger.LogDebug("Retrieved active clubs from cache");
+                return cachedClubs;
+            }
+
+            // If not in cache, fetch from database
+            var clubs = await _context.Clubs
+                .Include(c => c.Category)
+                .Where(c => c.IsActive && c.IsRecruitmentOpen)
+                .Select(c => new ClubRecommendation
+                {
+                    ClubId = c.Id,
+                    Name = c.Name,
+                    SubName = c.SubName,
+                    Description = c.Description ?? string.Empty,
+                    CategoryName = c.Category.Name,
+                    IsRecruitmentOpen = c.IsRecruitmentOpen
+                })
+                .Take(10) // Limit to top 10 clubs
+                .ToListAsync();
+
+            // Cache for 10 minutes
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(10));
+
+            _cache.Set(cacheKey, clubs, cacheOptions);
+            _logger.LogDebug("Cached active clubs for 10 minutes");
+
+            return clubs;
+        }
+
+        private async Task<List<ActivityRecommendation>> GetUpcomingActivitiesAsync(StudentContext context)
+        {
+            var cacheKey = "upcoming_activities";
+
+            // Try to get from cache
+            if (_cache.TryGetValue(cacheKey, out List<ActivityRecommendation>? cachedActivities) && cachedActivities != null)
+            {
+                _logger.LogDebug("Retrieved upcoming activities from cache");
+                return cachedActivities;
+            }
+
+            // If not in cache, fetch from database
+            var now = DateTime.Now;
+
+            var activities = await _context.Activities
+                .Include(a => a.Club)
+                .Where(a => a.Status == "Approved" && a.StartTime > now)
+                .OrderBy(a => a.StartTime)
+                .Select(a => new ActivityRecommendation
+                {
+                    ActivityId = a.Id,
+                    Title = a.Title,
+                    Description = a.Description ?? string.Empty,
+                    Location = a.Location ?? string.Empty,
+                    StartTime = a.StartTime,
+                    ClubName = a.Club != null ? a.Club.Name : "Toàn trường",
+                    ActivityType = a.Type.ToString(),
+                    IsPublic = a.IsPublic
+                })
+                .Take(10) // Limit to top 10 activities
+                .ToListAsync();
+
+            // Cache for 5 minutes
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(5));
+
+            _cache.Set(cacheKey, activities, cacheOptions);
+            _logger.LogDebug("Cached upcoming activities for 5 minutes");
+
+            return activities;
+        }
+
+        private string BuildAIPrompt(
+            StudentContext context,
+            List<ClubRecommendation> clubs,
+            List<ActivityRecommendation> activities,
+            string userMessage,
+            List<ChatMessageDto>? conversationHistory)
+        {
+            var prompt = new StringBuilder();
+
+            // System prompt
+            prompt.AppendLine("Bạn là AI Assistant của hệ thống EduXtend, một nền tảng quản lý câu lạc bộ sinh viên.");
+            prompt.AppendLine("Nhiệm vụ của bạn là hỗ trợ sinh viên tìm kiếm và tham gia các câu lạc bộ (CLB) và hoạt động phù hợp.");
+            prompt.AppendLine();
+
+            // Student information
+            prompt.AppendLine("THÔNG TIN SINH VIÊN:");
+            prompt.AppendLine($"- Họ tên: {context.FullName}");
+            prompt.AppendLine($"- Chuyên ngành: {context.MajorName}");
+            prompt.AppendLine($"- Khóa: {context.Cohort}");
+            
+            if (context.CurrentClubs.Any())
+            {
+                prompt.AppendLine($"- CLB hiện tại: {string.Join(", ", context.CurrentClubs)}");
+            }
+            else
+            {
+                prompt.AppendLine("- CLB hiện tại: Chưa tham gia CLB nào");
+            }
+            
+            if (context.Interests.Any())
+            {
+                prompt.AppendLine($"- Sở thích (từ CLB đã tham gia): {string.Join(", ", context.Interests)}");
+            }
+            prompt.AppendLine();
+
+            // Club list
+            prompt.AppendLine("DANH SÁCH CLB ĐANG MỞ TUYỂN:");
+            if (clubs.Any())
+            {
+                foreach (var club in clubs)
+                {
+                    prompt.AppendLine($"- ID: {club.ClubId} | {club.Name} ({club.SubName})");
+                    prompt.AppendLine($"  Danh mục: {club.CategoryName}");
+                    if (!string.IsNullOrWhiteSpace(club.Description))
+                    {
+                        prompt.AppendLine($"  Mô tả: {club.Description}");
+                    }
+                    prompt.AppendLine($"  Format đề xuất: [CLUB:{club.ClubId}:{club.Name}]");
+                    prompt.AppendLine();
+                }
+            }
+            else
+            {
+                prompt.AppendLine("Hiện tại không có CLB nào đang mở tuyển.");
+                prompt.AppendLine();
+            }
+
+            // Activity list
+            prompt.AppendLine("HOẠT ĐỘNG SẮP TỚI:");
+            if (activities.Any())
+            {
+                foreach (var activity in activities.Take(5)) // Limit to 5 for prompt size
+                {
+                    prompt.AppendLine($"- ID: {activity.ActivityId} | {activity.Title}");
+                    prompt.AppendLine($"  CLB: {activity.ClubName}");
+                    prompt.AppendLine($"  Thời gian: {activity.StartTime:dd/MM/yyyy HH:mm}");
+                    prompt.AppendLine($"  Địa điểm: {activity.Location}");
+                    prompt.AppendLine($"  Loại: {activity.ActivityType}");
+                    if (!string.IsNullOrWhiteSpace(activity.Description))
+                    {
+                        prompt.AppendLine($"  Mô tả: {activity.Description}");
+                    }
+                    prompt.AppendLine($"  Format đề xuất: [ACTIVITY:{activity.ActivityId}:{activity.Title}]");
+                    prompt.AppendLine();
+                }
+            }
+            else
+            {
+                prompt.AppendLine("Hiện tại không có hoạt động nào sắp diễn ra.");
+                prompt.AppendLine();
+            }
+
+            // Guidelines
+            prompt.AppendLine("HƯỚNG DẪN:");
+            prompt.AppendLine("1. Trả lời bằng tiếng Việt, thân thiện và nhiệt tình");
+            prompt.AppendLine("2. Đề xuất CLB và hoạt động phù hợp với chuyên ngành và sở thích của sinh viên");
+            prompt.AppendLine("3. Giải thích lý do tại sao CLB/hoạt động phù hợp");
+            prompt.AppendLine("4. Cung cấp thông tin cụ thể: tên CLB, mô tả, thời gian hoạt động");
+            prompt.AppendLine("5. Khuyến khích sinh viên tham gia và phát triển kỹ năng");
+            prompt.AppendLine("6. Nếu không có thông tin phù hợp, gợi ý sinh viên khám phá các lựa chọn khác");
+            prompt.AppendLine("7. Giữ câu trả lời ngắn gọn (dưới 500 từ)");
+            prompt.AppendLine();
+            prompt.AppendLine("ĐỊNH DẠNG ĐỀ XUẤT:");
+            prompt.AppendLine("Khi đề xuất CLB hoặc hoạt động, sử dụng format sau để hệ thống có thể tạo link:");
+            prompt.AppendLine("[CLUB:ID:Tên CLB] - để tạo link đến trang CLB");
+            prompt.AppendLine("[ACTIVITY:ID:Tên hoạt động] - để tạo link đến trang hoạt động");
+            prompt.AppendLine("Ví dụ: 'Tôi đề xuất bạn tham gia [CLUB:1:FPT Code Club] và hoạt động [ACTIVITY:5:Workshop React]'");
+            prompt.AppendLine();
+
+            // Conversation history
+            if (conversationHistory != null && conversationHistory.Any())
+            {
+                prompt.AppendLine("LỊCH SỬ HỘI THOẠI:");
+                var recentHistory = conversationHistory.TakeLast(10).ToList(); // Last 10 messages
+                foreach (var message in recentHistory)
+                {
+                    var role = message.Role == "user" ? "Sinh viên" : "AI Assistant";
+                    prompt.AppendLine($"{role}: {message.Content}");
+                }
+                prompt.AppendLine();
+            }
+
+            // User message
+            prompt.AppendLine("CÂU HỎI CỦA SINH VIÊN:");
+            prompt.AppendLine(userMessage);
+
+            return prompt.ToString();
+        }
+
+        private string FormatConversationHistory(List<ChatMessageDto> history)
+        {
+            if (history == null || !history.Any())
+            {
+                return string.Empty;
+            }
+
+            var formatted = new StringBuilder();
+            var recentHistory = history.TakeLast(10).ToList(); // Last 10 messages
+
+            foreach (var message in recentHistory)
+            {
+                var role = message.Role == "user" ? "Sinh viên" : "AI Assistant";
+                formatted.AppendLine($"{role}: {message.Content}");
+            }
+
+            return formatted.ToString();
+        }
+
+        /// <summary>
+        /// Invalidates the cached student context for a specific user.
+        /// Should be called when student profile, major, or club memberships are updated.
+        /// </summary>
+        public void InvalidateStudentContext(int userId)
+        {
+            var cacheKey = $"student_context_{userId}";
+            _cache.Remove(cacheKey);
+            _logger.LogInformation("Invalidated student context cache for user {UserId}", userId);
+        }
+
+        /// <summary>
+        /// Invalidates the cached active clubs list.
+        /// Should be called when clubs are created, updated, or recruitment status changes.
+        /// </summary>
+        public void InvalidateActiveClubs()
+        {
+            var cacheKey = "active_clubs";
+            _cache.Remove(cacheKey);
+            _logger.LogInformation("Invalidated active clubs cache");
+        }
+
+        /// <summary>
+        /// Invalidates the cached upcoming activities list.
+        /// Should be called when activities are created, updated, or status changes.
+        /// </summary>
+        public void InvalidateUpcomingActivities()
+        {
+            var cacheKey = "upcoming_activities";
+            _cache.Remove(cacheKey);
+            _logger.LogInformation("Invalidated upcoming activities cache");
+        }
+    }
+}

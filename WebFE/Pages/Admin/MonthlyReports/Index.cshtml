@@ -1,0 +1,166 @@
+@page
+@model WebFE.Pages.Admin.MonthlyReports.IndexModel
+@{
+    ViewData["Title"] = "Monthly Reports Management";
+    ViewData["Breadcrumb"] = "Monthly Reports";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Quản lý báo cáo tháng</h1>
+        <p class="page-description">Xem xét và phê duyệt báo cáo hoạt động tháng của các CLB</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="content-card mb-4">
+    <div class="content-card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Câu lạc bộ</label>
+                <select name="FilterClubId" class="form-select">
+                    <option value="">Tất cả CLB</option>
+                    @foreach (var club in Model.Clubs)
+                    {
+                        <option value="@club.Id" selected="@(Model.FilterClubId == club.Id)">@club.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Tháng</label>
+                <select name="FilterMonth" class="form-select">
+                    <option value="">Tất cả</option>
+                    @for (int i = 1; i <= 12; i++)
+                    {
+                        <option value="@i" selected="@(Model.FilterMonth == i)">Tháng @i</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Năm</label>
+                <select name="FilterYear" class="form-select">
+                    <option value="">Tất cả</option>
+                    @for (int year = DateTime.Now.Year; year >= DateTime.Now.Year - 3; year--)
+                    {
+                        <option value="@year" selected="@(Model.FilterYear == year)">@year</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trạng thái</label>
+                <select name="FilterStatus" class="form-select">
+                    <option value="">Tất cả</option>
+                    <option value="PendingApproval" selected="@(Model.FilterStatus == "PendingApproval")">Chờ phê duyệt</option>
+                    <option value="Approved" selected="@(Model.FilterStatus == "Approved")">Đã phê duyệt</option>
+                    <option value="Rejected" selected="@(Model.FilterStatus == "Rejected")">Bị từ chối</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                    Lọc
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reports Table -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h5 class="content-card-title">Danh sách báo cáo (@Model.Reports.Count)</h5>
+    </div>
+    <div class="content-card-body">
+        @if (Model.Reports.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">STT</th>
+                            <th>Câu lạc bộ</th>
+                            <th>Tháng/Năm</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày nộp</th>
+                            <th style="width: 150px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Reports.Count; i++)
+                        {
+                            var report = Model.Reports[i];
+                            var rowClass = report.Status == "PendingApproval" ? "table-warning" : "";
+                            <tr class="@rowClass">
+                                <td class="text-center">@(i + 1)</td>
+                                <td>
+                                    <strong>@report.ClubName</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">Tháng @report.ReportMonth/@report.ReportYear</span>
+                                </td>
+                                <td>
+                                    @if (report.Status == "Draft")
+                                    {
+                                        <span class="badge bg-secondary">Nháp</span>
+                                    }
+                                    else if (report.Status == "PendingApproval")
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            <i data-lucide="clock" style="width: 14px; height: 14px;"></i>
+                                            Chờ phê duyệt
+                                        </span>
+                                    }
+                                    else if (report.Status == "Approved")
+                                    {
+                                        <span class="badge bg-success">
+                                            <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                                            Đã phê duyệt
+                                        </span>
+                                    }
+                                    else if (report.Status == "Rejected")
+                                    {
+                                        <span class="badge bg-danger">
+                                            <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i>
+                                            Bị từ chối
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (report.SubmittedAt.HasValue)
+                                    {
+                                        @report.SubmittedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Chưa nộp</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="/Admin/MonthlyReports/Review/@report.Id" class="btn btn-sm btn-primary">
+                                        <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                        Xem xét
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info mb-0">
+                <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                Không có báo cáo nào phù hợp với bộ lọc.
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}

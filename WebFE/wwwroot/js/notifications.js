@@ -49,16 +49,20 @@ class NotificationManager {
         this.modalContainer = document.createElement('div');
         this.modalContainer.id = 'modal-container';
         this.modalContainer.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 10000;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            z-index: 10000 !important;
             display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.5);
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(0, 0, 0, 0.5) !important;
             backdrop-filter: blur(4px);
         `;
         document.body.appendChild(this.modalContainer);
@@ -88,11 +92,33 @@ class NotificationManager {
     }
 
     loadStoredNotifications() {
-        // Load notifications from localStorage
-        const stored = localStorage.getItem('eduxtend_notifications');
-        if (stored) {
-            this.notifications = JSON.parse(stored);
-            this.updateUnreadCount();
+        // Load notifications from API
+        this.loadNotificationsFromAPI();
+    }
+
+    async loadNotificationsFromAPI() {
+        try {
+            const response = await fetch('https://localhost:5001/api/notifications', {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                this.notifications = result.data || [];
+                this.updateUnreadCount();
+                this.renderNotificationCenter();
+            } else if (response.status === 401) {
+                // User not authenticated, skip loading
+                console.log('User not authenticated, skipping notification load');
+            }
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            // Fallback to localStorage if API fails
+            const stored = localStorage.getItem('eduxtend_notifications');
+            if (stored) {
+                this.notifications = JSON.parse(stored);
+                this.updateUnreadCount();
+            }
         }
     }
 
@@ -111,7 +137,25 @@ class NotificationManager {
         // Listen for visibility change to update unread count
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                this.updateUnreadCount();
+                this.loadNotificationsFromAPI();
+            }
+        });
+
+        // Auto-refresh notifications every 30 seconds
+        setInterval(() => {
+            this.loadNotificationsFromAPI();
+        }, 30000);
+
+        // Close notification center when clicking outside
+        document.addEventListener('click', (e) => {
+            const notificationCenter = document.getElementById('notification-center');
+            const notificationBell = document.querySelector('.notification-bell');
+            
+            if (notificationCenter && notificationBell && 
+                !notificationCenter.contains(e.target) && 
+                !notificationBell.contains(e.target) &&
+                notificationCenter.classList.contains('show')) {
+                this.hideNotificationCenter();
             }
         });
     }
@@ -405,6 +449,58 @@ class NotificationManager {
                 opacity: 1;
             }
 
+            /* Notification Preview on Hover */
+            .notification-preview {
+                position: absolute;
+                top: 50px;
+                right: 0;
+                width: 380px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+                z-index: 9999;
+                display: none;
+                flex-direction: column;
+                overflow: hidden;
+                opacity: 0;
+                transition: opacity 0.2s;
+            }
+
+            .notification-preview.show {
+                opacity: 1;
+            }
+
+            .notification-preview-header {
+                padding: 12px 16px;
+                border-bottom: 1px solid #e5e7eb;
+                background: #f8fafc;
+                font-size: 14px;
+                font-weight: 600;
+                color: #1f2937;
+            }
+
+            .notification-preview-list {
+                max-height: 350px;
+                overflow-y: auto;
+            }
+
+            .notification-preview-footer {
+                padding: 10px 16px;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+            }
+
+            .notification-preview-footer a {
+                color: #3b82f6;
+                text-decoration: none;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+            .notification-preview-footer a:hover {
+                text-decoration: underline;
+            }
+
             .notification-header {
                 padding: 20px 24px 16px;
                 border-bottom: 1px solid #e5e7eb;
@@ -457,7 +553,25 @@ class NotificationManager {
             .notification-list {
                 flex: 1;
                 overflow-y: auto;
-                max-height: 500px;
+                max-height: 490px; /* ~7 notifications */
+            }
+
+            .notification-list::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .notification-list::-webkit-scrollbar-track {
+                background: #f3f4f6;
+                border-radius: 3px;
+            }
+
+            .notification-list::-webkit-scrollbar-thumb {
+                background: #d1d5db;
+                border-radius: 3px;
+            }
+
+            .notification-list::-webkit-scrollbar-thumb:hover {
+                background: #9ca3af;
             }
 
             .notification-item {
@@ -650,37 +764,87 @@ class NotificationManager {
         this.showToast(notificationData.type, notificationData.title, notificationData.message, 5000);
     }
 
-    markAsRead(notificationId) {
+    async markAsRead(notificationId) {
         const notification = this.notifications.find(n => n.id === notificationId);
         if (notification && !notification.isRead) {
-            notification.isRead = true;
-            this.updateUnreadCount();
-            this.saveNotifications();
-            this.renderNotificationCenter();
+            try {
+                const response = await fetch(`https://localhost:5001/api/notifications/${notificationId}/read`, {
+                    method: 'PUT',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    notification.isRead = true;
+                    this.updateUnreadCount();
+                    this.renderNotificationCenter();
+                }
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
         }
     }
 
-    markAllAsRead() {
-        this.notifications.forEach(notification => {
-            notification.isRead = true;
-        });
-        this.updateUnreadCount();
-        this.saveNotifications();
-        this.renderNotificationCenter();
+    async markAllAsRead() {
+        try {
+            const response = await fetch('https://localhost:5001/api/notifications/read-all', {
+                method: 'PUT',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                this.notifications.forEach(notification => {
+                    notification.isRead = true;
+                });
+                this.updateUnreadCount();
+                this.renderNotificationCenter();
+            }
+        } catch (error) {
+            console.error('Error marking all notifications as read:', error);
+        }
     }
 
-    deleteNotification(notificationId) {
-        this.notifications = this.notifications.filter(n => n.id !== notificationId);
-        this.updateUnreadCount();
-        this.saveNotifications();
-        this.renderNotificationCenter();
+    async deleteNotification(notificationId) {
+        try {
+            // Delete notification on server
+            const response = await fetch(`https://localhost:5001/api/notification/${notificationId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                // Remove locally
+                this.notifications = this.notifications.filter(n => n.id !== notificationId);
+                this.updateUnreadCount();
+                this.saveNotifications();
+                this.renderNotificationCenter();
+            } else {
+                console.error('Failed to delete notification');
+            }
+        } catch (error) {
+            console.error('Error deleting notification:', error);
+        }
     }
 
-    clearAllNotifications() {
-        this.notifications = [];
-        this.updateUnreadCount();
-        this.saveNotifications();
-        this.renderNotificationCenter();
+    async clearAllNotifications() {
+        try {
+            // Delete all notifications on server
+            const response = await fetch('https://localhost:5001/api/notification/delete-all', {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                // Clear locally
+                this.notifications = [];
+                this.updateUnreadCount();
+                this.saveNotifications();
+                this.renderNotificationCenter();
+            } else {
+                console.error('Failed to delete all notifications');
+            }
+        } catch (error) {
+            console.error('Error deleting all notifications:', error);
+        }
     }
 
     updateUnreadCount() {
@@ -710,11 +874,7 @@ class NotificationManager {
         
         this.notificationCenter.innerHTML = `
             <div class="notification-header">
-                <h3 class="notification-title">Thông báo</h3>
-                <div class="notification-actions">
-                    ${unreadCount > 0 ? '<button class="notification-btn notification-btn-primary" onclick="notificationManager.markAllAsRead()">Đánh dấu đã đọc</button>' : ''}
-                    <button class="notification-btn notification-btn-secondary" onclick="notificationManager.clearAllNotifications()">Xóa tất cả</button>
-                </div>
+                <h3 class="notification-title">Notifications</h3>
             </div>
             <div class="notification-list">
                 ${this.notifications.length === 0 ? this.renderEmptyState() : this.renderNotificationList()}
@@ -726,43 +886,15 @@ class NotificationManager {
         return `
             <div class="notification-empty">
                 <div class="notification-empty-icon">🔔</div>
-                <p class="notification-empty-text">Chưa có thông báo</p>
-                <p class="notification-empty-subtext">Các thông báo mới sẽ xuất hiện ở đây</p>
+                <p class="notification-empty-text">No notifications</p>
+                <p class="notification-empty-subtext">New notifications will appear here</p>
             </div>
         `;
     }
 
     renderNotificationList() {
-        return this.notifications.map(notification => {
-            const iconMap = {
-                success: '✓',
-                error: '✕',
-                warning: '⚠',
-                info: 'ℹ'
-            };
-
-            const timeAgo = this.getTimeAgo(notification.createdAt);
-            const scopeText = notification.scope === 'Club' ? 'CLB' : 'Hệ thống';
-
-            return `
-                <div class="notification-item ${!notification.isRead ? 'unread' : ''}" 
-                     onclick="notificationManager.markAsRead('${notification.id}')">
-                    <div class="notification-item-header">
-                        <div class="notification-icon" style="background: ${this.getTypeColor(notification.type)}">
-                            ${iconMap[notification.type] || 'ℹ'}
-                        </div>
-                        <div class="notification-content">
-                            <h4 class="notification-item-title">${notification.title}</h4>
-                            <p class="notification-item-message">${notification.message}</p>
-                            <div class="notification-meta">
-                                <span class="notification-time">${timeAgo}</span>
-                                <span class="notification-scope">${scopeText}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        // Show maximum 7 notifications, rest can be scrolled
+        return this.notifications.map(notification => this.renderNotificationItem(notification)).join('');
     }
 
     getTypeColor(type) {
@@ -780,32 +912,127 @@ class NotificationManager {
         const date = new Date(dateString);
         const diffInSeconds = Math.floor((now - date) / 1000);
 
-        if (diffInSeconds < 60) return 'Vừa xong';
-        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
-        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
-        if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
-        return date.toLocaleDateString('vi-VN');
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+        if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+        return date.toLocaleDateString('en-US');
     }
 
     // Notification Center UI Methods
     showNotificationCenter() {
+        console.log('Show notification center', this.notifications.length, 'notifications');
         this.renderNotificationCenter();
         this.notificationCenter.style.display = 'flex';
-        setTimeout(() => this.notificationCenter.classList.add('show'), 10);
+        setTimeout(() => {
+            this.notificationCenter.style.transform = 'translateX(0)';
+            this.notificationCenter.style.opacity = '1';
+            console.log('Notification center should be visible now');
+            
+            // Auto mark all as read after 1 second
+            setTimeout(() => {
+                this.markAllAsRead();
+            }, 1000);
+        }, 10);
     }
 
     hideNotificationCenter() {
-        this.notificationCenter.classList.remove('show');
+        this.notificationCenter.style.transform = 'translateX(100%)';
+        this.notificationCenter.style.opacity = '0';
         setTimeout(() => {
             this.notificationCenter.style.display = 'none';
         }, 300);
     }
 
     toggleNotificationCenter() {
+        console.log('Toggle notification center', this.notificationCenter.style.display);
         if (this.notificationCenter.style.display === 'flex') {
             this.hideNotificationCenter();
         } else {
             this.showNotificationCenter();
+        }
+    }
+
+    renderNotificationItem(notification) {
+        const iconMap = {
+            success: '✓',
+            error: '✕',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+
+        const timeAgo = this.getTimeAgo(notification.createdAt);
+        const scopeText = notification.scope === 'Club' ? 'Club' : 'System';
+        
+        // Determine the link based on notification title/type
+        let targetUrl = '#'; // Default: no redirect, just mark as read
+        
+        // Fund collection / Payment notifications
+        if (notification.title.includes('payment') || notification.title.includes('Payment') ||
+            notification.title.includes('fund collection') || notification.title.includes('Fund collection')) {
+            // For members: go to Finance section in Member Dashboard
+            if (notification.title.includes('New payment request') || 
+                notification.title.includes('Payment confirmed') ||
+                notification.title.includes('Payment reminder') ||
+                notification.title.includes('Payment overdue') ||
+                notification.title.includes('Payment successful')) {
+                // Extract club ID from notification if available, otherwise use a default
+                const clubId = notification.targetClubId || 1; // You may need to store clubId in notification
+                targetUrl = `/Clubs/MemberDashboard/${clubId}?section=finance`;
+            }
+            // For club managers: go to Member Funds page
+            else if (notification.title.includes('cash payment') || 
+                     notification.title.includes('bank transfer') ||
+                     notification.title.includes('VNPAY payment')) {
+                targetUrl = '/ClubManager/Financial/MemberFunds';
+            }
+        }
+        // Club news notifications
+        else if (notification.title.includes('article') || notification.title.includes('Article')) {
+            // For admin: go to pending approval page
+            if (notification.title.includes('pending approval')) {
+                targetUrl = '/Admin/ClubNews';
+            }
+            // For club manager: go to their news page
+            else if (notification.title.includes('approved') || notification.title.includes('rejected')) {
+                targetUrl = '/ClubManager/News';
+            }
+        }
+        // Interview notifications
+        else if (notification.title.includes('phỏng vấn') || notification.title.includes('interview')) {
+            targetUrl = '/Student/MyApplications';
+        }
+
+        return `
+            <div class="notification-item ${!notification.isRead ? 'unread' : ''}" 
+                 onclick="notificationManager.handleNotificationClick('${notification.id}', '${targetUrl}')">
+                <div class="notification-item-header">
+                    <div class="notification-icon" style="background: ${this.getTypeColor(notification.type)}">
+                        ${iconMap[notification.type] || 'ℹ'}
+                    </div>
+                    <div class="notification-content">
+                        <h4 class="notification-item-title">${notification.title}</h4>
+                        <p class="notification-item-message">${notification.message}</p>
+                        <div class="notification-meta">
+                            <span class="notification-time">${timeAgo}</span>
+                            <span class="notification-scope">${scopeText}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    handleNotificationClick(notificationId, targetUrl) {
+        // Mark as read
+        this.markAsRead(notificationId);
+        
+        // Close notification center
+        this.hideNotificationCenter();
+        
+        // Navigate to target page only if targetUrl is not '#'
+        if (targetUrl && targetUrl !== '#') {
+            window.location.href = targetUrl;
         }
     }
 

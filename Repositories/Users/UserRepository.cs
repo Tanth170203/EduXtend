@@ -121,5 +121,13 @@ namespace Repositories.Users
                 .ToDictionaryAsync(r => r.RoleName, r => r.Id);
             return roles;
         }
+
+        public async Task<List<User>> GetUsersByRoleAsync(string roleName)
+        {
+            return await _db.Users
+                .Include(u => u.Role)
+                .Where(u => u.Role != null && u.Role.RoleName == roleName && u.IsActive)
+                .ToListAsync();
+        }
     }
 }

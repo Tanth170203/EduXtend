@@ -1,0 +1,59 @@
+@page
+@model WebFE.Pages.Student.MyPaymentsModel
+@{
+    ViewData["Title"] = "My Payments";
+}
+
+<div class="container mt-4">
+    <h2>My Payment Requests</h2>
+    <div id="paymentsList"></div>
+</div>
+
+@section Scripts {
+<script>
+    const clubId = @Model.ClubId;
+    const API_BASE = 'https://localhost:5001/api';
+    
+    async function loadPayments() {
+        const response = await fetch(`${API_BASE}/FundCollection/club/${clubId}/my-payments`, {
+            credentials: 'include'
+        });
+        const payments = await response.json();
+        renderPayments(payments);
+    }
+    
+    function renderPayments(payments) {
+        const container = document.getElementById('paymentsList');
+        container.innerHTML = payments.map(p => `
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5>${p.fundCollectionTitle}</h5>
+                    <p>Amount: ${p.amount} VND</p>
+                    <p>Status: ${p.status}</p>
+                    ${p.status === 'pending' ? `
+                        <button onclick="payWithVNPAY(${p.id})" class="btn btn-primary">
+                            Pay with VNPAY
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    async function payWithVNPAY(paymentId) {
+        const response = await fetch(`${API_BASE}/Vnpay/create-payment-url`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                paymentId: paymentId,
+                returnUrl: window.location.origin + '/Student/VnpayResult'
+            })
+        });
+        const result = await response.json();
+        window.location.href = result.paymentUrl;
+    }
+    
+    loadPayments();
+</script>
+}

@@ -24,12 +24,29 @@ namespace BusinessObject.DTOs.Activity
         public string? ClubName { get; set; }
         public string? ClubLogo { get; set; }
         
+        // Collaboration info
+        public int? ClubCollaborationId { get; set; }
+        public string? CollaboratingClubName { get; set; }
+        public int? CollaborationPoint { get; set; }
+        public string? CollaborationStatus { get; set; }
+        public string? CollaborationRejectionReason { get; set; }
+        public bool IsCollaboratedActivity { get; set; } // True if current club is the collaborating club (not owner)
+        
+        // Attendance code for self check-in
+        public string? AttendanceCode { get; set; }
+        
         // Registration info
         public bool CanRegister { get; set; }
         public bool IsRegistered { get; set; }
         public bool IsFull { get; set; }
         public bool HasAttended { get; set; }
         public bool HasFeedback { get; set; }
+        
+        // Attendance statistics
+        public int AttendedCount { get; set; }
+        
+        // Evaluation status
+        public bool HasEvaluation { get; set; }
     }
 }
 

@@ -78,10 +78,40 @@ public class IndexModel : PageModel
 
         if (SelectedSemesterId != 0)
         {
-            ClubScores = await _service.GetAllClubScoresAsync(SelectedSemesterId, SelectedMonth);
+            // Get scores from service
+            var scores = await _service.GetAllClubScoresAsync(SelectedSemesterId, SelectedMonth);
+            
+            // Get all active clubs
+            var allClubs = await _context.Clubs
+                .Where(c => c.IsActive)
+                .Select(c => new { c.Id, c.Name })
+                .ToListAsync();
+
+            // Merge: show all clubs, with scores if available
+            var scoredClubIds = scores.Select(s => s.ClubId).ToHashSet();
+            
+            ClubScores = allClubs.Select(club =>
+            {
+                var existingScore = scores.FirstOrDefault(s => s.ClubId == club.Id);
+                if (existingScore != null)
+                    return existingScore;
+                
+                // Return club with 0 scores if not scored yet
+                return new ClubMovementRecordDto
+                {
+                    ClubId = club.Id,
+                    ClubName = club.Name,
+                    ClubMeetingScore = 0,
+                    EventScore = 0,
+                    CollaborationScore = 0,
+                    CompetitionScore = 0,
+                    PlanScore = 0,
+                    TotalScore = 0
+                };
+            }).OrderByDescending(c => c.TotalScore).ThenBy(c => c.ClubName).ToList();
 
             // KPIs
-            TotalClubs = await _context.Clubs.CountAsync(c => c.IsActive);
+            TotalClubs = allClubs.Count;
             ScoredClubs = ClubScores.Count(r => r.TotalScore > 0 ||
                 (r.ClubMeetingScore + r.EventScore + r.CompetitionScore + r.PlanScore + r.CollaborationScore) > 0);
             UnscoredClubs = Math.Max(0, TotalClubs - ScoredClubs);

@@ -42,11 +42,21 @@ namespace WebAPI.Controllers
         // GET api/joinrequest/club/{clubId}
         [HttpGet("club/{clubId:int}")]
         [Authorize]
-        public async Task<IActionResult> GetByClubId(int clubId)
+        public async Task<IActionResult> GetByClubId(int clubId, [FromQuery] string? status = null)
         {
             try
             {
-                var requests = await _service.GetByClubIdAsync(clubId);
+                // Validate status if provided
+                if (!string.IsNullOrEmpty(status))
+                {
+                    var validStatuses = new[] { "Pending", "Approved", "Rejected", "Cancelled" };
+                    if (!validStatuses.Contains(status, StringComparer.OrdinalIgnoreCase))
+                    {
+                        return BadRequest(new { message = $"Invalid status. Valid values are: {string.Join(", ", validStatuses)}" });
+                    }
+                }
+
+                var requests = await _service.GetByClubIdWithFilterAsync(clubId, status);
                 return Ok(requests);
             }
             catch (Exception ex)
@@ -236,6 +246,34 @@ namespace WebAPI.Controllers
             {
                 _logger.LogError(ex, "Error getting user request for club {ClubId}", clubId);
                 return StatusCode(500, new { message = "Failed to retrieve request" });
+            }
+        }
+
+        // PUT api/joinrequest/{id}
+        [HttpPut("{id:int}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateRequest(int id, [FromBody] UpdateJoinRequestDto dto)
+        {
+            try
+            {
+                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+                {
+                    return Unauthorized(new { message = "Invalid user ID" });
+                }
+
+                var updated = await _service.UpdateRequestAsync(id, userId, dto);
+                if (updated == null)
+                {
+                    return NotFound(new { message = "Join request not found or cannot be updated" });
+                }
+
+                return Ok(updated);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating join request {Id}", id);
+                return StatusCode(500, new { message = ex.Message });
             }
         }
     }
