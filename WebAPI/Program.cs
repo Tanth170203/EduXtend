@@ -64,6 +64,10 @@ namespace WebAPI
             
             var builder = WebApplication.CreateBuilder(args);
 
+            //deploy ( chạy nhớ comment lần nây )
+            //builder.WebHost.UseUrls($"http://*:80");
+
+
             // DbContext
             builder.Services.AddDbContext<EduXtendContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -152,6 +156,7 @@ namespace WebAPI
             builder.Services.AddScoped<Services.Users.IUserManagementService, Services.Users.UserManagementService>();
             builder.Services.AddScoped<IClubService, ClubService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
+            builder.Services.AddScoped<IActivityExtractorService, ActivityExtractorService>();
             builder.Services.AddScoped<IJoinRequestService, JoinRequestService>();
             builder.Services.AddScoped<IInterviewService, InterviewService>();
             builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();

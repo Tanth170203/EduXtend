@@ -39,6 +39,14 @@ namespace Repositories.Users
             {
                 throw new UnauthorizedAccessException("Your email is not registered in the system. Please contact the administrator for support.");
             }
+
+            // ✅ KIỂM TRA USER CÓ BỊ BAN KHÔNG
+            if (!existingUser.IsActive)
+            {
+                _logger.LogWarning("[Google Auth] Banned user attempted to login - Email: {Email}, UserId: {UserId}", 
+                    payload.Email, existingUser.Id);
+                throw new UnauthorizedAccessException("Your account has been banned. Please contact the administrator for support.");
+            }
             else
             {
                 // User đã tồn tại (có thể từ import hoặc Google login trước đó)

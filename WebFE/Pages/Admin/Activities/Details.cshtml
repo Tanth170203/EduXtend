@@ -500,51 +500,56 @@
             const assignments = schedule.assignments || schedule.Assignments || [];
             
             html += `
-                <div class="timeline-item ${index === sortedSchedules.length - 1 ? 'timeline-item-last' : ''}">
-                    <div class="timeline-marker"></div>
-                    <div class="timeline-content">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0 fw-semibold">${escapeHtml(title)}</h6>
-                            <span class="badge bg-primary">
-                                <i class="bi bi-clock me-1"></i>
-                                ${startTime} - ${endTime}
-                            </span>
+                <div class="timeline-item">
+                    <!-- Time Badge on the left -->
+                    <div class="timeline-time">
+                        <div class="timeline-time-badge">
+                            <span class="time-start">${startTime}</span>
+                            <span class="time-range">đến ${endTime}</span>
                         </div>
+                    </div>
+                    
+                    <!-- Marker -->
+                    <div class="timeline-marker-wrapper">
+                        <div class="timeline-marker"></div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="timeline-content">
+                        <h6 class="timeline-title">${escapeHtml(title)}</h6>
             `;
             
             if (description) {
-                html += `<p class="text-muted mb-2">${escapeHtml(description)}</p>`;
+                html += `<p class="timeline-description">${escapeHtml(description)}</p>`;
             }
             
             if (notes) {
                 html += `
-                    <div class="alert alert-info py-2 px-3 mb-2">
-                        <small>
-                            <i class="bi bi-sticky me-1"></i>
-                            <strong>Notes:</strong> ${escapeHtml(notes)}
-                        </small>
+                    <div class="timeline-notes">
+                        <i class="bi bi-sticky me-1"></i>
+                        <strong>Ghi chú:</strong> ${escapeHtml(notes)}
                     </div>
                 `;
             }
             
             if (assignments.length > 0) {
                 html += `
-                    <div class="mt-2">
-                        <small class="text-muted d-block mb-1">
-                            <i class="bi bi-people me-1"></i>
-                            <strong>Assigned to:</strong>
+                    <div class="timeline-assignments">
+                        <small class="text-muted d-block mb-2">
+                            <i class="bi bi-people-fill me-1"></i>
+                            <strong>Phân công:</strong>
                         </small>
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="d-flex flex-wrap">
                 `;
                 
                 assignments.forEach(assignment => {
                     const name = assignment.responsibleName || assignment.ResponsibleName || 'Unknown';
                     const role = assignment.role || assignment.Role;
-                    const roleText = role ? ` - ${escapeHtml(role)}` : '';
+                    const roleText = role ? ` (${escapeHtml(role)})` : '';
                     
                     html += `
-                        <span class="badge bg-secondary">
-                            <i class="bi bi-person me-1"></i>
+                        <span class="assignment-badge">
+                            <i class="bi bi-person-fill"></i>
                             ${escapeHtml(name)}${roleText}
                         </span>
                     `;
@@ -596,34 +601,134 @@
 <style>
     .timeline {
         position: relative;
-        padding-left: 30px;
     }
     
     .timeline-item {
+        display: flex;
+        gap: 16px;
+        padding-bottom: 24px;
         position: relative;
-        padding-bottom: 30px;
-        border-left: 2px solid #e9ecef;
     }
     
-    .timeline-item-last {
-        border-left-color: transparent;
+    .timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 47px;
+        top: 48px;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, #0d6efd 0%, #e9ecef 100%);
+    }
+    
+    .timeline-time {
+        flex-shrink: 0;
+        width: 95px;
+        text-align: center;
+    }
+    
+    .timeline-time-badge {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        min-width: 85px;
+    }
+    
+    .timeline-time-badge .time-range {
+        font-size: 0.75rem;
+        opacity: 0.9;
+    }
+    
+    .timeline-time-badge .time-start {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    
+    .timeline-marker-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-shrink: 0;
     }
     
     .timeline-marker {
-        position: absolute;
-        left: -7px;
-        top: 5px;
-        width: 12px;
-        height: 12px;
+        width: 16px;
+        height: 16px;
         border-radius: 50%;
-        background-color: #0d6efd;
-        border: 2px solid #fff;
-        box-shadow: 0 0 0 2px #0d6efd;
+        background: white;
+        border: 3px solid #0d6efd;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.15);
+        z-index: 1;
+    }
+    
+    .timeline-item:first-child .timeline-marker {
+        background: #0d6efd;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25);
     }
     
     .timeline-content {
-        padding-left: 20px;
-        padding-bottom: 10px;
+        flex: 1;
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 16px 20px;
+        border: 1px solid #e9ecef;
+        transition: all 0.2s ease;
+    }
+    
+    .timeline-content:hover {
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        border-color: #0d6efd;
+    }
+    
+    .timeline-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 4px;
+    }
+    
+    .timeline-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    
+    .timeline-notes {
+        background: #e7f1ff;
+        border-left: 3px solid #0d6efd;
+        padding: 8px 12px;
+        border-radius: 0 8px 8px 0;
+        margin-top: 10px;
+        font-size: 0.85rem;
+    }
+    
+    .timeline-assignments {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px dashed #dee2e6;
+    }
+    
+    .assignment-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #e9ecef;
+        color: #495057;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin: 2px;
+    }
+    
+    .assignment-badge i {
+        color: #0d6efd;
     }
 </style>
 
