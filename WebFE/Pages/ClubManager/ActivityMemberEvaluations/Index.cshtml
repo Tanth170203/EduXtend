@@ -1,0 +1,142 @@
+@page
+@model WebFE.Pages.ClubManager.ActivityMemberEvaluations.IndexModel
+@{
+    ViewData["Title"] = "Đánh giá thành viên";
+    ViewData["Breadcrumb"] = "Member Evaluations";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Đánh giá thành viên</h1>
+        <p class="page-description">@Model.ActivityTitle</p>
+    </div>
+    <a href="/ClubManager/Activities/Details/@Model.ActivityId" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        Quay lại
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Evaluations List -->
+<div class="content-card">
+    <div class="content-card-header">
+        <h5 class="content-card-title">Danh sách thành viên cần đánh giá</h5>
+    </div>
+    <div class="content-card-body">
+        @if (!Model.Assignments.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i data-lucide="users" style="width: 64px; height: 64px; margin-bottom: 1rem;"></i>
+                <h4>Chưa có thành viên nào được phân công</h4>
+                <p>Không có thành viên nào được phân công trong hoạt động này</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Thành viên</th>
+                            <th>Vai trò</th>
+                            <th>Timeline</th>
+                            <th>Trạng thái</th>
+                            <th>Điểm TB</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var assignment in Model.Assignments)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@(assignment.UserName ?? assignment.ResponsibleName ?? "N/A")</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">@assignment.Role</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">@assignment.ScheduleTitle</small>
+                                </td>
+                                <td>
+                                    @if (assignment.IsEvaluated)
+                                    {
+                                        <span class="badge bg-success">Đã đánh giá</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">Chưa đánh giá</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (assignment.AverageScore.HasValue)
+                                    {
+                                        <strong>@assignment.AverageScore.Value.ToString("F2")</strong>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (assignment.IsEvaluated)
+                                    {
+                                        <button class="btn btn-sm btn-outline-info" title="Xem chi tiết" disabled>
+                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <a href="/ClubManager/ActivityMemberEvaluations/Create?assignmentId=@assignment.AssignmentId&activityId=@Model.ActivityId" 
+                                           class="btn btn-sm btn-primary" title="Đánh giá">
+                                            <i data-lucide="star" style="width: 14px; height: 14px;"></i>
+                                            Đánh giá
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Summary -->
+            <div class="mt-3 p-3 bg-light rounded">
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Tổng số thành viên:</strong> @Model.Assignments.Count
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Đã đánh giá:</strong> @Model.Assignments.Count(a => a.IsEvaluated)
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Chưa đánh giá:</strong> @Model.Assignments.Count(a => !a.IsEvaluated)
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}

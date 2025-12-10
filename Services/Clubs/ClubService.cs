@@ -226,5 +226,23 @@ namespace Services.Clubs
                 AwardedAt = a.AwardedAt
             }).ToList();
         }
+
+        public async Task<ClubDetailDto?> UpdateClubInfoAsync(int clubId, UpdateClubInfoDto dto)
+        {
+            var club = await _repo.GetByIdAsync(clubId);
+            if (club == null) return null;
+
+            // Update fields
+            club.Name = dto.Name;
+            club.SubName = dto.SubName;
+            club.Description = dto.Description;
+            club.LogoUrl = dto.LogoUrl;
+            club.BannerUrl = dto.BannerUrl;
+
+            await _repo.UpdateAsync(club);
+
+            // Return updated club detail
+            return await GetClubByIdAsync(clubId);
+        }
     }
 }

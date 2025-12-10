@@ -22,6 +22,7 @@ namespace WebFE.Pages.ClubManager
         public string ClubName { get; set; } = string.Empty;
         public bool IsRecruitmentOpen { get; set; }
         public List<JoinRequestDto> PendingRequests { get; set; } = new();
+        public List<JoinRequestDto> AllRequests { get; set; } = new();
 
         private HttpClient CreateHttpClient()
         {
@@ -49,13 +50,24 @@ namespace WebFE.Pages.ClubManager
         {
             try
             {
+                // Get ClubId from TempData
+                if (TempData["SelectedClubId"] != null)
+                {
+                    ClubId = (int)TempData["SelectedClubId"];
+                    TempData.Keep("SelectedClubId");
+                }
+                else
+                {
+                    return Redirect("/ClubManager");
+                }
+
                 using var httpClient = CreateHttpClient();
 
-                // Get managed club
-                var clubResponse = await httpClient.GetAsync("/api/club/my-managed-club");
+                // Get club details
+                var clubResponse = await httpClient.GetAsync($"/api/club/{ClubId}");
                 if (!clubResponse.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("Failed to get managed club");
+                    _logger.LogWarning("Failed to get club details");
                     return Redirect("/ClubManager");
                 }
 
@@ -70,9 +82,21 @@ namespace WebFE.Pages.ClubManager
                     return Redirect("/ClubManager");
                 }
 
-                ClubId = club.Id;
                 ClubName = club.Name;
                 IsRecruitmentOpen = club.IsRecruitmentOpen;
+
+                // Get all join requests
+                var allRequestsResponse = await httpClient.GetAsync($"/api/joinrequest/club/{ClubId}");
+                if (allRequestsResponse.IsSuccessStatusCode)
+                {
+                    var allRequestsContent = await allRequestsResponse.Content.ReadAsStringAsync();
+                    var allRequests = JsonSerializer.Deserialize<List<JoinRequestDto>>(allRequestsContent, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    AllRequests = allRequests ?? new List<JoinRequestDto>();
+                }
 
                 // Get pending join requests
                 var requestsResponse = await httpClient.GetAsync($"/api/joinrequest/club/{ClubId}/pending");

@@ -1,25 +1,12 @@
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebFE.Pages.ClubManager.Financial
 {
-    public class TransactionsModel : PageModel
+    public class TransactionsModel : ClubManagerPageModel
     {
-        public int ClubId { get; set; }
-
-        public async Task OnGetAsync()
+        public async Task<IActionResult> OnGetAsync()
         {
-            // Get Club ID from user claims or session
-            var clubIdClaim = User.FindFirst("ClubId")?.Value;
-            if (!string.IsNullOrEmpty(clubIdClaim) && int.TryParse(clubIdClaim, out int clubId))
-            {
-                ClubId = clubId;
-            }
-            else
-            {
-                // Fallback: Try to get from query or default
-                ClubId = 1; // Default club for testing
-            }
+            return await InitializeClubContextAsync();
         }
     }
 }

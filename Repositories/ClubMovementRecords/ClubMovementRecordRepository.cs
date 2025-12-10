@@ -39,6 +39,8 @@ public class ClubMovementRecordRepository : IClubMovementRecordRepository
             .Include(cmr => cmr.Semester)
             .Include(cmr => cmr.Details)
                 .ThenInclude(d => d.Criterion)
+            .Include(cmr => cmr.Details)
+                .ThenInclude(d => d.Activity)  // Fix: Load Activity for weekly limit check
             .Where(cmr => cmr.ClubId == clubId && cmr.SemesterId == semesterId)
             .OrderBy(cmr => cmr.Month)
             .ToListAsync();
@@ -136,9 +138,29 @@ public class ClubMovementRecordRepository : IClubMovementRecordRepository
             .Sum(d => d.Score);
 
         record.TotalScore = record.Details.Sum(d => d.Score);
+        
+        // Cap total score at 100
+        if (record.TotalScore > 100)
+        {
+            record.TotalScore = 100;
+        }
 
         record.LastUpdated = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<ClubMovementRecordDetail>> GetDetailsByClubAndWeekAsync(int clubId, int semesterId, DateTime weekStart, DateTime weekEnd)
+    {
+        return await _context.ClubMovementRecordDetails
+            .Include(d => d.ClubMovementRecord)
+            .Include(d => d.Criterion)
+            .Include(d => d.Activity)
+            .Where(d => 
+                d.ClubMovementRecord.ClubId == clubId &&
+                d.ClubMovementRecord.SemesterId == semesterId &&
+                d.AwardedAt >= weekStart &&
+                d.AwardedAt < weekEnd)
+            .ToListAsync();
     }
 }
 

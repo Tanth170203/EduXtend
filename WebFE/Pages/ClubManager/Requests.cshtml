@@ -68,24 +68,32 @@
     </div>
 </div>
 
-<!-- Pending Requests -->
+<!-- All Requests with Filter -->
 <div class="content-card">
     <div class="content-card-header">
         <h2 class="content-card-title">
             <i data-lucide="inbox" style="width: 20px; height: 20px;"></i>
-            Pending Applications (@Model.PendingRequests.Count)
+            All Applications (@Model.AllRequests.Count)
         </h2>
-        <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
-            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
-            Refresh
-        </button>
+        <div class="d-flex gap-2">
+            <select id="statusFilter" class="form-select form-select-sm" style="width: 150px;">
+                <option value="All">All Status</option>
+                <option value="Pending" selected>Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+            <button class="btn btn-sm btn-outline-primary" onclick="location.reload()">
+                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+                Refresh
+            </button>
+        </div>
     </div>
     <div class="content-card-body">
-        @if (!Model.PendingRequests.Any())
+        @if (!Model.AllRequests.Any())
         {
             <div class="text-center py-5">
                 <i data-lucide="inbox" style="width: 64px; height: 64px; color: #cbd5e1; margin-bottom: 1rem;"></i>
-                <h5 class="text-muted">No pending applications</h5>
+                <h5 class="text-muted">No applications</h5>
                 <p class="text-muted">
                     @if (Model.IsRecruitmentOpen)
                     {
@@ -101,11 +109,12 @@
         else
         {
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover" id="requestsTable">
                     <thead>
                         <tr>
                             <th>Student</th>
                             <th>Department</th>
+                            <th>Status</th>
                             <th>Applied Date</th>
                             <th>Motivation</th>
                             <th>CV</th>
@@ -113,9 +122,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var request in Model.PendingRequests)
+                        @foreach (var request in Model.AllRequests)
                         {
-                            <tr id="request-@request.Id">
+                            var statusBadge = request.Status == "Pending" ? "warning" : (request.Status == "Approved" ? "success" : "danger");
+                            <tr id="request-@request.Id" class="request-row" data-status="@request.Status">
                                 <td>
                                     <div>
                                         <strong>@request.UserName</strong>
@@ -132,6 +142,9 @@
                                     {
                                         <span class="text-muted">No preference</span>
                                     }
+                                </td>
+                                <td>
+                                    <span class="badge bg-@statusBadge">@request.Status</span>
                                 </td>
                                 <td>
                                     <small>@request.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
@@ -152,9 +165,9 @@
                                 <td>
                                     @if (!string.IsNullOrEmpty(request.CvUrl))
                                     {
-                                        <a href="https://localhost:5001/api/fileupload/cv/@System.IO.Path.GetFileName(request.CvUrl)" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <a href="@request.CvUrl" target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
-                                            View CV
+                                            View CV (PDF)
                                         </a>
                                     }
                                     else
@@ -163,19 +176,36 @@
                                     }
                                 </td>
                                 <td>
-                                    @if (request.HasInterview)
+                                    @if (request.Status == "Pending")
                                     {
-                                        <a href="/ClubManager/InterviewDetails/@request.Id" class="btn btn-sm btn-success">
-                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
-                                            View Interview
-                                        </a>
+                                        @if (request.HasInterview)
+                                        {
+                                            <a href="/ClubManager/InterviewDetails/@request.Id" class="btn btn-sm btn-success">
+                                                <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                                View Interview
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-primary schedule-interview-btn" data-request-id="@request.Id" data-student-name="@request.UserName">
+                                                <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
+                                                Schedule Interview
+                                            </button>
+                                        }
                                     }
-                                    else
+                                    else if (request.Status == "Approved")
                                     {
-                                        <button class="btn btn-sm btn-primary schedule-interview-btn" data-request-id="@request.Id" data-student-name="@request.UserName">
-                                            <i data-lucide="calendar" style="width: 14px; height: 14px;"></i>
-                                            Schedule Interview
-                                        </button>
+                                        <span class="badge bg-success">
+                                            <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                                            Approved
+                                        </span>
+                                    }
+                                    else if (request.Status == "Rejected")
+                                    {
+                                        <span class="badge bg-danger">
+                                            <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i>
+                                            Rejected
+                                        </span>
                                     }
                                 </td>
                             </tr>
@@ -258,6 +288,29 @@
 
         const clubId = @Model.ClubId;
         const toggleBtn = document.getElementById('toggleRecruitmentBtn');
+        const statusFilter = document.getElementById('statusFilter');
+
+        // Filter functionality
+        if (statusFilter) {
+            statusFilter.addEventListener('change', function() {
+                const selectedStatus = this.value;
+                const rows = document.querySelectorAll('.request-row');
+                
+                rows.forEach(row => {
+                    const rowStatus = row.getAttribute('data-status');
+                    if (selectedStatus === 'All' || rowStatus === selectedStatus) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                lucide.createIcons();
+            });
+            
+            // Trigger filter on load to show only Pending by default
+            statusFilter.dispatchEvent(new Event('change'));
+        }
 
         // Toggle recruitment
         toggleBtn.addEventListener('click', async () => {

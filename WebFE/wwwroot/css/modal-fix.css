@@ -1,0 +1,184 @@
+/* Modal Fix CSS - Ensure modals are centered on viewport */
+/* FIX: Modal bị lệch khi nằm trong sidebar layout */
+
+/* 
+ * CRITICAL FIX: Override tất cả styles của Bootstrap và admin-dashboard.css
+ * Sử dụng inset: 0 để đảm bảo modal cover toàn viewport
+ */
+
+/* Modal container - MUST cover entire viewport */
+.modal {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1060 !important;
+    display: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    outline: 0 !important;
+    /* Reset tất cả margin/padding có thể ảnh hưởng */
+    margin: 0 !important;
+    padding: 0 !important;
+    /* Đảm bảo width/height cover viewport */
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 100vw !important;
+    min-height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    /* Reset transform */
+    transform: none !important;
+}
+
+/* Khi modal show - dùng flexbox để căn giữa */
+.modal.show {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Modal dialog - KHÔNG dùng margin để căn giữa, flexbox sẽ làm */
+.modal-dialog {
+    position: relative !important;
+    width: auto !important;
+    /* Tăng kích thước mặc định lên 600px */
+    max-width: 600px !important;
+    min-width: 400px !important;
+    min-height: auto !important;
+    /* CRITICAL: Reset margin - flexbox của .modal.show sẽ căn giữa */
+    margin: 0 !important;
+    padding: 1rem !important;
+    pointer-events: none !important;
+    /* Reset các styles từ admin-dashboard.css */
+    display: block !important;
+    align-items: initial !important;
+    justify-content: initial !important;
+}
+
+/* Modal dialog centered - cho Bootstrap modal-dialog-centered */
+.modal-dialog-centered {
+    min-height: auto !important;
+}
+
+/* Modal content - làm to hơn với padding và font size lớn hơn */
+.modal-content {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-height: calc(100vh - 3rem) !important;
+    pointer-events: auto !important;
+    background-color: #fff !important;
+    background-clip: padding-box !important;
+    border: none !important;
+    border-radius: 12px !important;
+    outline: 0 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    overflow: hidden !important;
+}
+
+/* Modal header - to hơn */
+.modal-header {
+    padding: 1.5rem 1.75rem 1rem !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+.modal-title {
+    font-size: 1.35rem !important;
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+}
+
+/* Modal body - to hơn với padding và font size lớn hơn */
+.modal-body {
+    overflow-y: auto !important;
+    max-height: calc(100vh - 200px) !important;
+    flex: 1 1 auto !important;
+    padding: 1.5rem 1.75rem !important;
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+}
+
+/* Modal footer - to hơn */
+.modal-footer {
+    padding: 1rem 1.75rem 1.5rem !important;
+    border-top: 1px solid #e5e7eb !important;
+    gap: 0.75rem !important;
+}
+
+/* Modal backdrop - nền mờ đen */
+.modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1055 !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 0 !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.modal-backdrop.show {
+    opacity: 1 !important;
+}
+
+/* Nền mờ cho modal khi không có backdrop element */
+.modal {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Modal sizes - tăng kích thước */
+.modal-dialog.modal-sm {
+    max-width: 400px !important;
+    min-width: 300px !important;
+}
+
+.modal-dialog.modal-lg {
+    max-width: 900px !important;
+    min-width: 600px !important;
+}
+
+.modal-dialog.modal-xl {
+    max-width: 1200px !important;
+    min-width: 800px !important;
+}
+
+/* Animation */
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out !important;
+    transform: translateY(-30px) !important;
+    opacity: 0 !important;
+}
+
+.modal.fade.show .modal-dialog {
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+}
+
+/* Responsive */
+@media (max-width: 575.98px) {
+    .modal-dialog {
+        max-width: calc(100vw - 1rem) !important;
+        min-width: auto !important;
+        padding: 0.5rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-dialog {
+        min-width: auto !important;
+    }
+    
+    .modal-dialog.modal-lg,
+    .modal-dialog.modal-xl {
+        max-width: calc(100vw - 2rem) !important;
+        min-width: auto !important;
+    }
+}
+
+/* Body khi modal open */
+body.modal-open {
+    overflow: hidden !important;
+    padding-right: 0 !important;
+}

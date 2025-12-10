@@ -6,9 +6,25 @@
 }
 
 <div class="container-fluid px-4 py-4">
-    <div class="mb-4">
-        <h2 class="mb-1 fw-bold">Create Activity</h2>
-        <p class="text-muted mb-0">Add a new activity to the system</p>
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1 fw-bold">Create Activity</h2>
+            <p class="text-muted mb-0">Add a new activity to the system</p>
+        </div>
+        <div>
+            <input type="file" id="autoFillFile" class="d-none" accept=".txt,.jpg,.jpeg,.png,.pdf,.docx" />
+            <button type="button" class="btn btn-outline-primary" id="autoFillBtn">
+                <i class="bi bi-upload me-1"></i>
+                Upload & Auto-fill
+            </button>
+        </div>
+    </div>
+
+    <div id="autoFillStatus" class="alert alert-info mb-4" style="display: none;">
+        <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            <span id="autoFillStatusText">Processing file...</span>
+        </div>
     </div>
 
     <form method="post">
@@ -33,16 +49,8 @@
                                 <option value="7">Provincial Competition - 20 points</option>
                                 <option value="8">National Competition - 30 points</option>
                             </optgroup>
-                            <optgroup label="Community">
-                                <option value="9">Volunteer (1-5 points)</option>
-                            </optgroup>
                             <optgroup label="Collaboration">
                                 <option value="10">Club Collaboration (1-10 points)</option>
-                                <option value="11">School Collaboration (1-10 points)</option>
-                                <option value="12">Enterprise Collaboration (1-10 points)</option>
-                            </optgroup>
-                            <optgroup label="Other">
-                                <option value="13">Other (1-5 points)</option>
                             </optgroup>
                         </select>
                     </div>
@@ -82,16 +90,40 @@
                     </div>
                     
                     <div class="col-md-4">
-                        <label asp-for="Input.MaxParticipants" class="form-label fw-semibold">Max Participants</label>
-                        <input asp-for="Input.MaxParticipants" type="number" class="form-control" placeholder="Leave empty for unlimited" />
+                        <label asp-for="Input.MaxParticipants" class="form-label fw-semibold">Max Participants <span class="text-danger">*</span></label>
+                        <input asp-for="Input.MaxParticipants" type="number" class="form-control" id="MaxParticipantsInput" min="1" required />
+                        <span asp-validation-for="Input.MaxParticipants" class="text-danger"></span>
                         <div class="form-text">Maximum number of participants</div>
+                        <span class="text-danger small" id="MaxParticipantsError"></span>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6" id="clubCollaborationSection" style="display: none;">
+                        <label class="form-label fw-semibold">Collaborating Club</label>
+                        <input type="hidden" asp-for="Input.ClubCollaborationId" id="ClubCollaborationIdInput" />
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="selectedClubName" placeholder="No club selected" readonly />
+                            <button type="button" class="btn btn-outline-primary" id="selectClubBtn">
+                                <i class="bi bi-search me-1"></i>Select Club
+                            </button>
+                        </div>
+                        <div class="form-text">Select a club to collaborate with</div>
+                        <span class="text-danger small" id="ClubCollaborationError"></span>
+                    </div>
+                    
+                    <div class="col-md-3" id="collaborationPointSection" style="display: none;">
+                        <label asp-for="Input.CollaborationPoint" class="form-label fw-semibold">Collaboration Points</label>
+                        <input asp-for="Input.CollaborationPoint" type="number" class="form-control" id="CollaborationPointInput" placeholder="1-3" min="1" max="3" />
+                        <div class="form-text">Points for collaborating club (1-3)</div>
+                        <span asp-validation-for="Input.CollaborationPoint" class="text-danger small"></span>
+                        <span class="text-danger small" id="CollaborationPointError"></span>
+                    </div>
+                    
+                    <div class="col-md-3" id="movementPointSection">
                         <label asp-for="Input.MovementPoint" class="form-label fw-semibold">Movement Points <span class="text-danger">*</span></label>
                         <input asp-for="Input.MovementPoint" type="number" step="0.5" class="form-control" id="MovementPointInput" placeholder="0" min="0" required />
                         <div class="form-text" id="MovementPointHint">Points will be auto-filled based on activity type</div>
                         <span class="text-danger small" id="MovementPointError"></span>
                     </div>
+                    
                     <div class="col-md-4 d-flex align-items-center">
                         <div class="form-check form-switch">
                             <input asp-for="Input.IsPublic" class="form-check-input" role="switch" style="width: 3em; height: 1.5em;" />
@@ -100,21 +132,217 @@
                     </div>
                 </div>
             </div>
-            <div class="card-footer bg-light border-0 p-4 d-flex justify-content-between">
-                <a class="btn btn-lg btn-outline-secondary px-4" href="/Admin/Activities">
-                    <i class="bi bi-x-circle me-2"></i>Cancel
-                </a>
-                <button class="btn btn-lg btn-primary px-4" type="submit">
-                    <i class="bi bi-check-circle me-2"></i>Create Activity
-                </button>
+
+            <!-- Activity Schedule & Task Assignments -->
+            <div id="scheduleManagementSection" style="display: none;">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-light border-0 p-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-semibold">Activity Schedule & Task Assignments</h5>
+                            <button type="button" id="addScheduleBtn" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Add Schedule Item
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="scheduleList">
+                            <!-- Schedule items will be dynamically added here -->
+                        </div>
+                        <div id="noSchedulesMessage" class="text-muted text-center py-4">
+                            <i class="bi bi-calendar3" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">No schedule items yet. Click "Add Schedule Item" to create a timeline for this activity.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-footer bg-light border-0 p-4 d-flex justify-content-between">
+                    <a class="btn btn-lg btn-outline-secondary px-4" href="/Admin/Activities">
+                        <i class="bi bi-x-circle me-2"></i>Cancel
+                    </a>
+                    <button class="btn btn-lg btn-primary px-4" type="submit">
+                        <i class="bi bi-check-circle me-2"></i>Create Activity
+                    </button>
+                </div>
             </div>
         </div>
     </form>
 </div>
 
 <partial name="_ValidationScriptsPartial" />
+<partial name="_ClubSelectionModal" />
+<partial name="_MemberSelectionModal" />
 
 <script>
+    // ===== Auto-fill from File =====
+    const autoFillBtn = document.getElementById('autoFillBtn');
+    const autoFillFile = document.getElementById('autoFillFile');
+    const autoFillStatus = document.getElementById('autoFillStatus');
+    const autoFillStatusText = document.getElementById('autoFillStatusText');
+
+    // Type mapping for Admin (uses numeric values)
+    const typeMapping = {
+        'LargeEvent': '3',
+        'MediumEvent': '4',
+        'SmallEvent': '5',
+        'SchoolCompetition': '6',
+        'ProvincialCompetition': '7',
+        'NationalCompetition': '8',
+        'ClubCollaboration': '10'
+    };
+
+    autoFillBtn?.addEventListener('click', () => autoFillFile?.click());
+
+    autoFillFile?.addEventListener('change', async function() {
+        if (!this.files || this.files.length === 0) return;
+        
+        const file = this.files[0];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        
+        if (file.size > maxSize) {
+            alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+            this.value = '';
+            return;
+        }
+
+        // Show loading
+        autoFillStatus.style.display = 'block';
+        autoFillStatus.className = 'alert alert-info mb-4';
+        autoFillStatusText.textContent = `Đang xử lý file "${file.name}"...`;
+        autoFillBtn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('@Model.ApiBaseUrl/api/activity/extract-from-file', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to extract activity');
+            }
+
+            const data = await response.json();
+            
+            // Auto-fill form fields
+            if (data.title) {
+                document.getElementById('Input_Title').value = data.title;
+            }
+            if (data.description) {
+                document.getElementById('Input_Description').value = data.description;
+            }
+            if (data.location) {
+                document.getElementById('Input_Location').value = data.location;
+            }
+            if (data.startTime) {
+                const startInput = document.getElementById('startTimeInput');
+                if (startInput) {
+                    const dt = new Date(data.startTime);
+                    startInput.value = dt.toISOString().slice(0, 16);
+                }
+            }
+            if (data.endTime) {
+                const endInput = document.getElementById('endTimeInput');
+                if (endInput) {
+                    const dt = new Date(data.endTime);
+                    endInput.value = dt.toISOString().slice(0, 16);
+                }
+            }
+            if (data.maxParticipants) {
+                document.getElementById('MaxParticipantsInput').value = data.maxParticipants;
+            }
+            if (data.suggestedType && typeMapping[data.suggestedType]) {
+                const typeSelect = document.getElementById('activityTypeSelect');
+                if (typeSelect) {
+                    typeSelect.value = typeMapping[data.suggestedType];
+                    typeSelect.dispatchEvent(new Event('change'));
+                }
+            }
+
+            // Auto-fill schedules if present - store for later processing
+            if (data.schedules && data.schedules.length > 0) {
+                window.pendingSchedules = data.schedules;
+                // Use setTimeout to ensure addScheduleItem is defined and schedule section is visible
+                setTimeout(() => {
+                    if (typeof addScheduleItem === 'function' && window.pendingSchedules) {
+                        const scheduleListEl = document.getElementById('scheduleList');
+                        const scheduleSection = document.getElementById('scheduleManagementSection');
+                        
+                        // IMPORTANT: Force show schedule section before adding items
+                        if (scheduleSection) {
+                            scheduleSection.style.display = 'block';
+                        }
+                        
+                        // Clear existing schedules
+                        if (scheduleListEl) {
+                            scheduleListEl.innerHTML = '';
+                            scheduleIndex = 0;
+                        }
+                        
+                        // Add each schedule item
+                        window.pendingSchedules.forEach(schedule => {
+                            addScheduleItem();
+                            const lastSchedule = scheduleListEl?.lastElementChild;
+                            if (lastSchedule) {
+                                const startTimeInput = lastSchedule.querySelector('.schedule-start-time');
+                                const endTimeInput = lastSchedule.querySelector('.schedule-end-time');
+                                const titleInput = lastSchedule.querySelector('.schedule-title');
+                                const descInput = lastSchedule.querySelector('.schedule-description');
+                                
+                                if (startTimeInput && schedule.startTime) startTimeInput.value = schedule.startTime;
+                                if (endTimeInput && schedule.endTime) endTimeInput.value = schedule.endTime;
+                                if (titleInput && schedule.title) titleInput.value = schedule.title;
+                                if (descInput && schedule.description) descInput.value = schedule.description;
+                            }
+                        });
+                        
+                        if (typeof updateNoSchedulesMessage === 'function') updateNoSchedulesMessage();
+                        window.pendingSchedules = null;
+                    }
+                }, 200); // Increased timeout to ensure DOM is ready
+            }
+
+            // Show success
+            let successMsg = 'Đã điền thông tin từ file.';
+            if (data.schedules && data.schedules.length > 0) {
+                successMsg += ` Đã thêm ${data.schedules.length} schedule items.`;
+            }
+            successMsg += ' Vui lòng kiểm tra và chỉnh sửa nếu cần.';
+            
+            autoFillStatus.className = 'alert alert-success mb-4';
+            autoFillStatusText.innerHTML = '<i class="bi bi-check-circle me-1"></i> ' + successMsg;
+            
+            setTimeout(() => {
+                autoFillStatus.style.display = 'none';
+            }, 5000);
+
+        } catch (error) {
+            console.error('Auto-fill error:', error);
+            autoFillStatus.className = 'alert alert-danger mb-4';
+            autoFillStatusText.textContent = 'Lỗi: ' + error.message;
+        } finally {
+            autoFillBtn.disabled = false;
+            this.value = ''; // Reset file input
+        }
+    });
+
+    // ===== Collaboration Fields Management =====
+    const clubCollaborationSection = document.getElementById('clubCollaborationSection');
+    const collaborationPointSection = document.getElementById('collaborationPointSection');
+    const movementPointSection = document.getElementById('movementPointSection');
+    const clubCollaborationIdInput = document.getElementById('ClubCollaborationIdInput');
+    const collaborationPointInput = document.getElementById('CollaborationPointInput');
+    const selectedClubNameInput = document.getElementById('selectedClubName');
+    const selectClubBtn = document.getElementById('selectClubBtn');
+    const clubCollaborationError = document.getElementById('ClubCollaborationError');
+    const collaborationPointError = document.getElementById('CollaborationPointError');
+    
     // ===== Auto-fill Movement Points based on Activity Type =====
     const activityTypeSelect = document.getElementById('activityTypeSelect');
     const movementPointInput = document.getElementById('MovementPointInput');
@@ -133,26 +361,51 @@
         '7': { fixed: 20, hint: 'Provincial Competition: 20 points' }, // ProvincialCompetition
         '8': { fixed: 30, hint: 'National Competition: 30 points' }, // NationalCompetition
         
-        // Volunteer
-        '9': { min: 1, max: 5, hint: 'Volunteer: 1-5 points (manual input required)' }, // Volunteer
-        
         // Collaboration
-        '10': { min: 1, max: 10, hint: 'Club Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' }, // ClubCollaboration
-        '11': { min: 1, max: 10, hint: 'School Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' }, // SchoolCollaboration
-        '12': { min: 1, max: 10, hint: 'Enterprise Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' }, // EnterpriseCollaboration
-        
-        // Other
-        '13': { min: 1, max: 5, hint: 'Other activities: 1-5 points (manual input required)' } // Other
+        '10': { min: 1, max: 10, hint: 'Club Collaboration - Organizer role: 1-10 points (based on 5-10 organizing members)' } // ClubCollaboration
     };
 
+    function updateCollaborationFieldsVisibility() {
+        const selectedType = activityTypeSelect?.value;
+        const isClubCollaboration = selectedType === '10';
+        const isCollaborationType = isClubCollaboration;
+        
+        // Show/hide collaboration fields for Admin
+        if (isCollaborationType) {
+            if (clubCollaborationSection) clubCollaborationSection.style.display = 'block';
+            if (collaborationPointSection) collaborationPointSection.style.display = 'block';
+            if (movementPointSection) movementPointSection.style.display = 'none';
+            
+            // Clear movement point for collaboration activities (Admin doesn't set it)
+            if (movementPointInput) {
+                movementPointInput.value = '';
+                movementPointInput.removeAttribute('required');
+            }
+        } else {
+            if (clubCollaborationSection) clubCollaborationSection.style.display = 'none';
+            if (collaborationPointSection) collaborationPointSection.style.display = 'none';
+            if (movementPointSection) movementPointSection.style.display = 'block';
+            
+            // Clear collaboration fields
+            if (clubCollaborationIdInput) clubCollaborationIdInput.value = '';
+            if (collaborationPointInput) collaborationPointInput.value = '';
+            if (selectedClubNameInput) selectedClubNameInput.value = '';
+            if (clubCollaborationError) clubCollaborationError.textContent = '';
+            if (collaborationPointError) collaborationPointError.textContent = '';
+            
+            // Restore movement point requirement
+            if (movementPointInput) movementPointInput.setAttribute('required', 'required');
+        }
+    }
+    
     function updateMovementPoints() {
-        const selectedType = activityTypeSelect.value;
+        const selectedType = activityTypeSelect?.value;
         const pointsConfig = activityPoints[selectedType];
         
-        if (!pointsConfig) return;
+        if (!pointsConfig || !movementPointInput) return;
         
         // Clear error
-        movementPointError.textContent = '';
+        if (movementPointError) movementPointError.textContent = '';
         
         if (pointsConfig.fixed !== undefined) {
             // Fixed points
@@ -168,34 +421,119 @@
             movementPointInput.max = pointsConfig.max;
         }
         
-        movementPointHint.textContent = pointsConfig.hint;
+        if (movementPointHint) movementPointHint.textContent = pointsConfig.hint;
     }
 
     // Validate movement points on change
     function validateMovementPoints() {
-        const selectedType = activityTypeSelect.value;
+        if (!movementPointInput) return true;
+        
+        const selectedType = activityTypeSelect?.value;
         const pointsConfig = activityPoints[selectedType];
-        const value = parseFloat(movementPointInput.value);
         
         if (!pointsConfig) return true;
         
+        const value = parseFloat(movementPointInput.value);
+        if (isNaN(value)) return true; // Allow empty during typing
+        
         if (pointsConfig.min !== undefined && pointsConfig.max !== undefined) {
             if (value < pointsConfig.min || value > pointsConfig.max) {
-                movementPointError.textContent = `Points must be between ${pointsConfig.min} and ${pointsConfig.max}`;
+                if (movementPointError) {
+                    movementPointError.textContent = `Points must be between ${pointsConfig.min} and ${pointsConfig.max}`;
+                }
                 return false;
             }
         }
         
-        movementPointError.textContent = '';
+        if (movementPointError) movementPointError.textContent = '';
         return true;
     }
 
-    activityTypeSelect?.addEventListener('change', updateMovementPoints);
+    // Max Participants validation
+    const maxParticipantsInput = document.getElementById('MaxParticipantsInput');
+    const maxParticipantsError = document.getElementById('MaxParticipantsError');
+    function validateMaxParticipants(showRequiredError = false) {
+        const selectedType = activityTypeSelect?.value;
+        const value = parseInt(maxParticipantsInput?.value);
+        
+        // If empty, only show error if explicitly requested (on submit)
+        if (!maxParticipantsInput?.value || maxParticipantsInput.value.trim() === '') {
+            if (showRequiredError) {
+                maxParticipantsError.textContent = 'Max Participants là bắt buộc';
+                return false;
+            }
+            maxParticipantsError.textContent = '';
+            return false;
+        }
+        
+        // If invalid number
+        if (isNaN(value) || value < 1) {
+            maxParticipantsError.textContent = 'Vui lòng nhập số hợp lệ (>= 1)';
+            return false;
+        }
+
+        // Large Event (100-200 people)
+        if (selectedType === '3') {
+            if (value < 100 || value > 200) {
+                maxParticipantsError.textContent = 'Large Event phải có số người tham gia từ 100-200 người';
+                return false;
+            }
+        }
+        // Medium Event (50-100 people)
+        else if (selectedType === '4') {
+            if (value < 50 || value > 100) {
+                maxParticipantsError.textContent = 'Medium Event phải có số người tham gia từ 50-100 người';
+                return false;
+            }
+        }
+        // Small Event (<50 people)
+        else if (selectedType === '5') {
+            if (value >= 50) {
+                maxParticipantsError.textContent = 'Small Event phải có số người tham gia dưới 50 người';
+                return false;
+            }
+        }
+
+        maxParticipantsError.textContent = '';
+        return true;
+    }
+
+    activityTypeSelect?.addEventListener('change', function() {
+        updateCollaborationFieldsVisibility();
+        updateMovementPoints();
+        validateMaxParticipants();
+    });
     movementPointInput?.addEventListener('change', validateMovementPoints);
     movementPointInput?.addEventListener('input', validateMovementPoints);
+    maxParticipantsInput?.addEventListener('change', validateMaxParticipants);
+    maxParticipantsInput?.addEventListener('input', validateMaxParticipants);
 
     // Initial update
+    updateCollaborationFieldsVisibility();
     updateMovementPoints();
+    validateMaxParticipants();
+    
+    // ===== Club Selection Modal Integration =====
+    selectClubBtn?.addEventListener('click', function() {
+        if (window.ClubSelectionModal) {
+            window.ClubSelectionModal.show('@Model.ApiBaseUrl', 0, function(selectedClub) {
+                if (clubCollaborationIdInput) clubCollaborationIdInput.value = selectedClub.id;
+                if (selectedClubNameInput) selectedClubNameInput.value = selectedClub.name;
+                if (clubCollaborationError) clubCollaborationError.textContent = '';
+            });
+        }
+    });
+    
+    // ===== Collaboration Point Validation =====
+    collaborationPointInput?.addEventListener('input', function() {
+        if (!collaborationPointError) return;
+        const value = parseInt(this.value);
+        if (this.value && (isNaN(value) || value < 1 || value > 3)) {
+            collaborationPointError.textContent = 'Collaboration points must be between 1 and 3';
+        } else {
+            collaborationPointError.textContent = '';
+        }
+    });
 
     // ===== Date Validation =====
     const startTimeInput = document.getElementById('startTimeInput');
@@ -214,63 +552,104 @@
     
     // Set minimum date to now and update every minute
     function updateMinDateTime() {
+        if (!startTimeInput || !endTimeInput) return;
         const now = new Date();
         const minDateTime = now.toISOString().slice(0, 16);
         startTimeInput.setAttribute('min', minDateTime);
         endTimeInput.setAttribute('min', minDateTime);
     }
-    updateMinDateTime();
-    setInterval(updateMinDateTime, 60000); // Update every minute
+    if (startTimeInput && endTimeInput) {
+        updateMinDateTime();
+        setInterval(updateMinDateTime, 60000); // Update every minute
+    }
+    
+    // Revalidate all schedules when activity time changes
+    function revalidateAllSchedules() {
+        if (!scheduleList) return;
+        const scheduleItems = scheduleList.querySelectorAll('.schedule-item');
+        scheduleItems.forEach(scheduleItem => {
+            validateScheduleTime(scheduleItem);
+        });
+    }
     
     // Validate dates on change
     startTimeInput?.addEventListener('change', function() {
         clearErrors();
+        if (!this.value) return;
+        
         const startDate = new Date(this.value);
         const currentDate = new Date();
         
-        if (this.value && startDate < currentDate) {
-            setError(startTimeError, 'Không được chọn ngày giờ bắt đầu trong quá khứ');
+        if (startDate < currentDate) {
+            setError(startTimeError, 'Start time cannot be in the past. Please select a future date and time.');
             this.value = '';
+            this.focus();
             return;
         }
         
         // Update end time minimum to start time
-        if (this.value) endTimeInput.setAttribute('min', this.value);
+        if (endTimeInput && this.value) {
+            endTimeInput.setAttribute('min', this.value);
+        }
         
         // Check if end time is before or equal to start time
-        if (endTimeInput.value && new Date(endTimeInput.value) <= startDate) {
-            setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
-            endTimeInput.value = '';
+        if (endTimeInput && endTimeInput.value) {
+            const endDate = new Date(endTimeInput.value);
+            if (endDate <= startDate) {
+                setError(endTimeError, 'End time must be after start time. Please select a valid time.');
+                endTimeInput.value = '';
+            }
         }
+        
+        // Revalidate all schedules when activity time changes
+        revalidateAllSchedules();
     });
     
     endTimeInput?.addEventListener('change', function() {
         clearErrors();
+        if (!this.value) return;
+        
         const endDate = new Date(this.value);
         const currentDate = new Date();
         
-        if (this.value && endDate < currentDate) {
-            setError(endTimeError, 'End time cannot be in the past');
+        if (endDate < currentDate) {
+            setError(endTimeError, 'End time cannot be in the past. Please select a future date and time.');
             this.value = '';
+            this.focus();
             return;
         }
         
-        if (startTimeInput.value && endDate <= new Date(startTimeInput.value)) {
-            setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
-            this.value = '';
+        if (startTimeInput && startTimeInput.value) {
+            const startDate = new Date(startTimeInput.value);
+            if (endDate <= startDate) {
+                setError(endTimeError, 'End time must be after start time. Please select a valid time.');
+                this.value = '';
+                this.focus();
+            }
         }
+        
+        // Revalidate all schedules when activity time changes
+        revalidateAllSchedules();
     });
     
     // Validate before form submit
-    document.querySelector('form')?.addEventListener('submit', function(e) {
+    document.querySelector('form')?.addEventListener('submit', async function(e) {
+        e.preventDefault(); // Always prevent default to handle with AJAX
+        
         clearErrors();
+        
+        if (!startTimeInput || !endTimeInput) {
+            alert('Form error: Start time and End time fields are required.');
+            return;
+        }
+        
         const startDate = startTimeInput.value ? new Date(startTimeInput.value) : null;
         const endDate = endTimeInput.value ? new Date(endTimeInput.value) : null;
         const currentDate = new Date();
         let hasError = false;
         
         if (startDate && startDate < currentDate) {
-            setError(startTimeError, 'Không được chọn ngày giờ bắt đầu trong quá khứ');
+            setError(startTimeError, 'Start time cannot be in the past');
             hasError = true;
         }
         
@@ -280,7 +659,7 @@
         }
         
         if (startDate && endDate && endDate <= startDate) {
-            setError(endTimeError, 'Thời gian kết thúc phải sau thời gian bắt đầu');
+            setError(endTimeError, 'End time must be after start time');
             hasError = true;
         }
         
@@ -289,11 +668,654 @@
             hasError = true;
         }
         
+        // Validate max participants
+        if (!validateMaxParticipants(true)) {
+            hasError = true;
+        }
+        
+        // Validate collaboration fields
+        const selectedType = activityTypeSelect.value;
+        const isCollaborationType = selectedType === '10' || selectedType === '11';
+        
+        if (isCollaborationType) {
+            // Validate club selection
+            if (!clubCollaborationIdInput || !clubCollaborationIdInput.value) {
+                if (clubCollaborationError) {
+                    clubCollaborationError.textContent = 'Please select a collaborating club';
+                }
+                hasError = true;
+            }
+            
+            // Validate collaboration point
+            if (!collaborationPointInput || !collaborationPointInput.value) {
+                if (collaborationPointError) {
+                    collaborationPointError.textContent = 'Collaboration points must be between 1 and 3';
+                }
+                hasError = true;
+            } else {
+                const collabPoint = parseInt(collaborationPointInput.value);
+                if (isNaN(collabPoint) || collabPoint < 1 || collabPoint > 3) {
+                    if (collaborationPointError) {
+                        collaborationPointError.textContent = 'Collaboration points must be between 1 and 3';
+                    }
+                    hasError = true;
+                }
+            }
+        }
+
+        // Validate schedules for complex activities
+        if (isComplexActivity && isComplexActivity(selectedType)) {
+            if (!validateAllSchedules || !validateAllSchedules()) {
+                hasError = true;
+            }
+        }
+        
         if (hasError) {
-            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return false;
         }
+
+        // Submit form with schedules
+        try {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+
+            // Build payload
+            const titleInput = document.getElementById('Input_Title');
+            const descriptionInput = document.getElementById('Input_Description');
+            const locationInput = document.getElementById('Input_Location');
+            const imageUrlInput = document.getElementById('Input_ImageUrl');
+            const isPublicInput = document.getElementById('Input_IsPublic');
+            
+            // Validate required elements exist
+            if (!titleInput || !startTimeInput || !endTimeInput || !isPublicInput || !maxParticipantsInput) {
+                console.error('Missing required form elements');
+                alert('Form error: Some required fields are missing. Please refresh the page.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Create Activity';
+                return;
+            }
+            
+            // Ensure MaxParticipants has a valid integer value
+            // Use the maxParticipantsInput variable defined at the top of the script
+            const maxParticipantsValue = maxParticipantsInput.value && maxParticipantsInput.value.trim() !== ''
+                ? parseInt(maxParticipantsInput.value)
+                : 1; // Default to 1 if not provided
+                
+            if (isNaN(maxParticipantsValue) || maxParticipantsValue < 1) {
+                alert('Max Participants phải là số nguyên lớn hơn 0');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Create Activity';
+                return;
+            }
+            
+            const payload = {
+                Activity: {
+                    Title: titleInput.value.trim(),
+                    Description: descriptionInput?.value?.trim() || null,
+                    Location: locationInput?.value?.trim() || null,
+                    ImageUrl: imageUrlInput?.value?.trim() || null,
+                    StartTime: startTimeInput.value,
+                    EndTime: endTimeInput.value,
+                    Type: parseInt(selectedType),
+                    IsPublic: isPublicInput.checked,
+                    MaxParticipants: maxParticipantsValue,
+                    MovementPoint: movementPointInput && movementPointInput.value 
+                        ? parseFloat(movementPointInput.value) || 0 
+                        : 0,
+                    ClubCollaborationId: clubCollaborationIdInput?.value 
+                        ? parseInt(clubCollaborationIdInput.value) || null 
+                        : null,
+                    CollaborationPoint: collaborationPointInput?.value 
+                        ? parseInt(collaborationPointInput.value) || null 
+                        : null
+                },
+                Schedules: (isComplexActivity && isComplexActivity(selectedType)) 
+                    ? (collectScheduleData ? collectScheduleData() : []) 
+                    : []
+            };
+
+            console.log('Submitting payload:', payload);
+
+            // Submit to API
+            const response = await fetch('@Model.ApiBaseUrl/api/activity/admin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                // Success - redirect to index
+                window.location.href = '/Admin/Activities?success=Activity created successfully';
+            } else {
+                const errorText = await response.text();
+                console.error('API error:', errorText);
+                alert('Failed to create activity: ' + errorText);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Create Activity';
+            }
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            alert('An error occurred while creating the activity: ' + error.message);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Create Activity';
+        }
     });
+
+    // ===== Schedule Management =====
+    const scheduleManagementSection = document.getElementById('scheduleManagementSection');
+    const scheduleList = document.getElementById('scheduleList');
+    const noSchedulesMessage = document.getElementById('noSchedulesMessage');
+    const addScheduleBtn = document.getElementById('addScheduleBtn');
+    let scheduleIndex = 0;
+
+    // Check if activity type is Club Activity
+    function isClubActivity(type) {
+        // Admin doesn't have Club Activities, so always return false
+        return false;
+    }
+
+    // Check if activity type is Complex Activity (requires schedules)
+    function isComplexActivity(type) {
+        // For Admin: all activity types are complex (Events, Competitions, Collaborations)
+        return true;
+    }
+
+    // Show/hide schedule management section based on activity type
+    function updateScheduleManagementVisibility() {
+        if (!activityTypeSelect || !scheduleManagementSection || !scheduleList) return;
+        const selectedType = activityTypeSelect.value;
+        if (selectedType && isComplexActivity && isComplexActivity(selectedType)) {
+            scheduleManagementSection.style.display = 'block';
+        } else {
+            scheduleManagementSection.style.display = 'none';
+            // Clear all schedules when hiding
+            scheduleList.innerHTML = '';
+            scheduleIndex = 0;
+            updateNoSchedulesMessage();
+        }
+    }
+
+    // Update no schedules message visibility
+    function updateNoSchedulesMessage() {
+        const hasSchedules = scheduleList.children.length > 0;
+        noSchedulesMessage.style.display = hasSchedules ? 'none' : 'block';
+    }
+
+    // Add schedule item
+    function addScheduleItem() {
+        scheduleIndex++;
+        const scheduleItem = document.createElement('div');
+        scheduleItem.className = 'schedule-item card mb-3';
+        scheduleItem.setAttribute('data-schedule-index', scheduleIndex);
+        
+        scheduleItem.innerHTML = `
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="bi bi-calendar-event me-2"></i>
+                        Schedule Item #${scheduleIndex}
+                    </h6>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-schedule-btn">
+                        <i class="bi bi-trash me-1"></i>
+                        Remove
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Time inputs -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Start Time <span class="text-danger">*</span></label>
+                        <input type="time" class="form-control schedule-start-time" required />
+                        <small class="form-text text-muted">Must be within activity time range</small>
+                        <div class="schedule-start-time-error text-danger small"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">End Time <span class="text-danger">*</span></label>
+                        <input type="time" class="form-control schedule-end-time" required />
+                        <small class="form-text text-muted">Must be after start time and within activity range</small>
+                        <div class="schedule-end-time-error text-danger small"></div>
+                    </div>
+                </div>
+                
+                <!-- Title -->
+                <div class="mb-3">
+                    <label class="form-label">Title <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control schedule-title" maxlength="500" required />
+                    <div class="schedule-title-error text-danger small"></div>
+                </div>
+                
+                <!-- Description -->
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control schedule-description" rows="2" maxlength="1000"></textarea>
+                </div>
+                
+                <!-- Notes -->
+                <div class="mb-3">
+                    <label class="form-label">Notes</label>
+                    <textarea class="form-control schedule-notes" rows="2" maxlength="1000"></textarea>
+                </div>
+                
+                <!-- Task Assignments -->
+                <div class="assignments-section">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label mb-0">Task Assignments</label>
+                        <button type="button" class="btn btn-sm btn-outline-primary add-assignment-btn">
+                            <i class="bi bi-person-plus me-1"></i>
+                            Add Assignment
+                        </button>
+                    </div>
+                    <div class="assignment-list">
+                        <!-- Assignment items will be added here -->
+                    </div>
+                    <div class="no-assignments-message text-muted small">
+                        No assignments yet. Click "Add Assignment" to assign tasks.
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        scheduleList.appendChild(scheduleItem);
+        
+        // Add event listeners
+        const removeBtn = scheduleItem.querySelector('.remove-schedule-btn');
+        removeBtn.addEventListener('click', () => removeScheduleItem(scheduleItem));
+        
+        const addAssignmentBtn = scheduleItem.querySelector('.add-assignment-btn');
+        addAssignmentBtn.addEventListener('click', () => addAssignment(scheduleItem));
+        
+        // Add validation listeners
+        const startTimeInput = scheduleItem.querySelector('.schedule-start-time');
+        const endTimeInput = scheduleItem.querySelector('.schedule-end-time');
+        startTimeInput.addEventListener('change', () => validateScheduleTime(scheduleItem));
+        endTimeInput.addEventListener('change', () => validateScheduleTime(scheduleItem));
+        
+        updateNoSchedulesMessage();
+    }
+
+    // Remove schedule item
+    function removeScheduleItem(scheduleItem) {
+        scheduleItem.remove();
+        updateNoSchedulesMessage();
+        renumberScheduleItems();
+    }
+
+    // Renumber schedule items after removal
+    function renumberScheduleItems() {
+        const scheduleItems = scheduleList.querySelectorAll('.schedule-item');
+        scheduleItems.forEach((item, index) => {
+            const header = item.querySelector('.card-header h6');
+            header.innerHTML = `
+                <i class="bi bi-calendar-event me-2"></i>
+                Schedule Item #${index + 1}
+            `;
+        });
+    }
+
+    // Validate schedule time
+    function validateScheduleTime(scheduleItem) {
+        const startTimeInput = scheduleItem.querySelector('.schedule-start-time');
+        const endTimeInput = scheduleItem.querySelector('.schedule-end-time');
+        const startTimeError = scheduleItem.querySelector('.schedule-start-time-error');
+        const endTimeError = scheduleItem.querySelector('.schedule-end-time-error');
+        
+        startTimeError.textContent = '';
+        endTimeError.textContent = '';
+        startTimeError.style.color = '#dc3545'; // Reset to red for errors
+        endTimeError.style.color = '#dc3545';
+        
+        let isValid = true;
+        
+        const scheduleStartTime = startTimeInput.value;
+        const scheduleEndTime = endTimeInput.value;
+        
+        // Get activity datetime from the main form
+        const activityStartInput = document.getElementById('startTimeInput');
+        const activityEndInput = document.getElementById('endTimeInput');
+        
+        // Validate start time if it has a value
+        if (scheduleStartTime && activityStartInput && activityStartInput.value) {
+            const activityStart = new Date(activityStartInput.value);
+            
+            // Create full datetime for schedule start
+            const [scheduleStartHour, scheduleStartMin] = scheduleStartTime.split(':');
+            const scheduleStart = new Date(activityStart);
+            scheduleStart.setHours(parseInt(scheduleStartHour), parseInt(scheduleStartMin), 0, 0);
+            
+            // Check if schedule start is before activity start
+            if (scheduleStart < activityStart) {
+                startTimeError.textContent = 'Schedule start time cannot be before activity start time. Please enter a valid time.';
+                startTimeInput.value = ''; // Clear invalid value
+                startTimeInput.focus();
+                isValid = false;
+            }
+        }
+        
+        // Validate end time if it has a value
+        if (scheduleEndTime && activityEndInput && activityEndInput.value) {
+            const activityStart = new Date(activityStartInput.value);
+            const activityEnd = new Date(activityEndInput.value);
+            
+            // Create full datetime for schedule end
+            const [scheduleEndHour, scheduleEndMin] = scheduleEndTime.split(':');
+            const scheduleEnd = new Date(activityStart);
+            scheduleEnd.setHours(parseInt(scheduleEndHour), parseInt(scheduleEndMin), 0, 0);
+            
+            // If schedule end time is before start time (crosses midnight), add 1 day
+            if (scheduleStartTime) {
+                const [scheduleStartHour, scheduleStartMin] = scheduleStartTime.split(':');
+                const scheduleStart = new Date(activityStart);
+                scheduleStart.setHours(parseInt(scheduleStartHour), parseInt(scheduleStartMin), 0, 0);
+                
+                if (scheduleEnd <= scheduleStart) {
+                    scheduleEnd.setDate(scheduleEnd.getDate() + 1);
+                }
+            }
+            
+            // Check if schedule end is after activity end
+            if (scheduleEnd > activityEnd) {
+                endTimeError.textContent = 'Schedule end time cannot be after activity end time. Please enter a valid time.';
+                endTimeInput.value = ''; // Clear invalid value
+                endTimeInput.focus();
+                isValid = false;
+            }
+        }
+        
+        // Validate end time > start time (only if both have values)
+        if (scheduleStartTime && scheduleEndTime) {
+            if (scheduleEndTime <= scheduleStartTime) {
+                endTimeError.textContent = 'End time must be after start time. Please enter a valid time.';
+                endTimeInput.value = ''; // Clear invalid value
+                endTimeInput.focus();
+                isValid = false;
+            }
+        }
+        
+        // If validation failed, don't check for overlaps
+        if (!isValid) {
+            return false;
+        }
+        
+        // Check for overlapping schedules (warning only) - only if both times are filled
+        if (scheduleStartTime && scheduleEndTime) {
+            const allScheduleItems = document.querySelectorAll('.schedule-item');
+            const currentScheduleIndex = Array.from(allScheduleItems).indexOf(scheduleItem);
+            
+            allScheduleItems.forEach((otherItem, index) => {
+                if (index === currentScheduleIndex) return; // Skip self
+                
+                const otherStartTime = otherItem.querySelector('.schedule-start-time').value;
+                const otherEndTime = otherItem.querySelector('.schedule-end-time').value;
+                
+                if (!otherStartTime || !otherEndTime) return;
+                
+                // Check for overlap
+                const hasOverlap = (
+                    (scheduleStartTime >= otherStartTime && scheduleStartTime < otherEndTime) ||
+                    (scheduleEndTime > otherStartTime && scheduleEndTime <= otherEndTime) ||
+                    (scheduleStartTime <= otherStartTime && scheduleEndTime >= otherEndTime)
+                );
+                
+                if (hasOverlap) {
+                    // Show warning but don't block (some activities may intentionally have overlapping schedules)
+                    const warningMsg = `⚠️ Overlaps with Schedule Item #${index + 1}`;
+                    if (!startTimeError.textContent) {
+                        startTimeError.textContent = warningMsg;
+                        startTimeError.style.color = '#ff9800'; // Orange warning color
+                    }
+                }
+            });
+        }
+        
+        return true;
+    }
+
+    // Add assignment to schedule
+    function addAssignment(scheduleItem) {
+        const assignmentList = scheduleItem.querySelector('.assignment-list');
+        const noAssignmentsMessage = scheduleItem.querySelector('.no-assignments-message');
+        
+        const assignmentItem = document.createElement('div');
+        assignmentItem.className = 'assignment-item border rounded p-2 mb-2';
+        
+        assignmentItem.innerHTML = `
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <label class="form-label small">Responsible Person</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control assignment-name" 
+                               placeholder="Name or select member" maxlength="200" />
+                        <button type="button" class="btn btn-outline-primary select-member-btn" title="Select from club members">
+                            <i class="bi bi-people"></i>
+                        </button>
+                    </div>
+                    <div class="assignment-name-error text-danger small"></div>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label small">Role</label>
+                    <input type="text" class="form-control form-control-sm assignment-role" 
+                           placeholder="e.g., MC, Speaker" maxlength="100" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-assignment-btn w-100">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        assignmentList.appendChild(assignmentItem);
+        
+        // Add event listener for remove button
+        const removeBtn = assignmentItem.querySelector('.remove-assignment-btn');
+        removeBtn.addEventListener('click', () => removeAssignment(scheduleItem, assignmentItem));
+        
+        // Add event listener for select member button
+        const selectMemberBtn = assignmentItem.querySelector('.select-member-btn');
+        const nameInput = assignmentItem.querySelector('.assignment-name');
+        const nameError = assignmentItem.querySelector('.assignment-name-error');
+        
+        selectMemberBtn.addEventListener('click', () => {
+            // Clear any previous error
+            nameError.textContent = '';
+            
+            // Check activity type
+            const activityType = document.getElementById('activityTypeSelect').value;
+            const clubCollaborationId = document.getElementById('ClubCollaborationIdInput').value;
+            
+            if (activityType === '10') {
+                // ClubCollaboration type
+                if (clubCollaborationId) {
+                    // Club selected - show members from that club
+                    if (window.MemberSelectionModal) {
+                        window.MemberSelectionModal.showForClub('@Model.ApiBaseUrl', clubCollaborationId, function(selectedMember) {
+                            nameInput.value = selectedMember.studentName;
+                            nameInput.dataset.memberId = selectedMember.id;
+                            nameError.textContent = ''; // Clear error on successful selection
+                        });
+                    }
+                } else {
+                    // No club selected yet - show error message
+                    nameError.textContent = 'Please select a collaborating club first';
+                    // Scroll to club selection section
+                    const clubSection = document.getElementById('clubCollaborationSection');
+                    if (clubSection) {
+                        clubSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Highlight the club selection field
+                        const selectClubBtn = document.getElementById('selectClubBtn');
+                        if (selectClubBtn) {
+                            selectClubBtn.classList.add('btn-warning');
+                            setTimeout(() => {
+                                selectClubBtn.classList.remove('btn-warning');
+                            }, 2000);
+                        }
+                    }
+                }
+            } else {
+                // Other activity types - show all students
+                if (window.MemberSelectionModal) {
+                    window.MemberSelectionModal.showAllStudents('@Model.ApiBaseUrl', function(selectedMember) {
+                        nameInput.value = selectedMember.studentName;
+                        nameInput.dataset.memberId = selectedMember.id;
+                        nameError.textContent = ''; // Clear error on successful selection
+                    });
+                }
+            }
+        });
+        
+        // Clear error when user starts typing manually
+        nameInput.addEventListener('input', () => {
+            if (nameInput.value) {
+                nameError.textContent = '';
+            }
+        });
+        
+        // Update no assignments message
+        updateNoAssignmentsMessage(scheduleItem);
+    }
+
+    // Remove assignment
+    function removeAssignment(scheduleItem, assignmentItem) {
+        assignmentItem.remove();
+        updateNoAssignmentsMessage(scheduleItem);
+    }
+
+    // Update no assignments message visibility
+    function updateNoAssignmentsMessage(scheduleItem) {
+        const assignmentList = scheduleItem.querySelector('.assignment-list');
+        const noAssignmentsMessage = scheduleItem.querySelector('.no-assignments-message');
+        const hasAssignments = assignmentList.children.length > 0;
+        noAssignmentsMessage.style.display = hasAssignments ? 'none' : 'block';
+    }
+
+    // Validate all schedules
+    function validateAllSchedules() {
+        if (!scheduleList) return true; // No schedules section means no validation needed
+        
+        const scheduleItems = scheduleList.querySelectorAll('.schedule-item');
+        let isValid = true;
+        
+        scheduleItems.forEach(scheduleItem => {
+            // Validate required fields
+            const startTime = scheduleItem.querySelector('.schedule-start-time');
+            const endTime = scheduleItem.querySelector('.schedule-end-time');
+            const title = scheduleItem.querySelector('.schedule-title');
+            const titleError = scheduleItem.querySelector('.schedule-title-error');
+            const startTimeError = scheduleItem.querySelector('.schedule-start-time-error');
+            const endTimeError = scheduleItem.querySelector('.schedule-end-time-error');
+            
+            if (!startTime || !startTime.value) {
+                if (startTimeError) startTimeError.textContent = 'Start time is required';
+                isValid = false;
+            }
+            
+            if (!endTime || !endTime.value) {
+                if (endTimeError) endTimeError.textContent = 'End time is required';
+                isValid = false;
+            }
+            
+            if (!title || !title.value) {
+                if (titleError) titleError.textContent = 'Title is required';
+                isValid = false;
+            } else if (titleError) {
+                titleError.textContent = '';
+            }
+            
+            // Validate time
+            if (validateScheduleTime && !validateScheduleTime(scheduleItem)) {
+                isValid = false;
+            }
+            
+            // Validate assignments
+            const assignments = scheduleItem.querySelectorAll('.assignment-item');
+            assignments.forEach(assignment => {
+                const nameInput = assignment.querySelector('.assignment-name');
+                const nameError = assignment.querySelector('.assignment-name-error');
+                
+                if (!nameInput || !nameInput.value.trim()) {
+                    if (nameError) nameError.textContent = 'Responsible person is required';
+                    isValid = false;
+                } else if (nameError) {
+                    nameError.textContent = '';
+                }
+            });
+        });
+        
+        return isValid;
+    }
+
+    // Collect schedule data from form
+    function collectScheduleData() {
+        if (!scheduleList) return [];
+        
+        const schedules = [];
+        const scheduleItems = scheduleList.querySelectorAll('.schedule-item');
+        
+        scheduleItems.forEach(scheduleItem => {
+            const startTimeEl = scheduleItem.querySelector('.schedule-start-time');
+            const endTimeEl = scheduleItem.querySelector('.schedule-end-time');
+            const titleEl = scheduleItem.querySelector('.schedule-title');
+            const descriptionEl = scheduleItem.querySelector('.schedule-description');
+            const notesEl = scheduleItem.querySelector('.schedule-notes');
+            
+            if (!startTimeEl || !endTimeEl || !titleEl) return; // Skip incomplete schedules
+            
+            const startTime = startTimeEl.value;
+            const endTime = endTimeEl.value;
+            const title = titleEl.value;
+            const description = descriptionEl?.value || null;
+            const notes = notesEl?.value || null;
+            
+            // Collect assignments
+            const assignments = [];
+            const assignmentItems = scheduleItem.querySelectorAll('.assignment-item');
+            assignmentItems.forEach(assignmentItem => {
+                const nameEl = assignmentItem.querySelector('.assignment-name');
+                const roleEl = assignmentItem.querySelector('.assignment-role');
+                
+                if (nameEl) {
+                    const name = nameEl.value.trim();
+                    const role = roleEl?.value.trim() || null;
+                    
+                    if (name) {
+                        assignments.push({
+                            ResponsibleName: name,
+                            Role: role || null
+                        });
+                    }
+                }
+            });
+            
+            schedules.push({
+                StartTime: startTime,
+                EndTime: endTime,
+                Title: title,
+                Description: description || null,
+                Notes: notes || null,
+                Assignments: assignments
+            });
+        });
+        
+        return schedules;
+    }
+
+    // Event listener for add schedule button
+    addScheduleBtn?.addEventListener('click', addScheduleItem);
+
+    // Update visibility on type change
+    activityTypeSelect?.addEventListener('change', function() {
+        updateScheduleManagementVisibility();
+    });
+
+    // Initial setup
+    updateScheduleManagementVisibility();
 
     // ===== Image upload to Cloudinary =====
     const fileInput = document.getElementById('imageFile');

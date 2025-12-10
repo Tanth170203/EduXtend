@@ -1,0 +1,184 @@
+@page "{id:int}"
+@model WebFE.Pages.ClubManager.CommunicationPlans.EditModel
+@{
+    ViewData["Title"] = "Edit Communication Plan";
+    ViewData["Breadcrumb"] = "Edit Plan";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Edit Communication Plan</h1>
+        <p class="page-description">@Model.ActivityTitle</p>
+    </div>
+    <a href="/ClubManager/CommunicationPlans" class="btn btn-outline-secondary">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+        Back
+    </a>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-warning">
+        @Model.ErrorMessage
+    </div>
+}
+
+<!-- Form -->
+<form method="post" class="needs-validation" novalidate>
+    <input type="hidden" asp-for="PlanId" />
+    
+    <div class="row g-4">
+        <!-- Main Form -->
+        <div class="col-lg-12">
+            <!-- Communication Items -->
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Communication Items</h5>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="addItem()">
+                        <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                        Add Item
+                    </button>
+                </div>
+                <div class="content-card-body">
+                    <div id="itemsContainer">
+                        @for (int i = 0; i < Model.Items.Count; i++)
+                        {
+                            <div class="card mb-3" id="item-@(i + 1)">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0">Item @(i + 1)</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(@(i + 1))">
+                                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                        </button>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-md-12">
+                                            <label class="form-label">Content <span class="text-danger">*</span></label>
+                                            <textarea asp-for="Items[i].Content" class="form-control" rows="2" required maxlength="500"></textarea>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Scheduled Date <span class="text-danger">*</span></label>
+                                            <input asp-for="Items[i].ScheduledDate" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" required />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Responsible Person</label>
+                                            <select asp-for="Items[i].ResponsiblePerson" class="form-select">
+                                                <option value="">-- Chọn người phụ trách --</option>
+                                                @foreach (var member in Model.ClubMembers)
+                                                {
+                                                    var displayText = !string.IsNullOrEmpty(member.Position) 
+                                                        ? $"{member.FullName} ({member.Position})" 
+                                                        : member.FullName;
+                                                    <option value="@member.FullName">@displayText</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Notes</label>
+                                            <input asp-for="Items[i].Notes" class="form-control" maxlength="1000" />
+                                        </div>
+                                    </div>
+                                    <input type="hidden" asp-for="Items[i].Order" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                    Update Communication Plan
+                </button>
+                <a href="/ClubManager/CommunicationPlans" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+
+        let itemCount = @Model.Items.Count;
+        
+        // Club members data from server
+        const clubMembers = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ClubMembers));
+
+        function addItem() {
+            itemCount++;
+            const container = document.getElementById('itemsContainer');
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'card mb-3';
+            itemDiv.id = `item-${itemCount}`;
+            
+            // Build members dropdown options
+            let memberOptions = '<option value="">-- Chọn người phụ trách --</option>';
+            clubMembers.forEach(member => {
+                const displayText = member.position ? `${member.fullName} (${member.position})` : member.fullName;
+                memberOptions += `<option value="${member.fullName}">${displayText}</option>`;
+            });
+            
+            itemDiv.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Item ${itemCount}</h6>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem(${itemCount})">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Content <span class="text-danger">*</span></label>
+                            <textarea name="Items[${itemCount - 1}].Content" class="form-control" rows="2" required maxlength="500"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Scheduled Date <span class="text-danger">*</span></label>
+                            <input type="datetime-local" name="Items[${itemCount - 1}].ScheduledDate" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Responsible Person</label>
+                            <select name="Items[${itemCount - 1}].ResponsiblePerson" class="form-select">
+                                ${memberOptions}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Notes</label>
+                            <input type="text" name="Items[${itemCount - 1}].Notes" class="form-control" maxlength="1000" />
+                        </div>
+                    </div>
+                    <input type="hidden" name="Items[${itemCount - 1}].Order" value="${itemCount}" />
+                </div>
+            `;
+            container.appendChild(itemDiv);
+            lucide.createIcons();
+        }
+
+        function removeItem(id) {
+            const item = document.getElementById(`item-${id}`);
+            if (item) {
+                item.remove();
+            }
+        }
+
+        // Form validation
+        (function () {
+            'use strict'
+            var forms = document.querySelectorAll('.needs-validation')
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
+    <partial name="_ValidationScriptsPartial" />
+}

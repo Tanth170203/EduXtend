@@ -1,0 +1,63 @@
+@page
+@model WebFE.Pages.AccessDeniedModel
+@{
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                            <i class="bi bi-shield-lock text-danger" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                    
+                    <h1 class="h2 fw-bold text-danger mb-3">403 - Access Denied</h1>
+                    
+                    <p class="text-muted mb-4">
+                        Bạn không có quyền truy cập trang này. Vui lòng liên hệ quản trị viên nếu bạn cho rằng đây là lỗi.
+                    </p>
+                    
+                    <div class="alert alert-warning text-start mb-4">
+                        <h6 class="alert-heading fw-bold mb-2">
+                            <i class="bi bi-info-circle me-2"></i>Thông tin
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li>Trang <strong>Admin</strong> chỉ dành cho quản trị viên hệ thống</li>
+                            <li>Trang <strong>Club Manager</strong> dành cho người quản lý câu lạc bộ</li>
+                            <li>Trang <strong>Member Dashboard</strong> dành cho thành viên câu lạc bộ</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-flex gap-3 justify-content-center flex-wrap">
+                        <a href="/" class="btn btn-primary">
+                            <i class="bi bi-house me-2"></i>Về trang chủ
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Quay lại
+                        </a>
+                    </div>
+                    
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <div class="mt-4 pt-4 border-top">
+                            <p class="text-muted small mb-2">Đang đăng nhập với tài khoản:</p>
+                            <span class="badge bg-secondary">@User.Identity.Name</span>
+                            @{
+                                var role = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role || c.Type == "role")?.Value;
+                            }
+                            @if (!string.IsNullOrEmpty(role))
+                            {
+                                <span class="badge bg-info ms-2">@role</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services.Clubs;
+using Services.Evidences;
 using System.Security.Claims;
 
 [ApiController]
@@ -9,11 +10,13 @@ using System.Security.Claims;
 public class ClubController : ControllerBase
 {
     private readonly IClubService _service;
+    private readonly ICloudinaryService _cloudinaryService;
     private readonly ILogger<ClubController> _logger;
     
-    public ClubController(IClubService service, ILogger<ClubController> logger)
+    public ClubController(IClubService service, ICloudinaryService cloudinaryService, ILogger<ClubController> logger)
     {
         _service = service;
+        _cloudinaryService = cloudinaryService;
         _logger = logger;
     }
 
@@ -197,6 +200,37 @@ public class ClubController : ControllerBase
         }
     }
 
+    // GET api/club/my-club-members
+    [HttpGet("my-club-members")]
+    [Authorize(Roles = "ClubManager")]
+    public async Task<IActionResult> GetMyClubMembers()
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user ID" });
+            }
+
+            // Get the club managed by this user
+            var club = await _service.GetManagedClubByUserIdAsync(userId);
+            if (club == null)
+            {
+                return NotFound(new { message = "You are not managing any club" });
+            }
+
+            // Get members of that club
+            var members = await _service.GetClubMembersAsync(club.Id);
+            return Ok(members);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting members for managed club");
+            return StatusCode(500, new { message = "Failed to retrieve members" });
+        }
+    }
+
     // GET api/club/{clubId}/departments
     [HttpGet("{clubId:int}/departments")]
     [Authorize]
@@ -227,6 +261,58 @@ public class ClubController : ControllerBase
         {
             _logger.LogError(ex, "Error getting awards for club {ClubId}", clubId);
             return StatusCode(500, new { message = "Failed to retrieve awards" });
+        }
+    }
+
+    // ================= CLUB IMAGE UPLOAD =================
+    // POST api/club/upload-image
+    [HttpPost("upload-image")]
+    [Authorize]
+    public async Task<IActionResult> UploadClubImage(IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "No file provided" });
+
+            // Upload to "clubs" folder on Cloudinary
+            var url = await _cloudinaryService.UploadClubImageAsync(file);
+            _logger.LogInformation("Uploaded club image to Cloudinary: {Url}", url);
+            return Ok(new { url });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading club image");
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    // ================= CLUB INFO UPDATE =================
+    // PUT api/club/{id}
+    [HttpPut("{id:int}")]
+    [Authorize(Roles = "ClubManager")]
+    public async Task<IActionResult> UpdateClubInfo(int id, [FromBody] BusinessObject.DTOs.Club.UpdateClubInfoDto dto)
+    {
+        try
+        {
+            if (id != dto.Id)
+            {
+                return BadRequest(new { message = "ID mismatch" });
+            }
+
+            var result = await _service.UpdateClubInfoAsync(id, dto);
+            if (result == null)
+            {
+                return NotFound(new { message = "Club not found" });
+            }
+
+            _logger.LogInformation("Updated club info for ClubId={ClubId}", id);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating club info for ClubId={ClubId}", id);
+            return StatusCode(500, new { message = "Failed to update club information" });
         }
     }
 

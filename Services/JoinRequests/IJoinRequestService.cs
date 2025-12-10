@@ -6,6 +6,7 @@ namespace Services.JoinRequests
     {
         Task<JoinRequestDto?> GetByIdAsync(int id);
         Task<List<JoinRequestDto>> GetByClubIdAsync(int clubId);
+        Task<List<JoinRequestDto>> GetByClubIdWithFilterAsync(int clubId, string? status);
         Task<List<JoinRequestDto>> GetByUserIdAsync(int userId);
         Task<List<JoinRequestDto>> GetPendingByClubIdAsync(int clubId);
         Task<JoinRequestDto> CreateAsync(int userId, CreateJoinRequestDto dto);
@@ -13,6 +14,7 @@ namespace Services.JoinRequests
         Task<bool> CanApplyAsync(int userId, int clubId);
         Task<List<DepartmentDto>> GetClubDepartmentsAsync(int clubId);
         Task<JoinRequestDto?> GetMyRequestForClubAsync(int userId, int clubId);
+        Task<JoinRequestDto?> UpdateRequestAsync(int requestId, int userId, UpdateJoinRequestDto dto);
     }
 }
 

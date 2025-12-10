@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Services.Evidences;
+using System.Security.Claims;
 
 namespace WebAPI.Controllers
 {
@@ -8,12 +10,12 @@ namespace WebAPI.Controllers
     public class FileUploadController : ControllerBase
     {
         private readonly ILogger<FileUploadController> _logger;
-        private readonly IWebHostEnvironment _environment;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public FileUploadController(ILogger<FileUploadController> logger, IWebHostEnvironment environment)
+        public FileUploadController(ILogger<FileUploadController> logger, ICloudinaryService cloudinaryService)
         {
             _logger = logger;
-            _environment = environment;
+            _cloudinaryService = cloudinaryService;
         }
 
         // POST api/fileupload/cv
@@ -28,87 +30,41 @@ namespace WebAPI.Controllers
                     return BadRequest(new { message = "No file uploaded" });
                 }
 
-                // Validate file size (5MB)
-                if (file.Length > 5 * 1024 * 1024)
+                // Validate file size (10MB for Cloudinary)
+                if (file.Length > 10 * 1024 * 1024)
                 {
-                    return BadRequest(new { message = "File size must be less than 5MB" });
+                    return BadRequest(new { message = "File size must be less than 10MB" });
                 }
 
-                // Validate file extension
-                var allowedExtensions = new[] { ".pdf", ".doc", ".docx" };
+                // ONLY allow PDF
                 var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (!allowedExtensions.Contains(extension))
+                if (extension != ".pdf")
                 {
-                    return BadRequest(new { message = "Only PDF, DOC, DOCX files are allowed" });
+                    return BadRequest(new { message = "Only PDF files are allowed" });
                 }
 
-                // Create uploads directory if not exists
-                var uploadsPath = Path.Combine(_environment.WebRootPath, "uploads", "cv");
-                if (!Directory.Exists(uploadsPath))
-                {
-                    Directory.CreateDirectory(uploadsPath);
-                }
+                // Get user info for folder organization
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var studentCode = userIdClaim ?? "unknown";
 
-                // Generate unique filename
-                var uniqueFileName = $"{Guid.NewGuid()}{extension}";
-                var filePath = Path.Combine(uploadsPath, uniqueFileName);
-
-                // Save file
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-                // Return URL
-                var fileUrl = $"/uploads/cv/{uniqueFileName}";
+                // Upload to Cloudinary (uses evidences folder)
+                var cloudinaryUrl = await _cloudinaryService.UploadEvidenceFileAsync(file, studentCode);
                 
-                _logger.LogInformation("CV uploaded successfully: {FileName}", uniqueFileName);
+                _logger.LogInformation("CV uploaded to Cloudinary: {Url}", cloudinaryUrl);
 
-                return Ok(new { url = fileUrl, fileName = file.FileName });
+                return Ok(new { url = cloudinaryUrl, fileName = file.FileName });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error uploading CV");
-                return StatusCode(500, new { message = "Failed to upload file" });
+                _logger.LogError(ex, "Error uploading CV to Cloudinary");
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 
-        // GET api/fileupload/cv/{fileName}
-        [HttpGet("cv/{fileName}")]
-        public IActionResult ViewCV(string fileName)
-        {
-            try
-            {
-                var filePath = Path.Combine(_environment.WebRootPath, "uploads", "cv", fileName);
-
-                if (!System.IO.File.Exists(filePath))
-                {
-                    return NotFound(new { message = "File not found" });
-                }
-
-                var extension = Path.GetExtension(fileName).ToLowerInvariant();
-                var contentType = extension switch
-                {
-                    ".pdf" => "application/pdf",
-                    ".doc" => "application/msword",
-                    ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    _ => "application/octet-stream"
-                };
-
-                var fileBytes = System.IO.File.ReadAllBytes(filePath);
-                return File(fileBytes, contentType);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error viewing CV: {FileName}", fileName);
-                return StatusCode(500, new { message = "Failed to retrieve file" });
-            }
-        }
-
-        // DELETE api/fileupload/cv?url=/uploads/cv/xxx.pdf
+        // DELETE api/fileupload/cv?url=cloudinary_url
         [HttpDelete("cv")]
         [Authorize]
-        public IActionResult DeleteCV([FromQuery] string url)
+        public async Task<IActionResult> DeleteCV([FromQuery] string url)
         {
             try
             {
@@ -117,14 +73,12 @@ namespace WebAPI.Controllers
                     return BadRequest(new { message = "URL is required" });
                 }
 
-                // Extract filename from URL
-                var fileName = Path.GetFileName(url);
-                var filePath = Path.Combine(_environment.WebRootPath, "uploads", "cv", fileName);
-
-                if (System.IO.File.Exists(filePath))
+                // Delete from Cloudinary
+                var success = await _cloudinaryService.DeleteFileAsync(url);
+                
+                if (success)
                 {
-                    System.IO.File.Delete(filePath);
-                    _logger.LogInformation("CV deleted: {FileName}", fileName);
+                    _logger.LogInformation("CV deleted from Cloudinary: {Url}", url);
                     return Ok(new { message = "File deleted successfully" });
                 }
 
@@ -132,7 +86,7 @@ namespace WebAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting CV");
+                _logger.LogError(ex, "Error deleting CV from Cloudinary");
                 return StatusCode(500, new { message = "Failed to delete file" });
             }
         }

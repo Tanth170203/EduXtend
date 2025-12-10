@@ -64,6 +64,16 @@ public interface ICloudinaryService
     Task<string> UploadAvatarAsync(IFormFile file);
 
     /// <summary>
+    /// Upload club logo or banner to Cloudinary.
+    /// Images are stored in clubs/ folder (root level, not under evidences/).
+    /// Only accepts image files (.jpg, .png, .gif, .webp).
+    /// Automatically applies optimization (q_auto, f_auto).
+    /// </summary>
+    /// <param name="file">The image file to upload</param>
+    /// <returns>Cloudinary secure URL with auto-optimization</returns>
+    Task<string> UploadClubImageAsync(IFormFile file);
+
+    /// <summary>
     /// Delete file from Cloudinary by public ID or URL.
     /// 
     /// Automatically handles:

@@ -3,14 +3,24 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
     <title>@ViewData["Title"] - EduXtend</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" />
     <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/chatbot.css" asp-append-version="true" />
+    <environment include="Development">
+        <link rel="stylesheet" href="~/css/recommendation-cards.css" asp-append-version="true" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="~/css/recommendation-cards.min.css" asp-append-version="true" />
+    </environment>
     <link rel="stylesheet" href="~/WebFE.styles.css" asp-append-version="true" />
     <!-- Lucide Icons (local) -->
     <script src="~/lib/lucide/lucide.min.js"></script>
+    <!-- Modal Fix CSS -->
+    <link rel="stylesheet" href="~/css/modal-fix.css" asp-append-version="true" />
     
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -84,16 +94,16 @@
                     </ul>
                     <div class="d-flex align-items-center">
                         <!-- Notification Bell -->
-                        <div class="notification-bell me-3" onclick="toggleNotificationCenter()">
+                        <div class="notification-bell me-3" onclick="toggleNotificationCenter()" title="Thông báo" style="position: relative; cursor: pointer; padding: 8px; border-radius: 8px; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.1)'" onmouseout="this.style.backgroundColor='transparent'">
                             <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
-                            <div class="notification-badge"></div>
+                            <div class="notification-badge" style="position: absolute; top: 4px; right: 4px; background: #ef4444; color: white; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; transform: scale(0); transition: transform 0.2s;"></div>
                         </div>
 
                         <!-- User info when logged in -->
                         <div id="userInfo" style="display: none;">
                             <div class="dropdown">
                                 <button class="btn dropdown-toggle d-flex align-items-center gap-2" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background-color: rgba(255, 255, 255, 0.1); color: white; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 500; border: none;">
-                                    <img id="userAvatar" src="" alt="Avatar" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+                                    <img id="userAvatar" src="" alt="Avatar" referrerpolicy="no-referrer" crossorigin="anonymous" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
                                     <span id="userName">User</span>
                                     <i data-lucide="chevron-down" style="width: 16px; height: 16px;"></i>
                                 </button>
@@ -148,6 +158,46 @@
         @RenderBody()
     </main>
 
+    <!-- Notification Center Component -->
+    @await Html.PartialAsync("_NotificationCenter")
+
+    <!-- AI Chatbot Component (For authenticated users: Students, Club Managers, Club Members) -->
+    <div id="chatbotContainer" style="display: none;">
+        <!-- Floating Chat Button -->
+        <button id="chatbot-float-button" class="chatbot-float-button" title="AI Assistant">
+            <i data-lucide="message-circle" style="width: 30px; height: 30px;"></i>
+        </button>
+
+        <!-- Chat Modal -->
+        <div id="chatbot-modal" class="chatbot-modal">
+            <div class="chatbot-header">
+                <h3>AI Assistant - Hỗ trợ tìm CLB & Hoạt động</h3>
+                <button id="chatbot-close" class="chatbot-close" title="Đóng">
+                    <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+                </button>
+            </div>
+
+            <div class="chatbot-messages" id="chatbot-messages">
+                <!-- Welcome message and quick actions will be inserted here by JavaScript -->
+                <div id="chatbot-typing" class="chatbot-typing">
+                    <span class="chatbot-typing-text">AI đang suy nghĩ</span>
+                    <div class="chatbot-typing-dots">
+                        <div class="chatbot-typing-dot"></div>
+                        <div class="chatbot-typing-dot"></div>
+                        <div class="chatbot-typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chatbot-input-area">
+                <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Nhập tin nhắn của bạn..." />
+                <button id="chatbot-send-button" class="chatbot-send-button" title="Gửi">
+                    <i data-lucide="send" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <footer style="background-color: var(--primary); color: var(--primary-foreground); padding: 2rem 0; margin-top: 0;">
         <div class="container-custom">
             <div class="row">
@@ -182,19 +232,37 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/signalr/signalr.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/auth.js" asp-append-version="true"></script>
     <script src="~/js/notifications.js" asp-append-version="true"></script>
+    <script src="~/js/signalr-connection.js" asp-append-version="true"></script>
+    <script src="~/js/chatbot.js" asp-append-version="true"></script>
     <script>
         // Initialize Lucide Icons - wait for it to load
         function initLucide() {
-            if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+            if (typeof lucide !== 'undefined') {
                 try {
-                    // Some builds require passing the icons registry explicitly
-                    const options = lucide.icons ? { icons: lucide.icons } : undefined;
-                    lucide.createIcons(options);
+                    // For minified version, call createIcons with empty object
+                    if (typeof lucide.createIcons === 'function') {
+                        lucide.createIcons({});
+                    } else if (typeof lucide === 'function') {
+                        // Alternative: if lucide itself is the function
+                        lucide();
+                    }
                 } catch (e) {
-                    console.warn('Lucide init failed:', e);
+                    console.warn('Lucide init failed, trying alternative method:', e);
+                    // Fallback: manually replace icons
+                    try {
+                        document.querySelectorAll('[data-lucide]').forEach(el => {
+                            const iconName = el.getAttribute('data-lucide');
+                            if (lucide[iconName]) {
+                                el.innerHTML = lucide[iconName];
+                            }
+                        });
+                    } catch (e2) {
+                        console.error('All Lucide init methods failed:', e2);
+                    }
                 }
             } else {
                 setTimeout(initLucide, 50);
@@ -203,14 +271,30 @@
         initLucide();
 
         // Check authentication status and update UI
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             updateAuthUI();
             
             // Show/hide admin nav item based on user role
-            if (typeof isAdmin === 'function' && isAdmin()) {
+            if (typeof isAdmin === 'function' && await isAdmin()) {
                 const adminNavItem = document.getElementById('adminNavItem');
                 if (adminNavItem) {
                     adminNavItem.style.display = 'block';
+                }
+            }
+            
+            // Show chatbot for authenticated users (Student, ClubManager, ClubMember)
+            if (typeof isAuthenticated === 'function' && await isAuthenticated()) {
+                const userRole = await getUserRole();
+                // Allow chatbot for Student, ClubManager, and ClubMember roles
+                if (userRole === 'Student' || userRole === 'ClubManager' || userRole === 'ClubMember') {
+                    const chatbotContainer = document.getElementById('chatbotContainer');
+                    if (chatbotContainer) {
+                        chatbotContainer.style.display = 'block';
+                    }
+                    // Initialize chatbot
+                    if (typeof initChatbot === 'function') {
+                        initChatbot();
+                    }
                 }
             }
             
@@ -261,6 +345,48 @@
                 }
             }
         }
+
+        // FIX: Di chuyển modal ra body để đảm bảo căn giữa viewport
+        (function() {
+            function moveModalToBody(modal) {
+                if (modal && modal.classList.contains('modal') && modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+            }
+
+            function moveAllModalsToBody() {
+                document.querySelectorAll('.modal').forEach(moveModalToBody);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', moveAllModalsToBody);
+            } else {
+                moveAllModalsToBody();
+            }
+
+            setTimeout(moveAllModalsToBody, 500);
+
+            document.addEventListener('show.bs.modal', function(event) {
+                moveModalToBody(event.target);
+            });
+
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            if (node.classList && node.classList.contains('modal')) {
+                                moveModalToBody(node);
+                            }
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll('.modal').forEach(moveModalToBody);
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

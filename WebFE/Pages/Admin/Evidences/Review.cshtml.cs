@@ -29,6 +29,8 @@ namespace WebFE.Pages.Admin.Evidences
 
         public EvidenceDto? Evidence { get; set; }
 
+        public List<CriterionSelectItem> Criteria { get; set; } = new();
+
         [TempData]
         public string? SuccessMessage { get; set; }
 
@@ -38,9 +40,18 @@ namespace WebFE.Pages.Admin.Evidences
         public class InputModel
         {
             public int Id { get; set; }
-            public string Status { get; set; } = string.Empty;
+            public string Status { get; set; } = "Approved"; // Default to Approved
             public string? Comment { get; set; }
             public double Points { get; set; }
+            public int? CriterionId { get; set; }
+        }
+
+        public class CriterionSelectItem
+        {
+            public int Id { get; set; }
+            public string Title { get; set; } = string.Empty;
+            public int MaxScore { get; set; }
+            public string? GroupName { get; set; }
         }
 
         /// <summary>
@@ -73,6 +84,8 @@ namespace WebFE.Pages.Admin.Evidences
             try
             {
                 using var httpClient = CreateHttpClient();
+                
+                // Load evidence
                 var response = await httpClient.GetAsync($"/api/evidences/{id}");
 
                 if (response.IsSuccessStatusCode)
@@ -86,6 +99,11 @@ namespace WebFE.Pages.Admin.Evidences
                     if (Evidence != null)
                     {
                         Input.Id = Evidence.Id;
+                        Input.CriterionId = Evidence.CriterionId;
+                        
+                        // Load criteria list for dropdown
+                        await LoadCriteriaAsync(httpClient);
+                        
                         _logger.LogInformation("Loaded evidence {EvidenceId} for review", id);
                         return Page();
                     }
@@ -109,13 +127,72 @@ namespace WebFE.Pages.Admin.Evidences
         }
 
         /// <summary>
+        /// Load criteria list for dropdown
+        /// </summary>
+        private async Task LoadCriteriaAsync(HttpClient httpClient)
+        {
+            try
+            {
+                // Get only active criteria for Student target type
+                var response = await httpClient.GetAsync("/api/movement-criteria/by-target-type/Student");
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation("Criteria API response: {Content}", content);
+                    
+                    // API returns array directly, not wrapped in { data: [...] }
+                    var criteriaList = JsonSerializer.Deserialize<List<JsonElement>>(content, 
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    
+                    if (criteriaList != null)
+                    {
+                        foreach (var item in criteriaList)
+                        {
+                            // Only add active criteria
+                            var isActive = item.TryGetProperty("isActive", out var activeVal) && activeVal.GetBoolean();
+                            if (!isActive) continue;
+                            
+                            Criteria.Add(new CriterionSelectItem
+                            {
+                                Id = item.GetProperty("id").GetInt32(),
+                                Title = item.GetProperty("title").GetString() ?? "",
+                                MaxScore = item.TryGetProperty("maxScore", out var maxScore) ? maxScore.GetInt32() : 0,
+                                GroupName = item.TryGetProperty("groupName", out var groupName) ? groupName.GetString() : null
+                            });
+                        }
+                        
+                        _logger.LogInformation("Loaded {Count} criteria for dropdown", Criteria.Count);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to load criteria: {StatusCode}", response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load criteria list");
+            }
+        }
+
+        /// <summary>
+        /// Reload page data when validation fails
+        /// </summary>
+        private async Task ReloadPageDataAsync(int id)
+        {
+            Evidence = await LoadEvidenceAsync(id);
+            using var httpClient = CreateHttpClient();
+            await LoadCriteriaAsync(httpClient);
+        }
+
+        /// <summary>
         /// Submit review (approve/reject) for evidence
         /// </summary>
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid)
             {
-                await OnGetAsync(Input.Id);
+                await ReloadPageDataAsync(Input.Id);
                 return Page();
             }
 
@@ -127,7 +204,7 @@ namespace WebFE.Pages.Admin.Evidences
                 (Input.Status != "Approved" && Input.Status != "Rejected"))
             {
                 ErrorMessage = "❌ Invalid review status.";
-                await OnGetAsync(Input.Id);
+                await ReloadPageDataAsync(Input.Id);
                 return Page();
             }
 
@@ -137,34 +214,23 @@ namespace WebFE.Pages.Admin.Evidences
                 if (Input.Points < 0)
                 {
                     ErrorMessage = "❌ Points cannot be negative.";
-                    await OnGetAsync(Input.Id);
+                    await ReloadPageDataAsync(Input.Id);
                     return Page();
                 }
 
                 if (Input.Points <= 0)
                 {
                     ErrorMessage = "❌ Please enter points > 0 when approving.";
-                    await OnGetAsync(Input.Id);
+                    await ReloadPageDataAsync(Input.Id);
                     return Page();
                 }
             }
 
-            // ===== VALIDATE POINTS WITHIN CRITERION RANGE =====
-            if (Input.Status == "Approved" && Evidence != null && Evidence.CriterionMaxScore > 0)
+            // ===== VALIDATE CRITERION WHEN APPROVING =====
+            if (Input.Status == "Approved" && Input.Points > 0 && !Input.CriterionId.HasValue)
             {
-                if (Input.Points > Evidence.CriterionMaxScore)
-                {
-                    ErrorMessage = $"❌ Points cannot exceed {Evidence.CriterionMaxScore} (max for criterion \"{Evidence.CriterionTitle}\")";
-                    await OnGetAsync(Input.Id);
-                    return Page();
-                }
-            }
-
-            // ===== WARN IF NO CRITERION TO APPLY POINTS =====
-            if (Input.Status == "Approved" && Input.Points > 0 && (Evidence == null || Evidence.CriterionId == null))
-            {
-                ErrorMessage = "⚠️ Evidence is not linked to a criterion so points cannot be awarded automatically. Please attach a criterion or approve with zero points.";
-                await OnGetAsync(Input.Id);
+                ErrorMessage = "⚠️ Please select a criterion to award points.";
+                await ReloadPageDataAsync(Input.Id);
                 return Page();
             }
 
@@ -178,7 +244,7 @@ namespace WebFE.Pages.Admin.Evidences
                 {
                     ErrorMessage = "❌ Error: Unable to determine reviewer. Please check the JWT token. If the issue persists, log out and log back in.";
                     _logger.LogError("ReviewedById validation failed: ReviewedById={ReviewedById}", reviewedById);
-                    await OnGetAsync(Input.Id);
+                    await ReloadPageDataAsync(Input.Id);
                     return Page();
                 }
 
@@ -191,7 +257,8 @@ namespace WebFE.Pages.Admin.Evidences
                     Status = Input.Status,
                     ReviewerComment = Input.Comment,
                     Points = Input.Status == "Approved" ? Input.Points : 0,
-                    ReviewedById = reviewedById
+                    ReviewedById = reviewedById,
+                    CriterionId = Input.CriterionId
                 };
 
                 _logger.LogInformation("📤 Built ReviewEvidenceDto: Id={Id}, Status={Status}, Points={Points}, ReviewedById={ReviewedById}",
@@ -243,7 +310,7 @@ namespace WebFE.Pages.Admin.Evidences
                 ErrorMessage = $"❌ An error occurred: {ex.Message}";
             }
 
-            await OnGetAsync(Input.Id);
+            await ReloadPageDataAsync(Input.Id);
             return Page();
         }
 

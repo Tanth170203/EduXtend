@@ -59,6 +59,24 @@ namespace WebAPI.Controllers
             return Ok(updated);
         }
 
+        [HttpPut("{id:int}/with-schedules")]
+        public async Task<IActionResult> UpdateWithSchedules(int id, [FromBody] AdminUpdateActivityWithSchedulesRequest request)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var adminId = GetAdminUserId();
+            
+            // Update activity
+            var updated = await _service.AdminUpdateAsync(adminId, id, request.Activity);
+            if (updated == null) return NotFound();
+            
+            // Update schedules
+            await _service.UpdateActivitySchedulesAsync(id, request.Schedules);
+            
+            // Return updated activity with schedules
+            var result = await _service.GetActivityByIdAsync(id);
+            return Ok(result);
+        }
+
 		// GET api/admin/activities/{id}/registrants
 		[HttpGet("{id:int}/registrants")]
 		public async Task<IActionResult> GetRegistrants(int id)
@@ -88,6 +106,13 @@ namespace WebAPI.Controllers
             var ok = await _service.AdminDeleteAsync(id);
             if (!ok) return NotFound();
             return NoContent();
+        }
+
+        [HttpGet("available-clubs")]
+        public async Task<IActionResult> GetAvailableCollaboratingClubs([FromQuery] int excludeClubId = 0)
+        {
+            var clubs = await _service.GetAvailableCollaboratingClubsAsync(excludeClubId);
+            return Ok(clubs);
         }
 
 		// GET api/admin/activities/{id}/feedbacks
@@ -123,6 +148,26 @@ namespace WebAPI.Controllers
 		var result = await _service.RejectActivityAsync(adminId, id, request.RejectionReason);
 		if (result == null) return NotFound(new { message = "Activity not found" });
 		return Ok(result);
+	}
+
+	// POST api/admin/activities/{id}/complete
+	[HttpPost("{id:int}/complete")]
+	public async Task<IActionResult> CompleteActivity(int id)
+	{
+		var adminId = GetAdminUserId();
+		var result = await _service.CompleteActivityAsync(id, adminId);
+		
+		if (!result.success)
+		{
+			return BadRequest(new { message = result.message });
+		}
+		
+		return Ok(new 
+		{ 
+			message = result.message,
+			organizingClubPoints = result.organizingClubPoints,
+			collaboratingClubPoints = result.collaboratingClubPoints
+		});
 	}
     }
 

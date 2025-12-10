@@ -1,0 +1,476 @@
+@page
+@model WebFE.Pages.ClubManager.ClubInfoModel
+@{
+    ViewData["Title"] = "Club Information";
+    ViewData["Breadcrumb"] = "Club Information";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+    var isEditMode = Model.IsEditMode;
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="page-title">Club Information</h1>
+                <p class="page-description">@(isEditMode ? "Cập nhật thông tin câu lạc bộ" : "Xem thông tin câu lạc bộ")</p>
+            </div>
+            <div class="d-flex gap-2">
+                @if (!isEditMode)
+                {
+                    <a href="/ClubManager/ClubInfo?edit=true" class="btn btn-primary">
+                        <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                        Edit Information
+                    </a>
+                }
+                <a href="/ClubManager" class="btn btn-outline-secondary">
+                    <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+            @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (isEditMode)
+    {
+        <!-- EDIT MODE -->
+        <form method="post" id="clubInfoForm">
+            <div class="row g-4">
+                <!-- Main Information -->
+                <div class="col-lg-8">
+                    <div class="content-card mb-4">
+                        <div class="content-card-header">
+                            <h2 class="content-card-title">
+                                <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                                Basic Information
+                            </h2>
+                        </div>
+                        <div class="content-card-body">
+                            <input type="hidden" asp-for="Input.Id" />
+                            
+                            <div class="mb-3">
+                                <label asp-for="Input.Name" class="form-label fw-semibold">
+                                    Club Name <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Input.Name" class="form-control" required />
+                                <span asp-validation-for="Input.Name" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.SubName" class="form-label fw-semibold">
+                                    Sub Name <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Input.SubName" class="form-control" required />
+                                <span asp-validation-for="Input.SubName" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Input.Description" class="form-label fw-semibold">
+                                    Description
+                                </label>
+                                <textarea asp-for="Input.Description" class="form-control" rows="5" 
+                                          placeholder="Mô tả về câu lạc bộ..."></textarea>
+                                <span asp-validation-for="Input.Description" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Category</label>
+                                <input asp-for="Input.CategoryName" class="form-control" readonly />
+                                <div class="form-text">Category cannot be changed</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Images Section -->
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h2 class="content-card-title">
+                                <i data-lucide="image" style="width: 20px; height: 20px;"></i>
+                                Club Images
+                            </h2>
+                        </div>
+                        <div class="content-card-body">
+                            <!-- Logo Upload -->
+                            <div class="mb-4">
+                                <label for="logoFile" class="form-label fw-semibold">
+                                    <i data-lucide="image" style="width: 16px; height: 16px;"></i>
+                                    Club Logo
+                                </label>
+                                <input type="file" class="form-control" id="logoFile" accept="image/*" />
+                                <input type="hidden" asp-for="Input.LogoUrl" id="Input_LogoUrl" />
+                                <div class="form-text">Chấp nhận: JPG, PNG, GIF, WEBP. Tối đa 10MB.</div>
+                                
+                                <!-- Logo Preview -->
+                                <div id="logoPreview" class="mt-3">
+                                    @if (!string.IsNullOrEmpty(Model.Input.LogoUrl))
+                                    {
+                                        <div class="position-relative d-inline-block">
+                                            <img src="@Model.Input.LogoUrl" class="img-thumbnail" style="max-width: 300px; max-height: 200px;" />
+                                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" 
+                                                    onclick="document.getElementById('logoPreview').innerHTML = ''; document.getElementById('Input_LogoUrl').value = ''; document.getElementById('logoFile').value = '';">
+                                                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                                <div id="logoUploadStatus" class="small text-muted mt-2"></div>
+                            </div>
+
+                            <hr />
+
+                            <!-- Banner Upload -->
+                            <div class="mb-3">
+                                <label for="bannerFile" class="form-label fw-semibold">
+                                    <i data-lucide="image" style="width: 16px; height: 16px;"></i>
+                                    Club Banner
+                                </label>
+                                <input type="file" class="form-control" id="bannerFile" accept="image/*" />
+                                <input type="hidden" asp-for="Input.BannerUrl" id="Input_BannerUrl" />
+                                <div class="form-text">Chấp nhận: JPG, PNG, GIF, WEBP. Tối đa 10MB.</div>
+                                
+                                <!-- Banner Preview -->
+                                <div id="bannerPreview" class="mt-3">
+                                    @if (!string.IsNullOrEmpty(Model.Input.BannerUrl))
+                                    {
+                                        <div class="position-relative d-inline-block">
+                                            <img src="@Model.Input.BannerUrl" class="img-thumbnail" style="max-width: 100%; max-height: 300px;" />
+                                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" 
+                                                    onclick="document.getElementById('bannerPreview').innerHTML = ''; document.getElementById('Input_BannerUrl').value = ''; document.getElementById('bannerFile').value = '';">
+                                                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                                <div id="bannerUploadStatus" class="small text-muted mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                            Save Changes
+                        </button>
+                        <a href="/ClubManager/ClubInfo" class="btn btn-outline-secondary">
+                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Preview Card -->
+                <div class="col-lg-4">
+                    <div class="content-card sticky-top" style="top: 20px;">
+                        <div class="content-card-header">
+                            <h2 class="content-card-title">
+                                <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
+                                Preview
+                            </h2>
+                        </div>
+                        <div class="content-card-body">
+                            <div class="text-center">
+                                <!-- Logo Preview -->
+                                <div class="mb-3">
+                                    <img id="previewLogo" 
+                                         src="@(string.IsNullOrEmpty(Model.Input.LogoUrl) ? "/images/default-club-logo.png" : Model.Input.LogoUrl)" 
+                                         class="rounded-circle border" 
+                                         style="width: 120px; height: 120px; object-fit: cover;" 
+                                         alt="Club Logo" />
+                                </div>
+                                
+                                <!-- Club Name -->
+                                <h4 id="previewName" class="mb-1">@Model.Input.Name</h4>
+                                <p id="previewSubName" class="text-muted small mb-3">@Model.Input.SubName</p>
+                                
+                                <!-- Banner Preview -->
+                                <div class="mb-3">
+                                    <img id="previewBanner" 
+                                         src="@(string.IsNullOrEmpty(Model.Input.BannerUrl) ? "/images/default-club-banner.png" : Model.Input.BannerUrl)" 
+                                         class="img-fluid rounded" 
+                                         style="max-height: 150px; width: 100%; object-fit: cover;" 
+                                         alt="Club Banner" />
+                                </div>
+                                
+                                <!-- Description -->
+                                <p id="previewDescription" class="text-muted small text-start">
+                                    @(string.IsNullOrEmpty(Model.Input.Description) ? "No description" : Model.Input.Description)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    }
+    else
+    {
+        <!-- VIEW MODE -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="content-card mb-4">
+                    <div class="content-card-header">
+                        <h2 class="content-card-title">
+                            <i data-lucide="info" style="width: 20px; height: 20px;"></i>
+                            Basic Information
+                        </h2>
+                    </div>
+                    <div class="content-card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Club Name</label>
+                                <p class="fw-semibold">@Model.Input.Name</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Sub Name</label>
+                                <p class="fw-semibold">@Model.Input.SubName</p>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted small">Description</label>
+                                <p>@(string.IsNullOrEmpty(Model.Input.Description) ? "No description" : Model.Input.Description)</p>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Category</label>
+                                <p class="fw-semibold">@Model.Input.CategoryName</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Images Section -->
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h2 class="content-card-title">
+                            <i data-lucide="image" style="width: 20px; height: 20px;"></i>
+                            Club Images
+                        </h2>
+                    </div>
+                    <div class="content-card-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Club Logo</label>
+                                <div>
+                                    @if (!string.IsNullOrEmpty(Model.Input.LogoUrl))
+                                    {
+                                        <img src="@Model.Input.LogoUrl" class="img-thumbnail" style="max-width: 300px; max-height: 200px;" alt="Club Logo" />
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">No logo uploaded</p>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small">Club Banner</label>
+                                <div>
+                                    @if (!string.IsNullOrEmpty(Model.Input.BannerUrl))
+                                    {
+                                        <img src="@Model.Input.BannerUrl" class="img-thumbnail" style="max-width: 100%; max-height: 300px;" alt="Club Banner" />
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">No banner uploaded</p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="col-lg-4">
+                <div class="content-card sticky-top" style="top: 20px;">
+                    <div class="content-card-header">
+                        <h2 class="content-card-title">
+                            <i data-lucide="eye" style="width: 20px; height: 20px;"></i>
+                            Club Preview
+                        </h2>
+                    </div>
+                    <div class="content-card-body">
+                        <div class="text-center">
+                            <!-- Logo -->
+                            <div class="mb-3">
+                                <img src="@(string.IsNullOrEmpty(Model.Input.LogoUrl) ? "/images/default-club-logo.png" : Model.Input.LogoUrl)" 
+                                     class="rounded-circle border" 
+                                     style="width: 120px; height: 120px; object-fit: cover;" 
+                                     alt="Club Logo" />
+                            </div>
+                            
+                            <!-- Club Name -->
+                            <h4 class="mb-1">@Model.Input.Name</h4>
+                            <p class="text-muted small mb-3">@Model.Input.SubName</p>
+                            
+                            <!-- Banner -->
+                            <div class="mb-3">
+                                <img src="@(string.IsNullOrEmpty(Model.Input.BannerUrl) ? "/images/default-club-banner.png" : Model.Input.BannerUrl)" 
+                                     class="img-fluid rounded" 
+                                     style="max-height: 150px; width: 100%; object-fit: cover;" 
+                                     alt="Club Banner" />
+                            </div>
+                            
+                            <!-- Description -->
+                            <p class="text-muted small text-start">
+                                @(string.IsNullOrEmpty(Model.Input.Description) ? "No description" : Model.Input.Description)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    @if (isEditMode)
+    {
+        <partial name="_ValidationScriptsPartial" />
+        
+        <script>
+            const apiBaseUrl = '@Model.ApiBaseUrl';
+            
+            // ===== Logo Upload =====
+            const logoFile = document.getElementById('logoFile');
+            const logoInput = document.getElementById('Input_LogoUrl');
+            const logoPreview = document.getElementById('logoPreview');
+            const logoStatus = document.getElementById('logoUploadStatus');
+            const previewLogo = document.getElementById('previewLogo');
+            
+            logoFile?.addEventListener('change', async (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                
+                await uploadImage(file, logoInput, logoPreview, logoStatus, previewLogo);
+            });
+            
+            // ===== Banner Upload =====
+            const bannerFile = document.getElementById('bannerFile');
+            const bannerInput = document.getElementById('Input_BannerUrl');
+            const bannerPreview = document.getElementById('bannerPreview');
+            const bannerStatus = document.getElementById('bannerUploadStatus');
+            const previewBanner = document.getElementById('previewBanner');
+            
+            bannerFile?.addEventListener('change', async (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                
+                await uploadImage(file, bannerInput, bannerPreview, bannerStatus, previewBanner);
+            });
+            
+            // ===== Upload Function =====
+            async function uploadImage(file, hiddenInput, previewContainer, statusEl, previewImg) {
+                // Validate
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                if (!allowedTypes.includes(file.type)) {
+                    showStatus(statusEl, 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WEBP)', 'danger');
+                    return;
+                }
+                
+                const maxSize = 10 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    showStatus(statusEl, 'Kích thước file không được vượt quá 10MB', 'danger');
+                    return;
+                }
+                
+                // Show uploading
+                showStatus(statusEl, 'Uploading...', 'primary');
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const response = await fetch(`${apiBaseUrl}/api/club/upload-image`, {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'include'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Upload failed: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (!data.url) {
+                        throw new Error('No URL returned from server');
+                    }
+                    
+                    // Set hidden field
+                    hiddenInput.value = data.url;
+                    
+                    // Update preview
+                    previewImg.src = data.url;
+                    
+                    // Show preview with remove button
+                    previewContainer.innerHTML = `
+                        <div class="position-relative d-inline-block">
+                            <img src="${data.url}" class="img-thumbnail" style="max-width: 300px; max-height: 200px;" />
+                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" 
+                                    onclick="removeImage('${hiddenInput.id}', '${previewContainer.id}', '${previewImg.id}', '${file === logoFile.files[0] ? 'logoFile' : 'bannerFile'}')">
+                                <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+                            </button>
+                        </div>
+                    `;
+                    
+                    lucide.createIcons();
+                    showStatus(statusEl, '✓ Uploaded successfully', 'success');
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    showStatus(statusEl, '✗ ' + error.message, 'danger');
+                }
+            }
+            
+            function showStatus(el, message, type) {
+                el.textContent = message;
+                el.className = `small text-${type} mt-2`;
+            }
+            
+            window.removeImage = function(hiddenInputId, previewId, previewImgId, fileInputId) {
+                document.getElementById(hiddenInputId).value = '';
+                document.getElementById(previewId).innerHTML = '';
+                document.getElementById(fileInputId).value = '';
+                document.getElementById(previewImgId).src = hiddenInputId.includes('Logo') ? '/images/default-club-logo.png' : '/images/default-club-banner.png';
+            }
+            
+            // ===== Live Preview Updates =====
+            const nameInput = document.querySelector('input[name="Input.Name"]');
+            const subNameInput = document.querySelector('input[name="Input.SubName"]');
+            const descInput = document.querySelector('textarea[name="Input.Description"]');
+            
+            nameInput?.addEventListener('input', (e) => {
+                document.getElementById('previewName').textContent = e.target.value || 'Club Name';
+            });
+            
+            subNameInput?.addEventListener('input', (e) => {
+                document.getElementById('previewSubName').textContent = e.target.value || 'Sub Name';
+            });
+            
+            descInput?.addEventListener('input', (e) => {
+                document.getElementById('previewDescription').textContent = e.target.value || 'No description';
+            });
+        </script>
+    }
+    
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+}

@@ -3,7 +3,10 @@ using BusinessObject.Models;
 using Repositories.JoinRequests;
 using Repositories.Clubs;
 using Repositories.Interviews;
+using Repositories.Users;
 using Microsoft.Extensions.Logging;
+using DataAccess;
+using Microsoft.EntityFrameworkCore;
 
 namespace Services.JoinRequests
 {
@@ -13,17 +16,26 @@ namespace Services.JoinRequests
         private readonly IClubRepository _clubRepo;
         private readonly IInterviewRepository _interviewRepo;
         private readonly ILogger<JoinRequestService> _logger;
+        private readonly Services.Notifications.INotificationService _notificationService;
+        private readonly IUserRepository _userRepo;
+        private readonly EduXtendContext _context;
 
         public JoinRequestService(
             IJoinRequestRepository repo, 
             IClubRepository clubRepo,
             IInterviewRepository interviewRepo,
-            ILogger<JoinRequestService> logger)
+            ILogger<JoinRequestService> logger,
+            Services.Notifications.INotificationService notificationService,
+            IUserRepository userRepo,
+            EduXtendContext context)
         {
             _repo = repo;
             _clubRepo = clubRepo;
             _interviewRepo = interviewRepo;
             _logger = logger;
+            _notificationService = notificationService;
+            _userRepo = userRepo;
+            _context = context;
         }
 
         public async Task<JoinRequestDto?> GetByIdAsync(int id)
@@ -38,6 +50,41 @@ namespace Services.JoinRequests
         {
             var requests = await _repo.GetByClubIdAsync(clubId);
             return requests.Select(MapToDto).ToList();
+        }
+
+        public async Task<List<JoinRequestDto>> GetByClubIdWithFilterAsync(int clubId, string? status)
+        {
+            // If no status filter, return all requests
+            if (string.IsNullOrEmpty(status))
+            {
+                var allRequests = await _repo.GetByClubIdAsync(clubId);
+                var allDtos = allRequests.Select(MapToDto).ToList();
+                
+                // Include interview information
+                foreach (var dto in allDtos)
+                {
+                    var interview = await _interviewRepo.GetByJoinRequestIdAsync(dto.Id);
+                    dto.HasInterview = interview != null;
+                    dto.InterviewId = interview?.Id;
+                }
+                
+                return allDtos;
+            }
+
+            // Filter by status
+            var requests = await _repo.GetByClubIdAsync(clubId);
+            var filteredRequests = requests.Where(r => r.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+            var dtos = filteredRequests.Select(MapToDto).ToList();
+            
+            // Include interview information
+            foreach (var dto in dtos)
+            {
+                var interview = await _interviewRepo.GetByJoinRequestIdAsync(dto.Id);
+                dto.HasInterview = interview != null;
+                dto.InterviewId = interview?.Id;
+            }
+            
+            return dtos;
         }
 
         public async Task<List<JoinRequestDto>> GetByUserIdAsync(int userId)
@@ -123,6 +170,64 @@ namespace Services.JoinRequests
                 _logger.LogInformation("Creating ClubMember for UserId: {UserId}, ClubId: {ClubId}", joinRequest.UserId, joinRequest.ClubId);
                 var memberCreated = await _repo.CreateClubMemberAsync(joinRequest.ClubId, joinRequest.UserId, joinRequest.DepartmentId);
                 _logger.LogInformation("ClubMember creation result: {Result}", memberCreated);
+
+                // Update user role from Student to Member if needed
+                try
+                {
+                    var user = await _userRepo.GetByIdWithRolesAsync(joinRequest.UserId);
+                    if (user != null && user.Role.RoleName == "Student")
+                    {
+                        _logger.LogInformation("Updating user {UserId} role from Student to Member", joinRequest.UserId);
+                        
+                        // Get Member role ID
+                        var memberRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Member");
+                        if (memberRole != null)
+                        {
+                            user.RoleId = memberRole.Id;
+                            await _userRepo.UpdateAsync(user);
+                            _logger.LogInformation("User {UserId} role updated to Member successfully", joinRequest.UserId);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Member role not found in database");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to update user role to Member");
+                    // Don't fail the approval process if role update fails
+                }
+
+                // Send approval notification
+                try
+                {
+                    await _notificationService.NotifyUserAboutJoinRequestApprovalAsync(
+                        joinRequest.UserId,
+                        joinRequest.ClubId,
+                        joinRequest.Club?.Name ?? "the club"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send approval notification");
+                }
+            }
+            else if (result && action == "Reject")
+            {
+                // Send rejection notification
+                try
+                {
+                    await _notificationService.NotifyUserAboutJoinRequestRejectionAsync(
+                        joinRequest.UserId,
+                        joinRequest.ClubId,
+                        joinRequest.Club?.Name ?? "the club"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send rejection notification");
+                }
             }
 
             return result;
@@ -157,6 +262,47 @@ namespace Services.JoinRequests
         {
             var request = await _repo.GetActiveRequestByUserAndClubAsync(userId, clubId);
             if (request == null) return null;
+
+            var dto = MapToDto(request);
+            
+            // Check if request has an interview
+            var interview = await _interviewRepo.GetByJoinRequestIdAsync(dto.Id);
+            dto.HasInterview = interview != null;
+            dto.InterviewId = interview?.Id;
+            
+            return dto;
+        }
+
+        public async Task<JoinRequestDto?> UpdateRequestAsync(int requestId, int userId, UpdateJoinRequestDto dto)
+        {
+            var request = await _repo.GetByIdAsync(requestId);
+            if (request == null) return null;
+
+            // Verify ownership
+            if (request.UserId != userId)
+            {
+                throw new UnauthorizedAccessException("You can only update your own requests");
+            }
+
+            // Only allow update if status is Pending and no interview scheduled
+            if (request.Status != "Pending")
+            {
+                throw new InvalidOperationException("Cannot update request that has been processed");
+            }
+
+            // Check if interview exists
+            var hasInterview = await _interviewRepo.ExistsForJoinRequestAsync(requestId);
+            if (hasInterview)
+            {
+                throw new InvalidOperationException("Cannot update request after interview has been scheduled");
+            }
+
+            // Update fields
+            request.DepartmentId = dto.DepartmentId;
+            request.Motivation = dto.Motivation;
+            request.CvUrl = dto.CvUrl;
+
+            await _repo.UpdateAsync(request);
 
             return MapToDto(request);
         }

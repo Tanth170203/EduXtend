@@ -116,6 +116,11 @@ public class ReviewEvidenceDto
 
     [Required(ErrorMessage = "Reviewer ID is required")]
     public int ReviewedById { get; set; }
+
+    /// <summary>
+    /// Optional: Admin can change the criterion when reviewing
+    /// </summary>
+    public int? CriterionId { get; set; }
 }
 
 /// <summary>

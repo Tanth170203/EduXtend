@@ -88,6 +88,13 @@ namespace Services.GGLogin
                     && !t.Revoked
                     && t.ExpiryDate > DateTime.UtcNow);
 
+            // Check if user is banned
+            if (token?.User != null && !token.User.IsActive)
+            {
+                _logger.LogWarning("Banned user attempted to refresh token - UserId: {UserId}", token.User.Id);
+                return null;
+            }
+
             return token?.User;
         }
 

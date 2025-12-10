@@ -1,0 +1,164 @@
+@page "{id:int}"
+@model WebFE.Pages.ClubManager.MonthlyReports.EditModel
+@{
+    ViewData["Title"] = "Edit Monthly Report";
+    ViewData["Breadcrumb"] = "Edit Report";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Chỉnh sửa báo cáo tháng</h1>
+        @if (Model.Report != null)
+        {
+            <p class="page-description">Tháng @Model.Report.ReportMonth/@Model.Report.ReportYear</p>
+        }
+    </div>
+    <div>
+        <a href="/ClubManager/MonthlyReports/Details/@Model.Report?.Id" class="btn btn-outline-secondary">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Quay lại
+        </a>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model.Report != null)
+{
+    <form method="post">
+        <div class="content-card mb-4">
+            <div class="content-card-header">
+                <h5 class="content-card-title">Phần A.I.6 - Link hình ảnh/video sự kiện</h5>
+            </div>
+            <div class="content-card-body">
+                <div class="mb-3">
+                    <label for="EventMediaUrls" class="form-label">Link hình ảnh/video</label>
+                    <textarea class="form-control" id="EventMediaUrls" name="EventMediaUrls" rows="3" 
+                              placeholder="Nhập các link hình ảnh/video, mỗi link một dòng">@Model.EventMediaUrls</textarea>
+                    <div class="form-text">Nhập các link hình ảnh hoặc video của sự kiện cấp trường</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-card mb-4">
+            <div class="content-card-header">
+                <h5 class="content-card-title">Phần B.I - Mục đích và ý nghĩa</h5>
+            </div>
+            <div class="content-card-body">
+                <div class="mb-3">
+                    <label for="Purpose" class="form-label">Mục đích <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="Purpose" name="Purpose" rows="4" required
+                              placeholder="Nhập mục đích của kế hoạch tháng tiếp theo">@Model.Purpose</textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="Significance" class="form-label">Ý nghĩa <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="Significance" name="Significance" rows="4" required
+                              placeholder="Nhập ý nghĩa của kế hoạch tháng tiếp theo">@Model.Significance</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-card mb-4">
+            <div class="content-card-header">
+                <h5 class="content-card-title">Phần B.VII - Trách nhiệm của CLB</h5>
+            </div>
+            <div class="content-card-body">
+                <p class="text-muted mb-3">Nhập các trách nhiệm mà CLB cam kết thực hiện (mỗi trách nhiệm một dòng):</p>
+                <textarea class="form-control" id="ClubResponsibilitiesText" name="ClubResponsibilitiesText" 
+                          rows="8" placeholder="Ví dụ:&#10;- Lên kế hoạch chi tiết cho các hoạt động&#10;- Triển khai kế hoạch đúng tiến độ&#10;- Phân công nhân sự hợp lý&#10;- Đảm bảo an ninh trật tự trong các sự kiện&#10;- Giữ gìn vệ sinh và tài sản của trường">@Model.ClubResponsibilitiesText</textarea>
+                <small class="form-text text-muted mt-2">
+                    <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                    Mỗi trách nhiệm nên bắt đầu bằng dấu gạch ngang (-) hoặc số thứ tự
+                </small>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mb-4">
+            <button type="submit" class="btn btn-primary">
+                <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                Lưu thay đổi
+            </button>
+            <a href="/ClubManager/MonthlyReports/Details/@Model.Report?.Id" class="btn btn-outline-secondary">
+                <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                Hủy
+            </a>
+        </div>
+    </form>
+}
+else
+{
+    <div class="alert alert-warning">
+        Không tìm thấy báo cáo
+    </div>
+}
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+        
+        // Form validation (Requirements: 19.3)
+        document.querySelector('form')?.addEventListener('submit', function(e) {
+            const purpose = document.getElementById('Purpose')?.value.trim();
+            const significance = document.getElementById('Significance')?.value.trim();
+            
+            // Validate required fields
+            if (!purpose || !significance) {
+                e.preventDefault();
+                
+                // Show error message
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+                    Vui lòng nhập đầy đủ Mục đích và Ý nghĩa
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                const pageHeader = document.querySelector('.page-header');
+                if (pageHeader) {
+                    pageHeader.insertAdjacentElement('afterend', alertDiv);
+                    lucide.createIcons();
+                    
+                    // Scroll to error
+                    alertDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+                return false;
+            }
+            
+            // Show loading state
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
+            }
+        });
+        
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
+}

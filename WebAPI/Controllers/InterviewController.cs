@@ -86,6 +86,23 @@ namespace WebAPI.Controllers
             }
         }
 
+        // PUT api/interview/{id}
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateInterview(int id, [FromBody] UpdateInterviewDto dto)
+        {
+            try
+            {
+                var interview = await _interviewService.UpdateInterviewAsync(id, dto);
+                return Ok(interview);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating interview");
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         // PUT api/interview/{id}/evaluation
         [HttpPut("{id}/evaluation")]
         [Authorize]

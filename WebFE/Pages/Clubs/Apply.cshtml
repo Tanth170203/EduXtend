@@ -80,7 +80,7 @@
                                 <div class="col-12">
                                     <label class="form-label text-muted small">Your CV</label>
                                     <div>
-                                        <a href="https://localhost:5001/api/fileupload/cv/@System.IO.Path.GetFileName(Model.ExistingRequest.CvUrl)" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <a href="@Model.ExistingRequest.CvUrl" target="_blank" class="btn btn-sm btn-outline-primary">
                                             <i data-lucide="file-text" style="width: 16px; height: 16px;"></i>
                                             View Uploaded CV
                                         </a>
@@ -108,10 +108,26 @@
 
                         @if (Model.ExistingRequest.Status == "Pending")
                         {
-                            <div class="alert alert-info mt-4 mb-0">
-                                <i data-lucide="info" style="width: 18px; height: 18px;"></i>
-                                Your application is being reviewed by the club managers. You will be notified once a decision is made.
-                            </div>
+                            @if (!Model.ExistingRequest.HasInterview)
+                            {
+                                <!-- Allow edit if no interview scheduled yet -->
+                                <div class="alert alert-warning mt-4 mb-0">
+                                    <i data-lucide="edit" style="width: 18px; height: 18px;"></i>
+                                    You can still edit your application before the interview is scheduled.
+                                    <button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="offcanvas" data-bs-target="#editOffcanvas">
+                                        <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
+                                        Edit Application
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- Cannot edit after interview scheduled -->
+                                <div class="alert alert-info mt-4 mb-0">
+                                    <i data-lucide="info" style="width: 18px; height: 18px;"></i>
+                                    Your application is being reviewed. An interview has been scheduled. You cannot edit your application at this time.
+                                </div>
+                            }
                         }
                         else if (Model.ExistingRequest.Status == "Approved")
                         {
@@ -129,6 +145,87 @@
                         }
                     </div>
                 </div>
+
+                <!-- Edit Form Offcanvas (slides from right) -->
+                @if (Model.ExistingRequest != null && Model.ExistingRequest.Status == "Pending" && !Model.ExistingRequest.HasInterview)
+                {
+                    <div class="offcanvas offcanvas-end" tabindex="-1" id="editOffcanvas" aria-labelledby="editOffcanvasLabel" style="width: 500px;">
+                        <div class="offcanvas-header bg-primary text-white">
+                            <h5 class="offcanvas-title" id="editOffcanvasLabel">
+                                <i data-lucide="edit-3" style="width: 20px; height: 20px;"></i>
+                                Edit Your Application
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        <div class="offcanvas-body">
+                            <form id="editForm">
+                                <!-- Department Selection -->
+                                <div class="mb-4">
+                                    <label for="editDepartmentSelect" class="form-label fw-semibold">
+                                        <i data-lucide="briefcase" style="width: 18px; height: 18px;"></i>
+                                        Choose Department
+                                    </label>
+                                    <select class="form-select" id="editDepartmentSelect" name="departmentId">
+                                        <option value="">-- No specific department --</option>
+                                        @foreach (var dept in Model.Departments)
+                                        {
+                                            var isSelected = Model.ExistingRequest.DepartmentId == dept.Id;
+                                            <option value="@dept.Id" selected="@isSelected">
+                                                @dept.Name
+                                                @if (dept.MemberCount > 0)
+                                                {
+                                                    <text>(@dept.MemberCount members)</text>
+                                                }
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <!-- Motivation -->
+                                <div class="mb-4">
+                                    <label for="editMotivation" class="form-label fw-semibold">
+                                        <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
+                                        Motivation
+                                    </label>
+                                    <textarea class="form-control" id="editMotivation" name="motivation" rows="5" maxlength="500" placeholder="Tell us why you want to join...">@Model.ExistingRequest.Motivation</textarea>
+                                    <div class="form-text">
+                                        <span id="editCharCount">@(Model.ExistingRequest.Motivation?.Length ?? 0)</span>/500 characters
+                                    </div>
+                                </div>
+
+                                <!-- CV Upload -->
+                                <div class="mb-4">
+                                    <label for="editCvUpload" class="form-label fw-semibold">
+                                        <i data-lucide="file-text" style="width: 18px; height: 18px;"></i>
+                                        Upload New CV
+                                    </label>
+                                    @if (!string.IsNullOrEmpty(Model.ExistingRequest.CvUrl))
+                                    {
+                                        <div class="alert alert-info mb-2 small">
+                                            <i data-lucide="info" style="width: 14px; height: 14px;"></i>
+                                            Current: <a href="@Model.ExistingRequest.CvUrl" target="_blank" class="fw-bold">View CV</a>
+                                        </div>
+                                    }
+                                    <input class="form-control" type="file" id="editCvUpload" accept=".pdf">
+                                    <div class="form-text small">PDF only (Max 5MB). Leave empty to keep current.</div>
+                                    <div id="editCvPreview" class="mt-2"></div>
+                                </div>
+
+                                <!-- Buttons -->
+                                <div class="d-grid gap-2 mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg" id="editSubmitBtn">
+                                        <i data-lucide="save" style="width: 20px; height: 20px;"></i>
+                                        Save Changes
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">
+                                        <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
 
                 <div class="text-center mt-4">
                     <a href="/Clubs/Details/@Model.ClubId" class="btn btn-primary">Back to Club</a>
@@ -223,8 +320,8 @@
                                     <i data-lucide="file-text" style="width: 18px; height: 18px;"></i>
                                     Upload CV (Optional)
                                 </label>
-                                <input class="form-control" type="file" id="cvUpload" accept=".pdf,.doc,.docx">
-                                <div class="form-text">Accepted formats: PDF, DOC, DOCX (Max 5MB)</div>
+                                <input class="form-control" type="file" id="cvUpload" accept=".pdf">
+                                <div class="form-text">Accepted format: PDF only (Max 5MB)</div>
                                 <div id="cvPreview" class="mt-2"></div>
                             </div>
 
@@ -294,12 +391,28 @@
         const cvPreview = document.getElementById('cvPreview');
         const submitBtn = document.getElementById('submitBtn');
 
+        // Edit form elements
+        const editForm = document.getElementById('editForm');
+        const editMotivationInput = document.getElementById('editMotivation');
+        const editCharCount = document.getElementById('editCharCount');
+        const editCvUpload = document.getElementById('editCvUpload');
+        const editCvPreview = document.getElementById('editCvPreview');
+        const editSubmitBtn = document.getElementById('editSubmitBtn');
+
         let uploadedCvUrl = null;
+        let editUploadedCvUrl = '@Model.ExistingRequest?.CvUrl';
 
         // Character counter
         if (motivationInput) {
             motivationInput.addEventListener('input', () => {
                 charCount.textContent = motivationInput.value.length;
+            });
+        }
+
+        // Edit form character counter
+        if (editMotivationInput) {
+            editMotivationInput.addEventListener('input', () => {
+                editCharCount.textContent = editMotivationInput.value.length;
             });
         }
 
@@ -334,6 +447,38 @@
             cvUpload.value = '';
             cvPreview.innerHTML = '';
             uploadedCvUrl = null;
+        };
+
+        // Edit CV preview
+        if (editCvUpload) {
+            editCvUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    // Validate file size (5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('File size must be less than 5MB');
+                        editCvUpload.value = '';
+                        return;
+                    }
+
+                    editCvPreview.innerHTML = `
+                        <div class="alert alert-secondary d-flex align-items-center">
+                            <i data-lucide="file" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                            <div class="flex-grow-1">
+                                <strong>${file.name}</strong>
+                                <small class="text-muted d-block">${(file.size / 1024).toFixed(2)} KB</small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearEditCV()">Remove</button>
+                        </div>
+                    `;
+                    safeCreateIcons();
+                }
+            });
+        }
+
+        window.clearEditCV = function() {
+            editCvUpload.value = '';
+            editCvPreview.innerHTML = '';
         };
 
         // Form submission
@@ -465,6 +610,96 @@
                 throw error;
             }
         }
+
+        // Edit form submission
+        const existingRequestId = @(Model.ExistingRequest?.Id ?? 0);
+        
+        if (editForm && existingRequestId > 0) {
+            editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                editSubmitBtn.disabled = true;
+                editSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+                try {
+                    console.log('Starting application update...');
+                    
+                    // Upload new CV if selected
+                    const cvFile = editCvUpload.files[0];
+                    if (cvFile) {
+                        console.log('Uploading new CV:', cvFile.name);
+                        editUploadedCvUrl = await uploadCV(cvFile);
+                        console.log('CV uploaded successfully:', editUploadedCvUrl);
+                    }
+
+                    // Update application
+                    const departmentValue = document.getElementById('editDepartmentSelect').value;
+                    const formData = {
+                        departmentId: departmentValue ? parseInt(departmentValue) : null,
+                        motivation: editMotivationInput.value || null,
+                        cvUrl: editUploadedCvUrl || null
+                    };
+
+                    console.log('Updating application with data:', formData);
+
+                    const response = await fetch('https://localhost:5001/api/joinrequest/' + existingRequestId, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify(formData)
+                    });
+
+                    console.log('Response status:', response.status);
+
+                    if (response.ok) {
+                        console.log('Application updated successfully');
+                        
+                        // Show success notification
+                        if (typeof success === 'function') {
+                            success('Application Updated!', 'Your application has been updated successfully.', 3000);
+                        }
+                        
+                        // Reload page to show updated data
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        let errorMessage = 'Failed to update application';
+                        try {
+                            const errorData = await response.json();
+                            console.error('Error response:', errorData);
+                            errorMessage = errorData.message || errorMessage;
+                        } catch (e) {
+                            const errorText = await response.text();
+                            console.error('Error response (text):', errorText);
+                            errorMessage = errorText || errorMessage;
+                        }
+                        
+                        if (typeof error === 'function') {
+                            error('Update Failed', errorMessage, 5000);
+                        } else {
+                            alert('❌ Error: ' + errorMessage);
+                        }
+                        editSubmitBtn.disabled = false;
+                        editSubmitBtn.innerHTML = '<i data-lucide="save" style="width: 20px; height: 20px;"></i> Save Changes';
+                        safeCreateIcons();
+                    }
+                } catch (err) {
+                    console.error('Exception during update:', err);
+                    
+                    if (typeof error === 'function') {
+                        error('Error Occurred', 'An error occurred while updating your application. Please try again.', 5000);
+                    } else {
+                        alert('❌ An error occurred: ' + err.message);
+                    }
+                    editSubmitBtn.disabled = false;
+                    editSubmitBtn.innerHTML = '<i data-lucide="save" style="width: 20px; height: 20px;"></i> Save Changes';
+                    safeCreateIcons();
+                }
+            });
+        }
         } // End of initializeFormHandlers
 
         // Load interview information if exists
@@ -558,6 +793,16 @@
             @:} else {
             @:    setTimeout(loadInterviewInfo, 100);
             @:}
+            
+            @:// Initialize lucide icons when offcanvas is shown
+            @:document.addEventListener('DOMContentLoaded', function() {
+            @:    var editOffcanvas = document.getElementById('editOffcanvas');
+            @:    if (editOffcanvas) {
+            @:        editOffcanvas.addEventListener('shown.bs.offcanvas', function () {
+            @:            safeCreateIcons();
+            @:        });
+            @:    }
+            @:});
         }
     </script>
 }

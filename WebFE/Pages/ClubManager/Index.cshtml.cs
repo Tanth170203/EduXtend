@@ -50,7 +50,7 @@ namespace WebFE.Pages.ClubManager
             return client;
         }
 
-        public async Task<IActionResult> OnGetAsync()
+        public async Task<IActionResult> OnGetAsync(int? clubId)
         {
             try
             {
@@ -85,6 +85,23 @@ namespace WebFE.Pages.ClubManager
                     return Redirect("/Auth/Login");
                 }
 
+                // If clubId is provided, use it
+                if (clubId.HasValue && clubId.Value > 0)
+                {
+                    ClubId = clubId.Value;
+                    TempData["SelectedClubId"] = clubId.Value;
+                    TempData.Keep("SelectedClubId"); // Keep for next request
+                }
+                else
+                {
+                    // Try to get from TempData
+                    if (TempData["SelectedClubId"] != null)
+                    {
+                        ClubId = (int)TempData["SelectedClubId"];
+                        TempData.Keep("SelectedClubId"); // Keep for next request
+                    }
+                }
+
                 // Load club data for this manager
                 await LoadClubDataAsync(userId);
 
@@ -108,8 +125,18 @@ namespace WebFE.Pages.ClubManager
             {
                 using var httpClient = CreateHttpClient();
 
-                // Call API to get club managed by this user
-                var response = await httpClient.GetAsync("/api/club/my-managed-club");
+                HttpResponseMessage response;
+                
+                // If ClubId is already set, load that specific club
+                if (ClubId > 0)
+                {
+                    response = await httpClient.GetAsync($"/api/club/{ClubId}");
+                }
+                else
+                {
+                    // Otherwise, get the first managed club
+                    response = await httpClient.GetAsync("/api/club/my-managed-club");
+                }
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -126,6 +153,10 @@ namespace WebFE.Pages.ClubManager
                         ClubDescription = club.Description;
                         ClubLogoUrl = club.LogoUrl;
                         TotalMembers = club.MemberCount;
+                        
+                        // Save to TempData for other pages
+                        TempData["SelectedClubId"] = ClubId;
+                        TempData.Keep("SelectedClubId");
                         
                         // Get recruitment status for pending requests count
                         var statusResponse = await httpClient.GetAsync($"/api/club/{ClubId}/recruitment-status");

@@ -9,7 +9,7 @@ public interface IUserManagementService
     Task<UserWithRolesDto?> GetByIdWithRolesAsync(int id);
     Task BanUserAsync(int userId);
     Task UnbanUserAsync(int userId);
-    Task UpdateUserRolesAsync(int userId, List<int> roleIds);
+    Task UpdateUserRolesAsync(int userId, List<int> roleIds, int? clubId = null);
     Task<List<RoleDto>> GetAllRolesAsync();
 }
 

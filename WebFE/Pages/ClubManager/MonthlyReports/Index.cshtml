@@ -1,0 +1,174 @@
+@page
+@model WebFE.Pages.ClubManager.MonthlyReports.IndexModel
+@{
+    ViewData["Title"] = "Monthly Reports";
+    ViewData["Breadcrumb"] = "Monthly Reports";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Monthly Reports</h1>
+        <p class="page-description">Manage monthly activity reports</p>
+    </div>
+    <div>
+        <form method="post" asp-page-handler="Create">
+            <button type="submit" class="btn btn-primary">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                Create New Report
+            </button>
+        </form>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Filters -->
+<div class="content-card mb-4">
+    <div class="content-card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Tháng</label>
+                <select name="FilterMonth" class="form-select" asp-for="FilterMonth">
+                    <option value="">Tất cả</option>
+                    @for (int i = 1; i <= 12; i++)
+                    {
+                        <option value="@i">Tháng @i</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Năm</label>
+                <select name="FilterYear" class="form-select" asp-for="FilterYear">
+                    <option value="">Tất cả</option>
+                    @for (int year = DateTime.Now.Year; year >= DateTime.Now.Year - 5; year--)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trạng thái</label>
+                <select name="FilterStatus" class="form-select" asp-for="FilterStatus">
+                    <option value="">Tất cả</option>
+                    <option value="Draft">Nháp</option>
+                    <option value="PendingApproval">Chờ phê duyệt</option>
+                    <option value="Approved">Đã phê duyệt</option>
+                    <option value="Rejected">Bị từ chối</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                    Lọc
+                </button>
+                <a href="/ClubManager/MonthlyReports" class="btn btn-outline-secondary">
+                    <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                    Xóa bộ lọc
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reports List -->
+<div class="content-card">
+    <div class="content-card-body">
+        @if (Model.Reports == null || Model.Reports.Count == 0)
+        {
+            <div class="text-center py-5 text-muted">
+                <i data-lucide="file-text" style="width: 64px; height: 64px; margin-bottom: 1rem;"></i>
+                <h4>Chưa có báo cáo tháng</h4>
+                <p>Tạo báo cáo mới để bắt đầu</p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tháng/Năm</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th>Ngày nộp</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var report in Model.Reports)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>Tháng @report.ReportMonth/@report.ReportYear</strong>
+                                </td>
+                                <td>
+                                    @if (report.Status == "Draft")
+                                    {
+                                        <span class="badge bg-secondary">Nháp</span>
+                                    }
+                                    else if (report.Status == "PendingApproval")
+                                    {
+                                        <span class="badge bg-warning text-dark">Chờ phê duyệt</span>
+                                    }
+                                    else if (report.Status == "Approved")
+                                    {
+                                        <span class="badge bg-success">Đã phê duyệt</span>
+                                    }
+                                    else if (report.Status == "Rejected")
+                                    {
+                                        <span class="badge bg-danger">Bị từ chối</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        @report.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                    </small>
+                                </td>
+                                <td>
+                                    @if (report.SubmittedAt.HasValue)
+                                    {
+                                        <small class="text-muted">
+                                            @report.SubmittedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">-</small>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="/ClubManager/MonthlyReports/Details/@report.Id" class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                        <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                        Xem chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}

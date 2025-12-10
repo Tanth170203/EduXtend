@@ -1,6 +1,8 @@
 using BusinessObject.Models;
+using BusinessObject.Enum;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Repositories.Activities
 {
@@ -9,10 +11,16 @@ namespace Repositories.Activities
         private readonly EduXtendContext _ctx;
         public ActivityRepository(EduXtendContext ctx) => _ctx = ctx;
 
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _ctx.Database.BeginTransactionAsync();
+        }
+
         public async Task<List<Activity>> GetAllAsync()
             => await _ctx.Activities
                 .AsNoTracking()
                 .Include(a => a.Club)
+                .Include(a => a.CollaboratingClub)
                 .Include(a => a.CreatedBy)
                 .OrderByDescending(a => a.StartTime)
                 .ToListAsync();
@@ -27,6 +35,7 @@ namespace Repositories.Activities
             var query = _ctx.Activities
                 .AsNoTracking()
                 .Include(a => a.Club)
+                .Include(a => a.CollaboratingClub)
                 .Include(a => a.CreatedBy)
                 .AsQueryable();
 
@@ -65,6 +74,7 @@ namespace Repositories.Activities
             => await _ctx.Activities
                 .AsNoTracking()
                 .Include(a => a.Club)
+                .Include(a => a.CollaboratingClub)
                 .Include(a => a.CreatedBy)
                 .Include(a => a.ApprovedBy)
                 .FirstOrDefaultAsync(a => a.Id == id);
@@ -73,6 +83,7 @@ namespace Repositories.Activities
             => await _ctx.Activities
                 .AsNoTracking()
                 .Include(a => a.Club)
+                .Include(a => a.CollaboratingClub)
                 .Include(a => a.CreatedBy)
                 .Include(a => a.ApprovedBy)
                 .Include(a => a.Registrations)
@@ -85,6 +96,7 @@ namespace Repositories.Activities
                 .AsNoTracking()
                 .Where(a => a.ClubId == clubId)
                 .Include(a => a.Club)
+                .Include(a => a.CollaboratingClub)
                 .OrderByDescending(a => a.StartTime)
                 .ToListAsync();
 
@@ -199,6 +211,16 @@ namespace Repositories.Activities
 			=> await _ctx.ActivityRegistrations
 				.FirstOrDefaultAsync(r => r.ActivityId == activityId && r.UserId == userId);
 
+		public async Task<bool> UpdateRegistrationAsync(int activityId, int userId, string status)
+		{
+			var reg = await _ctx.ActivityRegistrations
+				.FirstOrDefaultAsync(r => r.ActivityId == activityId && r.UserId == userId);
+			if (reg == null) return false;
+			reg.Status = status;
+			await _ctx.SaveChangesAsync();
+			return true;
+		}
+
 		public async Task<bool> CancelRegistrationAsync(int activityId, int userId)
 		{
 			var reg = await _ctx.ActivityRegistrations
@@ -262,7 +284,7 @@ namespace Repositories.Activities
 		}).ToList();
 	}
 
-	public async Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int checkedById)
+	public async Task SetAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int? checkedById)
 	{
 		var existing = await _ctx.ActivityAttendances.FirstOrDefaultAsync(a => a.ActivityId == activityId && a.UserId == userId);
 		if (existing == null)
@@ -309,6 +331,153 @@ namespace Repositories.Activities
 				.AsNoTracking()
 				.ToListAsync()
 				.ContinueWith(t => t.Result.Select(x => (x.Id, x.StudentId)).ToList());
+		}
+
+		public async Task<bool> IsAttendanceCodeExistsAsync(string code)
+		{
+			return await _ctx.Activities
+				.AnyAsync(a => a.AttendanceCode == code);
+		}
+
+		public async Task<ActivityAttendance?> GetAttendanceAsync(int activityId, int userId)
+		{
+			return await _ctx.ActivityAttendances
+				.FirstOrDefaultAsync(a => a.ActivityId == activityId && a.UserId == userId);
+		}
+
+		public async Task<ActivityAttendance> CreateAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int? checkedById)
+		{
+			var attendance = new ActivityAttendance
+			{
+				ActivityId = activityId,
+				UserId = userId,
+				IsPresent = isPresent,
+				ParticipationScore = participationScore,
+				CheckedById = checkedById,
+				CheckedAt = DateTime.UtcNow
+			};
+			
+			_ctx.ActivityAttendances.Add(attendance);
+			await _ctx.SaveChangesAsync();
+			return attendance;
+		}
+
+		public async Task UpdateAttendanceAsync(ActivityAttendance attendance)
+		{
+			_ctx.ActivityAttendances.Update(attendance);
+			await _ctx.SaveChangesAsync();
+		}
+
+		// Evaluation methods
+		public async Task<ActivityEvaluation> CreateEvaluationAsync(ActivityEvaluation evaluation)
+		{
+			_ctx.ActivityEvaluations.Add(evaluation);
+			await _ctx.SaveChangesAsync();
+			return evaluation;
+		}
+
+		public async Task<ActivityEvaluation?> UpdateEvaluationAsync(ActivityEvaluation evaluation)
+		{
+			var existing = await _ctx.ActivityEvaluations.FirstOrDefaultAsync(e => e.Id == evaluation.Id);
+			if (existing == null) return null;
+
+			_ctx.Entry(existing).CurrentValues.SetValues(evaluation);
+			existing.UpdatedAt = DateTime.UtcNow;
+			await _ctx.SaveChangesAsync();
+			return existing;
+		}
+
+		public async Task<ActivityEvaluation?> GetEvaluationByActivityIdAsync(int activityId)
+		{
+			return await _ctx.ActivityEvaluations
+				.AsNoTracking()
+				.Include(e => e.Activity)
+				.Include(e => e.CreatedBy)
+				.FirstOrDefaultAsync(e => e.ActivityId == activityId);
+		}
+
+		public async Task<bool> HasEvaluationAsync(int activityId)
+		{
+			return await _ctx.ActivityEvaluations
+				.AnyAsync(e => e.ActivityId == activityId);
+		}
+
+		public async Task UpdateActivityStatusAsync(int activityId, string status)
+		{
+			var activity = await _ctx.Activities.FirstOrDefaultAsync(a => a.Id == activityId);
+			if (activity != null)
+			{
+				activity.Status = status;
+				await _ctx.SaveChangesAsync();
+			}
+		}
+
+		public async Task<List<Activity>> GetByClubAndMonthAsync(int clubId, int month, int year)
+		{
+			return await _ctx.Activities
+				.AsNoTracking()
+				.Where(a => a.ClubId == clubId 
+					&& a.StartTime.Month == month 
+					&& a.StartTime.Year == year)
+				.Include(a => a.Club)
+				.Include(a => a.CreatedBy)
+				.OrderBy(a => a.StartTime)
+				.ToListAsync();
+		}
+
+		public async Task<List<Activity>> GetByTypeAsync(int clubId, string type, int month, int year)
+		{
+			// Parse the string type to ActivityType enum
+			if (!System.Enum.TryParse<ActivityType>(type, out var activityType))
+			{
+				return new List<Activity>();
+			}
+
+			return await _ctx.Activities
+				.AsNoTracking()
+				.Where(a => a.ClubId == clubId 
+					&& a.Type == activityType
+					&& a.StartTime.Month == month 
+					&& a.StartTime.Year == year)
+				.Include(a => a.Club)
+				.Include(a => a.CreatedBy)
+				.OrderBy(a => a.StartTime)
+				.ToListAsync();
+		}
+
+		public async Task<List<(int Id, string Name, string? LogoUrl, int MemberCount)>> GetAvailableCollaboratingClubsAsync(int excludeClubId)
+		{
+			var clubs = await _ctx.Clubs
+				.AsNoTracking()
+				.Where(c => c.Id != excludeClubId && c.IsActive)
+				.Select(c => new
+				{
+					c.Id,
+					c.Name,
+					c.LogoUrl,
+					MemberCount = c.Members.Count(m => m.IsActive)
+				})
+				.OrderBy(c => c.Name)
+				.ToListAsync();
+
+			return clubs.Select(c => (c.Id, c.Name, c.LogoUrl, c.MemberCount)).ToList();
+		}
+
+		public async Task<Club?> GetClubByIdAsync(int clubId)
+		{
+			return await _ctx.Clubs
+				.AsNoTracking()
+				.FirstOrDefaultAsync(c => c.Id == clubId);
+		}
+
+		public async Task<List<Activity>> GetPendingCollaborationInvitationsAsync(int clubId)
+		{
+			return await _ctx.Activities
+				.Include(a => a.Club)
+				.Where(a => a.ClubCollaborationId == clubId && 
+				           (a.CollaborationStatus == null || a.CollaborationStatus == "Pending"))
+				.OrderByDescending(a => a.CreatedAt)
+				.ToListAsync();
 		}
     }
 }

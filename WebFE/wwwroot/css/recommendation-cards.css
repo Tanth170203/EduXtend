@@ -1,0 +1,417 @@
+/* Recommendation Cards CSS - Rich UI for Chatbot Recommendations */
+
+/* ============================================
+   CSS Variables - Color Palette
+   ============================================ */
+:root {
+    /* Card backgrounds - Màu trắng sáng với gradient nhẹ */
+    --card-bg: #FFFFFF;
+    --card-bg-gradient: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+    --card-hover-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    
+    /* Text colors - Màu đậm hơn để dễ đọc */
+    --card-title-color: #1A237E;
+    --card-text-color: #263238;
+    --card-reason-color: #37474F;
+    --card-type-label-color: #5E35B1;
+    
+    /* Score colors */
+    --score-excellent: #00C853;
+    --score-good: #64DD17;
+    --score-fair: #FFB300;
+    --score-low: #FF6F00;
+    
+    /* Spacing */
+    --card-padding: 20px;
+    --card-gap: 16px;
+    --card-border-radius: 16px;
+    
+    /* Accent */
+    --card-accent-color: #1565C0;
+    --card-border-color: #E3F2FD;
+    --card-reason-bg: #F5F5F5;
+}
+
+/* ============================================
+   Accessibility - Screen Reader Only
+   ============================================ */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ============================================
+   Message Intro (text before recommendations)
+   ============================================ */
+.message-intro {
+    margin-bottom: 16px;
+    line-height: 1.6;
+    color: #263238;
+}
+
+/* ============================================
+   Recommendations Container
+   ============================================ */
+.recommendations-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--card-gap);
+    margin-top: 0;
+    max-width: 100%;
+}
+
+/* ============================================
+   Recommendation Card Component
+   ============================================ */
+.recommendation-card {
+    background: var(--card-bg);
+    border: 2px solid var(--card-border-color);
+    border-radius: var(--card-border-radius);
+    padding: 18px;
+    margin-bottom: 12px;
+    box-shadow: var(--card-shadow);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Last card has no margin */
+.recommendation-card:last-child {
+    margin-bottom: 0;
+}
+
+/* Hover animation with transform and shadow effects */
+.recommendation-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-hover-shadow);
+    border-color: var(--card-accent-color);
+    background: linear-gradient(135deg, #FFFFFF 0%, #F0F4FF 100%);
+}
+
+/* Focus indicator for keyboard navigation - visible and prominent */
+.recommendation-card:focus {
+    outline: 3px solid #1565C0;
+    outline-offset: 2px;
+    transform: translateY(-4px);
+    box-shadow: var(--card-hover-shadow);
+    border-color: var(--card-accent-color);
+}
+
+/* Remove default focus outline and use custom styling */
+.recommendation-card:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Ensure focus is visible for keyboard users */
+.recommendation-card:focus-visible {
+    outline: 3px solid #1565C0;
+    outline-offset: 2px;
+    transform: translateY(-4px);
+    box-shadow: var(--card-hover-shadow);
+    border-color: var(--card-accent-color);
+}
+
+/* Left border accent with ::before pseudo-element */
+.recommendation-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--card-accent-color) 0%, #5E35B1 100%);
+    border-radius: 16px 0 0 16px;
+}
+
+/* ============================================
+   Card Header
+   ============================================ */
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #E8EAF6;
+}
+
+.card-type-icon {
+    font-size: 20px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.card-type-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--card-type-label-color);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: linear-gradient(135deg, #E8EAF6 0%, #D1C4E9 100%);
+    padding: 3px 10px;
+    border-radius: 10px;
+}
+
+/* ============================================
+   Card Title
+   ============================================ */
+.card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--card-title-color);
+    margin: 0 0 10px 0;
+    line-height: 1.3;
+    letter-spacing: -0.2px;
+}
+
+/* ============================================
+   Card Description
+   ============================================ */
+.card-description {
+    font-size: 13px;
+    color: var(--card-text-color);
+    margin: 0 0 10px 0;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+/* ============================================
+   Card Reason Section
+   ============================================ */
+.card-reason {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    background: var(--card-reason-bg);
+    border-radius: 10px;
+    border-left: 3px solid #FFB300;
+}
+
+.reason-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.reason-text {
+    font-size: 13px;
+    color: var(--card-reason-color);
+    margin: 0;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+/* ============================================
+   Card Score Section
+   ============================================ */
+.card-score {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%);
+    border-radius: 16px;
+    width: fit-content;
+}
+
+.score-icon {
+    font-size: 16px;
+    animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+.score-text {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+/* ============================================
+   Message Text (for intro text)
+   ============================================ */
+.message-text {
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+/* ============================================
+   Mobile Responsive Styles
+   ============================================ */
+@media (max-width: 768px) {
+    .recommendation-card {
+        padding: 18px;
+        margin-bottom: 14px;
+        border-radius: 14px;
+    }
+    
+    .card-header {
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+    }
+    
+    .card-title {
+        font-size: 19px;
+    }
+    
+    .card-description {
+        font-size: 13px;
+    }
+    
+    .card-reason {
+        padding: 12px 14px;
+        gap: 10px;
+    }
+    
+    .reason-text {
+        font-size: 13px;
+    }
+    
+    .card-score {
+        gap: 6px;
+        padding: 6px 10px;
+    }
+    
+    .score-text {
+        font-size: 14px;
+    }
+    
+    .card-type-icon {
+        font-size: 22px;
+    }
+    
+    .card-type-label {
+        font-size: 10px;
+        padding: 3px 10px;
+    }
+    
+    .reason-icon {
+        font-size: 18px;
+    }
+    
+    .score-icon {
+        font-size: 16px;
+    }
+}
+
+
+/* ============================================
+   News Card Specific Styles
+   ============================================ */
+.news-card {
+    border-left: 4px solid #FF6F00;
+}
+
+.news-card:hover {
+    border-left-color: #E65100;
+    background: linear-gradient(135deg, #FFFFFF 0%, #FFF3E0 100%);
+}
+
+.news-meta {
+    display: flex;
+    gap: 16px;
+    margin: 12px 0;
+    font-size: 0.875rem;
+    color: #546E7A;
+    flex-wrap: wrap;
+}
+
+.news-source,
+.news-date {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.news-source {
+    font-weight: 600;
+    color: #37474F;
+}
+
+.news-date {
+    color: #607D8B;
+}
+
+/* News card title styling */
+.news-card .card-title {
+    color: #BF360C;
+    font-size: 1.1rem;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+/* News card description */
+.news-card .card-description {
+    color: #455A64;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+/* News card reason section */
+.news-card .card-reason {
+    background: #FFF8E1;
+    border-left: 3px solid #FFA000;
+}
+
+/* News card score */
+.news-card .card-score {
+    border-top: 1px solid #FFE0B2;
+}
+
+/* ============================================
+   Responsive Design for News Cards
+   ============================================ */
+@media (max-width: 768px) {
+    .news-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .news-card .card-title {
+        font-size: 1rem;
+    }
+}
+
+
+/* ============================================
+   Emoji Line Formatting for Modern Display
+   ============================================ */
+.emoji-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 8px 0;
+    line-height: 1.6;
+    color: #263238;
+}
+
+.emoji-line:first-child {
+    margin-top: 0;
+}
+
+.emoji-line:last-child {
+    margin-bottom: 0;
+}
+
+/* Chatbot message bubble improvements */
+.chatbot-message-bubble {
+    line-height: 1.6;
+}
+
+.chatbot-message-bubble br {
+    display: block;
+    content: "";
+    margin: 4px 0;
+}

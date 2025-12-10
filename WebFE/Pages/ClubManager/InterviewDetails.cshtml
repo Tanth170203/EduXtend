@@ -41,6 +41,49 @@
                 </div>
             </div>
 
+            <!-- Edit Interview Form -->
+            <div class="content-card mb-4" id="editInterviewCard" style="display: none;">
+                <div class="content-card-header">
+                    <h2 class="content-card-title">
+                        <i data-lucide="edit" style="width: 20px; height: 20px;"></i>
+                        Edit Interview Schedule
+                    </h2>
+                </div>
+                <div class="content-card-body">
+                    <form id="editInterviewForm">
+                        <div class="mb-3">
+                            <label for="editScheduledDate" class="form-label">Interview Date & Time *</label>
+                            <input type="datetime-local" class="form-control" id="editScheduledDate" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editLocation" class="form-label">Location *</label>
+                            <input type="text" class="form-control" id="editLocation" placeholder="e.g. Room 101, Building A" required maxlength="200" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editNotes" class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="editNotes" rows="3" placeholder="Any additional information for the applicant..." maxlength="1000"></textarea>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+                            The student will be notified about the schedule change.
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="updateInterviewBtn">
+                                <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                                Update Interview
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="cancelEditInterview()">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Evaluation Form -->
             <div class="content-card" id="evaluationCard" style="display: none;">
                 <div class="content-card-header">
@@ -126,6 +169,7 @@
         const requestId = @Model.RequestId;
         let interviewId = null;
         let hasEvaluation = false;
+        let currentInterview = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             await loadInterviewData();
@@ -141,15 +185,16 @@
                 if (response.ok) {
                     const interview = await response.json();
                     interviewId = interview.id;
+                    currentInterview = interview;
                     hasEvaluation = interview.evaluation != null && interview.evaluation.trim() !== '';
                     displayInterviewInfo(interview);
                     displayApplicantInfo(interview);
 
-                    // Show evaluation form if no evaluation yet
-                    if (!hasEvaluation) {
+                    // Show evaluation form only if interview is not completed yet
+                    if (interview.status !== 'Completed') {
                         document.getElementById('evaluationCard').style.display = 'block';
                     } else {
-                        // Show decision buttons if evaluation exists
+                        // Show decision buttons if interview is completed
                         document.getElementById('decisionCard').style.display = 'block';
                     }
 
@@ -210,8 +255,20 @@
             if (hasEvaluation) {
                 html += `
                     <div class="col-12">
-                        <label class="form-label text-muted small">Evaluation</label>
+                        <label class="form-label text-muted small">Your Evaluation</label>
                         <p class="border p-3 rounded bg-light">${interview.evaluation}</p>
+                    </div>
+                `;
+            }
+
+            // Add Edit button if not completed
+            if (status !== 'Completed') {
+                html += `
+                    <div class="col-12">
+                        <button class="btn btn-outline-primary" onclick="showEditInterview()">
+                            <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                            Edit Interview Schedule
+                        </button>
                     </div>
                 `;
             }
@@ -240,6 +297,94 @@
                 </a>
             `;
             document.getElementById('applicantInfo').innerHTML = html;
+        }
+
+        // Show edit interview form
+        window.showEditInterview = function() {
+            if (!currentInterview) return;
+            
+            // Populate form with current data
+            const scheduledDate = new Date(currentInterview.scheduledDate);
+            const localDateTime = new Date(scheduledDate.getTime() - scheduledDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            document.getElementById('editScheduledDate').value = localDateTime;
+            document.getElementById('editLocation').value = currentInterview.location;
+            document.getElementById('editNotes').value = currentInterview.notes || '';
+            
+            // Hide interview info, show edit form
+            document.getElementById('interviewInfo').style.display = 'none';
+            document.getElementById('editInterviewCard').style.display = 'block';
+            document.getElementById('evaluationCard').style.display = 'none';
+            
+            lucide.createIcons();
+        };
+
+        // Cancel edit interview
+        window.cancelEditInterview = function() {
+            document.getElementById('interviewInfo').style.display = 'block';
+            document.getElementById('editInterviewCard').style.display = 'none';
+            if (!hasEvaluation) {
+                document.getElementById('evaluationCard').style.display = 'block';
+            }
+        };
+
+        // Handle edit interview form submission
+        const editInterviewForm = document.getElementById('editInterviewForm');
+        if (editInterviewForm) {
+            editInterviewForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const scheduledDate = document.getElementById('editScheduledDate').value;
+                const location = document.getElementById('editLocation').value;
+                const notes = document.getElementById('editNotes').value;
+
+                if (!scheduledDate || !location) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+
+                const updateBtn = document.getElementById('updateInterviewBtn');
+                updateBtn.disabled = true;
+                updateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+
+                try {
+                    const payload = {
+                        scheduledDate: new Date(scheduledDate).toISOString(),
+                        location: location.trim(),
+                        notes: notes ? notes.trim() : null
+                    };
+
+                    const response = await fetch(`https://localhost:5001/api/interview/${interviewId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        alert('Interview schedule updated successfully! The student will be notified.');
+                        window.location.reload();
+                    } else {
+                        const errorText = await response.text();
+                        let errorMessage = 'Failed to update interview';
+                        try {
+                            const error = JSON.parse(errorText);
+                            errorMessage = error.message || errorMessage;
+                        } catch (e) {
+                            errorMessage = errorText || errorMessage;
+                        }
+                        alert('Error: ' + errorMessage);
+                        updateBtn.disabled = false;
+                        updateBtn.innerHTML = '<i data-lucide="save" style="width: 16px; height: 16px;"></i> Update Interview';
+                        lucide.createIcons();
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred: ' + error.message);
+                    updateBtn.disabled = false;
+                    updateBtn.innerHTML = '<i data-lucide="save" style="width: 16px; height: 16px;"></i> Update Interview';
+                    lucide.createIcons();
+                }
+            });
         }
 
         // Character counter

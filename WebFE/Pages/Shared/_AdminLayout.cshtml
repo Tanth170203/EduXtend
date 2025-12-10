@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
     <title>@ViewData["Title"] - Admin Dashboard - EduXtend</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
@@ -13,8 +14,10 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    @await RenderSectionAsync("Styles", required: false)
-</head>
+    <!-- Modal Fix CSS -->
+    <link rel="stylesheet" href="~/css/modal-fix.css" asp-append-version="true" />
+    
+    @await RenderSectionAsync("Styles", required: false)</head>
 <body class="admin-body">
     <!-- Sidebar -->
     <div class="admin-sidebar" id="adminSidebar">
@@ -69,6 +72,10 @@
                         <i data-lucide="newspaper" style="width: 20px; height: 20px;"></i>
                         <span>System News</span>
                     </a>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/ClubNews") == true ? "active" : "")" href="/Admin/ClubNews">
+                        <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
+                        <span>Club News</span>
+                    </a>
                 </div>
                 
                 <div class="sidebar-section">
@@ -104,6 +111,10 @@
                     <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Attendances") == true ? "active" : "")" href="/Admin/Attendances">
                         <i data-lucide="clipboard-check" style="width: 20px; height: 20px;"></i>
                         <span>Attendances</span>
+                    </a>
+                    <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/MonthlyReports") == true ? "active" : "")" href="/Admin/MonthlyReports">
+                        <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
+                        <span>Monthly Reports</span>
                     </a>
                 </div>
                 
@@ -172,7 +183,7 @@
                 <!-- User Menu -->
                 <div class="dropdown">
                     <button class="user-menu-btn" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img id="adminUserAvatar" src="" alt="Avatar" class="user-avatar" />
+                        <img id="adminUserAvatar" src="" alt="Avatar" referrerpolicy="no-referrer" crossorigin="anonymous" class="user-avatar" />
                         <div class="user-info d-none d-md-block">
                             <div class="user-name" id="adminUserName">Admin</div>
                             <div class="user-role">Administrator</div>
@@ -245,26 +256,10 @@
             }
         })();
 
-        // Initialize Lucide Icons (robust)
-        (function initLucideIcons() {
-            function run() {
-                if (window.lucide && typeof lucide.createIcons === 'function') {
-                    try { lucide.createIcons(); } catch {}
-                }
-            }
-            Run now, on DOM ready, and after a short delay
-            run();
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', run);
-            } else {
-                setTimeout(run, 100);
-            }
-            Re-run when DOM changes (e.g., partial updates)
-            try {
-                const observer = new MutationObserver(() => run());
-                observer.observe(document.body, { childList: true, subtree: true });
-            } catch {}
-        })();
+        // Initialize Lucide Icons
+        if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+            lucide.createIcons();
+        }
 
         // Check authentication status and update UI
         document.addEventListener('DOMContentLoaded', async function() {
@@ -290,11 +285,24 @@
 
         async function updateAdminAuthUI() {
             const user = await getUser();
+            console.log('[Admin Auth Debug] User data:', user);
+            console.log('[Admin Auth Debug] Avatar URL:', user?.avatar);
+            
             const avatarEl = document.getElementById('adminUserAvatar');
             const nameEl = document.getElementById('adminUserName');
             const fallbackAvatar = '/images/default-avatar.png';
+            
             if (avatarEl) {
-                avatarEl.src = (user && user.avatar) ? user.avatar : fallbackAvatar;
+                const avatarUrl = (user && user.avatar) ? user.avatar : fallbackAvatar;
+                console.log('[Admin Auth Debug] Setting avatar to:', avatarUrl);
+                avatarEl.src = avatarUrl;
+                avatarEl.onerror = function() {
+                    console.error('[Admin Auth Debug] Failed to load avatar from:', avatarUrl);
+                    this.src = fallbackAvatar;
+                };
+                avatarEl.onload = function() {
+                    console.log('[Admin Auth Debug] Avatar loaded successfully!');
+                };
             }
             if (nameEl && user && user.name) {
                 nameEl.textContent = user.name;
@@ -345,6 +353,58 @@
         if (localStorage.getItem('sidebarCollapsed') === 'true') {
             document.body.classList.add('sidebar-collapsed');
         }
+
+        // FIX: Di chuyển modal ra body để tránh bị ảnh hưởng bởi sidebar layout
+        // Khi modal nằm trong .admin-main (có margin-left), nó sẽ bị lệch
+        // Sử dụng MutationObserver để bắt tất cả modal được thêm vào DOM
+        (function() {
+            // Di chuyển modal ra body
+            function moveModalToBody(modal) {
+                if (modal && modal.classList.contains('modal') && modal.parentElement !== document.body) {
+                    console.log('Moving modal to body:', modal.id || modal.className);
+                    document.body.appendChild(modal);
+                }
+            }
+
+            // Di chuyển tất cả modal hiện có ra body
+            function moveAllModalsToBody() {
+                document.querySelectorAll('.modal').forEach(moveModalToBody);
+            }
+
+            // Chạy ngay khi DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', moveAllModalsToBody);
+            } else {
+                moveAllModalsToBody();
+            }
+
+            // Chạy lại sau 500ms để bắt modal được render muộn
+            setTimeout(moveAllModalsToBody, 500);
+
+            // Lắng nghe event show.bs.modal
+            document.addEventListener('show.bs.modal', function(event) {
+                moveModalToBody(event.target);
+            });
+
+            // Sử dụng MutationObserver để bắt modal mới được thêm vào DOM
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) { // Element node
+                            if (node.classList && node.classList.contains('modal')) {
+                                moveModalToBody(node);
+                            }
+                            // Kiểm tra cả các modal con
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll('.modal').forEach(moveModalToBody);
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

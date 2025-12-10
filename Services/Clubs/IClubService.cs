@@ -22,5 +22,6 @@ namespace Services.Clubs
         Task<List<ClubMemberDto>> GetClubMembersAsync(int clubId);
         Task<List<DepartmentDto>> GetClubDepartmentsAsync(int clubId);
         Task<List<ClubAwardDto>> GetClubAwardsAsync(int clubId);
+        Task<ClubDetailDto?> UpdateClubInfoAsync(int clubId, UpdateClubInfoDto dto);
     }
 }

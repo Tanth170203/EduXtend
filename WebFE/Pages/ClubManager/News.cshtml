@@ -1,0 +1,893 @@
+@page
+@model WebFE.Pages.ClubManager.NewsModel
+@{
+    ViewData["Title"] = "Club News";
+    ViewData["Breadcrumb"] = "Club News";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">Club News</h1>
+            <p class="page-description">Manage your club's news</p>
+        </div>
+        <button class="btn btn-primary" onclick="showCreateModal()">
+            <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            Create News
+        </button>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid mb-4">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Pending Approval</p>
+            </div>
+            <div class="stat-card-icon orange">
+                <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value" id="pendingCount">0</div>
+        <div class="stat-card-change">
+            <span>Awaiting review</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Approved</p>
+            </div>
+            <div class="stat-card-icon green">
+                <i data-lucide="check-circle" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value" id="approvedCount">0</div>
+        <div class="stat-card-change positive">
+            <span>Published</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <div>
+                <p class="stat-card-title">Total News</p>
+            </div>
+            <div class="stat-card-icon blue">
+                <i data-lucide="newspaper" style="width: 24px; height: 24px;"></i>
+            </div>
+        </div>
+        <div class="stat-card-value" id="totalCount">0</div>
+        <div class="stat-card-change">
+            <span>All time</span>
+        </div>
+    </div>
+</div>
+
+<!-- Filter and Search -->
+<div class="content-card mb-3">
+    <div class="content-card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="content-card-title mb-0">My Club News</h2>
+            <select class="form-select form-select-sm" id="statusFilter" onchange="filterNews()" style="width: auto;">
+                <option value="all">All Status</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending Approval</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <span class="input-group-text bg-white">
+                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+            </span>
+            <input type="text" class="form-control" id="searchInput" placeholder="Search by title..." onkeyup="filterNews()" />
+        </div>
+    </div>
+</div>
+
+<!-- News Table -->
+<div class="content-card">
+    <div class="content-card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>Title</th>
+                        <th style="width: 150px;">Status</th>
+                        <th style="width: 180px;">Published</th>
+                        <th style="width: 150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="newsTableBody">
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <nav aria-label="News pagination" class="mt-3">
+            <ul class="pagination justify-content-center mb-0" id="pagination"></ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="newsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newsModalTitle">Create News</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newsForm">
+                    <input type="hidden" id="newsId" />
+                    
+                    <div class="mb-3">
+                        <label for="newsTitle" class="form-label">Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="newsTitle" maxlength="200" required />
+                        <div class="form-text">Maximum 200 characters</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newsContent" class="form-label">Content</label>
+                        <textarea class="form-control" id="newsContent" rows="6" maxlength="1000"></textarea>
+                        <div class="form-text">Maximum 1000 characters</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newsImage" class="form-label">Image</label>
+                        <div class="input-group mb-2">
+                            <input type="file" class="form-control" id="newsImageFile" accept="image/*" style="display: none;" onchange="uploadImage(this)" />
+                            <input type="text" class="form-control" id="fileNameDisplay" readonly placeholder="No file chosen" />
+                            <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('newsImageFile').click()">
+                                Choose File
+                            </button>
+                        </div>
+                        <input type="hidden" id="newsImageUrl" />
+                        <div id="imagePreview" class="mt-2" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview" class="img-thumbnail" style="max-height: 200px;" />
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-2" id="removeImageBtn">Remove</button>
+                        </div>
+                        <div class="form-text">Upload an image from your device. We will store it on Cloudinary.</div>
+                        <div id="imageUploadStatus" class="small text-muted mt-1"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newsFacebookUrl" class="form-label">Facebook URL</label>
+                        <input type="url" class="form-control" id="newsFacebookUrl" placeholder="https://facebook.com/..." />
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                        News will require Admin approval before being published publicly.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveNews()">
+                    <span id="saveButtonText">Create News</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Details Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewModalTitle">News Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewModalBody">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let newsModal, viewModal;
+        let currentClubId = null;
+        let allNews = [];
+        let filteredNews = [];
+        let currentPage = 1;
+        const itemsPerPage = 6;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            newsModal = new bootstrap.Modal(document.getElementById('newsModal'));
+            viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
+            
+            await loadClubInfo();
+            await loadNews();
+            
+            lucide.createIcons();
+        });
+
+        async function loadClubInfo() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/club/my-managed-club`, {
+                    credentials: 'include'
+                });
+                
+                if (res.ok) {
+                    const club = await res.json();
+                    currentClubId = club.id;
+                } else if (res.status === 404) {
+                    error('Error', 'You are not managing any club. Please contact admin.');
+                    const createBtn = document.querySelector('button[onclick="showCreateModal()"]');
+                    if (createBtn) {
+                        createBtn.disabled = true;
+                        createBtn.textContent = 'No Club Assigned';
+                    }
+                } else {
+                    const errorText = await res.text();
+                    console.error('API Error:', errorText);
+                    error('Error', 'Cannot load club information');
+                }
+            } catch (e) {
+                console.error('Error loading club info:', e);
+                error('Error', 'Cannot load club information: ' + e.message);
+            }
+        }
+
+        async function loadNews() {
+            if (!currentClubId) {
+                document.getElementById('newsTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            No club assigned. Please contact admin.
+                        </td>
+                    </tr>`;
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/club-news?clubId=${currentClubId}&approvedOnly=false`, {
+                    credentials: 'include'
+                });
+                
+                if (!res.ok) {
+                    throw new Error(`API returned ${res.status}`);
+                }
+                
+                allNews = await res.json();
+                updateStats();
+                filterNews();
+            } catch (e) {
+                console.error('Error loading news:', e);
+                document.getElementById('newsTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="alert alert-danger mb-0">Error loading news</div>
+                        </td>
+                    </tr>`;
+            }
+        }
+
+        function updateStats() {
+            const pending = allNews.filter(n => !n.isApproved).length;
+            const approved = allNews.filter(n => n.isApproved).length;
+            
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('approvedCount').textContent = approved;
+            document.getElementById('totalCount').textContent = allNews.length;
+        }
+
+        function filterNews() {
+            const filter = document.getElementById('statusFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            // Filter by status
+            let filtered = [...allNews];
+            if (filter === 'approved') {
+                filtered = filtered.filter(n => n.isApproved);
+            } else if (filter === 'pending') {
+                filtered = filtered.filter(n => !n.isApproved);
+            }
+            
+            // Filter by search term
+            if (searchTerm) {
+                filtered = filtered.filter(n => 
+                    n.title.toLowerCase().includes(searchTerm) ||
+                    (n.content && n.content.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            filteredNews = filtered;
+            currentPage = 1;
+            renderTable();
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('newsTableBody');
+            
+            if (filteredNews.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            No news found. Click "Create News" to add your first news.
+                        </td>
+                    </tr>`;
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+            
+            // Pagination
+            const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedNews = filteredNews.slice(startIndex, endIndex);
+            
+            // Render rows
+            tbody.innerHTML = '';
+            paginatedNews.forEach(n => {
+                const row = document.createElement('tr');
+                
+                const statusBadge = n.isApproved
+                    ? '<span class="badge bg-success">Approved</span>'
+                    : '<span class="badge bg-warning text-dark">Pending</span>';
+                
+                const actions = n.isApproved
+                    ? `
+                        <a href="/News/ClubDetails?id=${n.id}" class="btn btn-sm btn-outline-primary" title="View">
+                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteNews(${n.id})" title="Delete">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    `
+                    : `
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewNews(${n.id})" title="View">
+                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="editNews(${n.id})" title="Edit">
+                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteNews(${n.id})" title="Delete">
+                            <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                        </button>
+                    `;
+                
+                row.innerHTML = `
+                    <td>${n.id}</td>
+                    <td>${n.title}</td>
+                    <td>${statusBadge}</td>
+                    <td>${formatDate(n.publishedAt)}</td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            ${actions}
+                        </div>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            lucide.createIcons();
+            renderPagination(totalPages);
+        }
+
+        function renderPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // Previous
+            html += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">&laquo;</a>
+                </li>`;
+            
+            // Pages
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+            
+            if (startPage > 1) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(1); return false;">1</a></li>`;
+                if (startPage > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                    </li>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a></li>`;
+            }
+            
+            // Next
+            html += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">&raquo;</a>
+                </li>`;
+            
+            pagination.innerHTML = html;
+        }
+
+        function showCreateModal() {
+            document.getElementById('newsModalTitle').textContent = 'Create News';
+            document.getElementById('saveButtonText').textContent = 'Create News';
+            document.getElementById('newsForm').reset();
+            document.getElementById('newsId').value = '';
+            document.getElementById('newsImageUrl').value = '';
+            document.getElementById('newsImageFile').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('fileNameDisplay').value = 'No file chosen';
+            document.getElementById('imageUploadStatus').textContent = '';
+            newsModal.show();
+        }
+
+        async function editNews(id) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/club-news/${id}`, {
+                    credentials: 'include'
+                });
+                
+                if (!res.ok) {
+                    error('Error', 'Cannot load news details');
+                    return;
+                }
+                
+                const news = await res.json();
+                
+                if (news.isApproved) {
+                    error('Error', 'Cannot edit approved news');
+                    return;
+                }
+                
+                document.getElementById('newsModalTitle').textContent = 'Edit News';
+                document.getElementById('saveButtonText').textContent = 'Update News';
+                document.getElementById('newsId').value = news.id;
+                document.getElementById('newsTitle').value = news.title;
+                document.getElementById('newsContent').value = news.content || '';
+                document.getElementById('newsImageUrl').value = news.imageUrl || '';
+                document.getElementById('newsFacebookUrl').value = news.facebookUrl || '';
+                document.getElementById('newsImageFile').value = '';
+                document.getElementById('fileNameDisplay').value = news.imageUrl ? 'Image uploaded' : 'No file chosen';
+                document.getElementById('imageUploadStatus').textContent = '';
+                
+                if (news.imageUrl) {
+                    document.getElementById('previewImg').src = news.imageUrl;
+                    document.getElementById('imagePreview').style.display = 'block';
+                } else {
+                    document.getElementById('imagePreview').style.display = 'none';
+                }
+                
+                newsModal.show();
+            } catch (e) {
+                console.error('Error loading news:', e);
+                error('Error', 'Cannot load news details');
+            }
+        }
+
+        async function viewNews(id) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/club-news/${id}`, {
+                    credentials: 'include'
+                });
+                
+                if (!res.ok) {
+                    error('Error', 'Cannot load news details');
+                    return;
+                }
+                
+                const news = await res.json();
+                
+                const statusBadge = news.isApproved 
+                    ? '<span class="badge bg-success">Approved</span>'
+                    : '<span class="badge bg-warning text-dark">Pending Approval</span>';
+                
+                document.getElementById('viewModalTitle').textContent = news.title;
+                document.getElementById('viewModalBody').innerHTML = `
+                    <div class="mb-3">${statusBadge}</div>
+                    ${news.imageUrl ? `
+                        <div class="mb-3">
+                            <img src="${news.imageUrl}" class="img-fluid rounded" alt="${news.title}" />
+                        </div>` : ''}
+                    <div class="mb-3">
+                        <strong>Published:</strong> ${formatDate(news.publishedAt)}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Content:</strong>
+                        <p style="white-space: pre-line;">${news.content || 'No content'}</p>
+                    </div>
+                    ${news.facebookUrl ? `
+                        <div class="mb-3">
+                            <strong>Facebook:</strong> 
+                            <a href="${news.facebookUrl}" target="_blank">${news.facebookUrl}</a>
+                        </div>` : ''}
+                `;
+                
+                viewModal.show();
+            } catch (e) {
+                console.error('Error loading news:', e);
+                error('Error', 'Cannot load news details');
+            }
+        }
+
+        async function saveNews() {
+            const id = document.getElementById('newsId').value;
+            const title = document.getElementById('newsTitle').value.trim();
+            const content = document.getElementById('newsContent').value.trim();
+            const imageUrl = document.getElementById('newsImageUrl').value.trim();
+            const facebookUrl = document.getElementById('newsFacebookUrl').value.trim();
+            
+            if (!title) {
+                error('Validation Error', 'Title is required');
+                return;
+            }
+            
+            const data = {
+                title,
+                content: content || null,
+                imageUrl: imageUrl || null,
+                facebookUrl: facebookUrl || null
+            };
+            
+            try {
+                const url = id 
+                    ? `${API_BASE_URL}/api/club-news/${id}`
+                    : `${API_BASE_URL}/api/club-news`;
+                
+                const method = id ? 'PUT' : 'POST';
+                
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    success('Success', id ? 'News updated successfully' : 'News created successfully. Waiting for admin approval.');
+                    
+                    try {
+                        newsModal.hide();
+                    } catch (modalError) {
+                        console.log('Modal hide error (safe to ignore):', modalError);
+                    }
+                    
+                    // Force cleanup modal container
+                    const modalContainer = document.getElementById('modal-container');
+                    if (modalContainer) {
+                        modalContainer.style.display = 'none';
+                    }
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
+                    
+                    await loadNews();
+                } else {
+                    const err = await res.text();
+                    error('Error', err || 'Failed to save news');
+                }
+            } catch (e) {
+                console.error('Error saving news:', e);
+                // Don't show error notification if request was successful
+                if (!e.message || !e.message.includes('hide')) {
+                    error('Error', 'Failed to save news');
+                }
+            }
+        }
+
+        function showConfirmModal(title, message, onConfirm) {
+            // Remove any existing modal first
+            const existingModal = document.getElementById('custom-confirm-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Create a completely new modal element
+            const modalOverlay = document.createElement('div');
+            modalOverlay.id = 'custom-confirm-modal';
+            modalOverlay.setAttribute('data-confirm-modal', 'true');
+            
+            // Set styles directly on the element
+            Object.assign(modalOverlay.style, {
+                position: 'fixed',
+                top: '0',
+                left: '0',
+                right: '0',
+                bottom: '0',
+                width: '100vw',
+                height: '100vh',
+                margin: '0',
+                padding: '0',
+                zIndex: '99999',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backdropFilter: 'blur(4px)'
+            });
+            
+            modalOverlay.innerHTML = `
+                <div id="confirm-modal-content" style="
+                    background: #ffffff;
+                    border-radius: 16px;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                    max-width: 500px;
+                    width: 90%;
+                    overflow: hidden;
+                    transform: scale(0.9);
+                    opacity: 0;
+                    transition: all 0.3s ease;
+                ">
+                    <div style="
+                        padding: 24px;
+                        border-bottom: 1px solid #e5e7eb;
+                        display: flex;
+                        align-items: center;
+                        gap: 16px;
+                        background: #ffffff;
+                    ">
+                        <div style="
+                            width: 48px;
+                            height: 48px;
+                            border-radius: 12px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-size: 24px;
+                            background: #f59e0b;
+                            flex-shrink: 0;
+                        ">⚠</div>
+                        <h3 style="
+                            font-size: 20px;
+                            font-weight: 700;
+                            color: #1f2937;
+                            margin: 0;
+                            flex: 1;
+                        ">${title}</h3>
+                    </div>
+                    <div style="
+                        padding: 24px;
+                        background: #ffffff;
+                    ">
+                        <p style="
+                            font-size: 16px;
+                            color: #6b7280;
+                            line-height: 1.5;
+                            margin: 0 0 24px 0;
+                        ">${message}</p>
+                        <div style="
+                            display: flex;
+                            gap: 12px;
+                            justify-content: flex-end;
+                        ">
+                            <button id="confirm-cancel-btn" style="
+                                padding: 10px 20px;
+                                border-radius: 8px;
+                                font-weight: 600;
+                                font-size: 14px;
+                                border: none;
+                                cursor: pointer;
+                                min-width: 80px;
+                                background: #f3f4f6;
+                                color: #374151;
+                            ">Hủy</button>
+                            <button id="confirm-ok-btn" style="
+                                padding: 10px 20px;
+                                border-radius: 8px;
+                                font-weight: 600;
+                                font-size: 14px;
+                                border: none;
+                                cursor: pointer;
+                                min-width: 80px;
+                                background: #ef4444;
+                                color: white;
+                            ">Xác nhận</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modalOverlay);
+
+            // Add event listeners
+            document.getElementById('confirm-cancel-btn').addEventListener('click', closeConfirmModal);
+            document.getElementById('confirm-ok-btn').addEventListener('click', async () => {
+                closeConfirmModal();
+                if (onConfirm) await onConfirm();
+            });
+
+            // Animate in
+            setTimeout(() => {
+                const content = document.getElementById('confirm-modal-content');
+                if (content) {
+                    content.style.transform = 'scale(1)';
+                    content.style.opacity = '1';
+                }
+            }, 10);
+        }
+
+        function closeConfirmModal() {
+            const modalOverlay = document.getElementById('custom-confirm-modal');
+            if (modalOverlay) {
+                const content = document.getElementById('confirm-modal-content');
+                if (content) {
+                    content.style.transform = 'scale(0.9)';
+                    content.style.opacity = '0';
+                }
+                setTimeout(() => {
+                    modalOverlay.remove();
+                }, 300);
+            }
+        }
+
+        async function deleteNews(id) {
+            showConfirmModal(
+                'Xác nhận xóa',
+                'Bạn có chắc chắn muốn xóa bài tin tức này? Hành động này không thể hoàn tác.',
+                async () => {
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/api/club-news/${id}`, {
+                            method: 'DELETE',
+                            credentials: 'include'
+                        });
+                        
+                        if (res.ok) {
+                            success('Thành công', 'Đã xóa tin tức thành công');
+                            await loadNews();
+                        } else {
+                            error('Lỗi', 'Không thể xóa tin tức');
+                        }
+                    } catch (e) {
+                        console.error('Error deleting news:', e);
+                        error('Lỗi', 'Không thể xóa tin tức');
+                    }
+                }
+            );
+        }
+        
+        // Global cleanup function that runs periodically
+        setInterval(() => {
+            // Clean up Bootstrap modal backdrops
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            if (backdrops.length > 0 && !document.querySelector('.modal.show')) {
+                backdrops.forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+            }
+            
+            // Clean up notification modal container if no modal is showing
+            // BUT don't clean up if it's our confirm modal
+            const modalContainer = document.getElementById('modal-container');
+            const customConfirmModal = document.getElementById('custom-confirm-modal');
+            
+            if (modalContainer && modalContainer.style.display === 'flex' && !customConfirmModal) {
+                const modal = modalContainer.querySelector('.modal');
+                if (!modal || !modal.classList.contains('show')) {
+                    modalContainer.style.display = 'none';
+                }
+            }
+        }, 500);
+
+        async function uploadImage(input) {
+            if (!input.files || !input.files[0]) {
+                document.getElementById('fileNameDisplay').value = 'No file chosen';
+                return;
+            }
+            
+            const file = input.files[0];
+            document.getElementById('fileNameDisplay').value = file.name;
+            
+            const uploadStatus = document.getElementById('imageUploadStatus');
+            uploadStatus.textContent = 'Uploading...';
+            uploadStatus.classList.remove('text-danger', 'text-success');
+            uploadStatus.classList.add('text-primary');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/club-news/upload-image`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('newsImageUrl').value = data.url;
+                    document.getElementById('previewImg').src = data.url;
+                    document.getElementById('imagePreview').style.display = 'block';
+                    uploadStatus.textContent = '✓ Uploaded successfully';
+                    uploadStatus.classList.remove('text-primary', 'text-danger');
+                    uploadStatus.classList.add('text-success');
+                } else {
+                    error('Error', 'Failed to upload image');
+                    document.getElementById('fileNameDisplay').value = 'Upload failed';
+                    uploadStatus.textContent = '✗ Upload failed';
+                    uploadStatus.classList.remove('text-primary', 'text-success');
+                    uploadStatus.classList.add('text-danger');
+                }
+            } catch (e) {
+                console.error('Error uploading image:', e);
+                error('Error', 'Failed to upload image');
+                document.getElementById('fileNameDisplay').value = 'Upload failed';
+                uploadStatus.textContent = '✗ Upload failed';
+                uploadStatus.classList.remove('text-primary', 'text-success');
+                uploadStatus.classList.add('text-danger');
+            }
+        }
+        
+        // Remove image button handler
+        document.getElementById('removeImageBtn')?.addEventListener('click', function() {
+            document.getElementById('newsImageUrl').value = '';
+            document.getElementById('previewImg').src = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('newsImageFile').value = '';
+            document.getElementById('fileNameDisplay').value = 'No file chosen';
+            document.getElementById('imageUploadStatus').textContent = '';
+        });
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            try {
+                let dateStr = String(dateString).trim();
+                
+                // Normalize to UTC if no timezone
+                if (dateStr.includes('T') && !dateStr.endsWith('Z') && !dateStr.match(/[+-]\d{2}:\d{2}$/)) {
+                    dateStr = dateStr.replace(/\.\d{1,7}(?=[Z+-]|$)/, '') + 'Z';
+                }
+                
+                const date = new Date(dateStr);
+                
+                if (isNaN(date.getTime())) {
+                    return '';
+                }
+                
+                // Format as Vietnam time: dd/MM/yyyy HH:mm
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${day}/${month}/${year}, ${hours}:${minutes}`;
+            } catch (e) {
+                console.error('Error formatting date:', e, dateString);
+                return '';
+            }
+        }
+    </script>
+}

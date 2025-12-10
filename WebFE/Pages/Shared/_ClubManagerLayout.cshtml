@@ -3,15 +3,25 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="no-referrer" />
     <title>@ViewData["Title"] - Club Manager - EduXtend</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/eduxtend.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/chatbot.css" asp-append-version="true" />
+    <environment include="Development">
+        <link rel="stylesheet" href="~/css/recommendation-cards.css" asp-append-version="true" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="~/css/recommendation-cards.min.css" asp-append-version="true" />
+    </environment>
     <link rel="stylesheet" href="~/WebFE.styles.css" asp-append-version="true" />
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Modal Fix CSS -->
+    <link rel="stylesheet" href="~/css/modal-fix.css" asp-append-version="true" />
     
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -70,6 +80,18 @@
                         <i data-lucide="clipboard-check" style="width: 20px; height: 20px;"></i>
                         <span>Attendances</span>
                     </a>
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/CommunicationPlans") ? "active" : "")" href="/ClubManager/CommunicationPlans">
+                        <i data-lucide="megaphone" style="width: 20px; height: 20px;"></i>
+                        <span>Communication Plans</span>
+                    </a>
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/MonthlyReports") ? "active" : "")" href="/ClubManager/MonthlyReports">
+                        <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
+                        <span>Monthly Reports</span>
+                    </a>
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/ClubMovementScore") ? "active" : "")" href="/ClubManager/ClubMovementScore">
+                        <i data-lucide="trophy" style="width: 20px; height: 20px;"></i>
+                        <span>Club Movement Score</span>
+                    </a>
                 </div>
                 
                 <div class="sidebar-section">
@@ -101,10 +123,6 @@
                     <a class="sidebar-link" href="/ClubManager/News">
                         <i data-lucide="newspaper" style="width: 20px; height: 20px;"></i>
                         <span>Club News</span>
-                    </a>
-                    <a class="sidebar-link" href="/ClubManager/Gallery">
-                        <i data-lucide="images" style="width: 20px; height: 20px;"></i>
-                        <span>Gallery</span>
                     </a>
                 </div>
             </nav>
@@ -149,7 +167,7 @@
                 <!-- User Menu -->
                 <div class="dropdown">
                     <button class="user-menu-btn" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img id="clubManagerUserAvatar" src="" alt="Avatar" class="user-avatar" />
+                        <img id="clubManagerUserAvatar" src="" alt="Avatar" referrerpolicy="no-referrer" crossorigin="anonymous" class="user-avatar" />
                         <div class="user-info d-none d-md-block">
                             <div class="user-name" id="clubManagerUserName">Club Manager</div>
                             <div class="user-role">Club Manager</div>
@@ -206,20 +224,53 @@
     <!-- Overlay for mobile -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
+    <!-- AI Chatbot Component (For Club Managers) -->
+    <div id="chatbotContainer" style="display: none;">
+        <!-- Floating Chat Button -->
+        <button id="chatbot-float-button" class="chatbot-float-button" title="AI Assistant">
+            <i data-lucide="message-circle" style="width: 30px; height: 30px;"></i>
+        </button>
+
+        <!-- Chat Modal -->
+        <div id="chatbot-modal" class="chatbot-modal">
+            <div class="chatbot-header">
+                <h3>AI Assistant - Hỗ trợ tìm CLB & Hoạt động</h3>
+                <button id="chatbot-close" class="chatbot-close" title="Đóng">
+                    <i data-lucide="x" style="width: 24px; height: 24px;"></i>
+                </button>
+            </div>
+
+            <div class="chatbot-messages" id="chatbot-messages">
+                <!-- Welcome message and quick actions will be inserted here by JavaScript -->
+                <div id="chatbot-typing" class="chatbot-typing">
+                    <span class="chatbot-typing-text">AI đang suy nghĩ</span>
+                    <div class="chatbot-typing-dots">
+                        <div class="chatbot-typing-dot"></div>
+                        <div class="chatbot-typing-dot"></div>
+                        <div class="chatbot-typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chatbot-input-area">
+                <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Nhập tin nhắn của bạn..." />
+                <button id="chatbot-send-button" class="chatbot-send-button" title="Gửi">
+                    <i data-lucide="send" style="width: 20px; height: 20px;"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
+    <script src="~/js/chatbot.js" asp-append-version="true"></script>
 
     <script>
-
+        // Initialize Lucide Icons
         lucide.createIcons();
-
-            // Re-run when DOM changes (e.g., partial updates)
-            try {
-                const observer = new MutationObserver(() => run());
-                observer.observe(document.body, { childList: true, subtree: true });
-            } catch {}
-        })();
 
         // Check authentication status and update UI
         document.addEventListener('DOMContentLoaded', async function() {
@@ -227,12 +278,37 @@
             
             // Check for stored notifications from redirects
             checkStoredNotifications();
+            
+            // Show chatbot for authenticated Club Managers
+            if (typeof isAuthenticated === 'function' && await isAuthenticated()) {
+                const chatbotContainer = document.getElementById('chatbotContainer');
+                if (chatbotContainer) {
+                    chatbotContainer.style.display = 'block';
+                }
+                // Initialize chatbot
+                if (typeof initChatbot === 'function') {
+                    initChatbot();
+                }
+            }
         });
 
         async function updateClubManagerAuthUI() {
             const user = await getUser();
+            console.log('[ClubManager Auth Debug] User data:', user);
+            console.log('[ClubManager Auth Debug] Avatar URL:', user?.avatar);
+            
             if (user && user.avatar) {
-                document.getElementById('clubManagerUserAvatar').src = user.avatar;
+                const avatarUrl = user.avatar || '/images/default-avatar.png';
+                console.log('[ClubManager Auth Debug] Setting avatar to:', avatarUrl);
+                const avatarImg = document.getElementById('clubManagerUserAvatar');
+                avatarImg.src = avatarUrl;
+                avatarImg.onerror = function() {
+                    console.error('[ClubManager Auth Debug] Failed to load avatar from:', avatarUrl);
+                    this.src = '/images/default-avatar.png';
+                };
+                avatarImg.onload = function() {
+                    console.log('[ClubManager Auth Debug] Avatar loaded successfully!');
+                };
             }
             if (user && user.name) {
                 document.getElementById('clubManagerUserName').textContent = user.name;
@@ -283,6 +359,50 @@
         if (localStorage.getItem('sidebarCollapsed') === 'true') {
             document.body.classList.add('sidebar-collapsed');
         }
+
+        // FIX: Di chuyển modal ra body để tránh bị ảnh hưởng bởi sidebar layout
+        // Khi modal nằm trong .admin-main (có margin-left), nó sẽ bị lệch
+        (function() {
+            function moveModalToBody(modal) {
+                if (modal && modal.classList.contains('modal') && modal.parentElement !== document.body) {
+                    console.log('Moving modal to body:', modal.id || modal.className);
+                    document.body.appendChild(modal);
+                }
+            }
+
+            function moveAllModalsToBody() {
+                document.querySelectorAll('.modal').forEach(moveModalToBody);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', moveAllModalsToBody);
+            } else {
+                moveAllModalsToBody();
+            }
+
+            setTimeout(moveAllModalsToBody, 500);
+
+            document.addEventListener('show.bs.modal', function(event) {
+                moveModalToBody(event.target);
+            });
+
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1) {
+                            if (node.classList && node.classList.contains('modal')) {
+                                moveModalToBody(node);
+                            }
+                            if (node.querySelectorAll) {
+                                node.querySelectorAll('.modal').forEach(moveModalToBody);
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

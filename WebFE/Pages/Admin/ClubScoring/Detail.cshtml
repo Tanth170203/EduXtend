@@ -28,10 +28,6 @@
             <a href="/Admin/ClubScoring?semesterId=@Model.SemesterId&month=@Model.Month" class="btn btn-outline-secondary">
                 <i data-lucide="arrow-left"></i> Back
             </a>
-            <a class="btn btn-warning ms-2" href="/Admin/ClubScoring/ManualAdd?clubId=@Model.ClubId&semesterId=@Model.SemesterId&month=@Model.Month">
-                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                ➕ Add Score
-            </a>
         </div>
     </div>
 </div>
@@ -112,11 +108,9 @@
                 <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th><i data-lucide="tag" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Type</th>
                             <th><i data-lucide="list" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Criterion</th>
                             <th><i data-lucide="star" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Score</th>
                             <th><i data-lucide="message-square" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Note</th>
-                            <th><i data-lucide="user" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Evaluator</th>
                             <th><i data-lucide="calendar" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>Date</th>
                         </tr>
                     </thead>
@@ -124,29 +118,9 @@
                         @foreach (var d in Model.Record.Details)
                         {
                             <tr>
-                                <td>
-                                    @if (d.ScoreType == "Auto")
-                                    {
-                                        <span class="badge bg-success">Auto</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-warning">Manual</span>
-                                    }
-                                </td>
                                 <td>@d.CriterionTitle</td>
                                 <td><strong class="text-primary">@d.Score</strong></td>
                                 <td>@d.Note</td>
-                                <td>
-                                    @if (!string.IsNullOrEmpty(d.CreatedByName))
-                                    {
-                                        @d.CreatedByName
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">System</span>
-                                    }
-                                </td>
                                 <td>@d.AwardedAt.ToString("dd/MM/yyyy HH:mm")</td>
                             </tr>
                         }

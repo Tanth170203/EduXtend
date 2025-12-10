@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Repositories.Activities;
+using Repositories.ActivitySchedules;
+using Repositories.ActivityScheduleAssignments;
 using Repositories.Clubs;
 using Repositories.ClubMembers;
 using Repositories.PaymentTransactions;
@@ -19,6 +21,7 @@ using Repositories.JoinRequests;
 using Repositories.Interviews;
 using Repositories.FundCollectionRequests;
 using Repositories.FundCollectionPayments;
+using Repositories.Notifications;
 using Services.Activities;
 using Services.Clubs;
 using Services.GGLogin;
@@ -36,10 +39,20 @@ using Repositories.ClubMovementRecords;
 using Services.ClubMovementRecords;
 using Repositories.Proposals;
 using Services.Proposals;
+using Repositories.ActivityMemberEvaluations;
+using Services.ActivityMemberEvaluations;
+using Repositories.ActivityEvaluations;
+using Repositories.CommunicationPlans;
+using Services.CommunicationPlans;
+using Repositories.MonthlyReports;
+using Services.MonthlyReports;
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
 using Microsoft.OpenApi.Models;
+using VNPAY.Extensions;
+using AspNetCoreRateLimit;
+using Utils;
 
 namespace WebAPI
 {
@@ -47,15 +60,50 @@ namespace WebAPI
     {
         public static void Main(string[] args)
         {
+            // Set timezone to Vietnam (UTC+7)
+            TimeZoneInfo vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+            
             var builder = WebApplication.CreateBuilder(args);
+            //deploy ( chạy nhớ comment lần nây )
+            //builder.WebHost.UseUrls($"http://*:80");
 
             // DbContext
             builder.Services.AddDbContext<EduXtendContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            // Memory Cache
+            builder.Services.AddMemoryCache();
+
+            // Rate Limiting Configuration
+            builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+            builder.Services.Configure<IpRateLimitPolicies>(builder.Configuration.GetSection("IpRateLimitPolicies"));
+            builder.Services.AddInMemoryRateLimiting();
+            builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+
             // Options
             builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
             builder.Services.Configure<GoogleAuthOptions>(builder.Configuration.GetSection("GoogleAuth"));
+            builder.Services.Configure<Services.Chatbot.GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
+            builder.Services.Configure<AppUrlsConfig>(builder.Configuration.GetSection("AppUrls"));
+
+            // HttpClient for Gemini AI
+            builder.Services.AddHttpClient("GeminiAI", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+
+            // VNPAY Configuration
+            var vnpayConfig = builder.Configuration.GetSection("VNPAY");
+            builder.Services.AddVnpayClient(config =>
+            {
+                config.TmnCode = vnpayConfig["TmnCode"]!;
+                config.HashSecret = vnpayConfig["HashSecret"]!;
+                config.CallbackUrl = vnpayConfig["CallbackUrl"]!;
+                config.BaseUrl = vnpayConfig["BaseUrl"]!;
+                config.Version = vnpayConfig["Version"]!;
+                config.OrderType = vnpayConfig["OrderType"]!;
+            });
 
             // Repositories
             builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -73,6 +121,8 @@ namespace WebAPI
             builder.Services.AddScoped<IClubRepository, ClubRepository>();
             builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
             builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+            builder.Services.AddScoped<IActivityScheduleRepository, ActivityScheduleRepository>();
+            builder.Services.AddScoped<IActivityScheduleAssignmentRepository, ActivityScheduleAssignmentRepository>();
             builder.Services.AddScoped<IJoinRequestRepository, JoinRequestRepository>();
             builder.Services.AddScoped<IInterviewRepository, InterviewRepository>();
             builder.Services.AddScoped<IClubMovementRecordRepository, ClubMovementRecordRepository>();
@@ -82,6 +132,14 @@ namespace WebAPI
             builder.Services.AddScoped<IFundCollectionRequestRepository, FundCollectionRequestRepository>();
             builder.Services.AddScoped<IFundCollectionPaymentRepository, FundCollectionPaymentRepository>();
             builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+            builder.Services.AddScoped<IActivityMemberEvaluationRepository, ActivityMemberEvaluationRepository>();
+            builder.Services.AddScoped<Repositories.ActivityEvaluations.IActivityEvaluationRepository, Repositories.ActivityEvaluations.ActivityEvaluationRepository>();
+            builder.Services.AddScoped<ICommunicationPlanRepository, CommunicationPlanRepository>();
+            builder.Services.AddScoped<IMonthlyReportRepository, MonthlyReportRepository>();
+
+            // SignalR
+            builder.Services.AddSignalR();
 
             // Services
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -99,20 +157,40 @@ namespace WebAPI
             builder.Services.AddScoped<Services.Users.IUserManagementService, Services.Users.UserManagementService>();
             builder.Services.AddScoped<IClubService, ClubService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
+            builder.Services.AddScoped<IActivityExtractorService, ActivityExtractorService>();
             builder.Services.AddScoped<IJoinRequestService, JoinRequestService>();
             builder.Services.AddScoped<IInterviewService, InterviewService>();
             builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
             builder.Services.AddScoped<IClubScoringService, ClubScoringService>();
+            builder.Services.AddScoped<IClubMovementRecordService, ClubMovementRecordService>();
             builder.Services.AddScoped<IProposalService, ProposalService>();
             builder.Services.AddScoped<IFundCollectionService, FundCollectionService>();
             builder.Services.AddScoped<IFinancialDashboardService, FinancialDashboardService>();
             builder.Services.AddScoped<Repositories.News.INewsRepository, Repositories.News.NewsRepository>();
             builder.Services.AddScoped<Services.News.INewsService, Services.News.NewsService>();
+            builder.Services.AddScoped<Repositories.ClubNews.IClubNewsRepository, Repositories.ClubNews.ClubNewsRepository>();
+            builder.Services.AddScoped<Services.ClubNews.IClubNewsService, Services.ClubNews.ClubNewsService>();
+            builder.Services.AddScoped<Services.Notifications.INotificationService, Services.Notifications.NotificationService>();
+            builder.Services.AddScoped<IActivityMemberEvaluationService, ActivityMemberEvaluationService>();
+            builder.Services.AddScoped<ICommunicationPlanService, CommunicationPlanService>();
+            builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportService, Services.MonthlyReports.MonthlyReportService>();
+            builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportApprovalService, Services.MonthlyReports.MonthlyReportApprovalService>();
+            builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportDataAggregator, Services.MonthlyReports.MonthlyReportDataAggregator>();
+            builder.Services.AddScoped<Services.MonthlyReports.IMonthlyReportPdfService, Services.MonthlyReports.MonthlyReportPdfService>();
+            builder.Services.AddScoped<Services.Emails.IEmailService, Services.Emails.EmailService>();
+            builder.Services.AddScoped<Services.Chatbot.IGeminiAIService, Services.Chatbot.GeminiAIService>();
+            builder.Services.AddScoped<Services.Chatbot.IChatbotService, Services.Chatbot.ChatbotService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
             builder.Services.AddHostedService<TokenCleanupService>();
             builder.Services.AddHostedService<ComprehensiveAutoScoringService>();
+            builder.Services.AddHostedService<WebAPI.BackgroundServices.NotificationBroadcastService>();
+            builder.Services.AddHostedService<WebAPI.BackgroundServices.ActivityAutoCompleteService>();
+            builder.Services.AddHostedService<WebAPI.BackgroundServices.EvaluationReminderService>();
+            builder.Services.AddHostedService<WebAPI.BackgroundServices.MonthlyReportGenerationService>();
+            builder.Services.AddHostedService<Services.FundCollections.PaymentReminderBackgroundService>();
+            builder.Services.AddHostedService<Services.FundCollections.FundCollectionAutoCompleteService>();
             // DEPRECATED: MovementScoreAutomationService - functionality merged into ComprehensiveAutoScoringService
             // builder.Services.AddHostedService<MovementScoreAutomationService>();
 
@@ -197,6 +275,10 @@ namespace WebAPI
             // Enable serving static files (for uploaded CVs, images, etc.)
             app.UseStaticFiles();
 
+            // Rate Limiting - Must be before Authentication
+            app.UseIpRateLimiting();
+            app.UseCustomRateLimitResponse();
+
             // Custom middleware (order matters!)
             app.UseAuthentication();     // Validate JWT and set User principal
             
@@ -205,6 +287,9 @@ namespace WebAPI
             app.UseAuthorization();      // Check policies and roles
 
             app.MapControllers();
+            
+            // Map SignalR Hub
+            app.MapHub<WebAPI.Hubs.NotificationHub>("/notificationHub");
 
             app.Run();
         }

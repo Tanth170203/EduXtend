@@ -82,7 +82,7 @@
                         <span>Finance</span>
                     </a>
                     <a class="sidebar-link @(section == "score" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=score">
-                        <i data-lucide="trophy" style="width: 20px; height: 20px;"></i>
+                        <i data-lucide="bar-chart-2" style="width: 20px; height: 20px;"></i>
                         <span>Club Score</span>
                     </a>
                     <a class="sidebar-link @(section == "proposals" ? "active" : "")" href="/Clubs/MemberDashboard/@Model.Id?section=proposals">
@@ -127,6 +127,7 @@
                                 case "awards": <text>Awards</text>; break;
                                 case "finance": <text>Finance</text>; break;
                                 case "score": <text>Club Score</text>; break;
+                                case "score-detail": <text>Score Details</text>; break;
                                 case "proposals": <text>Proposals</text>; break;
                             }
                         </span>
@@ -769,185 +770,84 @@
 
                         <!-- Payment History Tab -->
                         <div class="tab-pane fade" id="history" role="tabpanel">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-header bg-white border-0">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <div>
-                                            <h5 class="mb-0">Payment History</h5>
-                                            <p class="text-muted small mb-0">All your completed transactions</p>
-                                        </div>
-                                        <button class="btn btn-outline-primary">
-                                            <i data-lucide="download" style="width: 16px; height: 16px;"></i>
-                                            Export Report
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- Search and Filters -->
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-white">
-                                                    <i data-lucide="search" style="width: 16px; height: 16px;"></i>
-                                                </span>
-                                                <input type="text" class="form-control" placeholder="Search by purpose or transaction ID...">
+                            <!-- Header Section -->
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h4 class="mb-1 fw-bold">Payment History</h4>
+                                    <p class="text-muted mb-0">All your completed transactions</p>
+                                </div>
+                                <button class="btn btn-primary" onclick="exportPaymentHistory()">
+                                    <i data-lucide="download" style="width: 18px; height: 18px;"></i>
+                                    Export Report
+                                </button>
+                            </div>
+
+                            <!-- Search and Filter Card -->
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-body">
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-7">
+                                            <label class="form-label fw-semibold mb-2">
+                                                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                                                Search Payments
+                                            </label>
+                                            <div class="input-group input-group-lg">
+                                                <input type="text" id="historySearchInput" class="form-control" placeholder="Search by fund name or transaction ID...">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()" title="Clear search">
+                                                    <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+                                                </button>
                                             </div>
                                         </div>
                                         <div class="col-md-3">
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-white">
-                                                    <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
-                                                </span>
-                                                <select class="form-select">
-                                                    <option selected>All Status</option>
-                                                    <option>Completed</option>
-                                                    <option>Pending</option>
-                                                    <option>Failed</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <select class="form-select">
-                                                <option selected>2024</option>
-                                                <option>2023</option>
-                                                <option>2022</option>
+                                            <label class="form-label fw-semibold mb-2">
+                                                <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                                                Filter by Status
+                                            </label>
+                                            <select id="historyStatusFilter" class="form-select form-select-lg">
+                                                <option value="">All Status</option>
+                                                <option value="paid">Completed</option>
+                                                <option value="pending">Pending</option>
+                                                <option value="failed">Failed</option>
                                             </select>
                                         </div>
+                                        <div class="col-md-2">
+                                            <button class="btn btn-primary btn-lg w-100" onclick="filterPaymentHistory()">
+                                                <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                                                Search
+                                            </button>
+                                        </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Results Table -->
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light border-0 py-3">
+                                    <h6 class="mb-0 fw-semibold">
+                                        <i data-lucide="list" style="width: 16px; height: 16px;"></i>
+                                        Transaction Results
+                                    </h6>
                                 </div>
                                 
                                 <div class="card-body p-0">
                                     <div class="table-responsive">
-                                        <table class="table table-hover mb-0">
+                                        <table class="table table-hover align-middle mb-0">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th>Date</th>
-                                                    <th>Purpose</th>
-                                                    <th>Transaction ID</th>
-                                                    <th>Method</th>
-                                                    <th class="text-end">Amount</th>
-                                                    <th>Status</th>
-                                                    <th class="text-center">Actions</th>
+                                                    <th class="px-4 py-3 fw-semibold">Date</th>
+                                                    <th class="py-3 fw-semibold">Purpose</th>
+                                                    <th class="py-3 fw-semibold">Transaction ID</th>
+                                                    <th class="py-3 fw-semibold">Method</th>
+                                                    <th class="py-3 text-end fw-semibold">Amount</th>
+                                                    <th class="py-3 fw-semibold">Status</th>
+                                                    <th class="py-3 text-center fw-semibold">Actions</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
+                                            <tbody id="paymentHistoryTableBody">
                                                 <tr>
-                                                    <td>12/15/2023</td>
-                                                    <td>
-                                                        <div>
-                                                            <strong>Q4 2023 Membership Fee</strong>
-                                                            <br>
-                                                            <small class="text-muted">Tech Innovation Club</small>
-                                                        </div>
-                                                    </td>
-                                                    <td><code>TXN2023120001</code></td>
-                                                    <td>
-                                                        <i data-lucide="building" style="width: 14px; height: 14px;"></i>
-                                                        Bank Transfer
-                                                    </td>
-                                                    <td class="text-end fw-bold">50.000 ₫</td>
-                                                    <td>
-                                                        <span class="badge bg-success">
-                                                            <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
-                                                            Completed
-                                                        </span>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <button class="btn btn-sm btn-outline-primary me-1">
-                                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-secondary">
-                                                            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>11/20/2023</td>
-                                                    <td>
-                                                        <div>
-                                                            <strong>Hackathon Registration Fee</strong>
-                                                            <br>
-                                                            <small class="text-muted">Tech Innovation Club</small>
-                                                        </div>
-                                                    </td>
-                                                    <td><code>TXN2023110002</code></td>
-                                                    <td>
-                                                        <i data-lucide="smartphone" style="width: 14px; height: 14px;"></i>
-                                                        E-Wallet
-                                                    </td>
-                                                    <td class="text-end fw-bold">100.000 ₫</td>
-                                                    <td>
-                                                        <span class="badge bg-success">
-                                                            <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
-                                                            Completed
-                                                        </span>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <button class="btn btn-sm btn-outline-primary me-1">
-                                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-secondary">
-                                                            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>9/10/2023</td>
-                                                    <td>
-                                                        <div>
-                                                            <strong>Q3 2023 Membership Fee</strong>
-                                                            <br>
-                                                            <small class="text-muted">Tech Innovation Club</small>
-                                                        </div>
-                                                    </td>
-                                                    <td><code>CASH2023090001</code></td>
-                                                    <td>
-                                                        <i data-lucide="dollar-sign" style="width: 14px; height: 14px;"></i>
-                                                        Cash
-                                                    </td>
-                                                    <td class="text-end fw-bold">50.000 ₫</td>
-                                                    <td>
-                                                        <span class="badge bg-success">
-                                                            <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
-                                                            Completed
-                                                        </span>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <button class="btn btn-sm btn-outline-primary me-1">
-                                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-secondary">
-                                                            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>7/5/2023</td>
-                                                    <td>
-                                                        <div>
-                                                            <strong>Summer Camp Contribution</strong>
-                                                            <br>
-                                                            <small class="text-muted">Tech Innovation Club</small>
-                                                        </div>
-                                                    </td>
-                                                    <td><code>TXN2023070003</code></td>
-                                                    <td>
-                                                        <i data-lucide="building" style="width: 14px; height: 14px;"></i>
-                                                        Bank Transfer
-                                                    </td>
-                                                    <td class="text-end fw-bold">200.000 ₫</td>
-                                                    <td>
-                                                        <span class="badge bg-success">
-                                                            <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i>
-                                                            Completed
-                                                        </span>
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <button class="btn btn-sm btn-outline-primary me-1">
-                                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-secondary">
-                                                            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
-                                                        </button>
+                                                    <td colspan="7" class="text-center py-5">
+                                                        <i data-lucide="loader" class="spin" style="width: 40px; height: 40px; color: #0d6efd;"></i>
+                                                        <p class="text-muted mt-3 mb-0">Loading payment history...</p>
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -960,49 +860,413 @@
                     break;
 
                 case "score":
-                    <!-- Score -->
-                    <div class="row g-4">
-                        <div class="col-md-3">
-                            <div class="card bg-primary text-white border-0 shadow-sm">
-                                <div class="card-body text-center">
-                                    <i data-lucide="users" style="width: 32px; height: 32px;"></i>
-                                    <h3 class="mt-2 mb-0">@Model.Club?.MemberCount</h3>
-                                    <small>Members</small>
+                    <!-- Club Movement Score Section -->
+                    @if (Model.ScoreSummary != null)
+                    {
+                        <!-- Summary Cards -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-4 d-flex justify-content-between">
+                                        <div>
+                                            <p class="text-muted mb-2 fw-medium">Average Score</p>
+                                            <h2 class="mb-0 fw-bold">@Model.ScoreSummary.AverageScore.ToString("F1")</h2>
+                                        </div>
+                                        <div class="rounded-3 p-3" style="background:#e3f2fd">
+                                            <i data-lucide="trending-up" style="width: 24px; height: 24px; color: #1976d2;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-4 d-flex justify-content-between">
+                                        <div>
+                                            <p class="text-muted mb-2 fw-medium">Highest Score</p>
+                                            <h2 class="mb-0 fw-bold">@Model.ScoreSummary.HighestScore.ToString("F1")</h2>
+                                        </div>
+                                        <div class="rounded-3 p-3" style="background:#e8f5e9">
+                                            <i data-lucide="arrow-up-circle" style="width: 24px; height: 24px; color: #388e3c;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-4 d-flex justify-content-between">
+                                        <div>
+                                            <p class="text-muted mb-2 fw-medium">Lowest Score</p>
+                                            <h2 class="mb-0 fw-bold">@Model.ScoreSummary.LowestScore.ToString("F1")</h2>
+                                        </div>
+                                        <div class="rounded-3 p-3" style="background:#fff3e0">
+                                            <i data-lucide="arrow-down-circle" style="width: 24px; height: 24px; color: #f57c00;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-4 d-flex justify-content-between">
+                                        <div>
+                                            <p class="text-muted mb-2 fw-medium">Total Records</p>
+                                            <h2 class="mb-0 fw-bold">@Model.ScoreSummary.TotalRecords</h2>
+                                        </div>
+                                        <div class="rounded-3 p-3" style="background:#f3e5f5">
+                                            <i data-lucide="calendar" style="width: 24px; height: 24px; color: #7b1fa2;"></i>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-success text-white border-0 shadow-sm">
-                                <div class="card-body text-center">
-                                    <i data-lucide="calendar" style="width: 32px; height: 32px;"></i>
-                                    <h3 class="mt-2 mb-0">@Model.Club?.ActivityCount</h3>
-                                    <small>Activities</small>
+
+                        <!-- Semester Info -->
+                        <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+                            <h5 class="text-muted mb-0">
+                                <i data-lucide="bar-chart" style="width: 20px; height: 20px;"></i>
+                                <strong>@Model.SemesterSummaries.Count</strong> recorded semesters
+                            </h5>
+                            @if (Model.CurrentSemesterId.HasValue)
+                            {
+                                var currentSemester = Model.SemesterSummaries.FirstOrDefault(s => s.SemesterId == Model.CurrentSemesterId);
+                                if (currentSemester != null)
+                                {
+                                    <div class="badge bg-warning text-dark px-3 py-2">
+                                        <i data-lucide="star" style="width: 14px; height: 14px;"></i>
+                                        Current Semester: <strong>@currentSemester.SemesterName</strong>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <!-- Semester Table -->
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-striped align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Semester</th>
+                                                <th>Total Score</th>
+                                                <th>Months</th>
+                                                <th>Criteria Achieved</th>
+                                                <th>Evaluation</th>
+                                                <th>Last Updated</th>
+                                                <th class="text-end" style="width:160px;">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        @if (!Model.SemesterSummaries.Any())
+                                        {
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted py-5">
+                                                    <i data-lucide="inbox" style="width: 48px; height: 48px; opacity: 0.3;"></i>
+                                                    <div class="mt-3">No activity score data available</div>
+                                                </td>
+                                            </tr>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var semester in Model.SemesterSummaries)
+                                            {
+                                                var percent = (semester.TotalScore / 100.0) * 100.0;
+                                                var cls = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
+                                                var eval = percent >= 80 ? "Excellent" : percent >= 60 ? "Good" : "Needs Improvement";
+                                                var isCurrent = Model.CurrentSemesterId.HasValue && semester.SemesterId == Model.CurrentSemesterId.Value;
+                                                <tr class="@(isCurrent ? "table-warning" : string.Empty)">
+                                                    <td class="fw-semibold">@semester.SemesterName</td>
+                                                    <td>
+                                                        <div class="d-flex flex-column">
+                                                            <span class="fw-bold text-@cls">@semester.TotalScore.ToString("F1")</span>
+                                                            <small class="text-muted">/ 100</small>
+                                                        </div>
+                                                    </td>
+                                                    <td><span class="badge bg-secondary">@semester.MonthCount months</span></td>
+                                                    <td><span class="badge bg-info">@semester.TotalCriteria criteria</span></td>
+                                                    <td><span class="badge bg-@cls">@eval</span></td>
+                                                    <td>@(semester.LastUpdated?.ToString("dd/MM/yyyy") ?? semester.CreatedAt.ToString("dd/MM/yyyy"))</td>
+                                                    <td class="text-end">
+                                                        <a href="/Clubs/MemberDashboard/@Model.Id?section=score-detail&semesterId=@semester.SemesterId" class="btn btn-sm btn-primary rounded-pill @(isCurrent ? "btn-warning text-dark border-0" : string.Empty)">
+                                                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i> View Details
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-warning text-dark border-0 shadow-sm">
-                                <div class="card-body text-center">
-                                    <i data-lucide="folder" style="width: 32px; height: 32px;"></i>
-                                    <h3 class="mt-2 mb-0">@Model.Club?.DepartmentCount</h3>
-                                    <small>Departments</small>
+
+                        <!-- Progress by Semester -->
+                        <h6 class="mb-3 text-muted">Progress by Semester</h6>
+                        <div class="row">
+                            @foreach (var semester in Model.SemesterSummaries.OrderBy(s => s.SemesterId))
+                            {
+                                var percent = (semester.TotalScore / 100.0) * 100.0;
+                                var progressClass = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
+                                var isCurrent = Model.CurrentSemesterId.HasValue && semester.SemesterId == Model.CurrentSemesterId.Value;
+                                <div class="col-md-4 mb-3">
+                                    <div class="card border-0 shadow-sm h-100 @(isCurrent ? "border border-warning" : string.Empty)">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between mb-2 align-items-center">
+                                                <h6 class="mb-0">@semester.SemesterName</h6>
+                                                @if (isCurrent)
+                                                {
+                                                    <span class="badge bg-warning text-dark">Current</span>
+                                                }
+                                                <span class="small text-muted">@percent.ToString("F1")%</span>
+                                            </div>
+                                            <div class="progress" style="height: 16px;">
+                                                <div class="progress-bar bg-@progressClass" style="width:@percent%" role="progressbar"></div>
+                                            </div>
+                                            <small class="text-muted d-block mt-2">Total Score: @semester.TotalScore.ToString("F1") / 100</small>
+                                            <small class="text-muted d-block">@semester.MonthCount months recorded</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info shadow-sm">
+                            <div class="d-flex align-items-center">
+                                <i data-lucide="info" style="width: 32px; height: 32px;" class="me-3"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-1">No activity scores yet</h5>
+                                    <p class="mb-0">Club activity scores will appear here once activities are completed and scored.</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="card bg-info text-white border-0 shadow-sm">
-                                <div class="card-body text-center">
-                                    <i data-lucide="award" style="width: 32px; height: 32px;"></i>
-                                    <h3 class="mt-2 mb-0">@Model.Club?.AwardCount</h3>
-                                    <small>Awards</small>
+                    }
+                    break;
+
+                case "score-detail":
+                    <!-- Club Score Detail Section -->
+                    @if (Model.ScoreDetailRecords.Any())
+                    {
+                        <!-- Header with Back Button -->
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div>
+                                <h4 class="mb-1">@Model.DetailSemesterName - Detailed Scores</h4>
+                                <p class="text-muted mb-0">Club: @Model.Club?.Name</p>
+                            </div>
+                            <a href="/Clubs/MemberDashboard/@Model.Id?section=score" class="btn btn-outline-secondary">
+                                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back to Overview
+                            </a>
+                        </div>
+
+                        <!-- Summary Cards -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-3 text-center">
+                                        <div class="rounded-3 p-2 mb-2" style="background:#e3f2fd; display: inline-block;">
+                                            <i data-lucide="trophy" style="width: 20px; height: 20px; color: #1976d2;"></i>
+                                        </div>
+                                        <h5 class="mb-1 fw-bold text-primary">@Model.DetailTotalScore.ToString("F1")</h5>
+                                        <small class="text-muted">Total Score</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-3 text-center">
+                                        <div class="rounded-3 p-2 mb-2" style="background:#e8f5e9; display: inline-block;">
+                                            <i data-lucide="calendar" style="width: 20px; height: 20px; color: #388e3c;"></i>
+                                        </div>
+                                        <h5 class="mb-1 fw-bold text-success">@Model.ScoreDetailRecords.Count</h5>
+                                        <small class="text-muted">Months Recorded</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-3 text-center">
+                                        <div class="rounded-3 p-2 mb-2" style="background:#fff3e0; display: inline-block;">
+                                            <i data-lucide="clipboard-list" style="width: 20px; height: 20px; color: #f57c00;"></i>
+                                        </div>
+                                        <h5 class="mb-1 fw-bold text-warning">@Model.DetailTotalCriteria</h5>
+                                        <small class="text-muted">Total Criteria</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body p-3 text-center">
+                                        <div class="rounded-3 p-2 mb-2" style="background:#f3e5f5; display: inline-block;">
+                                            <i data-lucide="user" style="width: 20px; height: 20px; color: #7b1fa2;"></i>
+                                        </div>
+                                        <h6 class="mb-1 fw-bold">@Model.DetailPresidentName</h6>
+                                        <small class="text-muted">@Model.DetailPresidentCode</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="alert alert-info mt-4">
-                        <i data-lucide="info" style="width: 16px; height: 16px;"></i>
-                        <strong>Note:</strong> Detailed scoring system and rankings coming soon!
-                    </div>
+
+                        <!-- Monthly Records Table -->
+                        <div class="card shadow-sm border-0 mb-4">
+                            <div class="card-header bg-light border-0 py-3">
+                                <h6 class="mb-0 fw-bold">
+                                    <i data-lucide="calendar-days" style="width: 18px; height: 18px;"></i>
+                                    Monthly Score Records
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-striped align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 60px;">#</th>
+                                                <th>Month</th>
+                                                <th>Total Score</th>
+                                                <th>Criteria Count</th>
+                                                <th>Evaluation</th>
+                                                <th>Last Updated</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        @{
+                                            int recordIndex = 1;
+                                        }
+                                        @foreach (var record in Model.ScoreDetailRecords)
+                                        {
+                                            var percent = (record.TotalScore / 100.0) * 100.0;
+                                            var cls = percent >= 80 ? "success" : percent >= 60 ? "warning" : "danger";
+                                            var eval = percent >= 80 ? "Excellent" : percent >= 60 ? "Good" : "Needs Improvement";
+                                            <tr>
+                                                <td class="text-muted">@recordIndex</td>
+                                                <td class="fw-semibold">Month @record.Month</td>
+                                                <td>
+                                                    <span class="fw-bold text-@cls">@record.TotalScore.ToString("F1")</span>
+                                                    <small class="text-muted">/ 100</small>
+                                                </td>
+                                                <td><span class="badge bg-info">@record.Details.Count criteria</span></td>
+                                                <td><span class="badge bg-@cls">@eval</span></td>
+                                                <td>@(record.LastUpdated?.ToString("dd/MM/yyyy HH:mm") ?? record.CreatedAt.ToString("dd/MM/yyyy HH:mm"))</td>
+                                            </tr>
+                                            recordIndex++;
+                                        }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detailed Breakdown by Category -->
+                        @foreach (var record in Model.ScoreDetailRecords)
+                        {
+                            <div class="card shadow-sm border-0 mb-4">
+                                <div class="card-header bg-light border-0 py-3">
+                                    <h6 class="mb-0 fw-bold">
+                                        <i data-lucide="list" style="width: 18px; height: 18px;"></i>
+                                        Month @record.Month - Detailed Breakdown
+                                    </h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-striped align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 40px;">#</th>
+                                                    <th>Category</th>
+                                                    <th>Criteria</th>
+                                                    <th class="text-center">Max Score</th>
+                                                    <th class="text-center">Score</th>
+                                                    <th>Date Awarded</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            @if (record.Details != null && record.Details.Any())
+                                            {
+                                                int detailIndex = 1;
+                                                @foreach (var detail in record.Details.OrderBy(d => d.GroupName).ThenBy(d => d.CriterionTitle))
+                                                {
+                                                    <tr>
+                                                        <td class="text-muted">@detailIndex</td>
+                                                        <td>
+                                                            <span class="badge bg-secondary">@detail.GroupName</span>
+                                                        </td>
+                                                        <td class="fw-medium">@detail.CriterionTitle</td>
+                                                        <td class="text-center text-muted">@detail.CriterionMaxScore</td>
+                                                        <td class="text-center">
+                                                            <span class="fw-bold">@detail.Score.ToString("F1")</span>
+                                                        </td>
+                                                        <td>@detail.AwardedAt.ToString("dd/MM/yyyy")</td>
+                                                    </tr>
+                                                    detailIndex++;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <tr>
+                                                    <td colspan="6" class="text-center text-muted py-4">
+                                                        <i data-lucide="inbox" style="width: 32px; height: 32px; opacity: 0.3;"></i>
+                                                        <div class="mt-2">No detailed score data available</div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Performance Summary -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body p-3">
+                                        <h6 class="mb-2">Semester Information</h6>
+                                        <p class="mb-1"><strong>Semester:</strong> @Model.DetailSemesterName</p>
+                                        <p class="mb-1"><strong>President:</strong> @Model.DetailPresidentName (@Model.DetailPresidentCode)</p>
+                                        <p class="mb-0"><strong>Status:</strong> 
+                                            @if (Model.IsDetailCurrentSemester)
+                                            {
+                                                <span class="badge bg-warning text-dark">Current Semester</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Past Semester</span>
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body p-3">
+                                        <h6 class="mb-2">Performance Summary</h6>
+                                        @{
+                                            var totalPercentage = Model.DetailTotalScore;
+                                            var performanceLevel = totalPercentage >= 80 ? "Excellent" : totalPercentage >= 60 ? "Good" : "Needs Improvement";
+                                            var performanceClass = totalPercentage >= 80 ? "success" : totalPercentage >= 60 ? "warning" : "danger";
+                                        }
+                                        <p class="mb-1"><strong>Overall Rating:</strong> <span class="badge bg-@performanceClass">@performanceLevel</span></p>
+                                        <p class="mb-1"><strong>Total Criteria:</strong> @Model.DetailTotalCriteria</p>
+                                        <p class="mb-0"><strong>Average per Month:</strong> @((Model.ScoreDetailRecords.Count > 0 ? Model.DetailTotalScore / Model.ScoreDetailRecords.Count : 0).ToString("F1"))</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning shadow-sm">
+                            <div class="d-flex align-items-center">
+                                <i data-lucide="alert-triangle" style="width: 32px; height: 32px;" class="me-3"></i>
+                                <div>
+                                    <h5 class="alert-heading mb-1">Score details not found</h5>
+                                    <p class="mb-0">The requested semester score details could not be loaded.</p>
+                                    <a href="/Clubs/MemberDashboard/@Model.Id?section=score" class="btn btn-sm btn-outline-warning mt-2">
+                                        <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Score Overview
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
                     break;
 
                 case "proposals":
@@ -1138,10 +1402,12 @@
                                 <option value="">Select method...</option>
                                 <option value="Cash">Cash</option>
                                 <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="VNPAY">VNPAY</option>
                             </select>
                             <div class="form-text">
                                 <strong>Cash:</strong> Submit request, manager will confirm after you pay<br>
-                                <strong>Bank Transfer:</strong> Upload receipt for verification
+                                <strong>Bank Transfer:</strong> Upload receipt for verification<br>
+                                <strong>VNPAY:</strong> Pay online instantly via VNPAY gateway
                             </div>
                         </div>
 
@@ -1163,6 +1429,88 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Details Modal -->
+    <div class="modal fade" id="paymentDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Payment Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small">Fund Collection</label>
+                            <p class="fw-bold mb-0" id="detailTitle"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Amount</label>
+                            <p class="fw-bold text-primary mb-0" id="detailAmount"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Payment Date</label>
+                            <p class="mb-0" id="detailPaidAt"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Payment Method</label>
+                            <p class="mb-0" id="detailPaymentMethod"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Status</label>
+                            <p class="mb-0" id="detailStatus"></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Transaction ID</label>
+                            <p class="mb-0"><code id="detailTransactionId"></code></p>
+                        </div>
+                        <div class="col-12" id="vnpayDetailsSection" style="display: none;">
+                            <hr>
+                            <h6 class="fw-bold mb-3">
+                                <i data-lucide="smartphone" style="width: 18px; height: 18px;"></i>
+                                VNPAY Transaction Details
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="text-muted small">VNPAY Transaction ID</label>
+                                    <p class="mb-0"><code id="detailVnpayTxnId"></code></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Bank Code</label>
+                                    <p class="mb-0" id="detailVnpayBank"></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small">Transaction Status</label>
+                                    <p class="mb-0" id="detailVnpayStatus"></p>
+                                </div>
+                                <div class="col-12">
+                                    <label class="text-muted small">Transaction Date</label>
+                                    <p class="mb-0" id="detailVnpayDate"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12" id="notesSection" style="display: none;">
+                            <hr>
+                            <label class="text-muted small">Notes</label>
+                            <p class="mb-0" id="detailNotes"></p>
+                        </div>
+                        <div class="col-12">
+                            <hr>
+                            <label class="text-muted small">Description</label>
+                            <p class="mb-0" id="detailDescription"></p>
+                        </div>
+                        <div class="col-12" id="confirmedBySection" style="display: none;">
+                            <label class="text-muted small">Confirmed By</label>
+                            <p class="mb-0" id="detailConfirmedBy"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1307,6 +1655,15 @@
                 // Render all pending payments
                 renderPendingPayments(pendingPayments);
 
+                // Populate year filter for payment history
+                populateYearFilter();
+
+                // Check if we're on the history tab and render if so
+                const historyTab = document.getElementById('history');
+                if (historyTab && historyTab.classList.contains('active')) {
+                    renderPaymentHistory(payments);
+                }
+
                 // Re-init Lucide icons
                 setTimeout(() => initLucide(), 100);
             } catch (error) {
@@ -1317,6 +1674,22 @@
                         Failed to load payments. Please refresh the page.
                     </div>
                 `;
+                
+                // Also show error in payment history table if it exists
+                const historyTableBody = document.getElementById('paymentHistoryTableBody');
+                if (historyTableBody) {
+                    historyTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i data-lucide="alert-circle" style="width: 48px; height: 48px; color: #dc3545;"></i>
+                                <p class="text-danger mt-2">Failed to load payment history</p>
+                                <button class="btn btn-sm btn-primary" onclick="loadMyPayments()">
+                                    <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Retry
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
             }
         }
 
@@ -1514,6 +1887,8 @@
                     document.getElementById('paymentInfoText').textContent = 'Payment method: Cash. Submit this request and pay to your club manager. They will confirm after receiving payment.';
                 } else if (availableMethods === 'Bank Transfer') {
                     document.getElementById('paymentInfoText').textContent = 'Payment method: Bank Transfer. Transfer money and submit this request. Upload receipt for faster verification.';
+                } else if (availableMethods === 'VNPAY') {
+                    document.getElementById('paymentInfoText').textContent = 'Payment method: VNPAY. You will be redirected to VNPAY gateway to complete your payment online.';
                 }
             }
 
@@ -1538,6 +1913,35 @@
                 : availableMethods;
             const notes = document.getElementById('paymentNotesMember').value;
 
+            // Handle VNPAY payment separately
+            if (selectedMethod === 'VNPAY') {
+                try {
+                    const response = await fetch(`${API_BASE}/Vnpay/create-payment-url`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            paymentId: parseInt(paymentId)
+                        })
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        // Close modal and redirect to VNPAY
+                        bootstrap.Modal.getInstance(document.getElementById('payNowModal')).hide();
+                        window.location.href = result.paymentUrl;
+                    } else {
+                        const error = await response.json();
+                        alert(`❌ Error: ${error.message || 'Failed to create VNPAY payment URL'}`);
+                    }
+                } catch (error) {
+                    console.error('Error creating VNPAY payment:', error);
+                    alert('❌ An error occurred. Please try again.');
+                }
+                return;
+            }
+
+            // Handle Cash and Bank Transfer payments
             // Determine transaction status based on payment method
             const status = selectedMethod === 'Cash' ? 'unconfirmed' : 'pending';
 
@@ -1577,6 +1981,406 @@
             }
         });
 
+        // ============================================
+        // Payment History Functions
+        // ============================================
+
+        // Render Payment History Table
+        function renderPaymentHistory(payments) {
+            const tbody = document.getElementById('paymentHistoryTableBody');
+            
+            if (!tbody) {
+                console.error('Payment history table body not found');
+                return;
+            }
+
+            console.log('Rendering payment history with', payments.length, 'payments');
+
+            // Sort by payment date descending (most recent first)
+            const sortedPayments = [...payments].sort((a, b) => {
+                const dateA = a.paidAt ? new Date(a.paidAt) : new Date(0);
+                const dateB = b.paidAt ? new Date(b.paidAt) : new Date(0);
+                return dateB - dateA;
+            });
+
+            // Handle empty state
+            if (sortedPayments.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="py-4">
+                                <i data-lucide="inbox" style="width: 64px; height: 64px; color: #adb5bd;"></i>
+                                <h6 class="mt-3 text-muted">No payment history found</h6>
+                                <p class="text-muted small mb-0">Try adjusting your search or filters</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                setTimeout(() => initLucide(), 100);
+                return;
+            }
+
+            // Generate table rows
+            tbody.innerHTML = sortedPayments.map(payment => {
+                const transactionId = getTransactionId(payment);
+                const paymentMethod = payment.paymentMethod || 'N/A';
+                const paymentMethodIcon = getPaymentMethodIcon(paymentMethod);
+                
+                return `
+                    <tr style="border-bottom: 1px solid #e9ecef;">
+                        <td class="px-4 py-3">
+                            <div class="fw-semibold">${formatDate(payment.paidAt)}</div>
+                        </td>
+                        <td class="py-3">
+                            <div class="fw-semibold text-dark">${escapeHtml(payment.fundCollectionRequest.title)}</div>
+                            <small class="text-muted">${escapeHtml('@Model.Club?.Name' || 'Club')}</small>
+                        </td>
+                        <td class="py-3">
+                            <code class="bg-light px-2 py-1 rounded">${escapeHtml(transactionId)}</code>
+                        </td>
+                        <td class="py-3">
+                            <i data-lucide="${paymentMethodIcon}" style="width: 16px; height: 16px;" class="me-1"></i>
+                            <span>${escapeHtml(paymentMethod)}</span>
+                        </td>
+                        <td class="py-3 text-end">
+                            <span class="fw-bold text-primary">${formatCurrency(payment.amount)}</span>
+                        </td>
+                        <td class="py-3">
+                            <span class="badge bg-success px-3 py-2">
+                                <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                                Completed
+                            </span>
+                        </td>
+                        <td class="py-3 text-center">
+                            <button class="btn btn-sm btn-primary" onclick="showPaymentDetails(${payment.id})" title="View Details">
+                                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Re-initialize Lucide icons
+            setTimeout(() => initLucide(), 100);
+        }
+
+        // Get Available Years from Payments
+        function getAvailableYears(payments) {
+            const years = new Set();
+            
+            payments.forEach(payment => {
+                if (payment.paidAt) {
+                    const year = new Date(payment.paidAt).getFullYear();
+                    years.add(year);
+                }
+            });
+            
+            // Convert to array and sort descending
+            return Array.from(years).sort((a, b) => b - a);
+        }
+
+        // Populate Year Filter Dropdown
+        function populateYearFilter() {
+            const yearFilter = document.getElementById('historyYearFilter');
+            
+            if (!yearFilter || !allPayments) {
+                return;
+            }
+
+            const years = getAvailableYears(allPayments);
+            
+            // Clear existing options except "All Years"
+            yearFilter.innerHTML = '<option value="">All Years</option>';
+            
+            // Add year options
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearFilter.appendChild(option);
+            });
+            
+            // Set current year as default if available
+            const currentYear = new Date().getFullYear();
+            if (years.includes(currentYear)) {
+                yearFilter.value = currentYear;
+            }
+        }
+
+        // Helper: Get Transaction ID
+        function getTransactionId(payment) {
+            if (payment.vnpayTransactionId) {
+                return `VNPAY-${payment.vnpayTransactionId}`;
+            } else if (payment.paymentTransactionId) {
+                return `TXN-${payment.paymentTransactionId}`;
+            } else {
+                return `PAY-${payment.id}`;
+            }
+        }
+
+        // Helper: Get Payment Method Icon
+        function getPaymentMethodIcon(method) {
+            const methodLower = method.toLowerCase();
+            if (methodLower.includes('vnpay')) return 'smartphone';
+            if (methodLower.includes('bank')) return 'building';
+            if (methodLower.includes('cash')) return 'dollar-sign';
+            return 'credit-card';
+        }
+
+        // Helper: Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Helper: Debounce function
+        function debounce(func, delay) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Clear Search
+        function clearSearch() {
+            const searchInput = document.getElementById('historySearchInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            filterPaymentHistory();
+        }
+
+        // Filter Payment History
+        function filterPaymentHistory() {
+            if (!allPayments || allPayments.length === 0) {
+                console.log('No payments data available for filtering');
+                return;
+            }
+
+            const searchInput = document.getElementById('historySearchInput');
+            const statusSelect = document.getElementById('historyStatusFilter');
+
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const statusFilter = statusSelect ? statusSelect.value : '';
+
+            console.log('Filtering with:', { searchTerm, statusFilter, totalPayments: allPayments.length });
+
+            let filtered = allPayments.filter(payment => {
+                // Only show paid/confirmed payments in history
+                const isPaidOrConfirmed = payment.status === 'paid' || payment.status === 'confirmed';
+                if (!isPaidOrConfirmed) return false;
+
+                // Search filter - match against title or transaction ID
+                let matchesSearch = true;
+                if (searchTerm) {
+                    const title = (payment.fundCollectionRequest?.title || '').toLowerCase();
+                    const txnId = getTransactionId(payment).toLowerCase();
+                    matchesSearch = title.includes(searchTerm) || txnId.includes(searchTerm);
+                }
+
+                // Status filter
+                let matchesStatus = true;
+                if (statusFilter) {
+                    matchesStatus = payment.status === statusFilter;
+                }
+
+                return matchesSearch && matchesStatus;
+            });
+
+            console.log('Filtered results:', filtered.length);
+            renderPaymentHistory(filtered);
+        }
+
+        // Get Filtered Payments (for export)
+        function getFilteredPayments() {
+            if (!allPayments) return [];
+
+            const searchTerm = document.getElementById('historySearchInput')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('historyStatusFilter')?.value || '';
+
+            return allPayments.filter(payment => {
+                const isPaidOrConfirmed = payment.status === 'paid' || payment.status === 'confirmed';
+                if (!isPaidOrConfirmed) return false;
+
+                let matchesSearch = true;
+                if (searchTerm) {
+                    const title = payment.fundCollectionRequest?.title?.toLowerCase() || '';
+                    const txnId = getTransactionId(payment).toLowerCase();
+                    matchesSearch = title.includes(searchTerm) || txnId.includes(searchTerm);
+                }
+
+                let matchesStatus = true;
+                if (statusFilter) {
+                    matchesStatus = payment.status === statusFilter;
+                }
+
+                return matchesSearch && matchesStatus;
+            });
+        }
+
+        // ============================================
+        // Payment Details Modal Functions
+        // ============================================
+
+        // Show Payment Details Modal
+        function showPaymentDetails(paymentId) {
+            const payment = allPayments.find(p => p.id === paymentId);
+            
+            if (!payment) {
+                showToast('Payment not found', 'danger');
+                console.error('Payment not found:', paymentId);
+                return;
+            }
+
+            populatePaymentDetails(payment);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('paymentDetailsModal'));
+            modal.show();
+        }
+
+        // Populate Payment Details Modal
+        function populatePaymentDetails(payment) {
+            // Basic payment information
+            document.getElementById('detailTitle').textContent = payment.fundCollectionRequest?.title || 'N/A';
+            document.getElementById('detailAmount').textContent = formatCurrency(payment.amount);
+            document.getElementById('detailPaidAt').textContent = payment.paidAt ? formatDate(payment.paidAt) : 'N/A';
+            document.getElementById('detailPaymentMethod').textContent = payment.paymentMethod || 'N/A';
+            
+            // Status badge
+            const statusElement = document.getElementById('detailStatus');
+            if (payment.status === 'paid' || payment.status === 'confirmed') {
+                statusElement.innerHTML = '<span class="badge bg-success"><i data-lucide="check-circle" style="width: 12px; height: 12px;"></i> Completed</span>';
+            } else if (payment.status === 'pending') {
+                statusElement.innerHTML = '<span class="badge bg-warning text-dark"><i data-lucide="clock" style="width: 12px; height: 12px;"></i> Pending</span>';
+            } else if (payment.status === 'unconfirmed') {
+                statusElement.innerHTML = '<span class="badge bg-danger"><i data-lucide="alert-circle" style="width: 12px; height: 12px;"></i> Unconfirmed</span>';
+            } else {
+                statusElement.innerHTML = `<span class="badge bg-secondary">${payment.status}</span>`;
+            }
+            
+            // Transaction ID
+            document.getElementById('detailTransactionId').textContent = getTransactionId(payment);
+            
+            // VNPAY details (if applicable)
+            const vnpaySection = document.getElementById('vnpayDetailsSection');
+            if (payment.paymentMethod === 'VNPAY' && payment.vnpayTransactionId) {
+                vnpaySection.style.display = 'block';
+                document.getElementById('detailVnpayTxnId').textContent = payment.vnpayTransactionId || 'N/A';
+                document.getElementById('detailVnpayBank').textContent = payment.vnpayBankCode || 'N/A';
+                document.getElementById('detailVnpayStatus').textContent = payment.vnpayTransactionStatus || 'N/A';
+                document.getElementById('detailVnpayDate').textContent = payment.vnpayTransactionDate ? formatDate(payment.vnpayTransactionDate) : 'N/A';
+            } else {
+                vnpaySection.style.display = 'none';
+            }
+            
+            // Notes (if applicable)
+            const notesSection = document.getElementById('notesSection');
+            if (payment.notes) {
+                notesSection.style.display = 'block';
+                document.getElementById('detailNotes').textContent = payment.notes;
+            } else {
+                notesSection.style.display = 'none';
+            }
+            
+            // Description
+            document.getElementById('detailDescription').textContent = payment.fundCollectionRequest?.description || 'No description provided';
+            
+            // Confirmed by (if applicable)
+            const confirmedBySection = document.getElementById('confirmedBySection');
+            if (payment.confirmedByName) {
+                confirmedBySection.style.display = 'block';
+                document.getElementById('detailConfirmedBy').textContent = payment.confirmedByName;
+            } else {
+                confirmedBySection.style.display = 'none';
+            }
+            
+            // Re-initialize Lucide icons
+            setTimeout(() => initLucide(), 100);
+        }
+
+        // Show Toast Notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        // ============================================
+        // Export Functionality
+        // ============================================
+
+        // Export Payment History to CSV
+        function exportPaymentHistory() {
+            try {
+                // Get currently filtered payments
+                const filtered = getFilteredPayments();
+                
+                if (filtered.length === 0) {
+                    showToast('No payments to export', 'warning');
+                    return;
+                }
+                
+                // CSV headers
+                const headers = ['Date', 'Purpose', 'Transaction ID', 'Method', 'Amount (VND)', 'Status'];
+                
+                // CSV rows
+                const rows = filtered.map(payment => {
+                    const date = payment.paidAt ? formatDate(payment.paidAt) : 'N/A';
+                    const purpose = payment.fundCollectionRequest?.title || 'N/A';
+                    const txnId = getTransactionId(payment);
+                    const method = payment.paymentMethod || 'N/A';
+                    const amount = payment.amount;
+                    const status = payment.status === 'paid' || payment.status === 'confirmed' ? 'Completed' : payment.status;
+                    
+                    return [date, purpose, txnId, method, amount, status];
+                });
+                
+                // Generate CSV content
+                const csvContent = [
+                    headers.join(','),
+                    ...rows.map(row => row.map(cell => {
+                        // Escape quotes and wrap in quotes if contains comma
+                        const cellStr = String(cell).replace(/"/g, '""');
+                        return cellStr.includes(',') ? `"${cellStr}"` : cellStr;
+                    }).join(','))
+                ].join('\n');
+                
+                // Create blob and download
+                const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                // Generate filename
+                const clubName = '@Model.Club?.Name'.replace(/[^a-z0-9]/gi, '-').toLowerCase() || 'club';
+                const date = new Date().toISOString().split('T')[0];
+                const filename = `payment-history-${clubName}-${date}.csv`;
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                showToast('Payment history exported successfully', 'success');
+            } catch (error) {
+                console.error('Error exporting payment history:', error);
+                showToast('Failed to export payment history', 'danger');
+            }
+        }
+
         // Initialize Lucide icons
         function initLucide() {
             if (typeof lucide !== 'undefined' && lucide.createIcons) {
@@ -1601,6 +2405,30 @@
             const section = urlParams.get('section');
             if (section === 'finance') {
                 await loadMyPayments();
+            }
+            
+            // Add event listeners for payment history filters
+            const historySearchInput = document.getElementById('historySearchInput');
+            const historyStatusFilter = document.getElementById('historyStatusFilter');
+            
+            if (historySearchInput) {
+                // Debounce search input to avoid excessive filtering
+                const debouncedFilter = debounce(filterPaymentHistory, 300);
+                historySearchInput.addEventListener('input', debouncedFilter);
+            }
+            
+            if (historyStatusFilter) {
+                historyStatusFilter.addEventListener('change', filterPaymentHistory);
+            }
+
+            // Add event listener for history tab to render when shown
+            const historyTab = document.getElementById('history-tab');
+            if (historyTab) {
+                historyTab.addEventListener('shown.bs.tab', function() {
+                    if (allPayments && allPayments.length > 0) {
+                        filterPaymentHistory();
+                    }
+                });
             }
             
             initLucide();

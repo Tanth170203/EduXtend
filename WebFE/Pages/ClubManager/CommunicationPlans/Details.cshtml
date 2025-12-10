@@ -1,0 +1,98 @@
+@page "{id:int}"
+@model WebFE.Pages.ClubManager.CommunicationPlans.DetailsModel
+@{
+    ViewData["Title"] = "Communication Plan Details";
+    ViewData["Breadcrumb"] = "Plan Details";
+    Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Communication Plan Details</h1>
+        <p class="page-description">@Model.Plan?.ActivityTitle</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/ClubManager/CommunicationPlans/Edit/@Model.Plan?.Id" class="btn btn-primary">
+            <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+            Edit
+        </a>
+        <a href="/ClubManager/CommunicationPlans" class="btn btn-outline-secondary">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back
+        </a>
+    </div>
+</div>
+
+@if (Model.Plan != null)
+{
+    <!-- Plan Info -->
+    <div class="content-card mb-4">
+        <div class="content-card-header">
+            <h5 class="content-card-title">Plan Information</h5>
+        </div>
+        <div class="content-card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Activity:</strong> @Model.Plan.ActivityTitle</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Created:</strong> @Model.Plan.CreatedAt.ToString("MMM dd, yyyy HH:mm")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Communication Items -->
+    <div class="content-card">
+        <div class="content-card-header">
+            <h5 class="content-card-title">Communication Items</h5>
+        </div>
+        <div class="content-card-body">
+            @if (Model.Plan.Items == null || Model.Plan.Items.Count == 0)
+            {
+                <p class="text-muted">No communication items</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">STT</th>
+                                <th>Nội dung truyền thông</th>
+                                <th style="width: 180px;">Thời gian</th>
+                                <th style="width: 150px;">Phụ trách</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Plan.Items.OrderBy(i => i.Order))
+                            {
+                                <tr>
+                                    <td class="text-center">@item.Order</td>
+                                    <td>@item.Content</td>
+                                    <td>@item.ScheduledDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@(item.ResponsiblePerson ?? "-")</td>
+                                    <td>@(item.Notes ?? "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        Communication plan not found
+    </div>
+}
+
+@section Scripts {
+    <script>
+        lucide.createIcons();
+    </script>
+}
