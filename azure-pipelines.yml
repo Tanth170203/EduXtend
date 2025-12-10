@@ -1,0 +1,38 @@
+# ASP.NET
+# Build and test ASP.NET projects.
+# Add steps that publish symbols, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/apps/aspnet/build-aspnet-4
+
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+
+stages:
+- stage: Build
+  displayName: Build and push stage
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+    - checkout: self
+    - task: DockerCompose@1
+      inputs:
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'AzureStudentConnection'
+        azureContainerRegistry: '{"loginServer":"eduxtend.azurecr.io", "id" : "/subscriptions/0665a2b7-66f2-486d-b789-894b17582e76/resourceGroups/EduXtend/providers/Microsoft.ContainerRegistry/registries/EduXtend"}'
+        dockerComposeFile: '**/docker-compose.yml'
+        projectName: 'shareit-be'
+        action: 'Build services'
+        includeLatestTag: true
+    - task: DockerCompose@1
+      inputs:
+        containerregistrytype: 'Azure Container Registry'
+        azureSubscription: 'AzureStudentConnection'
+        azureContainerRegistry: '{"loginServer":"eduxtend.azurecr.io", "id" : "/subscriptions/0665a2b7-66f2-486d-b789-894b17582e76/resourceGroups/EduXtend/providers/Microsoft.ContainerRegistry/registries/EduXtend"}'
+        dockerComposeFile: '**/docker-compose.yml'
+        projectName: 'shareit-be'
+        action: 'Push services'
+        includeLatestTag: true

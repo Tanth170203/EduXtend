@@ -63,6 +63,8 @@ namespace WebAPI
             TimeZoneInfo vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             
             var builder = WebApplication.CreateBuilder(args);
+            //chạy localhost comment cái này
+            builder.WebHost.UseUrls("http://*:80");
 
             // DbContext
             builder.Services.AddDbContext<EduXtendContext>(options =>

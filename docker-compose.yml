@@ -17,7 +17,7 @@ services:
       context: .
       dockerfile: ./WebFE/Dockerfile
     ports:
-      - "7045:80"
+      - "3001:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
     depends_on:
