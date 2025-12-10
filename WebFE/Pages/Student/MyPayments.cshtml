@@ -666,101 +666,21 @@
     }
     
     function renderPayments(payments) {
-        const tbody = document.getElementById('paymentsTableBody');
-        
-        if (!payments || payments.length === 0) {
-            showEmptyState('No payments found');
-            return;
-        }
-        
-        tbody.innerHTML = payments.map(p => {
-            const date = new Date(p.paidAt || p.createdAt).toLocaleDateString('en-GB');
-            const statusClass = p.status === 'completed' || p.status === 'paid' ? 'completed' : 'pending';
-            const statusText = p.status === 'completed' || p.status === 'paid' ? 'Completed' : 'Pending';
-            
-            return `
-                <tr>
-                    <td>${date}</td>
-                    <td>
-                        <div class="fw-bold">${escapeHtml(p.fundCollectionTitle || 'Payment')}</div>
-                        <small class="text-muted">${escapeHtml(p.clubName || '')}</small>
-                    </td>
-                    <td>
-                        <span class="transaction-id">${p.vnpayTransactionId || 'PAY-' + p.id}</span>
-                    </td>
-                    <td>${p.paymentMethod || 'Cash'}</td>
-                    <td>
-                        <span class="amount">${formatCurrency(p.amount)}</span>
-                    </td>
-                    <td>
-                        <span class="status-badge ${statusClass}">${statusText}</span>
-                    </td>
-                    <td>
-                        ${p.status === 'pending' ? `
-                            <button class="btn-pay" onclick="payWithVNPAY(${p.id})">
-                                <i data-lucide="credit-card" style="width: 16px; height: 16px;"></i>
-                                Pay
-                            </button>
-                        ` : `
-                            <button class="btn-view" onclick="viewDetails(${p.id})">
-                                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
-                                View
-                            </button>
-                        `}
-                    </td>
-                </tr>
-            `;
-        }).join('');
-        
-        // Reinitialize Lucide icons
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-    }
-    
-    function showEmptyState(message) {
-        const tbody = document.getElementById('paymentsTableBody');
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="7">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i data-lucide="inbox" style="width: 40px; height: 40px;" class="text-muted"></i>
-                        </div>
-                        <h3>${message}</h3>
-                        <p>Your payment history will appear here</p>
-                    </div>
-                </td>
-            </tr>
-        `;
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-    }
-    
-    function searchPayments() {
-        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const statusFilter = document.getElementById('statusFilter').value;
-        
-        let filtered = [...allPayments];
-        
-        if (searchTerm) {
-            filtered = filtered.filter(p => 
-                (p.fundCollectionTitle && p.fundCollectionTitle.toLowerCase().includes(searchTerm)) ||
-                (p.vnpayTransactionId && p.vnpayTransactionId.toLowerCase().includes(searchTerm))
-            );
-        }
-        
-        if (statusFilter) {
-            filtered = filtered.filter(p => p.status === statusFilter);
-        }
-        
-        renderPayments(filtered);
-    }
-    
-    function showPaymentModal(paymentId) {
-        // Redirect to member dashboard with payment modal
-        window.location.href = `/Clubs/MemberDashboard?paymentId=${paymentId}`;
+        const container = document.getElementById('paymentsList');
+        container.innerHTML = payments.map(p => `
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5>${p.fundCollectionTitle}</h5>
+                    <p>Amount: ${p.amount} VND</p>
+                    <p>Status: ${p.status}</p>
+                    ${p.status === 'pending' ? `
+                        <button onclick="payWithVNPAY(${p.id})" class="btn btn-primary">
+                            Pay with VNPAY
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
     }
     
     async function payWithVNPAY(paymentId) {
