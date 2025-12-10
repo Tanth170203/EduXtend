@@ -1,6 +1,10 @@
 using BusinessObject.DTOs.User;
+using BusinessObject.Models;
 using Repositories.Users;
 using Repositories.Roles;
+using Repositories.ClubMembers;
+using Repositories.Students;
+using Repositories.Clubs;
 
 namespace Services.Users;
 
@@ -8,11 +12,22 @@ public class UserManagementService : IUserManagementService
 {
     private readonly IUserRepository _userRepo;
     private readonly IRoleRepository _roleRepo;
+    private readonly IClubMemberRepository _clubMemberRepo;
+    private readonly IStudentRepository _studentRepo;
+    private readonly IClubRepository _clubRepo;
 
-    public UserManagementService(IUserRepository userRepo, IRoleRepository roleRepo)
+    public UserManagementService(
+        IUserRepository userRepo, 
+        IRoleRepository roleRepo,
+        IClubMemberRepository clubMemberRepo,
+        IStudentRepository studentRepo,
+        IClubRepository clubRepo)
     {
         _userRepo = userRepo;
         _roleRepo = roleRepo;
+        _clubMemberRepo = clubMemberRepo;
+        _studentRepo = studentRepo;
+        _clubRepo = clubRepo;
     }
 
     public async Task<List<UserDto>> GetAllAsync()
@@ -105,7 +120,7 @@ public class UserManagementService : IUserManagementService
         await _userRepo.UnbanUserAsync(userId);
     }
 
-    public async Task UpdateUserRolesAsync(int userId, List<int> roleIds)
+    public async Task UpdateUserRolesAsync(int userId, List<int> roleIds, int? clubId = null)
     {
         var user = await _userRepo.GetByIdAsync(userId);
         if (user == null)
@@ -118,6 +133,51 @@ public class UserManagementService : IUserManagementService
 
         if (invalidRoles.Any())
             throw new ArgumentException($"Invalid role IDs: {string.Join(", ", invalidRoles)}");
+
+        // Get the role being assigned
+        var roleId = roleIds.FirstOrDefault();
+        var role = allRoles.FirstOrDefault(r => r.Id == roleId);
+        
+        // Check if role is ClubMember or ClubManager - require clubId
+        if (role != null && (role.RoleName == "ClubMember" || role.RoleName == "ClubManager"))
+        {
+            if (!clubId.HasValue)
+                throw new ArgumentException("Club selection is required for ClubMember or ClubManager role");
+
+            // Validate club exists
+            var club = await _clubRepo.GetByIdAsync(clubId.Value);
+            if (club == null)
+                throw new ArgumentException($"Club with ID {clubId} not found");
+
+            // Get student record for this user
+            var student = await _studentRepo.GetByUserIdAsync(userId);
+            if (student == null)
+                throw new ArgumentException("User must have a student record to be assigned ClubMember or ClubManager role");
+
+            // Check if already a member of this club
+            var existingMember = await _clubMemberRepo.GetByClubAndStudentIdAsync(clubId.Value, student.Id);
+            
+            if (existingMember == null)
+            {
+                // Create new ClubMember record
+                var clubMember = new ClubMember
+                {
+                    ClubId = clubId.Value,
+                    StudentId = student.Id,
+                    RoleInClub = role.RoleName == "ClubManager" ? "Manager" : "Member",
+                    IsActive = true,
+                    JoinedAt = DateTime.UtcNow
+                };
+                await _clubMemberRepo.CreateAsync(clubMember);
+            }
+            else
+            {
+                // Update existing member's role in club
+                existingMember.RoleInClub = role.RoleName == "ClubManager" ? "Manager" : "Member";
+                existingMember.IsActive = true;
+                await _clubMemberRepo.UpdateAsync(existingMember);
+            }
+        }
 
         await _userRepo.UpdateUserRolesAsync(userId, roleIds);
     }

@@ -152,6 +152,7 @@ namespace WebAPI
             builder.Services.AddScoped<Services.Users.IUserManagementService, Services.Users.UserManagementService>();
             builder.Services.AddScoped<IClubService, ClubService>();
             builder.Services.AddScoped<IActivityService, ActivityService>();
+            builder.Services.AddScoped<IActivityExtractorService, ActivityExtractorService>();
             builder.Services.AddScoped<IJoinRequestService, JoinRequestService>();
             builder.Services.AddScoped<IInterviewService, InterviewService>();
             builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
