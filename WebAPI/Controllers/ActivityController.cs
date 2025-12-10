@@ -518,6 +518,7 @@ namespace WebAPI.Controllers
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	// ================= EXTRACT ACTIVITY FROM FILE (AI) =================
 	// POST api/activity/extract-from-file
 	[HttpPost("extract-from-file")]
@@ -554,6 +555,8 @@ namespace WebAPI.Controllers
 		}
 	}
 
+=======
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
 =======
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
 	// ================= STUDENT SELF CHECK-IN =================

@@ -1,12 +1,16 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 using System.Text.Json.Serialization;
 
+=======
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
 =======
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
 namespace Services.Chatbot.Models
 {
     public class GeminiPart
     {
+<<<<<<< HEAD
 <<<<<<< HEAD
         [JsonPropertyName("text")]
         public string? Text { get; set; }
@@ -22,6 +26,9 @@ namespace Services.Chatbot.Models
         
         [JsonPropertyName("data")]
         public string Data { get; set; } = string.Empty;
+=======
+        public string Text { get; set; } = string.Empty;
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
 =======
         public string Text { get; set; } = string.Empty;
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b

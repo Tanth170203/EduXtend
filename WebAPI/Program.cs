@@ -53,7 +53,10 @@ using Microsoft.OpenApi.Models;
 using VNPAY.Extensions;
 using AspNetCoreRateLimit;
 <<<<<<< HEAD
+<<<<<<< HEAD
 using Utils;
+=======
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
 =======
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
 
@@ -84,7 +87,10 @@ namespace WebAPI
             builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
 =======
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
             // Options
@@ -92,7 +98,10 @@ namespace WebAPI
             builder.Services.Configure<GoogleAuthOptions>(builder.Configuration.GetSection("GoogleAuth"));
             builder.Services.Configure<Services.Chatbot.GeminiAIOptions>(builder.Configuration.GetSection("GeminiAI"));
 <<<<<<< HEAD
+<<<<<<< HEAD
             builder.Services.Configure<AppUrlsConfig>(builder.Configuration.GetSection("AppUrls"));
+=======
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
 =======
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
 

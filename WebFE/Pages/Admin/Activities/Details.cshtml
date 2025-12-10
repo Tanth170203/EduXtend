@@ -501,6 +501,7 @@
             
             html += `
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <div class="timeline-item">
                     <!-- Time Badge on the left -->
                     <div class="timeline-time">
@@ -523,6 +524,8 @@
             if (description) {
                 html += `<p class="timeline-description">${escapeHtml(description)}</p>`;
 =======
+=======
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
                 <div class="timeline-item ${index === sortedSchedules.length - 1 ? 'timeline-item-last' : ''}">
                     <div class="timeline-marker"></div>
                     <div class="timeline-content">
@@ -537,21 +540,30 @@
             
             if (description) {
                 html += `<p class="text-muted mb-2">${escapeHtml(description)}</p>`;
+<<<<<<< HEAD
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
+=======
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
             }
             
             if (notes) {
                 html += `
 <<<<<<< HEAD
+<<<<<<< HEAD
                     <div class="timeline-notes">
                         <i class="bi bi-sticky me-1"></i>
                         <strong>Ghi chú:</strong> ${escapeHtml(notes)}
 =======
+=======
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
                     <div class="alert alert-info py-2 px-3 mb-2">
                         <small>
                             <i class="bi bi-sticky me-1"></i>
                             <strong>Notes:</strong> ${escapeHtml(notes)}
                         </small>
+<<<<<<< HEAD
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
+=======
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
                     </div>
                 `;
@@ -560,6 +572,7 @@
             if (assignments.length > 0) {
                 html += `
 <<<<<<< HEAD
+<<<<<<< HEAD
                     <div class="timeline-assignments">
                         <small class="text-muted d-block mb-2">
                             <i class="bi bi-people-fill me-1"></i>
@@ -567,12 +580,17 @@
                         </small>
                         <div class="d-flex flex-wrap">
 =======
+=======
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
                     <div class="mt-2">
                         <small class="text-muted d-block mb-1">
                             <i class="bi bi-people me-1"></i>
                             <strong>Assigned to:</strong>
                         </small>
                         <div class="d-flex flex-wrap gap-2">
+<<<<<<< HEAD
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
+=======
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
                 `;
                 
@@ -580,17 +598,23 @@
                     const name = assignment.responsibleName || assignment.ResponsibleName || 'Unknown';
                     const role = assignment.role || assignment.Role;
 <<<<<<< HEAD
+<<<<<<< HEAD
                     const roleText = role ? ` (${escapeHtml(role)})` : '';
                     
                     html += `
                         <span class="assignment-badge">
                             <i class="bi bi-person-fill"></i>
 =======
+=======
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
                     const roleText = role ? ` - ${escapeHtml(role)}` : '';
                     
                     html += `
                         <span class="badge bg-secondary">
                             <i class="bi bi-person me-1"></i>
+<<<<<<< HEAD
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
+=======
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
                             ${escapeHtml(name)}${roleText}
                         </span>
@@ -643,6 +667,7 @@
 <style>
     .timeline {
         position: relative;
+<<<<<<< HEAD
 <<<<<<< HEAD
     }
     
@@ -773,6 +798,8 @@
     .assignment-badge i {
         color: #0d6efd;
 =======
+=======
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
         padding-left: 30px;
     }
     
@@ -801,6 +828,9 @@
     .timeline-content {
         padding-left: 20px;
         padding-bottom: 10px;
+<<<<<<< HEAD
+>>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
+=======
 >>>>>>> c3efbe527c0562abdad920e99cb9009199d6a74b
     }
 </style>
