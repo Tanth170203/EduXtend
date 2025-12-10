@@ -64,6 +64,10 @@ namespace WebAPI
             
             var builder = WebApplication.CreateBuilder(args);
 
+            //deploy ( chạy nhớ comment lần nây )
+            //builder.WebHost.UseUrls($"http://*:80");
+
+
             // DbContext
             builder.Services.AddDbContext<EduXtendContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
