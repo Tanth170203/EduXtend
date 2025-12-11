@@ -13,6 +13,8 @@ namespace BusinessObject.DTOs.Interview
         public DateTime ScheduledDate { get; set; }
         public string InterviewType { get; set; } = "Offline";
         public string Location { get; set; } = string.Empty;
+        public decimal? Latitude { get; set; }
+        public decimal? Longitude { get; set; }
         public string? Notes { get; set; }
         public string? Evaluation { get; set; }
         public string Status { get; set; } = string.Empty;

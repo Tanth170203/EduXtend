@@ -87,7 +87,10 @@ namespace Services.Interviews
                 Notes = dto.Notes,
                 Status = "Scheduled",
                 CreatedById = createdById,
-                CreatedAt = DateTimeHelper.Now
+                CreatedAt = DateTimeHelper.Now,
+                // GPS coordinates for offline interviews
+                Latitude = dto.InterviewType == "Offline" ? dto.Latitude : null,
+                Longitude = dto.InterviewType == "Offline" ? dto.Longitude : null
             };
 
             var created = await _interviewRepo.CreateAsync(interview);
@@ -164,6 +167,18 @@ namespace Services.Interviews
             interview.InterviewType = dto.InterviewType;
             interview.Location = location;
             interview.Notes = dto.Notes;
+            
+            // Update GPS coordinates: clear if switching to online, update if offline
+            if (dto.InterviewType == "Online")
+            {
+                interview.Latitude = null;
+                interview.Longitude = null;
+            }
+            else // Offline
+            {
+                interview.Latitude = dto.Latitude;
+                interview.Longitude = dto.Longitude;
+            }
 
             await _interviewRepo.UpdateAsync(interview);
 
@@ -259,6 +274,8 @@ namespace Services.Interviews
                 ScheduledDate = interview.ScheduledDate,
                 InterviewType = interview.InterviewType,
                 Location = interview.Location,
+                Latitude = interview.Latitude,
+                Longitude = interview.Longitude,
                 Notes = interview.Notes,
                 Evaluation = showEvaluation ? interview.Evaluation : null,
                 Status = interview.Status,
