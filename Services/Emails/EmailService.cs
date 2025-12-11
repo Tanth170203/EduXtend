@@ -454,4 +454,206 @@ public class EmailService : IEmailService
             // Don't throw - email failure shouldn't break the application
         }
     }
+
+    public async Task SendInterviewNotificationEmailAsync(
+        string toEmail,
+        string applicantName,
+        string clubName,
+        DateTime scheduledDate,
+        string interviewType,
+        string location,
+        string? notes)
+    {
+        var subject = $"[{clubName}] Thông báo lịch phỏng vấn";
+
+        var locationHtml = interviewType == "Online"
+            ? $"<a href='{location}' style='color: #007bff; text-decoration: none; font-weight: bold;'>🔗 Tham gia Google Meet</a>"
+            : $"<span style='color: #212529;'>📍 {location}</span>";
+
+        var interviewTypeText = interviewType == "Online" ? "trực tuyến (Online)" : "trực tiếp (Offline)";
+        var interviewIcon = interviewType == "Online" ? "💻" : "🏢";
+
+        var body = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .club-badge {{ background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }}
+        .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .info {{ background: #e0e7ff; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0; }}
+        .details {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        .detail-row {{ display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e9ecef; }}
+        .detail-row:last-child {{ border-bottom: none; }}
+        .detail-label {{ font-weight: bold; color: #6c757d; }}
+        .detail-value {{ color: #212529; text-align: right; }}
+        .interview-type {{ display: inline-block; background: {(interviewType == "Online" ? "#e0f2fe" : "#fef3c7")}; color: {(interviewType == "Online" ? "#0369a1" : "#92400e")}; padding: 5px 15px; border-radius: 20px; font-weight: bold; }}
+        .notes {{ background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }}
+        .button {{ display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+        .footer {{ text-align: center; color: #6c757d; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <div class='club-badge'>📚 {clubName}</div>
+            <h1>{interviewIcon} Lịch phỏng vấn mới</h1>
+        </div>
+        <div class='content'>
+            <p>Xin chào <strong>{applicantName}</strong>,</p>
+            
+            <div class='info'>
+                <strong>🎉 Chúc mừng! Bạn đã được mời tham gia phỏng vấn</strong>
+            </div>
+
+            <p>Câu lạc bộ <strong>{clubName}</strong> đã sắp xếp lịch phỏng vấn cho bạn. Vui lòng xem chi tiết bên dưới:</p>
+
+            <div class='details'>
+                <div class='detail-row'>
+                    <span class='detail-label'>Hình thức:</span>
+                    <span class='detail-value'><span class='interview-type'>{interviewTypeText}</span></span>
+                </div>
+                <div class='detail-row'>
+                    <span class='detail-label'>Thời gian:</span>
+                    <span class='detail-value'><strong>{scheduledDate:dd/MM/yyyy HH:mm}</strong></span>
+                </div>
+                <div class='detail-row'>
+                    <span class='detail-label'>{(interviewType == "Online" ? "Link tham gia:" : "Địa điểm:")}</span>
+                    <span class='detail-value'>{locationHtml}</span>
+                </div>
+            </div>
+
+            {(string.IsNullOrWhiteSpace(notes) ? "" : $@"
+            <div class='notes'>
+                <strong>📝 Ghi chú:</strong><br/>
+                {notes}
+            </div>
+            ")}
+
+            <p><strong>Lưu ý quan trọng:</strong></p>
+            <ul>
+                <li>Vui lòng có mặt đúng giờ</li>
+                {(interviewType == "Online" ? "<li>Kiểm tra kết nối internet và thiết bị trước khi tham gia</li>" : "<li>Mang theo giấy tờ tùy thân nếu cần</li>")}
+                <li>Chuẩn bị tinh thần tốt nhất cho buổi phỏng vấn</li>
+            </ul>
+
+            <center>
+                <a href='{_webBaseUrl}/Student/MyApplications' class='button'>Xem chi tiết đơn ứng tuyển</a>
+            </center>
+
+            <div class='footer'>
+                <p>Chúc bạn thành công!</p>
+                <p>Email này được gửi tự động từ hệ thống EduXtend</p>
+                <p>Vui lòng không trả lời email này</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>";
+
+        await SendEmailAsync(toEmail, subject, body);
+    }
+
+    public async Task SendInterviewUpdateEmailAsync(
+        string toEmail,
+        string applicantName,
+        string clubName,
+        DateTime scheduledDate,
+        string interviewType,
+        string location,
+        string? notes)
+    {
+        var subject = $"[{clubName}] Cập nhật lịch phỏng vấn";
+
+        var locationHtml = interviewType == "Online"
+            ? $"<a href='{location}' style='color: #007bff; text-decoration: none; font-weight: bold;'>🔗 Tham gia Google Meet</a>"
+            : $"<span style='color: #212529;'>📍 {location}</span>";
+
+        var interviewTypeText = interviewType == "Online" ? "trực tuyến (Online)" : "trực tiếp (Offline)";
+        var interviewIcon = interviewType == "Online" ? "💻" : "🏢";
+
+        var body = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .club-badge {{ background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; display: inline-block; margin-bottom: 10px; }}
+        .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .warning {{ background: #fff3cd; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; }}
+        .details {{ background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        .detail-row {{ display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e9ecef; }}
+        .detail-row:last-child {{ border-bottom: none; }}
+        .detail-label {{ font-weight: bold; color: #6c757d; }}
+        .detail-value {{ color: #212529; text-align: right; }}
+        .interview-type {{ display: inline-block; background: {(interviewType == "Online" ? "#e0f2fe" : "#fef3c7")}; color: {(interviewType == "Online" ? "#0369a1" : "#92400e")}; padding: 5px 15px; border-radius: 20px; font-weight: bold; }}
+        .notes {{ background: #e0f2fe; border-left: 4px solid #0284c7; padding: 15px; margin: 20px 0; }}
+        .button {{ display: inline-block; background: #f59e0b; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+        .footer {{ text-align: center; color: #6c757d; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <div class='club-badge'>📚 {clubName}</div>
+            <h1>🔔 Cập nhật lịch phỏng vấn</h1>
+        </div>
+        <div class='content'>
+            <p>Xin chào <strong>{applicantName}</strong>,</p>
+            
+            <div class='warning'>
+                <strong>⚠️ Lịch phỏng vấn của bạn đã được cập nhật</strong>
+            </div>
+
+            <p>Câu lạc bộ <strong>{clubName}</strong> đã thay đổi thông tin lịch phỏng vấn. Vui lòng xem chi tiết mới bên dưới:</p>
+
+            <div class='details'>
+                <div class='detail-row'>
+                    <span class='detail-label'>Hình thức:</span>
+                    <span class='detail-value'><span class='interview-type'>{interviewTypeText}</span></span>
+                </div>
+                <div class='detail-row'>
+                    <span class='detail-label'>Thời gian mới:</span>
+                    <span class='detail-value'><strong>{scheduledDate:dd/MM/yyyy HH:mm}</strong></span>
+                </div>
+                <div class='detail-row'>
+                    <span class='detail-label'>{(interviewType == "Online" ? "Link tham gia:" : "Địa điểm mới:")}</span>
+                    <span class='detail-value'>{locationHtml}</span>
+                </div>
+            </div>
+
+            {(string.IsNullOrWhiteSpace(notes) ? "" : $@"
+            <div class='notes'>
+                <strong>📝 Ghi chú:</strong><br/>
+                {notes}
+            </div>
+            ")}
+
+            <p><strong>Lưu ý quan trọng:</strong></p>
+            <ul>
+                <li>Vui lòng có mặt đúng giờ theo lịch mới</li>
+                {(interviewType == "Online" ? "<li>Kiểm tra kết nối internet và thiết bị trước khi tham gia</li>" : "<li>Lưu ý địa điểm mới để không bị nhầm lẫn</li>")}
+                <li>Chuẩn bị tinh thần tốt nhất cho buổi phỏng vấn</li>
+            </ul>
+
+            <center>
+                <a href='{_webBaseUrl}/Student/MyApplications' class='button'>Xem chi tiết đơn ứng tuyển</a>
+            </center>
+
+            <div class='footer'>
+                <p>Chúc bạn thành công!</p>
+                <p>Email này được gửi tự động từ hệ thống EduXtend</p>
+                <p>Vui lòng không trả lời email này</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>";
+
+        await SendEmailAsync(toEmail, subject, body);
+    }
 }

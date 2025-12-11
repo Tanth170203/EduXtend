@@ -28,4 +28,28 @@ public interface IEmailService
         DateTime submittedAt,
         int reportId,
         byte[] pdfAttachment);
+
+    /// <summary>
+    /// Sends interview notification email to applicant
+    /// </summary>
+    Task SendInterviewNotificationEmailAsync(
+        string toEmail,
+        string applicantName,
+        string clubName,
+        DateTime scheduledDate,
+        string interviewType,
+        string location,
+        string? notes);
+
+    /// <summary>
+    /// Sends interview update notification email
+    /// </summary>
+    Task SendInterviewUpdateEmailAsync(
+        string toEmail,
+        string applicantName,
+        string clubName,
+        DateTime scheduledDate,
+        string interviewType,
+        string location,
+        string? notes);
 }

@@ -159,6 +159,7 @@ namespace WebAPI
             builder.Services.AddScoped<IActivityExtractorService, ActivityExtractorService>();
             builder.Services.AddScoped<IJoinRequestService, JoinRequestService>();
             builder.Services.AddScoped<IInterviewService, InterviewService>();
+            builder.Services.AddScoped<Services.GoogleMeet.IGoogleMeetService, Services.GoogleMeet.GoogleMeetService>();
             builder.Services.AddScoped<Services.Users.IUserProfileService, Services.Users.UserProfileService>();
             builder.Services.AddScoped<IClubScoringService, ClubScoringService>();
             builder.Services.AddScoped<IClubMovementRecordService, ClubMovementRecordService>();
@@ -179,6 +180,13 @@ namespace WebAPI
             builder.Services.AddScoped<Services.Emails.IEmailService, Services.Emails.EmailService>();
             builder.Services.AddScoped<Services.Chatbot.IGeminiAIService, Services.Chatbot.GeminiAIService>();
             builder.Services.AddScoped<Services.Chatbot.IChatbotService, Services.Chatbot.ChatbotService>();
+            
+            // CV Export Services
+            builder.Services.AddHttpClient(); // Add HttpClientFactory
+            builder.Services.AddScoped<Services.CVExport.ICVDownloaderService, Services.CVExport.CVDownloaderService>();
+            builder.Services.AddScoped<Services.CVExport.ICVParserService, Services.CVExport.CVParserService>();
+            builder.Services.AddScoped<Services.CVExport.IExcelGeneratorService, Services.CVExport.ExcelGeneratorService>();
+            builder.Services.AddScoped<Services.CVExport.ICVExportService, Services.CVExport.CVExportService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();
