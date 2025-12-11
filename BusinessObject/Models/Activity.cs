@@ -79,6 +79,14 @@ public class Activity
     [MaxLength(6)]
     public string? AttendanceCode { get; set; }
     
+    // GPS Check-in fields
+    public double? GpsLatitude { get; set; }
+    public double? GpsLongitude { get; set; }
+    public int GpsCheckInRadius { get; set; } = 300; // meters
+    public bool IsGpsCheckInEnabled { get; set; } = false;
+    public int CheckInWindowMinutes { get; set; } = 10; // thời gian cho phép check-in sau khi bắt đầu
+    public int CheckOutWindowMinutes { get; set; } = 10; // thời gian cho phép check-out trước khi kết thúc
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Liên kết dữ liệu

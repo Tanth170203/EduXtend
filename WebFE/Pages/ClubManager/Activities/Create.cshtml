@@ -6,11 +6,14 @@
     Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
 }
 
+<!-- Leaflet CSS for Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
 <!-- Page Header -->
 <div class="page-header">
     <div>
         <h1 class="page-title">Create Activity</h1>
-        <p class="page-description">T&#7841;o ho&#7841;t &#273;&#7897;ng m&#7899;i cho câu l&#7841;c b&#7897;</p>
+        <p class="page-description">Create a new activity for your club</p>
     </div>
     <a href="/ClubManager/Activities" class="btn btn-outline-secondary">
         <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
@@ -27,10 +30,11 @@
 
 <!-- Form -->
 <form method="post" class="needs-validation" novalidate>
-    <div class="row g-4">
-        <!-- Main Form -->
+    <!-- Row 1: Basic Information + Activity Settings -->
+    <div class="row g-4 mb-4">
+        <!-- Basic Information (Left) -->
         <div class="col-lg-8">
-            <div class="content-card mb-4">
+            <div class="content-card h-100">
                 <div class="content-card-header d-flex justify-content-between align-items-center">
                     <h5 class="content-card-title mb-0">Basic Information</h5>
                     <div>
@@ -64,13 +68,6 @@
                         <span asp-validation-for="Activity.Description" class="text-danger"></span>
                     </div>
 
-                    <!-- Location -->
-                    <div class="mb-3">
-                        <label asp-for="Activity.Location" class="form-label">Location</label>
-                        <input asp-for="Activity.Location" class="form-control" placeholder="e.g., Hall A, Building B" />
-                        <span asp-validation-for="Activity.Location" class="text-danger"></span>
-                    </div>
-
                     <!-- Image Upload (Cloudinary) -->
                     <div class="mb-3">
                         <label class="form-label">Activity Image</label>
@@ -85,59 +82,11 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Date & Time -->
-            <div class="content-card mb-4">
-                <div class="content-card-header">
-                    <h5 class="content-card-title">Date & Time</h5>
-                </div>
-                <div class="content-card-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label asp-for="Activity.StartTime" class="form-label">Start Date & Time <span class="text-danger">*</span></label>
-                            <input asp-for="Activity.StartTime" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" step="60" id="startTimeInput" required />
-                            <span asp-validation-for="Activity.StartTime" class="text-danger"></span>
-                            <div id="startTimeError" class="text-danger small"></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label asp-for="Activity.EndTime" class="form-label">End Date & Time <span class="text-danger">*</span></label>
-                            <input asp-for="Activity.EndTime" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" step="60" id="endTimeInput" required />
-                            <span asp-validation-for="Activity.EndTime" class="text-danger"></span>
-                            <div id="endTimeError" class="text-danger small"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Activity Schedule & Task Assignments -->
-            <div id="scheduleManagementSection" style="display: none;">
-                <div class="content-card mb-4">
-                    <div class="content-card-header">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="content-card-title mb-0">Activity Schedule & Task Assignments</h5>
-                            <button type="button" id="addScheduleBtn" class="btn btn-sm btn-primary">
-                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                                Add Schedule Item
-                            </button>
-                        </div>
-                    </div>
-                    <div class="content-card-body">
-                        <div id="scheduleList">
-                            <!-- Schedule items will be dynamically added here -->
-                        </div>
-                        <div id="noSchedulesMessage" class="text-muted text-center py-3">
-                            <i data-lucide="calendar" style="width: 32px; height: 32px;"></i>
-                            <p class="mt-2">No schedule items yet. Click "Add Schedule Item" to create a timeline for this activity.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
-        <!-- Sidebar -->
+        <!-- Activity Settings (Right) -->
         <div class="col-lg-4">
-            <!-- Activity Settings -->
-            <div class="content-card mb-4">
+            <div class="content-card h-100">
                 <div class="content-card-header">
                     <h5 class="content-card-title">Activity Settings</h5>
                 </div>
@@ -232,22 +181,161 @@
                     </div>
 
                     <!-- Approval Note (Hidden for Club Activities) -->
-                    <div class="alert alert-info" id="approvalNote">
+                    <div class="alert alert-info mb-0" id="approvalNote">
                         <i data-lucide="info" style="width: 16px; height: 16px;"></i>
                         <strong>Note:</strong> This activity will be submitted for admin approval before it becomes visible to students.
                     </div>
 
                     <!-- Club Activity Note (Shown for Club Activities) -->
-                    <div class="alert alert-success" id="clubActivityNote" style="display:none;">
+                    <div class="alert alert-success mb-0" id="clubActivityNote" style="display:none;">
                         <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
                         <strong>Internal Activity:</strong> Club activities do not require admin approval and are created immediately.
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Submit Buttons -->
+    <!-- Row 2: Location & GPS Configuration -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Location & GPS Configuration</h5>
+                </div>
+                <div class="content-card-body">
+                    <div class="row">
+                        <!-- Location Input and Map -->
+                        <div class="col-lg-8">
+                            <div class="mb-3">
+                                <label asp-for="Activity.Location" class="form-label">Location <i class="bi bi-geo-alt text-primary"></i></label>
+                                <div class="input-group">
+                                    <input asp-for="Activity.Location" class="form-control" id="locationInput" 
+                                           placeholder="Enter address and press Enter to search..." 
+                                           onkeypress="if(event.key==='Enter'){event.preventDefault();searchActivityLocation();}" />
+                                    <button class="btn btn-outline-secondary" type="button" onclick="searchActivityLocation()">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="getCurrentLocationForActivity()">
+                                        <i class="bi bi-crosshair"></i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="Activity.Location" class="text-danger"></span>
+                                <small class="text-muted">Enter address to search or click on the map to select location</small>
+                            </div>
+                            
+                            <!-- GPS Location Map -->
+                            <div id="locationMap" style="height: 300px; border-radius: 8px; border: 1px solid #dee2e6;"></div>
+                            
+                            <!-- Hidden GPS fields -->
+                            <input type="hidden" asp-for="Activity.GpsLatitude" id="gpsLatInput" />
+                            <input type="hidden" asp-for="Activity.GpsLongitude" id="gpsLonInput" />
+                            
+                            <!-- Display coordinates -->
+                            <div class="d-flex justify-content-between mt-2">
+                                <small class="text-muted">Lat: <span id="displayLat" class="fw-bold">--</span></small>
+                                <small class="text-muted">Lng: <span id="displayLon" class="fw-bold">--</span></small>
+                            </div>
+                        </div>
+                        
+                        <!-- GPS Configuration -->
+                        <div class="col-lg-4">
+                            <div class="p-3 border rounded bg-light h-100" id="gpsConfigSection">
+                                <h6 class="mb-3"><i class="bi bi-geo-alt text-primary"></i> GPS Attendance Configuration</h6>
+                                
+                                <!-- Hidden field for IsGpsCheckInEnabled (always true) -->
+                                <input type="hidden" asp-for="Activity.IsGpsCheckInEnabled" id="isGpsCheckInEnabled" value="true" />
+                                
+                                <!-- Radius Slider -->
+                                <div class="mb-3">
+                                    <label class="form-label">Allowed Radius (meters)</label>
+                                    <input type="range" class="form-range" min="50" max="500" step="10"
+                                           asp-for="Activity.GpsCheckInRadius" id="radiusSlider" value="100" oninput="updateRadiusDisplay()">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="small">50m</span>
+                                        <span id="radiusLabel" class="fw-bold text-primary">100m</span>
+                                        <span class="small">500m</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Time Windows -->
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label small">Check-in (minutes)</label>
+                                        <input type="number" class="form-control form-control-sm" min="5" max="60" 
+                                               asp-for="Activity.CheckInWindowMinutes" value="10">
+                                        <small class="text-muted">After activity starts</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">Check-out (minutes)</label>
+                                        <input type="number" class="form-control form-control-sm" min="5" max="60" 
+                                               asp-for="Activity.CheckOutWindowMinutes" value="10">
+                                        <small class="text-muted">Before activity ends</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 3: Date & Time + Submit -->
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <!-- Date & Time -->
+            <div class="content-card mb-4">
+                <div class="content-card-header">
+                    <h5 class="content-card-title">Date & Time</h5>
+                </div>
+                <div class="content-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Activity.StartTime" class="form-label">Start Date & Time <span class="text-danger">*</span></label>
+                            <input asp-for="Activity.StartTime" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" id="startTimeInput" required />
+                            <span asp-validation-for="Activity.StartTime" class="text-danger"></span>
+                            <div id="startTimeError" class="text-danger small"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Activity.EndTime" class="form-label">End Date & Time <span class="text-danger">*</span></label>
+                            <input asp-for="Activity.EndTime" asp-format="{0:yyyy-MM-ddTHH:mm}" type="datetime-local" class="form-control" id="endTimeInput" required />
+                            <span asp-validation-for="Activity.EndTime" class="text-danger"></span>
+                            <div id="endTimeError" class="text-danger small"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Schedule & Task Assignments -->
+            <div id="scheduleManagementSection" style="display: none;">
+                <div class="content-card mb-4">
+                    <div class="content-card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="content-card-title mb-0">Activity Schedule & Task Assignments</h5>
+                            <button type="button" id="addScheduleBtn" class="btn btn-sm btn-primary">
+                                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+                                Add Schedule Item
+                            </button>
+                        </div>
+                    </div>
+                    <div class="content-card-body">
+                        <div id="scheduleList">
+                            <!-- Schedule items will be dynamically added here -->
+                        </div>
+                        <div id="noSchedulesMessage" class="text-muted text-center py-3">
+                            <i data-lucide="calendar" style="width: 32px; height: 32px;"></i>
+                            <p class="mt-2">No schedule items yet. Click "Add Schedule Item" to create a timeline for this activity.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="col-lg-4">
             <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary btn-lg">
                     <i data-lucide="check" style="width: 16px; height: 16px;"></i>
                     Submit for Approval
                 </button>
@@ -316,7 +404,7 @@
                     document.getElementById('Activity_Description').value = data.description;
                 }
                 if (data.location) {
-                    document.getElementById('Activity_Location').value = data.location;
+                    document.getElementById('locationInput').value = data.location;
                 }
                 if (data.startTime) {
                     const startInput = document.getElementById('startTimeInput');
@@ -346,26 +434,19 @@
                     }
                 }
 
-                // Auto-fill schedules if present - store for later processing
+                // Auto-fill schedules if present
                 if (data.schedules && data.schedules.length > 0) {
                     window.pendingSchedules = data.schedules;
-                    // Use setTimeout to ensure addScheduleItem is defined and schedule section is visible
                     setTimeout(() => {
                         if (typeof addScheduleItem === 'function' && window.pendingSchedules) {
                             const scheduleSection = document.getElementById('scheduleManagementSection');
-                            
-                            // IMPORTANT: Force show schedule section before adding items
                             if (scheduleSection) {
                                 scheduleSection.style.display = 'block';
                             }
-                            
-                            // Clear existing schedules
                             if (scheduleList) {
                                 scheduleList.innerHTML = '';
                                 scheduleIndex = 0;
                             }
-                            
-                            // Add each schedule item
                             window.pendingSchedules.forEach(schedule => {
                                 addScheduleItem();
                                 const lastSchedule = scheduleList.lastElementChild;
@@ -374,18 +455,16 @@
                                     const endTimeInput = lastSchedule.querySelector('.schedule-end-time');
                                     const titleInput = lastSchedule.querySelector('.schedule-title');
                                     const descInput = lastSchedule.querySelector('.schedule-description');
-                                    
                                     if (startTimeInput && schedule.startTime) startTimeInput.value = schedule.startTime;
                                     if (endTimeInput && schedule.endTime) endTimeInput.value = schedule.endTime;
                                     if (titleInput && schedule.title) titleInput.value = schedule.title;
                                     if (descInput && schedule.description) descInput.value = schedule.description;
                                 }
                             });
-                            
                             if (typeof updateNoSchedulesMessage === 'function') updateNoSchedulesMessage();
                             window.pendingSchedules = null;
                         }
-                    }, 200); // Increased timeout to ensure DOM is ready
+                    }, 200);
                 }
 
                 // Show success
@@ -409,7 +488,7 @@
                 autoFillStatusText.textContent = 'Lỗi: ' + error.message;
             } finally {
                 autoFillBtn.disabled = false;
-                this.value = ''; // Reset file input
+                this.value = '';
             }
         });
 
@@ -419,6 +498,14 @@
             var forms = document.querySelectorAll('.needs-validation')
             Array.prototype.slice.call(forms).forEach(function (form) {
                 form.addEventListener('submit', function (event) {
+                    // Log GPS values before submit
+                    const latInput = document.querySelector('input[name="Activity.GpsLatitude"]');
+                    const lngInput = document.querySelector('input[name="Activity.GpsLongitude"]');
+                    console.log('=== FORM SUBMIT ===');
+                    console.log('GPS Latitude:', latInput?.value);
+                    console.log('GPS Longitude:', lngInput?.value);
+                    console.log('IsGpsCheckInEnabled:', document.getElementById('isGpsCheckInEnabled')?.checked);
+                    
                     if (!form.checkValidity()) {
                         event.preventDefault()
                         event.stopPropagation()
@@ -428,6 +515,17 @@
             })
         })()
 
+        // ===== Core Element References (declare early to avoid null reference errors) =====
+        const activityTypeSelect = document.getElementById('activityTypeSelect');
+        const maxParticipantsInput = document.getElementById('maxParticipantsInput');
+        const startTimeInput = document.getElementById('startTimeInput');
+        const endTimeInput = document.getElementById('endTimeInput');
+        
+        // Collaboration fields
+        const clubCollaborationIdInput = document.getElementById('ClubCollaborationIdInput');
+        const collaborationPointInput = document.getElementById('CollaborationPointInput');
+        const isMandatoryHidden = document.getElementById('isMandatoryHidden');
+        
         // ===== Auto-fill Movement Points =====
         const movementPointInput = document.getElementById('movementPointInput');
         const movementPointHint = document.getElementById('movementPointHint');
@@ -557,11 +655,10 @@
         // Note: maxParticipantsInput event listeners will be added after activityTypeSelect is declared
 
         // ===== Collaboration Fields Management =====
+        // Note: clubCollaborationIdInput and collaborationPointInput are declared at the top of the script
         const clubCollaborationSection = document.getElementById('clubCollaborationSection');
         const collaborationPointSection = document.getElementById('collaborationPointSection');
         const movementPointSection = document.getElementById('movementPointSection');
-        const clubCollaborationIdInput = document.getElementById('ClubCollaborationIdInput');
-        const collaborationPointInput = document.getElementById('CollaborationPointInput');
         const selectedClubNameInput = document.getElementById('selectedClubName');
         const selectClubBtn = document.getElementById('selectClubBtn');
         const clubCollaborationError = document.getElementById('ClubCollaborationError');
@@ -631,12 +728,10 @@
         });
 
         // ===== Mandatory Button & Club Activity Type Logic =====
-        const activityTypeSelect = document.getElementById('activityTypeSelect');
+        // Note: activityTypeSelect, maxParticipantsInput, and isMandatoryHidden are declared at the top of the script
         const mandatorySection = document.getElementById('mandatorySection');
         const mandatoryBtn = document.getElementById('mandatoryBtn');
         const mandatoryBtnText = document.getElementById('mandatoryBtnText');
-        const isMandatoryHidden = document.getElementById('isMandatoryHidden');
-        const maxParticipantsInput = document.getElementById('maxParticipantsInput');
         const approvalNote = document.getElementById('approvalNote');
         const clubActivityNote = document.getElementById('clubActivityNote');
         
@@ -790,8 +885,7 @@
         }, 100);
 
         // ===== Date Validation =====
-        const startTimeInput = document.getElementById('startTimeInput');
-        const endTimeInput = document.getElementById('endTimeInput');
+        // Note: startTimeInput and endTimeInput are declared at the top of the script
         const startTimeError = document.getElementById('startTimeError');
         const endTimeError = document.getElementById('endTimeError');
 
@@ -1023,27 +1117,52 @@
                     'SchoolCollaboration': 11
                 }[selectedType] || 0;
 
-                // Build payload
+                // Build payload with null safety
+                const gpsLat = document.getElementById('gpsLatInput')?.value;
+                const gpsLng = document.getElementById('gpsLonInput')?.value;
+                const gpsRadius = document.getElementById('radiusSlider')?.value;
+                const checkInWindow = document.querySelector('input[name="Activity.CheckInWindowMinutes"]')?.value;
+                const checkOutWindow = document.querySelector('input[name="Activity.CheckOutWindowMinutes"]')?.value;
+                
+                console.log('GPS Config:', { gpsLat, gpsLng, gpsRadius, checkInWindow, checkOutWindow });
+                
                 const payload = {
                     Activity: {
-                        Title: document.getElementById('Activity_Title').value,
-                        Description: document.getElementById('Activity_Description').value || null,
-                        Location: document.getElementById('Activity_Location').value || null,
-                        ImageUrl: document.getElementById('Activity_ImageUrl').value || null,
-                        StartTime: startTimeInput.value,
-                        EndTime: endTimeInput.value,
+                        Title: document.getElementById('Activity_Title')?.value || '',
+                        Description: document.getElementById('Activity_Description')?.value || null,
+                        Location: document.getElementById('locationInput')?.value || 'Da Nang, Vietnam',
+                        ImageUrl: document.getElementById('Activity_ImageUrl')?.value || null,
+                        StartTime: startTimeInput?.value || '',
+                        EndTime: endTimeInput?.value || '',
                         Type: typeValue,
-                        IsPublic: document.getElementById('Activity_IsPublic').checked,
-                        MaxParticipants: maxParticipantsInput.value ? parseInt(maxParticipantsInput.value) : null,
-                        MovementPoint: parseFloat(movementPointInput.value),
-                        IsMandatory: isMandatoryHidden.value === 'true',
-                        ClubCollaborationId: clubCollaborationIdInput.value ? parseInt(clubCollaborationIdInput.value) : null,
-                        CollaborationPoint: collaborationPointInput.value ? parseInt(collaborationPointInput.value) : null
+                        IsPublic: document.getElementById('Activity_IsPublic')?.checked || false,
+                        MaxParticipants: maxParticipantsInput?.value ? parseInt(maxParticipantsInput.value) : null,
+                        MovementPoint: parseFloat(movementPointInput?.value || '0'),
+                        IsMandatory: isMandatoryHidden?.value === 'true',
+                        ClubCollaborationId: clubCollaborationIdInput?.value ? parseInt(clubCollaborationIdInput.value) : null,
+                        CollaborationPoint: collaborationPointInput?.value ? parseInt(collaborationPointInput.value) : null,
+                        // GPS Location (default to Đà Nẵng if not set)
+                        GpsLatitude: gpsLat ? parseFloat(gpsLat) : 15.967483,
+                        GpsLongitude: gpsLng ? parseFloat(gpsLng) : 108.260361,
+                        // GPS Check-in Configuration (always enabled)
+                        IsGpsCheckInEnabled: true,
+                        GpsCheckInRadius: gpsRadius ? parseInt(gpsRadius) : 100,
+                        CheckInWindowMinutes: checkInWindow ? parseInt(checkInWindow) : 10,
+                        CheckOutWindowMinutes: checkOutWindow ? parseInt(checkOutWindow) : 10
                     },
                     Schedules: isComplexActivity(selectedType) ? collectScheduleData() : []
                 };
 
-                console.log('Submitting payload:', payload);
+                console.log('=== SUBMITTING PAYLOAD ===');
+                console.log('Full payload:', JSON.stringify(payload, null, 2));
+                console.log('GPS fields:', {
+                    GpsLatitude: payload.Activity.GpsLatitude,
+                    GpsLongitude: payload.Activity.GpsLongitude,
+                    IsGpsCheckInEnabled: payload.Activity.IsGpsCheckInEnabled,
+                    GpsCheckInRadius: payload.Activity.GpsCheckInRadius,
+                    CheckInWindowMinutes: payload.Activity.CheckInWindowMinutes,
+                    CheckOutWindowMinutes: payload.Activity.CheckOutWindowMinutes
+                });
 
                 // Submit to API
                 const response = await fetch(`@Model.ApiBaseUrl/api/activity/club-manager?clubId=${clubId}`, {
@@ -1514,6 +1633,147 @@
             statusEl.textContent = '';
         });
     </script>
+    
+    <!-- Leaflet JS for Location Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Location Map for Activity Creation
+        let locationMap, locationMarker;
+        // Default location: Đà Nẵng (as per user requirement)
+        const defaultLat = 15.967483, defaultLon = 108.260361;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initLocationMap();
+        });
+
+        function initLocationMap() {
+            locationMap = L.map('locationMap').setView([defaultLat, defaultLon], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(locationMap);
+
+            locationMap.on('click', function(e) {
+                setLocationMarker(e.latlng.lat, e.latlng.lng, true); // true = reverse geocode
+            });
+            
+            // Set default marker and location text on page load
+            setLocationMarker(defaultLat, defaultLon, true);
+        }
+
+        function setLocationMarker(lat, lng, reverseGeocode = false) {
+            if (locationMarker) locationMap.removeLayer(locationMarker);
+            locationMarker = L.marker([lat, lng], { draggable: true }).addTo(locationMap);
+            
+            locationMarker.on('dragend', function(e) {
+                const pos = e.target.getLatLng();
+                updateGpsInputs(pos.lat, pos.lng);
+                reverseGeocodeLocation(pos.lat, pos.lng);
+            });
+            
+            updateGpsInputs(lat, lng);
+            locationMarker.bindPopup('Activity Location').openPopup();
+            
+            // Reverse geocode to get address text
+            if (reverseGeocode) {
+                reverseGeocodeLocation(lat, lng);
+            }
+        }
+        
+        // Reverse geocode to get address from coordinates
+        function reverseGeocodeLocation(lat, lng) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.display_name) {
+                        // Get short address (first 3 parts)
+                        const shortName = data.display_name.split(',').slice(0, 3).join(', ');
+                        document.getElementById('locationInput').value = shortName;
+                        console.log('Location text set:', shortName);
+                    }
+                })
+                .catch(err => {
+                    console.error('Reverse geocode error:', err);
+                    // Set default text if reverse geocode fails
+                    document.getElementById('locationInput').value = 'Da Nang, Vietnam';
+                });
+        }
+
+        function updateGpsInputs(lat, lng) {
+            const latValue = lat.toFixed(6);
+            const lngValue = lng.toFixed(6);
+            
+            // Set hidden input values (try both custom ID and ASP.NET generated ID)
+            const latInput = document.getElementById('gpsLatInput') || document.getElementById('Activity_GpsLatitude');
+            const lngInput = document.getElementById('gpsLonInput') || document.getElementById('Activity_GpsLongitude');
+            
+            if (latInput) latInput.value = latValue;
+            if (lngInput) lngInput.value = lngValue;
+            
+            // Also set by name attribute (ASP.NET binding)
+            const latByName = document.querySelector('input[name="Activity.GpsLatitude"]');
+            const lngByName = document.querySelector('input[name="Activity.GpsLongitude"]');
+            if (latByName) latByName.value = latValue;
+            if (lngByName) lngByName.value = lngValue;
+            
+            // Update display
+            document.getElementById('displayLat').textContent = latValue;
+            document.getElementById('displayLon').textContent = lngValue;
+            
+            console.log('GPS Updated:', { lat: latValue, lng: lngValue });
+        }
+        
+        function updateRadiusDisplay() {
+            const radius = document.getElementById('radiusSlider').value;
+            document.getElementById('radiusLabel').textContent = radius + 'm';
+        }
+        
+        // Initialize GPS config on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial radius display
+            updateRadiusDisplay();
+        });
+
+        function getCurrentLocationForActivity() {
+            if (!navigator.geolocation) { alert('Browser does not support GPS'); return; }
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    locationMap.setView([pos.coords.latitude, pos.coords.longitude], 17);
+                    setLocationMarker(pos.coords.latitude, pos.coords.longitude);
+                },
+                function(err) { alert('Cannot get location: ' + err.message); },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        function searchActivityLocation() {
+            const query = document.getElementById('locationInput').value.trim();
+            if (!query) { alert('Please enter an address'); return; }
+            
+            const locationInput = document.getElementById('locationInput');
+            const originalPlaceholder = locationInput.placeholder;
+            locationInput.placeholder = 'Searching...';
+            
+            fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=1')
+                .then(r => r.json())
+                .then(data => {
+                    locationInput.placeholder = originalPlaceholder;
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
+                        locationMap.setView([lat, lng], 17);
+                        setLocationMarker(lat, lng);
+                        const shortName = data[0].display_name.split(',').slice(0, 3).join(', ');
+                        document.getElementById('locationInput').value = shortName;
+                    } else { 
+                        alert('Location not found. You can click directly on the map to select a location.'); 
+                    }
+                })
+                .catch(() => {
+                    locationInput.placeholder = originalPlaceholder;
+                    alert('Search error. Please try again.');
+                });
+        }
+    </script>
+    
     <partial name="_ValidationScriptsPartial" />
 }
 

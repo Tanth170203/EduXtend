@@ -85,7 +85,22 @@ public class MovementRecordRepository : IMovementRecordRepository
     public async Task<MovementRecord> UpdateAsync(MovementRecord record)
     {
         record.LastUpdated = DateTime.UtcNow;
-        _context.MovementRecords.Update(record);
+        
+        // Check if entity is already being tracked
+        var trackedEntity = _context.ChangeTracker.Entries<MovementRecord>()
+            .FirstOrDefault(e => e.Entity.Id == record.Id);
+        
+        if (trackedEntity != null)
+        {
+            // Entity is already tracked, update its values
+            trackedEntity.CurrentValues.SetValues(record);
+        }
+        else
+        {
+            // Entity is not tracked, attach and mark as modified
+            _context.MovementRecords.Update(record);
+        }
+        
         await _context.SaveChangesAsync();
         return record;
     }

@@ -1,4 +1,6 @@
-﻿namespace BusinessObject.Models;
+using System.ComponentModel.DataAnnotations;
+
+namespace BusinessObject.Models;
 
 public class ActivityAttendance
 {
@@ -22,4 +24,21 @@ public class ActivityAttendance
     
     public int? CheckedById { get; set; }
     public User? CheckedBy { get; set; }
+    
+    // GPS Check-in fields
+    public double? CheckInLatitude { get; set; }
+    public double? CheckInLongitude { get; set; }
+    public double? CheckInAccuracy { get; set; } // GPS accuracy in meters
+    public double? DistanceFromActivity { get; set; } // calculated distance when check-in
+    
+    // GPS Check-out fields
+    public double? CheckOutLatitude { get; set; }
+    public double? CheckOutLongitude { get; set; }
+    public double? CheckOutAccuracy { get; set; }
+    public DateTime? CheckOutTime { get; set; }
+    
+    // Check-in method: Currently only "GPS" is supported
+    // Note: "Code" and "Manual" methods are temporarily disabled (hidden, not deleted)
+    [MaxLength(20)]
+    public string? CheckInMethod { get; set; }
 }

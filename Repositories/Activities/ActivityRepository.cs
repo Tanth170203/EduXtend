@@ -265,7 +265,7 @@ namespace Repositories.Activities
 			await _ctx.SaveChangesAsync();
 		}
 
-	public async Task<List<(int UserId, string FullName, string Email, bool? IsPresent, int? ParticipationScore)>> GetRegistrantsWithAttendanceAsync(int activityId)
+	public async Task<List<(int UserId, string FullName, string Email, bool? IsPresent, int? ParticipationScore, string? CheckInMethod, DateTime? GpsCheckInTime, DateTime? GpsCheckOutTime, double? CheckInDistance)>> GetRegistrantsWithAttendanceAsync(int activityId)
 	{
 		var regs = await _ctx.ActivityRegistrations
 			.Where(r => r.ActivityId == activityId && (r.Status == "Registered" || r.Status == "Attended"))
@@ -274,13 +274,24 @@ namespace Repositories.Activities
 
 		var attendanceMap = await _ctx.ActivityAttendances
 			.Where(a => a.ActivityId == activityId)
-			.ToDictionaryAsync(a => a.UserId, a => new { a.IsPresent, a.ParticipationScore });
+			.ToDictionaryAsync(a => a.UserId, a => new { 
+				a.IsPresent, 
+				a.ParticipationScore, 
+				a.CheckInMethod, 
+				a.CheckedAt, 
+				a.CheckOutTime,
+				a.DistanceFromActivity 
+			});
 
 		return regs.Select(r => {
 			var attendance = attendanceMap.ContainsKey(r.UserId) ? attendanceMap[r.UserId] : null;
 			return (r.UserId, r.FullName, r.Email, 
 				attendance != null ? (bool?)attendance.IsPresent : null,
-				attendance?.ParticipationScore);
+				attendance?.ParticipationScore,
+				attendance?.CheckInMethod,
+				attendance?.CheckInMethod == "GPS" ? attendance?.CheckedAt : null,
+				attendance?.CheckOutTime,
+				attendance?.DistanceFromActivity);
 		}).ToList();
 	}
 
@@ -343,6 +354,13 @@ namespace Repositories.Activities
 		{
 			return await _ctx.ActivityAttendances
 				.FirstOrDefaultAsync(a => a.ActivityId == activityId && a.UserId == userId);
+		}
+
+		public async Task<List<ActivityAttendance>> GetAttendancesWithScoreAsync(int activityId)
+		{
+			return await _ctx.ActivityAttendances
+				.Where(a => a.ActivityId == activityId && a.IsPresent && a.ParticipationScore.HasValue && a.ParticipationScore > 0)
+				.ToListAsync();
 		}
 
 		public async Task<ActivityAttendance> CreateAttendanceAsync(int activityId, int userId, bool isPresent, int? participationScore, int? checkedById)

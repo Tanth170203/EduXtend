@@ -46,6 +46,7 @@ using Repositories.CommunicationPlans;
 using Services.CommunicationPlans;
 using Repositories.MonthlyReports;
 using Services.MonthlyReports;
+using Services.GpsAttendance;
 using System.IdentityModel.Tokens.Jwt;
 using WebAPI.Authentication;
 using WebAPI.Middleware;
@@ -179,6 +180,10 @@ namespace WebAPI
             builder.Services.AddScoped<Services.Emails.IEmailService, Services.Emails.EmailService>();
             builder.Services.AddScoped<Services.Chatbot.IGeminiAIService, Services.Chatbot.GeminiAIService>();
             builder.Services.AddScoped<Services.Chatbot.IChatbotService, Services.Chatbot.ChatbotService>();
+
+            // GPS Attendance Services
+            builder.Services.AddSingleton<IHaversineCalculator, HaversineCalculator>();
+            builder.Services.AddScoped<IGpsAttendanceService, GpsAttendanceService>();
 
             // Background Services
             builder.Services.AddHostedService<SemesterAutoUpdateService>();

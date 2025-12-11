@@ -134,7 +134,7 @@
                 // Show success message
                 const successDiv = document.createElement('div');
                 successDiv.className = 'alert alert-success text-center';
-                successDiv.innerHTML = '<i class="bi bi-check-circle me-2"></i>✓ Đăng nhập thành công! Đang chuyển hướng...';
+                successDiv.innerHTML = '<i class="bi bi-check-circle me-2"></i>Login successful! Redirecting...';
                 document.querySelector('.card-body').insertBefore(
                     successDiv, 
                     document.querySelector('.card-body').firstChild
@@ -147,7 +147,7 @@
                 window.location.href = data.redirectUrl || '/';
             } catch (err) {
                 console.error('[Auth] Login error:', err);
-                showError(err.message || 'Đăng nhập thất bại. Vui lòng dùng email @@fpt.edu.vn');
+                showError(err.message || 'Login failed.');
                 isLoggingIn = false;
                 showLoading(false);
             }
@@ -187,7 +187,7 @@
                     init();
                 } else if (attempts >= maxAttempts) {
                     clearInterval(checkLib);
-                    showError('Không thể tải Google Sign-In. Vui lòng kiểm tra kết nối internet.');
+                    showError('Unable to load Google Sign-In. Please check your internet connection.');
                 }
             }, 100);
         });

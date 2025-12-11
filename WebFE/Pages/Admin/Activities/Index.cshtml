@@ -156,7 +156,7 @@
                             <th class="px-3 py-3 fw-semibold text-muted">End</th>
                             <th class="px-3 py-3 fw-semibold text-muted">Public</th>
                             <th class="px-3 py-3 fw-semibold text-muted">Participants</th>
-                            <th class="px-3 py-3 fw-semibold text-muted">Code</th>
+                            @* <th class="px-3 py-3 fw-semibold text-muted">Code</th> - TEMPORARILY HIDDEN (GPS only mode) *@
                             <th class="px-4 py-3 fw-semibold text-muted text-end" style="width: 150px;">Actions</th>
                         </tr>
                     </thead>
@@ -218,6 +218,7 @@
                                     <span class="text-muted">/ @a.MaxParticipants</span>
                                 }
                             </td>
+                            @* ATTENDANCE CODE COLUMN - TEMPORARILY HIDDEN (GPS only mode)
                             <td class="px-3 py-3">
                                 @if (!string.IsNullOrWhiteSpace(a.AttendanceCode))
                                 {
@@ -235,6 +236,7 @@
                                     <span class="text-muted small">N/A</span>
                                 }
                             </td>
+                            *@
                             <td class="px-4 py-3 text-end" style="white-space: nowrap;">
                                 <a class="btn btn-sm btn-outline-info me-1" href="/Admin/Activities/Details/@a.Id" title="View Details" style="width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;">
                                     <i class="bi bi-eye" style="font-size: 16px;"></i>

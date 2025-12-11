@@ -103,7 +103,22 @@ public class ClubMovementRecordRepository : IClubMovementRecordRepository
     public async Task UpdateAsync(ClubMovementRecord record)
     {
         record.LastUpdated = DateTime.UtcNow;
-        _context.ClubMovementRecords.Update(record);
+        
+        // Check if entity is already being tracked
+        var trackedEntity = _context.ChangeTracker.Entries<ClubMovementRecord>()
+            .FirstOrDefault(e => e.Entity.Id == record.Id);
+        
+        if (trackedEntity != null)
+        {
+            // Entity is already tracked, update its values
+            trackedEntity.CurrentValues.SetValues(record);
+        }
+        else
+        {
+            // Entity is not tracked, attach and mark as modified
+            _context.ClubMovementRecords.Update(record);
+        }
+        
         await _context.SaveChangesAsync();
     }
 

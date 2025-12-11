@@ -5,24 +5,19 @@
 namespace DataAccess.Migrations
 {
     /// <inheritdoc />
-    public partial class AddRejectionReasonToPlans : Migration
+    public partial class SyncGpsAttendanceFields : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "RejectionReason",
-                table: "Plans",
-                type: "nvarchar(max)",
-                nullable: true);
+            // GPS fields already added via SQL script (ADD_GPS_ATTENDANCE_FIELDS.sql)
+            // This migration is just to sync the model snapshot
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "RejectionReason",
-                table: "Plans");
+            // No rollback needed - fields were added via SQL script
         }
     }
 }

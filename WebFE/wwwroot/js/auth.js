@@ -166,8 +166,8 @@ async function logout() {
         });
 
         sessionStorage.setItem('logoutSuccess', JSON.stringify({
-            title: 'Đăng xuất thành công',
-            message: 'Hẹn gặp lại bạn!'
+            title: 'Log out successfully',
+            message: 'See you again!'
         }));
 
         window.location.href = '/';

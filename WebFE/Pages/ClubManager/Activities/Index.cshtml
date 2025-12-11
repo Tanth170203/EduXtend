@@ -113,7 +113,7 @@
                             <th>Date</th>
                             <th>Status</th>
                             <th>Participants</th>
-                            <th>Code</th>
+                            @* <th>Code</th> - TEMPORARILY HIDDEN (GPS only mode) *@
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -193,6 +193,7 @@
                                         <span>@activity.CurrentParticipants</span>
                                     }
                                 </td>
+                                @* ATTENDANCE CODE COLUMN - TEMPORARILY HIDDEN (GPS only mode)
                                 <td>
                                     @if (!string.IsNullOrWhiteSpace(activity.AttendanceCode))
                                     {
@@ -210,6 +211,7 @@
                                         <span class="text-muted small">N/A</span>
                                     }
                                 </td>
+                                *@
                                 <td>
                                     <div class="btn-group" role="group">
                                         <a href="/ClubManager/Activities/Details/@activity.Id" class="btn btn-sm btn-outline-primary" title="View Details">
