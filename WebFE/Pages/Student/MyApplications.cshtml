@@ -199,6 +199,10 @@
 </div>
 
 @section Scripts {
+    <!-- Leaflet CSS and JS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
         const applications = @Html.Raw(Json.Serialize(Model.Applications.Select(a => new { a.Id, a.ClubId, a.CvUrl })));
         
@@ -404,6 +408,7 @@
             const scheduledDate = new Date(interview.scheduledDate).toLocaleString('vi-VN');
             const statusClass = interview.status === 'Completed' ? 'success' : (interview.status === 'Scheduled' ? 'primary' : 'secondary');
             const hasEvaluation = interview.evaluation && interview.evaluation.trim() !== '';
+            const hasGPS = interview.latitude && interview.longitude;
 
             let html = '<div class="alert alert-' + statusClass + ' mt-3 mb-0">';
             html += '<div class="d-flex align-items-center gap-2 mb-2">';
@@ -413,6 +418,19 @@
             html += '<div class="small">';
             html += '<div><i data-lucide="clock" style="width: 14px; height: 14px;"></i> <strong>Date:</strong> ' + scheduledDate + '</div>';
             html += '<div><i data-lucide="map-pin" style="width: 14px; height: 14px;"></i> <strong>Location:</strong> ' + interview.location + '</div>';
+            
+            // Show map if GPS coordinates available
+            if (hasGPS && interview.interviewType === 'Offline') {
+                const mapId = 'map-' + requestId;
+                html += '<div class="mt-2">';
+                html += '<div id="' + mapId + '" style="height: 200px; border-radius: 8px; overflow: hidden; margin-top: 8px;"></div>';
+                html += '<div class="mt-1">';
+                html += '<a href="https://www.google.com/maps?q=' + interview.latitude + ',' + interview.longitude + '" target="_blank" class="btn btn-sm btn-outline-primary">';
+                html += '<i data-lucide="external-link" style="width: 12px; height: 12px;"></i> Open in Google Maps';
+                html += '</a>';
+                html += '</div>';
+                html += '</div>';
+            }
             
             if (interview.notes) {
                 html += '<div class="mt-2"><strong>Notes:</strong> ' + interview.notes + '</div>';
@@ -427,10 +445,29 @@
             
             html += '</div>';
             html += '</div>';
-
+            
             container.innerHTML = html;
-            if (typeof lucide !== 'undefined' && lucide.createIcons) {
-                lucide.createIcons();
+            lucide.createIcons();
+            
+            // Initialize map if GPS available
+            if (hasGPS && interview.interviewType === 'Offline') {
+                setTimeout(() => {
+                    const map = L.map(mapId, {
+                        dragging: true,
+                        scrollWheelZoom: false,
+                        zoomControl: true
+                    }).setView([interview.latitude, interview.longitude], 15);
+                    
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors',
+                        maxZoom: 19
+                    }).addTo(map);
+                    
+                    L.marker([interview.latitude, interview.longitude])
+                        .addTo(map)
+                        .bindPopup(interview.location)
+                        .openPopup();
+                }, 100);
             }
         }
 

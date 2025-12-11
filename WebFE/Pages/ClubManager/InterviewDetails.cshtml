@@ -78,6 +78,24 @@
                             <label for="editLocation" class="form-label" id="editLocationLabel">Location *</label>
                             <input type="text" class="form-control" id="editLocation" placeholder="e.g. Room 101, Building A" maxlength="500" required />
                             <div class="form-text" id="editLocationHelp">Physical location for the interview</div>
+                            
+                            <!-- Map Picker for Offline Interview -->
+                            <div id="editMapPickerContainer" style="display: none;" class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label mb-0">Select Location on Map (Optional)</label>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="useCurrentLocation()">
+                                        <i data-lucide="navigation" style="width: 14px; height: 14px;"></i>
+                                        Use My Location
+                                    </button>
+                                </div>
+                                <div id="editMapPicker" style="height: 300px; border-radius: 8px; overflow: hidden;"></div>
+                                <div class="form-text mt-2">
+                                    Click on the map to select interview location. Coordinates: 
+                                    <span id="editMapCoords" class="text-muted">Not selected</span>
+                                </div>
+                                <input type="hidden" id="editGpsLatitude" />
+                                <input type="hidden" id="editGpsLongitude" />
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -182,6 +200,10 @@
 </div>
 
 @section Scripts {
+    <!-- Leaflet CSS and JS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
         lucide.createIcons();
 
@@ -189,6 +211,8 @@
         let interviewId = null;
         let hasEvaluation = false;
         let currentInterview = null;
+        let editMap = null;
+        let editMarker = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             await loadInterviewData();
@@ -276,6 +300,20 @@
                     </div>
             `;
 
+            // Add map for offline interviews with GPS coordinates
+            if (!isOnline && interview.latitude && interview.longitude) {
+                html += `
+                    <div class="col-12">
+                        <label class="form-label text-muted small">Interview Location on Map</label>
+                        <div id="viewMap" style="height: 300px; border-radius: 8px; overflow: hidden; border: 1px solid #dee2e6;"></div>
+                        <div class="form-text mt-2">
+                            <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                            Coordinates: ${interview.latitude}, ${interview.longitude}
+                        </div>
+                    </div>
+                `;
+            }
+
             if (interview.notes) {
                 html += `
                     <div class="col-12">
@@ -308,6 +346,34 @@
 
             html += `</div>`;
             document.getElementById('interviewInfo').innerHTML = html;
+            
+            // Initialize view map if GPS coordinates exist
+            if (!isOnline && interview.latitude && interview.longitude) {
+                setTimeout(() => initViewMap(interview.latitude, interview.longitude), 100);
+            }
+        }
+        
+        function initViewMap(lat, lng) {
+            // Create read-only map
+            const viewMap = L.map('viewMap', {
+                dragging: true,
+                touchZoom: true,
+                scrollWheelZoom: true,
+                doubleClickZoom: true,
+                boxZoom: true,
+                keyboard: true,
+                zoomControl: true
+            }).setView([lat, lng], 15);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(viewMap);
+            
+            // Add marker at interview location
+            const marker = L.marker([lat, lng]).addTo(viewMap);
+            marker.bindPopup('<b>Interview Location</b>').openPopup();
         }
 
         function displayApplicantInfo(interview) {
@@ -397,20 +463,133 @@
             const locationInput = document.getElementById('editLocation');
             const locationLabel = document.getElementById('editLocationLabel');
             const locationHelp = document.getElementById('editLocationHelp');
+            const mapPickerContainer = document.getElementById('editMapPickerContainer');
             
             if (isOnline) {
-                // Online: Ask for Google Meet link
+                // Online: Ask for Google Meet link, hide map
                 locationLabel.textContent = 'Google Meet Link *';
                 locationInput.placeholder = 'e.g. https://meet.google.com/abc-defg-hij';
                 locationHelp.textContent = 'Create a Google Meet link and paste it here';
+                mapPickerContainer.style.display = 'none';
+                
+                // Clear GPS coordinates
+                document.getElementById('editGpsLatitude').value = '';
+                document.getElementById('editGpsLongitude').value = '';
+                
+                // Destroy map if exists
+                if (editMap) {
+                    editMap.remove();
+                    editMap = null;
+                    editMarker = null;
+                }
             } else {
-                // Offline: Ask for physical location
+                // Offline: Ask for physical location, show map
                 locationLabel.textContent = 'Location *';
                 locationInput.placeholder = 'e.g. Room 101, Building A';
                 locationHelp.textContent = 'Physical location for the interview';
+                mapPickerContainer.style.display = 'block';
+                
+                // Initialize map if not exists
+                if (!editMap) {
+                    initEditMap();
+                }
             }
             lucide.createIcons();
         }
+        
+        function initEditMap() {
+            // Default to Da Nang
+            const defaultLat = 16.047079;
+            const defaultLng = 108.206230;
+            
+            // Get initial coordinates from current interview if available
+            let initialLat = defaultLat;
+            let initialLng = defaultLng;
+            
+            if (currentInterview && currentInterview.latitude && currentInterview.longitude) {
+                initialLat = currentInterview.latitude;
+                initialLng = currentInterview.longitude;
+            }
+            
+            // Create map
+            editMap = L.map('editMapPicker').setView([initialLat, initialLng], 13);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(editMap);
+            
+            // Add marker if coordinates exist
+            if (currentInterview && currentInterview.latitude && currentInterview.longitude) {
+                setEditMapLocation(initialLat, initialLng);
+            }
+            
+            // Handle map click
+            editMap.on('click', function(e) {
+                setEditMapLocation(e.latlng.lat, e.latlng.lng);
+            });
+        }
+        
+        function setEditMapLocation(lat, lng) {
+            // Remove existing marker
+            if (editMarker) {
+                editMap.removeLayer(editMarker);
+            }
+            
+            // Add new marker
+            editMarker = L.marker([lat, lng], {
+                draggable: true
+            }).addTo(editMap);
+            
+            // Handle marker drag
+            editMarker.on('dragend', function(e) {
+                const position = e.target.getLatLng();
+                setEditMapLocation(position.lat, position.lng);
+            });
+            
+            // Update hidden inputs
+            document.getElementById('editGpsLatitude').value = lat.toFixed(6);
+            document.getElementById('editGpsLongitude').value = lng.toFixed(6);
+            
+            // Update display
+            document.getElementById('editMapCoords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            
+            // Reverse geocode to get address
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=vi`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.display_name) {
+                        document.getElementById('editLocation').value = data.display_name;
+                    }
+                })
+                .catch(error => {
+                    console.log('Reverse geocoding failed:', error);
+                });
+            
+            // Center map on marker
+            editMap.setView([lat, lng], editMap.getZoom());
+        }
+        
+        window.useCurrentLocation = function() {
+            if (!navigator.geolocation) {
+                alert('Geolocation is not supported by your browser');
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    setEditMapLocation(lat, lng);
+                    editMap.setView([lat, lng], 15);
+                },
+                function(error) {
+                    console.error('Error getting location:', error);
+                    alert('Unable to get your location. Please select manually on the map.');
+                }
+            );
+        };
 
         // Cancel edit interview
         window.cancelEditInterview = function() {
@@ -451,11 +630,17 @@
                 updateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
 
                 try {
+                    // Get GPS coordinates if available
+                    const gpsLat = document.getElementById('editGpsLatitude').value;
+                    const gpsLng = document.getElementById('editGpsLongitude').value;
+                    
                     const payload = {
                         scheduledDate: new Date(scheduledDate).toISOString(),
                         interviewType: interviewType,
                         location: location.trim(), // Send location for both Online and Offline
-                        notes: notes ? notes.trim() : null
+                        notes: notes ? notes.trim() : null,
+                        latitude: gpsLat ? parseFloat(gpsLat) : null,
+                        longitude: gpsLng ? parseFloat(gpsLng) : null
                     };
 
                     const response = await fetch(`https://localhost:5001/api/interview/${interviewId}`, {

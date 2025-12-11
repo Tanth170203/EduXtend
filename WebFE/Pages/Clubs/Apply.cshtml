@@ -362,6 +362,10 @@
 </div>
 
 @section Scripts {
+    <!-- Leaflet CSS and JS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
         // Safe wrapper for lucide.createIcons()
         window.safeCreateIcons = function() {
@@ -753,6 +757,8 @@
             @:    const hasEvaluation = interview.evaluation && interview.evaluation.trim() !== '';
             @:    const status = interview.status;
             @:    const statusClass = status === 'Completed' ? 'success' : (status === 'Scheduled' ? 'primary' : 'secondary');
+            @:    const hasGPS = interview.latitude && interview.longitude;
+            @:    const mapId = 'interview-map-' + interview.id;
             @:    
             @:    let html = `
             @:        <div class="card border-${statusClass}">
@@ -773,6 +779,21 @@
             @:                        <p class="fw-semibold"><i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> ${interview.location}</p>
             @:                    </div>
             @:    `;
+            @:    
+            @:    // Add map if GPS coordinates available
+            @:    if (hasGPS && interview.interviewType === 'Offline') {
+            @:        html += `
+            @:            <div class="col-12">
+            @:                <label class="form-label text-muted small">Map Location</label>
+            @:                <div id="${mapId}" style="height: 250px; border-radius: 8px; overflow: hidden;"></div>
+            @:                <div class="mt-2">
+            @:                    <a href="https://www.google.com/maps?q=${interview.latitude},${interview.longitude}" target="_blank" class="btn btn-sm btn-outline-primary">
+            @:                        <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Open in Google Maps
+            @:                    </a>
+            @:                </div>
+            @:            </div>
+            @:        `;
+            @:    }
             @:    
             @:    if (interview.notes) {
             @:        html += `
@@ -803,6 +824,27 @@
             @:    
             @:    document.getElementById('interviewSection').innerHTML = html;
             @:    safeCreateIcons();
+            @:    
+            @:    // Initialize map if GPS available
+            @:    if (hasGPS && interview.interviewType === 'Offline') {
+            @:        setTimeout(() => {
+            @:            const map = L.map(mapId, {
+            @:                dragging: true,
+            @:                scrollWheelZoom: false,
+            @:                zoomControl: true
+            @:            }).setView([interview.latitude, interview.longitude], 15);
+            @:            
+            @:            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            @:                attribution: '© OpenStreetMap contributors',
+            @:                maxZoom: 19
+            @:            }).addTo(map);
+            @:            
+            @:            L.marker([interview.latitude, interview.longitude])
+            @:                .addTo(map)
+            @:                .bindPopup(interview.location)
+            @:                .openPopup();
+            @:        }, 100);
+            @:    }
             @:}
         }
 

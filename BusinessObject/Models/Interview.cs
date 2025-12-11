@@ -25,6 +25,10 @@ namespace BusinessObject.Models
         [MaxLength(200)]
         public string Location { get; set; } = string.Empty;
 
+        // GPS coordinates for offline interview location
+        public decimal? Latitude { get; set; }
+        public decimal? Longitude { get; set; }
+
         [MaxLength(1000)]
         public string? Notes { get; set; } // Ghi chú ban đầu khi tạo lịch
 
