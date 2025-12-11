@@ -60,12 +60,6 @@ namespace WebFE.Pages.Admin.Activities
                 .Take(PageSize)
                 .ToList();
             
-            // Calculate statistics from all activities
-            var allActivities = await client.GetFromJsonAsync<List<ActivityListItemDto>>("/api/admin/activities") ?? new();
-            TotalActivities = allActivities.Count;
-            ApprovedActivities = allActivities.Count(a => a.Status == "Approved");
-            PendingActivities = allActivities.Count(a => a.Status == "PendingApproval");
-            UpcomingActivities = allActivities.Count(a => a.StartTime > DateTime.Now);
             // Fetch all activities for statistics (without filters)
             var allActivities = await client.GetFromJsonAsync<List<ActivityListItemDto>>("/api/admin/activities") ?? new();
             

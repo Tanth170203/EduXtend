@@ -9,7 +9,9 @@ namespace BusinessObject.DTOs.Interview
         public int UserId { get; set; }
         public string UserName { get; set; } = string.Empty;
         public string UserEmail { get; set; } = string.Empty;
+        public string? CvUrl { get; set; }
         public DateTime ScheduledDate { get; set; }
+        public string InterviewType { get; set; } = "Offline";
         public string Location { get; set; } = string.Empty;
         public string? Notes { get; set; }
         public string? Evaluation { get; set; }

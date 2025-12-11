@@ -18,6 +18,10 @@ namespace BusinessObject.Models
         public DateTime ScheduledDate { get; set; }
 
         [Required]
+        [MaxLength(50)]
+        public string InterviewType { get; set; } = "Offline"; // "Online" or "Offline"
+
+        [Required]
         [MaxLength(200)]
         public string Location { get; set; } = string.Empty;
 

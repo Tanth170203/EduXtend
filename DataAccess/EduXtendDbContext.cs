@@ -143,6 +143,12 @@ public class EduXtendContext : DbContext
             .HasForeignKey(i => i.CreatedById)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<Interview>()
+            .Property(i => i.InterviewType)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasDefaultValue("Offline");
+
         // ==== ACTIVITY ====
         // Activity CreatedBy and ApprovedBy
         modelBuilder.Entity<Activity>()

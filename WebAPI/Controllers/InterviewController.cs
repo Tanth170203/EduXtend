@@ -12,11 +12,16 @@ namespace WebAPI.Controllers
     {
         private readonly IInterviewService _interviewService;
         private readonly ILogger<InterviewController> _logger;
+        private readonly Services.GoogleMeet.IGoogleMeetService _googleMeetService;
 
-        public InterviewController(IInterviewService interviewService, ILogger<InterviewController> logger)
+        public InterviewController(
+            IInterviewService interviewService, 
+            ILogger<InterviewController> logger,
+            Services.GoogleMeet.IGoogleMeetService googleMeetService)
         {
             _interviewService = interviewService;
             _logger = logger;
+            _googleMeetService = googleMeetService;
         }
 
         // POST api/interview/schedule
@@ -32,8 +37,25 @@ namespace WebAPI.Controllers
                     return Unauthorized(new { message = "Invalid user" });
                 }
 
+                // Validate interview type
+                if (dto.InterviewType != "Online" && dto.InterviewType != "Offline")
+                {
+                    return BadRequest(new { message = "Hình thức phỏng vấn không hợp lệ. Vui lòng chọn Online hoặc Offline." });
+                }
+
+                // Validate location for offline interviews
+                if (dto.InterviewType == "Offline" && string.IsNullOrWhiteSpace(dto.Location))
+                {
+                    return BadRequest(new { message = "Vui lòng nhập địa chỉ phỏng vấn." });
+                }
+
                 var interview = await _interviewService.ScheduleInterviewAsync(dto, userId);
                 return Ok(interview);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Google Meet"))
+            {
+                _logger.LogError(ex, "Google Meet API error scheduling interview");
+                return StatusCode(503, new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -93,8 +115,25 @@ namespace WebAPI.Controllers
         {
             try
             {
+                // Validate interview type
+                if (dto.InterviewType != "Online" && dto.InterviewType != "Offline")
+                {
+                    return BadRequest(new { message = "Hình thức phỏng vấn không hợp lệ. Vui lòng chọn Online hoặc Offline." });
+                }
+
+                // Validate location for offline interviews
+                if (dto.InterviewType == "Offline" && string.IsNullOrWhiteSpace(dto.Location))
+                {
+                    return BadRequest(new { message = "Vui lòng nhập địa chỉ phỏng vấn." });
+                }
+
                 var interview = await _interviewService.UpdateInterviewAsync(id, dto);
                 return Ok(interview);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Google Meet"))
+            {
+                _logger.LogError(ex, "Google Meet API error updating interview");
+                return StatusCode(503, new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -159,6 +198,31 @@ namespace WebAPI.Controllers
             {
                 _logger.LogError(ex, "Error deleting interview");
                 return StatusCode(500, new { message = "Failed to delete interview" });
+            }
+        }
+
+        // GET api/interview/test-google-meet
+        [HttpGet("test-google-meet")]
+        [Authorize(Roles = "Admin,Staff")]
+        public async Task<IActionResult> TestGoogleMeetConfiguration()
+        {
+            try
+            {
+                var (success, message) = await _googleMeetService.TestConfigurationAsync();
+                
+                if (success)
+                {
+                    return Ok(new { success = true, message });
+                }
+                else
+                {
+                    return StatusCode(500, new { success = false, message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error testing Google Meet configuration");
+                return StatusCode(500, new { success = false, message = $"Test failed: {ex.Message}" });
             }
         }
     }

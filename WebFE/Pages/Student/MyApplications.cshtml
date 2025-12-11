@@ -179,10 +179,15 @@
                                 </a>
                                 @if (!string.IsNullOrEmpty(app.CvUrl))
                                 {
-                                    <button type="button" class="btn btn-outline-secondary btn-sm view-cv-btn" data-cv-url="@app.CvUrl" data-cv-title="My CV - @app.ClubName">
-                                        <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
-                                        View CV
-                                    </button>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm view-cv-btn" data-cv-url="@app.CvUrl" data-cv-title="My CV - @app.ClubName">
+                                            <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
+                                            View CV
+                                        </button>
+                                        <a href="@app.CvUrl" target="_blank" class="btn btn-outline-secondary btn-sm" title="Open in new tab">
+                                            <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                    </div>
                                 }
                             </div>
                         </div>
@@ -195,7 +200,10 @@
 
 @section Scripts {
     <script>
-        const applications = @Html.Raw(Json.Serialize(Model.Applications.Select(a => new { a.Id, a.ClubId })));
+        const applications = @Html.Raw(Json.Serialize(Model.Applications.Select(a => new { a.Id, a.ClubId, a.CvUrl })));
+        
+        console.log('Applications loaded:', applications);
+        console.log('Total applications:', applications.length);
 
         document.addEventListener('DOMContentLoaded', async () => {
             // Initialize lucide icons
@@ -210,6 +218,19 @@
 
             // Initialize search and filter
             initializeSearchAndFilter();
+            
+            // Wait for CV Viewer to be ready
+            let cvViewerCheckCount = 0;
+            const checkCVViewer = setInterval(() => {
+                cvViewerCheckCount++;
+                if (window.cvViewer) {
+                    console.log('CV Viewer is ready');
+                    clearInterval(checkCVViewer);
+                } else if (cvViewerCheckCount > 50) {
+                    console.error('CV Viewer failed to initialize after 5 seconds');
+                    clearInterval(checkCVViewer);
+                }
+            }, 100);
         });
 
         function initializeSearchAndFilter() {
@@ -413,16 +434,59 @@
             }
         }
 
-        // Attach event listeners to view CV buttons
-        document.querySelectorAll('.view-cv-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const cvUrl = this.getAttribute('data-cv-url');
-                const cvTitle = this.getAttribute('data-cv-title');
-                if (window.cvViewer) {
-                    window.cvViewer.showCV(cvUrl, { title: cvTitle });
-                }
+        // Attach event listeners to view CV buttons - with delay to ensure CV viewer is ready
+        function attachCVViewerListeners() {
+            document.querySelectorAll('.view-cv-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const cvUrl = this.getAttribute('data-cv-url');
+                    const cvTitle = this.getAttribute('data-cv-title');
+                    
+                    console.log('View CV clicked:', { cvUrl, cvTitle });
+                    
+                    // Validate CV URL
+                    if (!cvUrl || cvUrl === '' || cvUrl === 'null' || cvUrl === 'undefined') {
+                        alert('CV URL is not available. Please contact support.');
+                        console.error('Invalid CV URL:', cvUrl);
+                        return;
+                    }
+                    
+                    // Check if cvViewer is available
+                    if (!window.cvViewer) {
+                        console.error('CV Viewer not initialized');
+                        alert('CV Viewer is not ready. Please refresh the page.');
+                        return;
+                    }
+                    
+                    // Decode URL if needed (handle encoded URLs)
+                    let decodedUrl = cvUrl;
+                    try {
+                        // Only decode if it looks encoded
+                        if (cvUrl.includes('%')) {
+                            decodedUrl = decodeURIComponent(cvUrl);
+                        }
+                    } catch (e) {
+                        console.warn('Failed to decode URL, using original:', e);
+                    }
+                    
+                    console.log('Decoded CV URL:', decodedUrl);
+                    
+                    // Show CV
+                    window.cvViewer.showCV(decodedUrl, { 
+                        title: cvTitle,
+                        onError: (error) => {
+                            console.error('CV Viewer error:', error);
+                            // Offer to open in new tab as fallback
+                            if (confirm('Failed to load CV in viewer. Would you like to open it in a new tab?')) {
+                                window.open(decodedUrl, '_blank');
+                            }
+                        }
+                    });
+                });
             });
-        });
+        }
+        
+        // Call after DOM is ready
+        attachCVViewerListeners();
     </script>
 }
 
