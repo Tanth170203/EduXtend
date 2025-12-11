@@ -20,3 +20,6 @@ _ReSharper*/
 # Secrets/local configs - đừng commit
 appsettings.*.local.json
 secrets.json
+
+.kiro/
+*.sql

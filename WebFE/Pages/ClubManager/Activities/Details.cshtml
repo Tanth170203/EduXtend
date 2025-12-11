@@ -228,6 +228,29 @@
 
     <!-- Sidebar -->
     <div class="col-lg-4">
+        <!-- GPS Check-in Card -->
+        <div class="content-card mb-4 bg-primary bg-opacity-10">
+            <div class="content-card-header">
+                <h5 class="content-card-title">
+                    <i data-lucide="map-pin" style="width: 18px; height: 18px;"></i>
+                    GPS Check-in
+                </h5>
+            </div>
+            <div class="content-card-body text-center">
+                <p class="text-muted mb-3">Cho phép sinh viên điểm danh bằng vị trí GPS</p>
+                <a href="/ClubManager/Activities/GpsConfig/@activity.Id" class="btn btn-primary w-100">
+                    <i data-lucide="settings" style="width: 16px; height: 16px;"></i>
+                    Cấu hình GPS
+                </a>
+            </div>
+        </div>
+
+        @* ============================================================
+           ATTENDANCE CODE CARD - TEMPORARILY HIDDEN (not deleted)
+           Code-based attendance is disabled, only GPS is supported
+           Uncomment this section to re-enable code-based attendance
+           ============================================================ *@
+        @* 
         <!-- Attendance Code Card -->
         @if (!string.IsNullOrWhiteSpace(activity.AttendanceCode))
         {
@@ -250,6 +273,7 @@
                 </div>
             </div>
         }
+        *@
         
         <!-- Statistics Card -->
         <div class="content-card mb-4">

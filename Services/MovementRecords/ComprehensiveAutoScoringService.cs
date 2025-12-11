@@ -146,8 +146,10 @@ public class ComprehensiveAutoScoringService : BackgroundService
         {
             _logger.LogInformation("🎭 Processing social activity scores...");
 
-            // 2.1. Event participation
-            await ProcessEventParticipationScoresAsync(dbContext);
+            // 2.1. Event participation - DISABLED: Now handled by ActivityService.CompleteActivityAsync
+            // When activity completes, ParticipationScore is added to MovementRecordDetails with criterionId=10
+            // This prevents duplicate scoring (same activity scored twice with different criterionIds)
+            // await ProcessEventParticipationScoresAsync(dbContext);
             
             // 2.2. Club membership - DISABLED: Now managed by Club Manager manually
             // Club Manager will evaluate and submit scores to Admin
@@ -168,35 +170,8 @@ public class ComprehensiveAutoScoringService : BackgroundService
     {
         try
         {
-            _logger.LogInformation("🎯 Processing event participation scores...");
+            _logger.LogInformation("🎯 Processing student participation scores from ActivityAttendances...");
 
-            // Get activities that are completed and have movement points
-            var completedActivities = await dbContext.Activities
-                .Include(a => a.Attendances)
-                    .ThenInclude(att => att.User)
-            .Where(a => a.Status == "Completed" && a.MovementPoint > 0)
-            .ToListAsync();
-
-            _logger.LogInformation("Found {Count} completed activities with movement points", completedActivities.Count);
-
-            foreach (var activity in completedActivities)
-            {
-                await ProcessActivityAttendanceWithGroupCapAsync(dbContext, activity);
-            }
-
-            await dbContext.SaveChangesAsync();
-            _logger.LogInformation("✅ Finished processing event participation scores");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Error processing event participation scores");
-        }
-    }
-
-    private async Task ProcessActivityAttendanceWithGroupCapAsync(EduXtendContext dbContext, Activity activity)
-    {
-        try
-        {
             // Get current semester
             var currentSemester = await GetCurrentSemesterAsync(dbContext);
             if (currentSemester == null)
@@ -205,8 +180,7 @@ public class ComprehensiveAutoScoringService : BackgroundService
                 return;
             }
 
-            // Decision 414 - Social activities: điểm sự kiện (3–5 điểm/sự kiện)
-            // Criterion title: "Tham gia sự kiện"
+            // Get criterion for activity participation
             var activityCriterion = await dbContext.MovementCriteria
                 .Include(c => c.Group)
                 .FirstOrDefaultAsync(c => c.Title.Contains("Tham gia sự kiện") && c.IsActive);
@@ -217,24 +191,36 @@ public class ComprehensiveAutoScoringService : BackgroundService
                 return;
             }
 
-            // Skip competitions here; they are processed in dedicated routines
-            if (activity.Type == BusinessObject.Enum.ActivityType.SchoolCompetition
-                || activity.Type == BusinessObject.Enum.ActivityType.NationalCompetition
-                || activity.Type == BusinessObject.Enum.ActivityType.ProvincialCompetition)
-            {
-                return; // handled elsewhere
-            }
+            // Get all attendances with ParticipationScore from completed activities
+            // Use ParticipationScore (3-5) from ActivityAttendances for student scoring
+            var attendancesWithScores = await dbContext.ActivityAttendances
+                .Include(a => a.Activity)
+                .Include(a => a.User)
+                .Where(a => a.IsPresent 
+                         && a.ParticipationScore.HasValue 
+                         && a.ParticipationScore > 0
+                         && a.Activity.Status == "Completed")
+                .ToListAsync();
 
-            // Process each attendance for normal events (MovementPoint is expected 3–5 per event)
-            foreach (var attendance in activity.Attendances.Where(a => a.IsPresent))
+            _logger.LogInformation("Found {Count} attendances with ParticipationScore to process", attendancesWithScores.Count);
+
+            foreach (var attendance in attendancesWithScores)
             {
+                // Skip club internal activities - they don't give student movement points
+                if (attendance.Activity.Type == BusinessObject.Enum.ActivityType.ClubMeeting ||
+                    attendance.Activity.Type == BusinessObject.Enum.ActivityType.ClubTraining ||
+                    attendance.Activity.Type == BusinessObject.Enum.ActivityType.ClubWorkshop)
+                {
+                    continue;
+                }
+
                 // Get student from UserId
                 var student = await dbContext.Students
                     .FirstOrDefaultAsync(s => s.UserId == attendance.UserId);
                 if (student == null)
                     continue;
 
-                // Get or create movement record
+                // Get or create movement record for student
                 var record = await dbContext.MovementRecords
                     .Include(r => r.Details)
                     .FirstOrDefaultAsync(r => r.StudentId == student.Id && r.SemesterId == currentSemester.Id);
@@ -249,16 +235,14 @@ public class ComprehensiveAutoScoringService : BackgroundService
                         CreatedAt = DateTime.UtcNow
                     };
                     dbContext.MovementRecords.Add(record);
-                    await dbContext.SaveChangesAsync(); // Save to get the ID
+                    await dbContext.SaveChangesAsync();
                 }
 
-                // Check if score already added for THIS SPECIFIC ACTIVITY (by ActivityId)
-                // NOTE: We allow multiple scores for same criterion (e.g., multiple competitions, events)
-                // But we should not duplicate score for the SAME activity
+                // Check if score already added for this activity
                 var existingDetail = await dbContext.MovementRecordDetails
                     .AnyAsync(d => d.MovementRecordId == record.Id 
                                 && d.CriterionId == activityCriterion.Id
-                                && d.ActivityId == activity.Id);
+                                && d.ActivityId == attendance.ActivityId);
 
                 if (!existingDetail)
                 {
@@ -280,49 +264,44 @@ public class ComprehensiveAutoScoringService : BackgroundService
                     // Check if already reached group max score
                     if (currentGroupScore >= groupMaxScore)
                     {
-                        _logger.LogInformation(
-                            "Student {StudentId} already reached max score {MaxScore} for group {GroupName}. Skipping activity {ActivityTitle}",
-                            student.Id, groupMaxScore, activityCriterion.Group.Name, activity.Title);
+                        _logger.LogDebug("Student {StudentId} already reached max score for group. Skipping.", student.Id);
                         continue;
                     }
 
-                    // Calculate score to add (movementPoint should be 3–5 per Decision 414 for event)
-                    var scoreToAdd = Math.Min(activity.MovementPoint, groupMaxScore - currentGroupScore);
+                    // Use ParticipationScore from attendance (3-5 points)
+                    var scoreToAdd = Math.Min(attendance.ParticipationScore.Value, groupMaxScore - currentGroupScore);
 
                     // Add score detail
                     var detail = new MovementRecordDetail
                     {
                         MovementRecordId = record.Id,
                         CriterionId = activityCriterion.Id,
-                        ActivityId = activity.Id,
+                        ActivityId = attendance.ActivityId,
                         Score = scoreToAdd,
                         AwardedAt = DateTime.UtcNow
                     };
                     dbContext.MovementRecordDetails.Add(detail);
 
-                    // Recalculate total score (sum all details, cap at 100)
+                    // Recalculate total score
                     var totalScore = await dbContext.MovementRecordDetails
                         .Where(d => d.MovementRecordId == record.Id)
-                        .SumAsync(d => d.Score);
+                        .SumAsync(d => d.Score) + scoreToAdd;
 
-                    record.TotalScore = Math.Min(totalScore, 100); // Cap at 100 total
+                    record.TotalScore = Math.Min(totalScore, 100);
                     record.LastUpdated = DateTime.UtcNow;
 
                     _logger.LogInformation(
-                        "Added {Points} points to student {StudentId} for activity {ActivityTitle} (Group: {GroupName}, Current: {CurrentScore}/{MaxScore})",
-                        scoreToAdd, student.Id, activity.Title, activityCriterion.Group.Name, 
-                        currentGroupScore + scoreToAdd, groupMaxScore);
-                }
-                else
-                {
-                    _logger.LogDebug("Score already added for student {StudentId} for activity {ActivityTitle}",
-                        student.Id, activity.Title);
+                        "Added {Points} points (ParticipationScore) to student {StudentId} for activity {ActivityTitle}",
+                        scoreToAdd, student.Id, attendance.Activity.Title);
                 }
             }
+
+            await dbContext.SaveChangesAsync();
+            _logger.LogInformation("✅ Finished processing student participation scores");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing activity {ActivityId}", activity.Id);
+            _logger.LogError(ex, "❌ Error processing student participation scores");
         }
     }
 

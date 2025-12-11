@@ -1,0 +1,312 @@
+@page "{id:int}"
+@model WebFE.Pages.Activities.GpsCheckInModel
+@{
+    ViewData["Title"] = "GPS Attendance";
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Activities">Activities</a></li>
+            <li class="breadcrumb-item"><a href="/Activities/Details/@Model.Id">@Model.Activity?.Title</a></li>
+            <li class="breadcrumb-item active">GPS Attendance</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt-fill me-2"></i>GPS Attendance</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.AttendanceStatus == null || !Model.AttendanceStatus.IsGpsCheckInEnabled)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            This activity does not support GPS attendance.
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Activity Info -->
+                        <div class="mb-4">
+                            <h6 class="text-muted">Activity Information</h6>
+                            <p class="mb-1"><strong>@Model.Activity?.Title</strong></p>
+                            <p class="mb-1">
+                                <i class="bi bi-clock me-1"></i>
+                                @Model.AttendanceStatus.ActivityStartTime.ToString("HH:mm dd/MM/yyyy") - 
+                                @Model.AttendanceStatus.ActivityEndTime.ToString("HH:mm dd/MM/yyyy")
+                            </p>
+                            <p class="mb-0">
+                                <i class="bi bi-geo me-1"></i>
+                                Allowed radius: <strong>@Model.AttendanceStatus.AllowedRadius m</strong>
+                            </p>
+                        </div>
+
+                        <!-- GPS Status -->
+                        <div id="gpsStatus" class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Getting GPS location...
+                        </div>
+
+                        <!-- Check-in Section -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card h-100 @(Model.AttendanceStatus.HasCheckedIn ? "border-success" : "")">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">
+                                            <i class="bi bi-box-arrow-in-right me-1"></i>Check-in
+                                        </h6>
+                                        @if (Model.AttendanceStatus.HasCheckedIn)
+                                        {
+                                            <p class="text-success mb-2">
+                                                <i class="bi bi-check-circle-fill"></i> Checked in
+                                            </p>
+                                            <small class="text-muted">
+                                                @Model.AttendanceStatus.CheckInTime?.ToString("HH:mm dd/MM")
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <p class="mb-2">
+                                                Time: @Model.AttendanceStatus.CheckInWindowStart.ToString("HH:mm") - 
+                                                @Model.AttendanceStatus.CheckInWindowEnd.ToString("HH:mm")
+                                            </p>
+                                            @if (Model.AttendanceStatus.IsCheckInWindowOpen)
+                                            {
+                                                <p class="text-warning mb-2">
+                                                    <span id="checkInCountdown">@Model.AttendanceStatus.CheckInRemainingSeconds</span> seconds remaining
+                                                </p>
+                                                <button id="btnCheckIn" class="btn btn-primary" onclick="doCheckIn()">
+                                                    <i class="bi bi-geo-alt me-1"></i>GPS Check-in
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <p class="text-muted">Check-in window not open or has closed</p>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100 @(Model.AttendanceStatus.HasCheckedOut ? "border-success" : "")">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">
+                                            <i class="bi bi-box-arrow-right me-1"></i>Check-out
+                                        </h6>
+                                        @if (Model.AttendanceStatus.HasCheckedOut)
+                                        {
+                                            <p class="text-success mb-2">
+                                                <i class="bi bi-check-circle-fill"></i> Checked out
+                                            </p>
+                                            <small class="text-muted">
+                                                @Model.AttendanceStatus.CheckOutTime?.ToString("HH:mm dd/MM")
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <p class="mb-2">
+                                                Time: @Model.AttendanceStatus.CheckOutWindowStart.ToString("HH:mm") - 
+                                                @Model.AttendanceStatus.CheckOutWindowEnd.ToString("HH:mm")
+                                            </p>
+                                            @if (Model.AttendanceStatus.IsCheckOutWindowOpen && Model.AttendanceStatus.HasCheckedIn)
+                                            {
+                                                <p class="text-warning mb-2">
+                                                    <span id="checkOutCountdown">@Model.AttendanceStatus.CheckOutRemainingSeconds</span> seconds remaining
+                                                </p>
+                                                <button id="btnCheckOut" class="btn btn-success" onclick="doCheckOut()">
+                                                    <i class="bi bi-geo-alt me-1"></i>GPS Check-out
+                                                </button>
+                                            }
+                                            else if (!Model.AttendanceStatus.HasCheckedIn)
+                                            {
+                                                <p class="text-muted">Check-in required first</p>
+                                            }
+                                            else
+                                            {
+                                                <p class="text-muted">Check-out window not open yet</p>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Result Message -->
+                        <div id="resultMessage" class="d-none"></div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Info -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2">Allow browser to access GPS location</li>
+                        <li class="mb-2">Check-in within <strong>first 10 minutes</strong> after activity starts</li>
+                        <li class="mb-2">Check-out within <strong>last 10 minutes</strong> before activity ends</li>
+                        <li class="mb-0">Ensure you are within the allowed radius</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+<script>
+    const apiBaseUrl = '@Model.ApiBaseUrl';
+    const activityId = @Model.Id;
+    let currentLat = null;
+    let currentLon = null;
+    let currentAccuracy = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        getGpsLocation();
+        startCountdowns();
+    });
+
+    function getGpsLocation() {
+        const statusDiv = document.getElementById('gpsStatus');
+        
+        if (!navigator.geolocation) {
+            statusDiv.className = 'alert alert-danger';
+            statusDiv.innerHTML = '<i class="bi bi-x-circle me-2"></i>Browser does not support GPS';
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                currentLat = position.coords.latitude;
+                currentLon = position.coords.longitude;
+                currentAccuracy = position.coords.accuracy;
+                
+                statusDiv.className = 'alert alert-success';
+                statusDiv.innerHTML = `<i class="bi bi-check-circle me-2"></i>
+                    GPS location acquired (accuracy: ${currentAccuracy.toFixed(0)}m)`;
+            },
+            function(error) {
+                let message = '';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        message = 'Please allow location access for GPS attendance';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message = 'Unable to get location. Please enable GPS';
+                        break;
+                    case error.TIMEOUT:
+                        message = 'Location request timed out. Please try again';
+                        break;
+                    default:
+                        message = 'Unknown error getting location';
+                }
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.innerHTML = `<i class="bi bi-x-circle me-2"></i>${message}
+                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="getGpsLocation()">Retry</button>`;
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+
+    function startCountdowns() {
+        const checkInSpan = document.getElementById('checkInCountdown');
+        if (checkInSpan) {
+            let seconds = parseInt(checkInSpan.textContent);
+            setInterval(function() { if (seconds > 0) { seconds--; checkInSpan.textContent = seconds; } }, 1000);
+        }
+        const checkOutSpan = document.getElementById('checkOutCountdown');
+        if (checkOutSpan) {
+            let seconds = parseInt(checkOutSpan.textContent);
+            setInterval(function() { if (seconds > 0) { seconds--; checkOutSpan.textContent = seconds; } }, 1000);
+        }
+    }
+
+    async function doCheckIn() {
+        if (currentLat === null || currentLon === null) {
+            showResult('error', 'GPS location not available. Please try again.');
+            getGpsLocation();
+            return;
+        }
+
+        const btn = document.getElementById('btnCheckIn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/gpsattendance/checkin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ activityId: activityId, latitude: currentLat, longitude: currentLon, accuracy: currentAccuracy })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                showResult('success', `${result.message} (Distance: ${result.distanceMeters?.toFixed(0)}m)`);
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showResult('error', result.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-geo-alt me-1"></i>GPS Check-in';
+            }
+        } catch (error) {
+            showResult('error', 'Connection error. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-geo-alt me-1"></i>GPS Check-in';
+        }
+    }
+
+    async function doCheckOut() {
+        if (currentLat === null || currentLon === null) {
+            showResult('error', 'GPS location not available. Please try again.');
+            getGpsLocation();
+            return;
+        }
+
+        const btn = document.getElementById('btnCheckOut');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/gpsattendance/checkout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ activityId: activityId, latitude: currentLat, longitude: currentLon, accuracy: currentAccuracy })
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                showResult('success', `${result.message} (Distance: ${result.distanceMeters?.toFixed(0)}m)`);
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showResult('error', result.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-geo-alt me-1"></i>GPS Check-out';
+            }
+        } catch (error) {
+            showResult('error', 'Connection error. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-geo-alt me-1"></i>GPS Check-out';
+        }
+    }
+
+    function showResult(type, message) {
+        const div = document.getElementById('resultMessage');
+        div.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
+        div.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'x-circle'} me-2"></i>${message}`;
+        div.classList.remove('d-none');
+    }
+</script>
+}

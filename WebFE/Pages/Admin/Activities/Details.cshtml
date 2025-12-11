@@ -210,6 +210,12 @@
 
         <!-- Sidebar Statistics -->
         <div class="col-lg-4">
+            @* ============================================================
+               ATTENDANCE CODE CARD - TEMPORARILY HIDDEN (not deleted)
+               Code-based attendance is disabled, only GPS is supported
+               Uncomment this section to re-enable code-based attendance
+               ============================================================ *@
+            @* 
             <!-- Attendance Code Card -->
             @if (!string.IsNullOrWhiteSpace(activity.AttendanceCode))
             {
@@ -230,6 +236,7 @@
                     </div>
                 </div>
             }
+            *@
             
             <!-- Participation Stats -->
             <div class="card shadow-sm border-0 mb-4">

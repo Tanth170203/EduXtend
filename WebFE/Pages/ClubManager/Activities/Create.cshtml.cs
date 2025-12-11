@@ -42,6 +42,7 @@ namespace WebFE.Pages.ClubManager.Activities
             Activity.IsPublic = false;
             Activity.RequiresApproval = true; // Always true for ClubManager
             Activity.Type = "AcademicClub";
+            Activity.Location = "Da Nang, Vietnam"; // Default location text
             ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "";
             
             return Page();
@@ -139,7 +140,14 @@ namespace WebFE.Pages.ClubManager.Activities
                     MovementPoint = Activity.MovementPoint,
                     IsMandatory = Activity.IsMandatory,
                     ClubCollaborationId = Activity.ClubCollaborationId,
-                    CollaborationPoint = Activity.CollaborationPoint
+                    CollaborationPoint = Activity.CollaborationPoint,
+                    // GPS Configuration
+                    GpsLatitude = Activity.GpsLatitude,
+                    GpsLongitude = Activity.GpsLongitude,
+                    IsGpsCheckInEnabled = Activity.IsGpsCheckInEnabled,
+                    GpsCheckInRadius = Activity.GpsCheckInRadius,
+                    CheckInWindowMinutes = Activity.CheckInWindowMinutes,
+                    CheckOutWindowMinutes = Activity.CheckOutWindowMinutes
                 };
                 var json = JsonSerializer.Serialize(payload);
                 request.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
@@ -186,6 +194,16 @@ namespace WebFE.Pages.ClubManager.Activities
         public bool IsMandatory { get; set; }
         public int? ClubCollaborationId { get; set; }
         public int? CollaborationPoint { get; set; }
+        
+        // GPS Location fields for GPS-based attendance (default: Đà Nẵng)
+        public double? GpsLatitude { get; set; } = 15.967483;
+        public double? GpsLongitude { get; set; } = 108.260361;
+        
+        // GPS Check-in configuration (always enabled by default)
+        public bool IsGpsCheckInEnabled { get; set; } = true;
+        public int GpsCheckInRadius { get; set; } = 100; // Default 100m
+        public int CheckInWindowMinutes { get; set; } = 10; // Default 10 minutes
+        public int CheckOutWindowMinutes { get; set; } = 10; // Default 10 minutes
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

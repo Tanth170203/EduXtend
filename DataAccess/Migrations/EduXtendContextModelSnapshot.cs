@@ -40,6 +40,12 @@ namespace DataAccess.Migrations
                         .HasMaxLength(6)
                         .HasColumnType("nvarchar(6)");
 
+                    b.Property<int>("CheckInWindowMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CheckOutWindowMinutes")
+                        .HasColumnType("int");
+
                     b.Property<int?>("ClubCollaborationId")
                         .HasColumnType("int");
 
@@ -76,9 +82,21 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("GpsCheckInRadius")
+                        .HasColumnType("int");
+
+                    b.Property<double?>("GpsLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("GpsLongitude")
+                        .HasColumnType("float");
+
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsGpsCheckInEnabled")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsPublic")
                         .HasColumnType("bit");
@@ -140,11 +158,39 @@ namespace DataAccess.Migrations
                     b.Property<int>("ActivityId")
                         .HasColumnType("int");
 
+                    b.Property<double?>("CheckInAccuracy")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("CheckInLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("CheckInLongitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("CheckInMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<double?>("CheckOutAccuracy")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("CheckOutLatitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("CheckOutLongitude")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime?>("CheckOutTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CheckedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("CheckedById")
                         .HasColumnType("int");
+
+                    b.Property<double?>("DistanceFromActivity")
+                        .HasColumnType("float");
 
                     b.Property<bool>("IsPresent")
                         .HasColumnType("bit");

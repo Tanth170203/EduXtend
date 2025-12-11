@@ -1,0 +1,272 @@
+@page "{id:int}"
+@model WebFE.Pages.ClubManager.Activities.GpsConfigModel
+@{
+    ViewData["Title"] = "GPS Configuration - " + Model.Activity?.Title;
+    Layout = "_ClubManagerLayout";
+}
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">GPS Configuration</h1>
+            <p class="page-description text-muted">@Model.Activity?.Title</p>
+        </div>
+        <a href="/ClubManager/Activities/Details/@Model.Id" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-x-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt-fill me-2"></i>GPS Attendance Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <input type="hidden" asp-for="GpsConfig.ActivityId" />
+
+                        <!-- Enable GPS -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="isEnabled" 
+                                       asp-for="GpsConfig.IsEnabled" onchange="toggleGpsFields()">
+                                <label class="form-check-label" for="isEnabled">
+                                    <strong>Enable GPS Attendance</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted">Only GPS attendance is supported (Code and Manual disabled)</small>
+                        </div>
+
+                        <div id="gpsFields" class="@(Model.GpsConfig.IsEnabled ? "" : "d-none")">
+                            <!-- Map for selecting location -->
+                            <div class="mb-3">
+                                <label class="form-label"><i class="bi bi-map me-1"></i>Select Location on Map</label>
+                                <div id="map" style="height: 400px; border-radius: 8px; border: 1px solid #dee2e6;"></div>
+                                <small class="text-muted">Click on the map to select location or drag the marker</small>
+                            </div>
+
+                            <!-- Search location -->
+                            <div class="mb-3">
+                                <label class="form-label">Search Location</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="searchInput" placeholder="Enter address...">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="searchLocation()">
+                                        <i class="bi bi-search"></i> Search
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Get Current Location Button -->
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-outline-primary" onclick="getCurrentLocation()">
+                                    <i class="bi bi-crosshair me-1"></i>Get Current Location
+                                </button>
+                                <span id="locationStatus" class="ms-2 text-muted"></span>
+                            </div>
+
+                            <!-- Coordinates -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Latitude</label>
+                                    <input type="number" step="0.000001" class="form-control" 
+                                           asp-for="GpsConfig.Latitude" id="latInput" readonly style="background-color: #f8f9fa;">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Longitude</label>
+                                    <input type="number" step="0.000001" class="form-control" 
+                                           asp-for="GpsConfig.Longitude" id="lonInput" readonly style="background-color: #f8f9fa;">
+                                </div>
+                            </div>
+
+                            <!-- Radius -->
+                            <div class="mb-3">
+                                <label class="form-label">Allowed Radius (meters)</label>
+                                <input type="range" class="form-range" min="50" max="1000" step="50"
+                                       asp-for="GpsConfig.Radius" id="radiusSlider" oninput="updateRadius()">
+                                <div class="d-flex justify-content-between">
+                                    <span>50m</span>
+                                    <span id="radiusLabel" class="fw-bold text-primary">@Model.GpsConfig.Radius m</span>
+                                    <span>1000m</span>
+                                </div>
+                            </div>
+
+                            <!-- Time Windows -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Check-in Window (minutes)</label>
+                                    <input type="number" class="form-control" min="1" max="60" asp-for="GpsConfig.CheckInWindowMinutes">
+                                    <small class="text-muted">Minutes allowed for check-in after start</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Check-out Window (minutes)</label>
+                                    <input type="number" class="form-control" min="1" max="60" asp-for="GpsConfig.CheckOutWindowMinutes">
+                                    <small class="text-muted">Minutes allowed for check-out before end</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Save Configuration
+                            </button>
+                            <a href="/ClubManager/Activities/Details/@Model.Id" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Info -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Instructions</h6>
+                </div>
+                <div class="card-body">
+                    <h6>How it works:</h6>
+                    <ol class="mb-3">
+                        <li class="mb-2"><strong>Click on the map</strong> to select location</li>
+                        <li class="mb-2">Or <strong>search</strong> for a location</li>
+                        <li class="mb-2">Set allowed radius (100-300m recommended)</li>
+                        <li class="mb-2">Students check-in within first 10 minutes</li>
+                        <li class="mb-0">Students check-out within last 10 minutes</li>
+                    </ol>
+                    <div class="alert alert-info mb-0">
+                        <small><i class="bi bi-lightbulb me-1"></i>Only GPS attendance is supported</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    let map, marker, radiusCircle;
+    const defaultLat = @(Model.GpsConfig.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "10.762622");
+    const defaultLon = @(Model.GpsConfig.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "106.660172");
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initMap();
+    });
+
+    function initMap() {
+        map = L.map('map').setView([defaultLat, defaultLon], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+        
+        if (defaultLat && defaultLon) {
+            addMarker(defaultLat, defaultLon);
+        }
+        
+        map.on('click', function(e) {
+            addMarker(e.latlng.lat, e.latlng.lng);
+            updateInputs(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    function addMarker(lat, lng) {
+        if (marker) map.removeLayer(marker);
+        if (radiusCircle) map.removeLayer(radiusCircle);
+        
+        marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        const radius = parseInt(document.getElementById('radiusSlider').value);
+        radiusCircle = L.circle([lat, lng], { color: '#0d6efd', fillColor: '#0d6efd', fillOpacity: 0.2, radius: radius }).addTo(map);
+        
+        marker.on('dragend', function(e) {
+            const pos = e.target.getLatLng();
+            updateInputs(pos.lat, pos.lng);
+            updateCircle(pos.lat, pos.lng);
+        });
+        marker.bindPopup('Attendance Location').openPopup();
+    }
+
+    function updateInputs(lat, lng) {
+        document.getElementById('latInput').value = lat.toFixed(6);
+        document.getElementById('lonInput').value = lng.toFixed(6);
+    }
+
+    function updateCircle(lat, lng) {
+        if (radiusCircle) map.removeLayer(radiusCircle);
+        const radius = parseInt(document.getElementById('radiusSlider').value);
+        radiusCircle = L.circle([lat, lng], { color: '#0d6efd', fillColor: '#0d6efd', fillOpacity: 0.2, radius: radius }).addTo(map);
+    }
+
+    function updateRadius() {
+        document.getElementById('radiusLabel').textContent = document.getElementById('radiusSlider').value + ' m';
+        if (marker) updateCircle(marker.getLatLng().lat, marker.getLatLng().lng);
+    }
+
+    function toggleGpsFields() {
+        const gpsFields = document.getElementById('gpsFields');
+        if (document.getElementById('isEnabled').checked) {
+            gpsFields.classList.remove('d-none');
+            setTimeout(() => map && map.invalidateSize(), 100);
+        } else {
+            gpsFields.classList.add('d-none');
+        }
+    }
+
+    function getCurrentLocation() {
+        const status = document.getElementById('locationStatus');
+        status.textContent = 'Getting location...';
+        if (!navigator.geolocation) { status.textContent = 'GPS not supported'; return; }
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                map.setView([pos.coords.latitude, pos.coords.longitude], 17);
+                addMarker(pos.coords.latitude, pos.coords.longitude);
+                updateInputs(pos.coords.latitude, pos.coords.longitude);
+                status.textContent = 'Success!';
+                status.className = 'ms-2 text-success';
+            },
+            function(err) { status.textContent = 'Error: ' + err.message; status.className = 'ms-2 text-danger'; },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    }
+
+    function searchLocation() {
+        const query = document.getElementById('searchInput').value.trim();
+        if (!query) { alert('Please enter an address'); return; }
+        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=1')
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
+                    map.setView([lat, lng], 17);
+                    addMarker(lat, lng);
+                    updateInputs(lat, lng);
+                } else { alert('Location not found'); }
+            })
+            .catch(() => alert('Search error'));
+    }
+
+    document.getElementById('searchInput')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); searchLocation(); }
+    });
+</script>
+}

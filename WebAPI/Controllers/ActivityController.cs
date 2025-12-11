@@ -193,6 +193,11 @@ namespace WebAPI.Controllers
             if (clubId <= 0)
                 return BadRequest(new { message = "Missing clubId" });
 
+            // Log GPS config for debugging
+            _logger.LogInformation("[CreateByClubManager] GPS Config received: Lat={Lat}, Lng={Lng}, Enabled={Enabled}, Radius={Radius}, CheckIn={CheckIn}, CheckOut={CheckOut}",
+                request.Activity.GpsLatitude, request.Activity.GpsLongitude, request.Activity.IsGpsCheckInEnabled,
+                request.Activity.GpsCheckInRadius, request.Activity.CheckInWindowMinutes, request.Activity.CheckOutWindowMinutes);
+
             try
             {
                 // Create activity

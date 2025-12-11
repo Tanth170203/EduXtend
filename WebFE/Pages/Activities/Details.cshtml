@@ -30,7 +30,7 @@
         </a>
     </div>
 
-    <!-- Quick Actions -->
+    @* <!-- Quick Actions -->
     @if (isEnded && activity.Status == "Approved")
     {
         <div class="card shadow-sm border-0 mb-4 border-start border-success border-4">
@@ -50,7 +50,7 @@
                 </p>
             </div>
         </div>
-    }
+    } *@
 
     <!-- Header with image/banner -->
     <div class="position-relative mb-4">
@@ -559,6 +559,28 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <!-- GPS Check-in Option (Primary method) -->
+                <div class="mb-4 p-3 bg-primary bg-opacity-10 rounded">
+                    <h6 class="fw-bold mb-2">
+                        <i class="bi bi-geo-alt-fill text-primary"></i> Điểm danh GPS
+                    </h6>
+                    <p class="text-muted small mb-2">Điểm danh bằng vị trí GPS của bạn (phương thức chính)</p>
+                    <a href="/Activities/GpsCheckIn/@activity.Id" class="btn btn-primary w-100">
+                        <i class="bi bi-geo-alt"></i> Mở trang điểm danh GPS
+                    </a>
+                </div>
+
+                @* ============================================================
+                   CODE CHECK-IN - TEMPORARILY HIDDEN (not deleted)
+                   Uncomment this section to re-enable code-based attendance
+                   ============================================================ *@
+                @* 
+                <hr class="my-3">
+
+                <!-- Code Check-in Option -->
+                <h6 class="fw-bold mb-2">
+                    <i class="bi bi-keyboard text-secondary"></i> Điểm danh bằng mã
+                </h6>
                 <div class="mb-3">
                     <label for="attendanceCode" class="form-label">Nhập mã điểm danh (6 ký tự)</label>
                     <input type="text" 
@@ -569,14 +591,16 @@
                            style="letter-spacing: 0.5em; font-weight: bold;">
                     <div class="form-text">Nhập mã điểm danh mà giảng viên/quản lý cung cấp</div>
                 </div>
+                *@
                 <div id="attendanceError" class="alert alert-danger d-none"></div>
                 <div id="attendanceSuccess" class="alert alert-success d-none"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-primary" id="submitAttendanceBtn" onclick="submitAttendance(@activity.Id)">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                @* Code check-in button - TEMPORARILY HIDDEN *@
+                @* <button type="button" class="btn btn-primary" id="submitAttendanceBtn" onclick="submitAttendance(@activity.Id)">
                     <i class="bi bi-check-circle"></i> Xác nhận điểm danh
-                </button>
+                </button> *@
             </div>
         </div>
     </div>
