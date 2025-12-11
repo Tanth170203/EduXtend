@@ -154,7 +154,12 @@ namespace WebFE.Middleware
                 "/index",
                 "/error",
                 "/accessdenied",
-                "/privacy"
+                "/privacy",
+                "/clubs",             // Allow /Clubs
+                "/clubs/index",
+                "/clubs/active",
+                "/activities",        // Allow /Activities
+                "/activities/index"
             };
 
             // Prefix match pages (paths that start with these)
@@ -162,6 +167,8 @@ namespace WebFE.Middleware
             {
                 "/auth/",
                 "/news",
+                "/clubs/details/",    // Allow club details with ID
+                "/activities/details/", // Allow activity details with ID
                 "/lib/",
                 "/css/",
                 "/js/",
@@ -177,7 +184,10 @@ namespace WebFE.Middleware
                 return true;
 
             // Check prefix matches
-            return prefixMatchPages.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+            if (prefixMatchPages.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                return true;
+
+            return false;
         }
 
         private bool IsProtectedPage(string path)
@@ -214,7 +224,7 @@ namespace WebFE.Middleware
             }
 
             // Club pages (both /club/ and /clubs/) - All authenticated users
-            // Note: Specific membership checks are done at page level
+            // Note: Public club pages are already filtered out in IsPublicPage()
             if (path.StartsWith("/club/", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/clubs/", StringComparison.OrdinalIgnoreCase))
             {
@@ -229,6 +239,7 @@ namespace WebFE.Middleware
             }
 
             // Activities pages - All authenticated users
+            // Note: Public activity pages are already filtered out in IsPublicPage()
             if (path.StartsWith("/activities/", StringComparison.OrdinalIgnoreCase))
             {
                 return userRoles.Any();

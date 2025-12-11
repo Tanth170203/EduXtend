@@ -6,13 +6,15 @@
     Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
 }
 
+<link rel="stylesheet" href="~/css/financial-dashboard.css" />
+
 <div class="admin-page-header">
     <div>
-        <h1 class="admin-page-title">Financial Reports</h1>
+        <h1 class="admin-page-title">📄 Financial Reports</h1>
         <p class="admin-page-subtitle">Generate and export detailed financial reports</p>
     </div>
     <div class="admin-page-actions">
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
+        <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
             <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
             Add Income
         </button>
@@ -23,17 +25,17 @@
     </div>
 </div>
 
-<!-- Report Options -->
+<!-- Report Options with Colorful Cards -->
 <div class="row g-4 mb-4">
     <div class="col-md-3 col-sm-6">
-        <div class="card border-0 shadow-sm h-100 text-center report-card">
+        <div class="stat-card financial-card-gradient-1 border-0 shadow-sm h-100 text-center">
             <div class="card-body">
-                <div class="report-icon bg-primary bg-opacity-10 text-primary mx-auto mb-3">
-                    <i data-lucide="file-text" style="width: 32px; height: 32px;"></i>
+                <div class="report-icon bg-white bg-opacity-20 mx-auto mb-3 pulse-animation">
+                    <i data-lucide="file-text" style="width: 32px; height: 32px;" class="text-white"></i>
                 </div>
-                <h5 class="card-title">Full Report</h5>
-                <p class="text-muted small mb-3">PDF/Excel</p>
-                <button class="btn btn-outline-primary btn-sm">
+                <h5 class="card-title text-white fw-bold">Full Report</h5>
+                <p class="text-white opacity-75 small mb-3">PDF/Excel</p>
+                <button class="btn btn-light btn-sm">
                     <i data-lucide="download" style="width: 14px; height: 14px;"></i>
                     Export
                 </button>
@@ -42,14 +44,14 @@
     </div>
 
     <div class="col-md-3 col-sm-6">
-        <div class="card border-0 shadow-sm h-100 text-center report-card">
+        <div class="stat-card financial-card-gradient-4 border-0 shadow-sm h-100 text-center">
             <div class="card-body">
-                <div class="report-icon bg-success bg-opacity-10 text-success mx-auto mb-3">
-                    <i data-lucide="trending-up" style="width: 32px; height: 32px;"></i>
+                <div class="report-icon bg-white bg-opacity-20 mx-auto mb-3 pulse-animation">
+                    <i data-lucide="trending-up" style="width: 32px; height: 32px;" class="text-white"></i>
                 </div>
-                <h5 class="card-title">Income Report</h5>
-                <p class="text-muted small mb-3">Excel</p>
-                <button class="btn btn-outline-success btn-sm">
+                <h5 class="card-title text-white fw-bold">Income Report</h5>
+                <p class="text-white opacity-75 small mb-3">Excel</p>
+                <button class="btn btn-light btn-sm">
                     <i data-lucide="download" style="width: 14px; height: 14px;"></i>
                     Export
                 </button>
@@ -58,14 +60,14 @@
     </div>
 
     <div class="col-md-3 col-sm-6">
-        <div class="card border-0 shadow-sm h-100 text-center report-card">
+        <div class="stat-card financial-card-gradient-2 border-0 shadow-sm h-100 text-center">
             <div class="card-body">
-                <div class="report-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3">
-                    <i data-lucide="trending-down" style="width: 32px; height: 32px;"></i>
+                <div class="report-icon bg-white bg-opacity-20 mx-auto mb-3 pulse-animation">
+                    <i data-lucide="trending-down" style="width: 32px; height: 32px;" class="text-white"></i>
                 </div>
-                <h5 class="card-title">Expense Report</h5>
-                <p class="text-muted small mb-3">Excel</p>
-                <button class="btn btn-outline-danger btn-sm">
+                <h5 class="card-title text-white fw-bold">Expense Report</h5>
+                <p class="text-white opacity-75 small mb-3">Excel</p>
+                <button class="btn btn-light btn-sm">
                     <i data-lucide="download" style="width: 14px; height: 14px;"></i>
                     Export
                 </button>
@@ -74,14 +76,14 @@
     </div>
 
     <div class="col-md-3 col-sm-6">
-        <div class="card border-0 shadow-sm h-100 text-center report-card">
+        <div class="stat-card financial-card-gradient-5 border-0 shadow-sm h-100 text-center">
             <div class="card-body">
-                <div class="report-icon bg-warning bg-opacity-10 text-warning mx-auto mb-3">
-                    <i data-lucide="users" style="width: 32px; height: 32px;"></i>
+                <div class="report-icon bg-white bg-opacity-20 mx-auto mb-3 pulse-animation">
+                    <i data-lucide="users" style="width: 32px; height: 32px;" class="text-white"></i>
                 </div>
-                <h5 class="card-title">Member Report</h5>
-                <p class="text-muted small mb-3">Excel</p>
-                <button class="btn btn-outline-warning btn-sm">
+                <h5 class="card-title text-white fw-bold">Member Report</h5>
+                <p class="text-white opacity-75 small mb-3">Excel</p>
+                <button class="btn btn-light btn-sm">
                     <i data-lucide="download" style="width: 14px; height: 14px;"></i>
                     Export
                 </button>
@@ -90,12 +92,12 @@
     </div>
 </div>
 
-<!-- Financial Summary -->
+<!-- Financial Summary with Glass Effect -->
 <div class="row g-4">
     <div class="col-lg-6">
-        <div class="card border-0 shadow-sm">
+        <div class="glass-card">
             <div class="card-body">
-                <h5 class="card-title mb-4">Expense Breakdown</h5>
+                <h5 class="card-title mb-4 fw-bold">🎨 Expense Breakdown</h5>
                 <div style="position: relative; height: 300px;">
                     <canvas id="expenseBreakdownChart"></canvas>
                 </div>
@@ -104,37 +106,53 @@
     </div>
 
     <div class="col-lg-6">
-        <div class="card border-0 shadow-sm">
+        <div class="glass-card">
             <div class="card-body">
-                <h5 class="card-title mb-4">Financial Metrics</h5>
+                <h5 class="card-title mb-4 fw-bold">💎 Financial Metrics</h5>
                 
-                <div class="metric-row">
-                    <div class="metric-label">Total Income</div>
-                    <div class="metric-value text-success" id="totalIncome">-</div>
+                <div class="metric-card mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="income-indicator">
+                                <i data-lucide="arrow-up" style="width: 16px; height: 16px;"></i>
+                                Income
+                            </div>
+                        </div>
+                        <div class="metric-value text-success" id="totalIncome">-</div>
+                    </div>
                 </div>
-                <hr>
                 
-                <div class="metric-row">
-                    <div class="metric-label">Total Expenses</div>
-                    <div class="metric-value text-danger" id="totalExpenses">-</div>
+                <div class="metric-card mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="expense-indicator">
+                                <i data-lucide="arrow-down" style="width: 16px; height: 16px;"></i>
+                                Expenses
+                            </div>
+                        </div>
+                        <div class="metric-value text-danger" id="totalExpenses">-</div>
+                    </div>
                 </div>
-                <hr>
                 
-                <div class="metric-row">
-                    <div class="metric-label">Net Balance</div>
-                    <div class="metric-value text-primary fw-bold" id="netBalance">-</div>
+                <div class="metric-card mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="metric-label fw-bold">💰 Net Balance</div>
+                        <div class="metric-value text-primary fw-bold" id="netBalance">-</div>
+                    </div>
                 </div>
-                <hr>
                 
-                <div class="metric-row">
-                    <div class="metric-label">Pending Expenses</div>
-                    <div class="metric-value text-warning" id="pendingExpenses">-</div>
+                <div class="metric-card mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="metric-label">⏳ Pending Expenses</div>
+                        <div class="metric-value text-warning" id="pendingExpenses">-</div>
+                    </div>
                 </div>
-                <hr>
                 
-                <div class="metric-row">
-                    <div class="metric-label">Member Contributions</div>
-                    <div class="metric-value" id="memberContributions">-</div>
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="metric-label">👥 Member Contributions</div>
+                        <div class="metric-value" id="memberContributions">-</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -152,6 +170,11 @@
         let expenseChart = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize icons immediately
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
             // Set default dates to today
             document.getElementById('incomeDate').valueAsDate = new Date();
             document.getElementById('expenseDate').valueAsDate = new Date();
@@ -160,7 +183,11 @@
             await loadUpcomingActivities();
             
             await loadFinancialData();
-            lucide.createIcons();
+            
+            // Reinitialize icons after loading data
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         });
 
         // Load upcoming activities (StartTime >= now)
@@ -455,16 +482,6 @@
 }
 
 <style>
-    .report-card {
-        transition: transform 0.2s, box-shadow 0.2s;
-        cursor: pointer;
-    }
-
-    .report-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
-    }
-
     .report-icon {
         width: 64px;
         height: 64px;
@@ -472,13 +489,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-    }
-
-    .metric-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 0;
     }
 
     .metric-label {
@@ -489,6 +499,11 @@
     .metric-value {
         font-size: 18px;
         font-weight: 600;
+    }
+    
+    /* Ensure icons render properly */
+    [data-lucide] {
+        display: inline-block;
     }
 </style>
 

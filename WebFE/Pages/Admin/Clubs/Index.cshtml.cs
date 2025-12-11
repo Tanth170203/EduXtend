@@ -1,10 +1,9 @@
 using BusinessObject.DTOs.Club;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net.Http.Json;
 
-using Microsoft.AspNetCore.Mvc;
-
-namespace WebFE.Pages.Clubs
+namespace WebFE.Pages.Admin.Clubs
 {
     public class IndexModel : PageModel
     {
@@ -15,7 +14,7 @@ namespace WebFE.Pages.Clubs
         
         // Pagination properties
         public int CurrentPage { get; set; } = 1;
-        public int PageSize { get; set; } = 6;
+        public int PageSize { get; set; } = 10;
         public int TotalPages { get; set; }
         public int TotalCount { get; set; }
 
@@ -32,7 +31,7 @@ namespace WebFE.Pages.Clubs
         {
             var client = _http.CreateClient("ApiClient");
             
-            // Try to read page from query string directly as fallback
+            // Read page from query string as fallback
             if (Request.Query.ContainsKey("page") && int.TryParse(Request.Query["page"], out int pageFromQuery))
             {
                 Page = pageFromQuery;
@@ -56,7 +55,6 @@ namespace WebFE.Pages.Clubs
             TotalCount = allClubs.Count;
             TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
             
-            // Ensure current page is within bounds
             if (CurrentPage > TotalPages && TotalPages > 0)
                 CurrentPage = TotalPages;
             

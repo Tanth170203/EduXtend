@@ -20,6 +20,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PDF.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <!-- Modal Fix CSS -->
     <link rel="stylesheet" href="~/css/modal-fix.css" asp-append-version="true" />
     
@@ -120,7 +122,7 @@
                         <i data-lucide="lightbulb" style="width: 20px; height: 20px;"></i>
                         <span>Proposals</span>
                     </a>
-                    <a class="sidebar-link" href="/ClubManager/News">
+                    <a class="sidebar-link @(current.StartsWith("/ClubManager/News") ? "active" : "")" href="/ClubManager/News">
                         <i data-lucide="newspaper" style="width: 20px; height: 20px;"></i>
                         <span>Club News</span>
                     </a>
@@ -261,14 +263,23 @@
         </div>
     </div>
 
+    <!-- CV Viewer Modal Component -->
+    @await Html.PartialAsync("_CVViewerModal")
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/auth.js" asp-append-version="true"></script>
     <script src="~/js/notifications.js" asp-append-version="true"></script>
     <script src="~/js/chatbot.js" asp-append-version="true"></script>
+    <script src="~/js/cv-viewer.js" asp-append-version="true"></script>
 
     <script>
+        // Configure PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+        
         // Initialize Lucide Icons
         lucide.createIcons();
 

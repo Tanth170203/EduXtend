@@ -90,6 +90,29 @@ public class ClubController : ControllerBase
         }
     }
 
+    // GET api/club/my-managed-clubs
+    [HttpGet("my-managed-clubs")]
+    [Authorize(Roles = "ClubManager")]
+    public async Task<IActionResult> GetMyManagedClubs()
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user ID" });
+            }
+
+            var clubs = await _service.GetAllManagedClubsByUserIdAsync(userId);
+            return Ok(clubs);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting managed clubs");
+            return StatusCode(500, new { message = "Failed to retrieve clubs information" });
+        }
+    }
+
     // POST api/club/{clubId}/toggle-recruitment
     [HttpPost("{clubId:int}/toggle-recruitment")]
     [Authorize]

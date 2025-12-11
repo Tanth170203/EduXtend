@@ -36,7 +36,7 @@ namespace WebAPI.Controllers
             return Ok(data);
         }
 
-        // GET api/activity/search?searchTerm=workshop&type=Club&status=Approved&isPublic=true&clubId=1
+        // GET api/activity/search?searchTerm=workshop&type=Club&status=Approved&isPublic=true&clubId=1&page=1&pageSize=6
         [HttpGet("search")]
         [AllowAnonymous]
         public async Task<IActionResult> Search(
@@ -44,9 +44,11 @@ namespace WebAPI.Controllers
             [FromQuery] string? type,
             [FromQuery] string? status,
             [FromQuery] bool? isPublic,
-            [FromQuery] int? clubId)
+            [FromQuery] int? clubId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 6)
         {
-            var data = await _service.SearchActivitiesAsync(searchTerm, type, status, isPublic, clubId);
+            var data = await _service.SearchActivitiesAsync(searchTerm, type, status, isPublic, clubId, page, pageSize);
             return Ok(data);
         }
 
@@ -864,6 +866,13 @@ namespace WebAPI.Controllers
 			_logger.LogError(ex, "Error rejecting collaboration for activity {ActivityId}", activityId);
 			return StatusCode(500, new { message = "Internal server error" });
 		}
+	}
+
+	// ==================== Attendance Evaluation Endpoints ====================
+
+	public class RejectAttendanceDto
+	{
+		public string Reason { get; set; } = string.Empty;
 	}
     }
 }

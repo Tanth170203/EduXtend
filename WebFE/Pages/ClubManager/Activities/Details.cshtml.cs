@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace WebFE.Pages.ClubManager.Activities
 {
-    public class DetailsModel : PageModel
+    public class DetailsModel : ClubManagerPageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<DetailsModel> _logger;
@@ -30,6 +30,13 @@ namespace WebFE.Pages.ClubManager.Activities
 
         public async Task<IActionResult> OnGetAsync()
         {
+            // Initialize club context from TempData
+            var result = await InitializeClubContextAsync();
+            if (result is RedirectResult)
+            {
+                return result;
+            }
+
             try
             {
                 ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "";
@@ -58,31 +65,8 @@ namespace WebFE.Pages.ClubManager.Activities
                 }
 
                 // Check if this is a collaborated activity (current user's club is the collaborating club, not owner)
-                // Get current user's club
-                try
-                {
-                    var clubRequest = new HttpRequestMessage(HttpMethod.Get, "api/club/my-managed-club");
-                    foreach (var cookie in Request.Cookies)
-                    {
-                        clubRequest.Headers.Add("Cookie", $"{cookie.Key}={cookie.Value}");
-                    }
-                    var clubResponse = await client.SendAsync(clubRequest);
-                    if (clubResponse.IsSuccessStatusCode)
-                    {
-                        var clubJson = await clubResponse.Content.ReadAsStringAsync();
-                        var clubDoc = System.Text.Json.JsonDocument.Parse(clubJson);
-                        if (clubDoc.RootElement.TryGetProperty("id", out var idElement))
-                        {
-                            int clubId = idElement.GetInt32();
-                            IsCollaboratedActivity = Activity.ClubCollaborationId == clubId && Activity.ClubId != clubId;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to check if activity is collaborated");
-                    IsCollaboratedActivity = false;
-                }
+                // Use ClubId from TempData (already set by InitializeClubContextAsync)
+                IsCollaboratedActivity = Activity.ClubCollaborationId == ClubId && Activity.ClubId != ClubId;
 
                 // Load feedbacks
                 await LoadFeedbacksAsync();

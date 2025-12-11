@@ -6,33 +6,33 @@
     Layout = "~/Pages/Shared/_ClubManagerLayout.cshtml";
 }
 
+<link rel="stylesheet" href="~/css/financial-dashboard.css" />
+
 <div class="admin-page-header">
     <div>
-        <h1 class="admin-page-title">Member Contributions</h1>
-        <p class="admin-page-subtitle">Track member fund collection</p>
+        <h1 class="admin-page-title">💰 Member Contributions</h1>
+        <p class="admin-page-subtitle">Track member fund collection with style</p>
     </div>
     <div class="admin-page-actions">
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#collectFundsModal">
+        <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#collectFundsModal">
             <i data-lucide="send" style="width: 16px; height: 16px;"></i>
             Collect Funds
         </button>
     </div>
 </div>
 
-<!-- Summary Cards -->
+<!-- Summary Cards with Gradients -->
 <div class="row g-4 mb-4" id="statisticsCards">
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #10b981 !important;">
+        <div class="stat-card financial-card-gradient-4 border-0 shadow-sm h-100">
             <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <div class="stat-icon bg-success bg-opacity-10 text-success">
-                            <i data-lucide="users" style="width: 24px; height: 24px;"></i>
-                        </div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white mb-2 opacity-90">Paid Members</h6>
+                        <h2 class="mb-0 text-white fw-bold" id="paidCount">-</h2>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-1">Paid Members</h6>
-                        <h3 class="mb-0" id="paidCount">-</h3>
+                    <div class="stat-icon bg-white bg-opacity-20 pulse-animation">
+                        <i data-lucide="user-check" style="width: 28px; height: 28px;" class="text-white"></i>
                     </div>
                 </div>
             </div>
@@ -40,17 +40,15 @@
     </div>
 
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #f59e0b !important;">
+        <div class="stat-card financial-card-gradient-5 border-0 shadow-sm h-100">
             <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
-                            <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
-                        </div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white mb-2 opacity-90">Pending</h6>
+                        <h2 class="mb-0 text-white fw-bold" id="pendingCount">-</h2>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-1">Pending</h6>
-                        <h3 class="mb-0" id="pendingCount">-</h3>
+                    <div class="stat-icon bg-white bg-opacity-20 pulse-animation">
+                        <i data-lucide="clock" style="width: 28px; height: 28px;" class="text-white"></i>
                     </div>
                 </div>
             </div>
@@ -58,17 +56,15 @@
     </div>
 
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #dc3545 !important;">
+        <div class="stat-card financial-card-gradient-2 border-0 shadow-sm h-100">
             <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
-                            <i data-lucide="alert-circle" style="width: 24px; height: 24px;"></i>
-                        </div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white mb-2 opacity-90">Unconfirmed</h6>
+                        <h2 class="mb-0 text-white fw-bold" id="unconfirmedCount">-</h2>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-1">Unconfirmed</h6>
-                        <h3 class="mb-0" id="unconfirmedCount">-</h3>
+                    <div class="stat-icon bg-white bg-opacity-20 pulse-animation">
+                        <i data-lucide="alert-circle" style="width: 28px; height: 28px;" class="text-white"></i>
                     </div>
                 </div>
             </div>
@@ -76,17 +72,15 @@
     </div>
 
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #003d7a !important;">
+        <div class="stat-card financial-card-gradient-3 border-0 shadow-sm h-100">
             <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
-                            <i data-lucide="dollar-sign" style="width: 24px; height: 24px;"></i>
-                        </div>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-white mb-2 opacity-90">Collected</h6>
+                        <h2 class="mb-0 text-white fw-bold" id="collectedAmount">-</h2>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h6 class="text-muted mb-1">Collected</h6>
-                        <h3 class="mb-0" id="collectedAmount">-</h3>
+                    <div class="stat-icon bg-white bg-opacity-20 pulse-animation">
+                        <i data-lucide="trending-up" style="width: 28px; height: 28px;" class="text-white"></i>
                     </div>
                 </div>
             </div>
@@ -304,8 +298,8 @@
 
                     <div class="mb-3">
                         <label for="paymentDate" class="form-label">Payment Date <span class="text-danger">*</span></label>
-                        <input type="datetime-local" class="form-control" id="paymentDate" required>
-                        <div class="invalid-feedback">Payment date cannot be in the future</div>
+                        <input type="datetime-local" class="form-control" id="paymentDate" required readonly>
+                        <div class="form-text">Ngày thanh toán sẽ tự động là thời điểm xác nhận</div>
                     </div>
 
                     <div class="mb-3">
@@ -334,6 +328,11 @@
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize icons immediately
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
             // Check for success message after reload
             if (sessionStorage.getItem('reminderSuccess') === 'true') {
                 sessionStorage.removeItem('reminderSuccess');
@@ -342,7 +341,11 @@
             
             await loadStatistics();
             await loadRequests();
-            lucide.createIcons();
+            
+            // Reinitialize icons after loading data
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
 
             // Set minimum due date to tomorrow
             const tomorrow = new Date();
@@ -365,6 +368,8 @@
                     const stats = await response.json();
                     console.log('Statistics:', stats); // Debug log
                     
+                    // Statistics show counts across ALL active requests
+                    // So we show total unique members with each status
                     document.getElementById('paidCount').textContent = stats.paidMembers || 0;
                     document.getElementById('pendingCount').textContent = stats.pendingMembers || 0;
                     document.getElementById('unconfirmedCount').textContent = stats.unconfirmedMembers || 0;
@@ -880,12 +885,8 @@
             }
 
             const paymentId = document.getElementById('confirmPaymentId').value;
-            const paymentDate = new Date(document.getElementById('paymentDate').value);
-            
-            if (paymentDate > new Date()) {
-                showToast('Payment date cannot be in the future', 'danger');
-                return;
-            }
+            // Always use current date/time when confirming payment
+            const paymentDate = new Date();
 
             const paymentNotes = document.getElementById('paymentNotes').value;
             const paymentMethod = document.getElementById('confirmPaymentMethod').value;
@@ -1063,4 +1064,23 @@
     .spin {
         animation: spin 1s linear infinite;
     }
+    
+    /* Avatar Circles */
+    .avatar-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: white;
+    }
+    
+    .avatar-circle.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .avatar-circle.success { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+    .avatar-circle.info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .avatar-circle.warning { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+    .avatar-circle.secondary { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
 </style>

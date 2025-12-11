@@ -15,6 +15,7 @@ namespace Services.Clubs
         Task<ClubDetailDto?> GetClubByIdAsync(int id);
         Task<List<string>> GetAllCategoryNamesAsync();
         Task<ClubDetailDto?> GetManagedClubByUserIdAsync(int userId);
+        Task<List<ClubListItemDto>> GetAllManagedClubsByUserIdAsync(int userId);
         Task<bool> ToggleRecruitmentAsync(int clubId, bool isOpen);
         Task<RecruitmentStatusDto?> GetRecruitmentStatusAsync(int clubId);
         Task<bool> IsUserMemberOfClubAsync(int userId, int clubId);
