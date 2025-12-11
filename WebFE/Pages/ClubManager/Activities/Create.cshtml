@@ -31,8 +31,21 @@
         <!-- Main Form -->
         <div class="col-lg-8">
             <div class="content-card mb-4">
-                <div class="content-card-header">
-                    <h5 class="content-card-title">Basic Information</h5>
+                <div class="content-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="content-card-title mb-0">Basic Information</h5>
+                    <div>
+                        <input type="file" id="autoFillFile" class="d-none" accept=".txt,.jpg,.jpeg,.png,.pdf,.docx" />
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="autoFillBtn">
+                            <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
+                            Upload & Auto-fill
+                        </button>
+                    </div>
+                </div>
+                <div id="autoFillStatus" class="alert alert-info mx-3 mt-3" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                        <span id="autoFillStatusText">Processing file...</span>
+                    </div>
                 </div>
                 <div class="content-card-body">
                     <!-- Title -->
@@ -251,6 +264,154 @@
     <script>
         console.log('=== CREATE ACTIVITY SCRIPT LOADED ===');
         lucide.createIcons();
+
+        // ===== Auto-fill from File =====
+        const autoFillBtn = document.getElementById('autoFillBtn');
+        const autoFillFile = document.getElementById('autoFillFile');
+        const autoFillStatus = document.getElementById('autoFillStatus');
+        const autoFillStatusText = document.getElementById('autoFillStatusText');
+
+        autoFillBtn?.addEventListener('click', () => autoFillFile?.click());
+
+        autoFillFile?.addEventListener('change', async function() {
+            if (!this.files || this.files.length === 0) return;
+            
+            const file = this.files[0];
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            
+            if (file.size > maxSize) {
+                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+                this.value = '';
+                return;
+            }
+
+            // Show loading
+            autoFillStatus.style.display = 'block';
+            autoFillStatus.className = 'alert alert-info mx-3 mt-3';
+            autoFillStatusText.textContent = `Đang xử lý file "${file.name}"...`;
+            autoFillBtn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('@Model.ApiBaseUrl/api/activity/extract-from-file', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to extract activity');
+                }
+
+                const data = await response.json();
+                
+                // Auto-fill form fields
+                if (data.title) {
+                    document.getElementById('Activity_Title').value = data.title;
+                }
+                if (data.description) {
+                    document.getElementById('Activity_Description').value = data.description;
+                }
+                if (data.location) {
+                    document.getElementById('Activity_Location').value = data.location;
+                }
+                if (data.startTime) {
+                    const startInput = document.getElementById('startTimeInput');
+                    if (startInput) {
+                        const dt = new Date(data.startTime);
+                        startInput.value = dt.toISOString().slice(0, 16);
+                    }
+                }
+                if (data.endTime) {
+                    const endInput = document.getElementById('endTimeInput');
+                    if (endInput) {
+                        const dt = new Date(data.endTime);
+                        endInput.value = dt.toISOString().slice(0, 16);
+                    }
+                }
+                if (data.maxParticipants) {
+                    document.getElementById('maxParticipantsInput').value = data.maxParticipants;
+                }
+                if (data.suggestedType) {
+                    const typeSelect = document.getElementById('activityTypeSelect');
+                    if (typeSelect) {
+                        const option = Array.from(typeSelect.options).find(o => o.value === data.suggestedType);
+                        if (option) {
+                            typeSelect.value = data.suggestedType;
+                            typeSelect.dispatchEvent(new Event('change'));
+                        }
+                    }
+                }
+
+                // Auto-fill schedules if present - store for later processing
+                if (data.schedules && data.schedules.length > 0) {
+                    window.pendingSchedules = data.schedules;
+                    // Use setTimeout to ensure addScheduleItem is defined and schedule section is visible
+                    setTimeout(() => {
+                        if (typeof addScheduleItem === 'function' && window.pendingSchedules) {
+                            const scheduleSection = document.getElementById('scheduleManagementSection');
+                            
+                            // IMPORTANT: Force show schedule section before adding items
+                            if (scheduleSection) {
+                                scheduleSection.style.display = 'block';
+                            }
+                            
+                            // Clear existing schedules
+                            if (scheduleList) {
+                                scheduleList.innerHTML = '';
+                                scheduleIndex = 0;
+                            }
+                            
+                            // Add each schedule item
+                            window.pendingSchedules.forEach(schedule => {
+                                addScheduleItem();
+                                const lastSchedule = scheduleList.lastElementChild;
+                                if (lastSchedule) {
+                                    const startTimeInput = lastSchedule.querySelector('.schedule-start-time');
+                                    const endTimeInput = lastSchedule.querySelector('.schedule-end-time');
+                                    const titleInput = lastSchedule.querySelector('.schedule-title');
+                                    const descInput = lastSchedule.querySelector('.schedule-description');
+                                    
+                                    if (startTimeInput && schedule.startTime) startTimeInput.value = schedule.startTime;
+                                    if (endTimeInput && schedule.endTime) endTimeInput.value = schedule.endTime;
+                                    if (titleInput && schedule.title) titleInput.value = schedule.title;
+                                    if (descInput && schedule.description) descInput.value = schedule.description;
+                                }
+                            });
+                            
+                            if (typeof updateNoSchedulesMessage === 'function') updateNoSchedulesMessage();
+                            window.pendingSchedules = null;
+                        }
+                    }, 200); // Increased timeout to ensure DOM is ready
+                }
+
+                // Show success
+                let successMsg = 'Đã điền thông tin từ file.';
+                if (data.schedules && data.schedules.length > 0) {
+                    successMsg += ` Đã thêm ${data.schedules.length} schedule items.`;
+                }
+                successMsg += ' Vui lòng kiểm tra và chỉnh sửa nếu cần.';
+                
+                autoFillStatus.className = 'alert alert-success mx-3 mt-3';
+                autoFillStatusText.innerHTML = '<i data-lucide="check-circle" style="width:16px;height:16px;"></i> ' + successMsg;
+                lucide.createIcons();
+                
+                setTimeout(() => {
+                    autoFillStatus.style.display = 'none';
+                }, 5000);
+
+            } catch (error) {
+                console.error('Auto-fill error:', error);
+                autoFillStatus.className = 'alert alert-danger mx-3 mt-3';
+                autoFillStatusText.textContent = 'Lỗi: ' + error.message;
+            } finally {
+                autoFillBtn.disabled = false;
+                this.value = ''; // Reset file input
+            }
+        });
 
         // Form validation
         (function () {

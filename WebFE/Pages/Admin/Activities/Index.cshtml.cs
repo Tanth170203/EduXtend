@@ -40,12 +40,13 @@ namespace WebFE.Pages.Admin.Activities
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             // Show all activities regardless of status
+            // Build query string with filters
             var qs = new List<string>();
             if (!string.IsNullOrWhiteSpace(SearchTerm)) qs.Add($"searchTerm={Uri.EscapeDataString(SearchTerm)}");
             if (!string.IsNullOrWhiteSpace(Type)) qs.Add($"type={Uri.EscapeDataString(Type)}");
             if (!string.IsNullOrWhiteSpace(Status)) qs.Add($"status={Uri.EscapeDataString(Status)}");
             if (IsPublic.HasValue) qs.Add($"isPublic={(IsPublic.Value ? "true" : "false")}");
-            var endpoint = $"/api/admin/activities?{string.Join("&", qs)}";
+            var endpoint = qs.Count > 0 ? $"/api/admin/activities?{string.Join("&", qs)}" : "/api/admin/activities";
 
             var allItems = await client.GetFromJsonAsync<List<ActivityListItemDto>>(endpoint) ?? new();
             
@@ -65,6 +66,14 @@ namespace WebFE.Pages.Admin.Activities
             ApprovedActivities = allActivities.Count(a => a.Status == "Approved");
             PendingActivities = allActivities.Count(a => a.Status == "PendingApproval");
             UpcomingActivities = allActivities.Count(a => a.StartTime > DateTime.Now);
+            // Fetch all activities for statistics (without filters)
+            var allActivities = await client.GetFromJsonAsync<List<ActivityListItemDto>>("/api/admin/activities") ?? new();
+            
+            // Calculate statistics from all activities
+            TotalActivities = allActivities.Count;
+            ApprovedActivities = allActivities.Count(a => a.Status == "Approved");
+            PendingActivities = allActivities.Count(a => a.Status == "PendingApproval");
+            UpcomingActivities = allActivities.Count(a => a.StartTime > DateTime.Now && a.Status == "Approved");
             
             return Page();
         }

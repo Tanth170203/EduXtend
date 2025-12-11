@@ -12,12 +12,18 @@ namespace WebAPI.Controllers
     {
         private readonly IActivityService _service;
         private readonly ICloudinaryService _cloudinaryService;
+        private readonly IActivityExtractorService _extractorService;
         private readonly ILogger<ActivityController> _logger;
         
-        public ActivityController(IActivityService service, ICloudinaryService cloudinaryService, ILogger<ActivityController> logger)
+        public ActivityController(
+            IActivityService service, 
+            ICloudinaryService cloudinaryService, 
+            IActivityExtractorService extractorService,
+            ILogger<ActivityController> logger)
         {
             _service = service;
             _cloudinaryService = cloudinaryService;
+            _extractorService = extractorService;
             _logger = logger;
         }
 
@@ -510,6 +516,42 @@ namespace WebAPI.Controllers
 		{
 			_logger.LogError(ex, "Error uploading activity image");
 			return BadRequest(new { message = ex.Message });
+		}
+	}
+
+	// ================= EXTRACT ACTIVITY FROM FILE (AI) =================
+	// POST api/activity/extract-from-file
+	[HttpPost("extract-from-file")]
+	[Authorize(Roles = "ClubManager,Admin")]
+	public async Task<IActionResult> ExtractActivityFromFile(IFormFile file)
+	{
+		try
+		{
+			if (file == null || file.Length == 0)
+				return BadRequest(new { message = "No file provided" });
+
+			// Max file size: 10MB
+			if (file.Length > 10 * 1024 * 1024)
+				return BadRequest(new { message = "File size exceeds 10MB limit" });
+
+			_logger.LogInformation("Extracting activity from file: {FileName}, Size: {Size}", 
+				file.FileName, file.Length);
+
+			var result = await _extractorService.ExtractActivityFromFileAsync(file);
+			return Ok(result);
+		}
+		catch (NotSupportedException ex)
+		{
+			return BadRequest(new { message = ex.Message });
+		}
+		catch (ArgumentException ex)
+		{
+			return BadRequest(new { message = ex.Message });
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error extracting activity from file");
+			return StatusCode(500, new { message = "Failed to extract activity information from file" });
 		}
 	}
 

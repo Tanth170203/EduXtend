@@ -12,7 +12,8 @@ namespace WebFE
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
+            //deploy ( chạy nhớ comment lần nây )
+            //builder.WebHost.UseUrls($"http://*:80");
             // Add services to the container.
             builder.Services.AddHttpContextAccessor();
             
