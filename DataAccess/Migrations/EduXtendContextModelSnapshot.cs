@@ -1080,6 +1080,13 @@ namespace DataAccess.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<string>("InterviewType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("Offline");
+
                     b.Property<int>("JoinRequestId")
                         .HasColumnType("int");
 

@@ -5,6 +5,7 @@ using Repositories.JoinRequests;
 using Repositories.Notifications;
 using Microsoft.Extensions.Logging;
 using Utils;
+using Services.Emails;
 
 namespace Services.Interviews
 {
@@ -13,17 +14,20 @@ namespace Services.Interviews
         private readonly IInterviewRepository _interviewRepo;
         private readonly IJoinRequestRepository _joinRequestRepo;
         private readonly INotificationRepository _notificationRepo;
+        private readonly IEmailService _emailService;
         private readonly ILogger<InterviewService> _logger;
 
         public InterviewService(
             IInterviewRepository interviewRepo, 
             IJoinRequestRepository joinRequestRepo,
             INotificationRepository notificationRepo,
+            IEmailService emailService,
             ILogger<InterviewService> logger)
         {
             _interviewRepo = interviewRepo;
             _joinRequestRepo = joinRequestRepo;
             _notificationRepo = notificationRepo;
+            _emailService = emailService;
             _logger = logger;
         }
 
@@ -59,11 +63,27 @@ namespace Services.Interviews
             if (await _interviewRepo.ExistsForJoinRequestAsync(dto.JoinRequestId))
                 throw new Exception("Interview already scheduled for this request");
 
+            // Validate interview type
+            if (dto.InterviewType != "Online" && dto.InterviewType != "Offline")
+                throw new Exception("Hình thức phỏng vấn không hợp lệ. Vui lòng chọn Online hoặc Offline.");
+
+            // Validate location is provided
+            if (string.IsNullOrWhiteSpace(dto.Location))
+            {
+                var errorMsg = dto.InterviewType == "Online" 
+                    ? "Vui lòng nhập link Google Meet." 
+                    : "Vui lòng nhập địa chỉ phỏng vấn.";
+                throw new Exception(errorMsg);
+            }
+
+            string location = dto.Location.Trim();
+
             var interview = new Interview
             {
                 JoinRequestId = dto.JoinRequestId,
                 ScheduledDate = dto.ScheduledDate,
-                Location = dto.Location,
+                InterviewType = dto.InterviewType,
+                Location = location,
                 Notes = dto.Notes,
                 Status = "Scheduled",
                 CreatedById = createdById,
@@ -75,10 +95,14 @@ namespace Services.Interviews
             // Create notification for student
             try
             {
+                var locationText = dto.InterviewType == "Online" 
+                    ? $"<a href='{location}' target='_blank'>Tham gia Google Meet</a>"
+                    : location;
+
                 var notification = new Notification
                 {
                     Title = "Lịch phỏng vấn mới",
-                    Message = $"Bạn có lịch phỏng vấn cho câu lạc bộ {joinRequest.Club?.Name} vào {dto.ScheduledDate:dd/MM/yyyy HH:mm} tại {dto.Location}",
+                    Message = $"Bạn có lịch phỏng vấn {dto.InterviewType} cho câu lạc bộ {joinRequest.Club?.Name} vào {dto.ScheduledDate:dd/MM/yyyy HH:mm}. Địa điểm: {locationText}",
                     Scope = "User",
                     TargetUserId = joinRequest.UserId,
                     CreatedById = createdById,
@@ -90,6 +114,24 @@ namespace Services.Interviews
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to create notification for interview {InterviewId}", created.Id);
+            }
+
+            // Send email notification
+            try
+            {
+                await _emailService.SendInterviewNotificationEmailAsync(
+                    joinRequest.User?.Email ?? "",
+                    joinRequest.User?.FullName ?? "",
+                    joinRequest.Club?.Name ?? "",
+                    dto.ScheduledDate,
+                    dto.InterviewType,
+                    location,
+                    dto.Notes
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send email for interview {InterviewId}", created.Id);
             }
             
             // Reload with includes
@@ -103,8 +145,24 @@ namespace Services.Interviews
             if (interview == null)
                 throw new Exception("Interview not found");
 
+            // Validate interview type
+            if (dto.InterviewType != "Online" && dto.InterviewType != "Offline")
+                throw new Exception("Hình thức phỏng vấn không hợp lệ. Vui lòng chọn Online hoặc Offline.");
+
+            // Validate location is provided
+            if (string.IsNullOrWhiteSpace(dto.Location))
+            {
+                var errorMsg = dto.InterviewType == "Online" 
+                    ? "Vui lòng nhập link Google Meet." 
+                    : "Vui lòng nhập địa chỉ phỏng vấn.";
+                throw new Exception(errorMsg);
+            }
+
+            string location = dto.Location.Trim();
+
             interview.ScheduledDate = dto.ScheduledDate;
-            interview.Location = dto.Location;
+            interview.InterviewType = dto.InterviewType;
+            interview.Location = location;
             interview.Notes = dto.Notes;
 
             await _interviewRepo.UpdateAsync(interview);
@@ -112,10 +170,14 @@ namespace Services.Interviews
             // Create notification for student about the update
             try
             {
+                var locationText = dto.InterviewType == "Online" 
+                    ? $"<a href='{location}' target='_blank'>Tham gia Google Meet</a>"
+                    : location;
+
                 var notification = new Notification
                 {
                     Title = "Lịch phỏng vấn đã được cập nhật",
-                    Message = $"Lịch phỏng vấn của bạn cho câu lạc bộ {interview.JoinRequest.Club.Name} đã được cập nhật. Thời gian mới: {dto.ScheduledDate:dd/MM/yyyy HH:mm}, Địa điểm: {dto.Location}",
+                    Message = $"Lịch phỏng vấn {dto.InterviewType} của bạn cho câu lạc bộ {interview.JoinRequest.Club.Name} đã được cập nhật. Thời gian mới: {dto.ScheduledDate:dd/MM/yyyy HH:mm}, Địa điểm: {locationText}",
                     Scope = "User",
                     TargetUserId = interview.JoinRequest.UserId,
                     CreatedById = interview.CreatedById,
@@ -127,6 +189,24 @@ namespace Services.Interviews
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to create notification for interview update {InterviewId}", id);
+            }
+
+            // Send email notification
+            try
+            {
+                await _emailService.SendInterviewUpdateEmailAsync(
+                    interview.JoinRequest.User.Email,
+                    interview.JoinRequest.User.FullName,
+                    interview.JoinRequest.Club.Name,
+                    dto.ScheduledDate,
+                    dto.InterviewType,
+                    location,
+                    dto.Notes
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send email for interview update {InterviewId}", id);
             }
 
             // Reload with includes
@@ -175,7 +255,9 @@ namespace Services.Interviews
                 UserId = interview.JoinRequest.UserId,
                 UserName = interview.JoinRequest.User.FullName,
                 UserEmail = interview.JoinRequest.User.Email,
+                CvUrl = interview.JoinRequest.CvUrl,
                 ScheduledDate = interview.ScheduledDate,
+                InterviewType = interview.InterviewType,
                 Location = interview.Location,
                 Notes = interview.Notes,
                 Evaluation = showEvaluation ? interview.Evaluation : null,

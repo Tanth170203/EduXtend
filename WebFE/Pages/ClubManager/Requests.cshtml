@@ -76,6 +76,11 @@
             All Applications (@Model.AllRequests.Count)
         </h2>
         <div class="d-flex gap-2">
+            <button id="exportCVBtn" class="btn btn-sm btn-success" title="Export all CVs without interview schedule to Excel">
+                <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i>
+                Export Unscheduled CVs
+                <span id="unscheduledCount" class="badge bg-white text-success ms-1" style="display: none;">0</span>
+            </button>
             <select id="statusFilter" class="form-select form-select-sm" style="width: 150px;">
                 <option value="All">All Status</option>
                 <option value="Pending" selected>Pending</option>
@@ -261,8 +266,27 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="location" class="form-label">Location *</label>
-                        <input type="text" class="form-control" id="location" placeholder="e.g. Room 101, Building A" required maxlength="200" />
+                        <label class="form-label">Interview Type *</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="interviewType" id="typeOnline" value="Online">
+                                <label class="form-check-label" for="typeOnline">
+                                    <i data-lucide="video" style="width: 16px; height: 16px;"></i> Online (Google Meet)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="interviewType" id="typeOffline" value="Offline" checked>
+                                <label class="form-check-label" for="typeOffline">
+                                    <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> Offline (In-person)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="locationGroup">
+                        <label for="location" class="form-label" id="locationLabel">Location *</label>
+                        <input type="text" class="form-control" id="location" placeholder="e.g. Room 101, Building A" maxlength="500" required />
+                        <div class="form-text" id="locationHelp">Physical location for the interview</div>
                     </div>
 
                     <div class="mb-3">
@@ -278,6 +302,72 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- CV Export Preview Modal -->
+<div class="modal fade" id="cvExportModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i data-lucide="file-spreadsheet" style="width: 20px; height: 20px;"></i>
+                    Preview - Dữ liệu CV đã trích xuất
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="exportProgress" style="display: none;">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 id="progressText">Đang xử lý CV...</h5>
+                        <p class="text-muted" id="progressDetail">Vui lòng đợi</p>
+                    </div>
+                </div>
+                
+                <div id="exportResult" style="display: none;">
+                    <div class="alert alert-info mb-3">
+                        <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                        <strong>Kết quả:</strong> 
+                        <span id="resultSummary"></span>
+                    </div>
+                    
+                    <div id="errorList" class="alert alert-warning" style="display: none;">
+                        <strong>Lỗi khi xử lý một số CV:</strong>
+                        <ul id="errorItems" class="mb-0 mt-2"></ul>
+                    </div>
+                    
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Mã SV</th>
+                                    <th>Họ tên</th>
+                                    <th>Email</th>
+                                    <th>SĐT</th>
+                                    <th>Học vấn</th>
+                                    <th>Kinh nghiệm</th>
+                                    <th>Kỹ năng</th>
+                                    <th>Thông tin khác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success" id="downloadExcelBtn" style="display: none;">
+                    <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                    Tải xuống Excel
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -383,15 +473,27 @@
             
             const requestId = document.getElementById('interviewJoinRequestId').value;
             const scheduledDate = document.getElementById('scheduledDate').value;
+            const interviewTypeElement = document.querySelector('input[name="interviewType"]:checked');
+            const interviewType = interviewTypeElement ? interviewTypeElement.value : 'Offline';
             const location = document.getElementById('location').value;
             const notes = document.getElementById('notes').value;
             
             console.log('Scheduling interview for request:', requestId);
             console.log('Scheduled date:', scheduledDate);
+            console.log('Interview type:', interviewType);
             console.log('Location:', location);
             
-            if (!scheduledDate || !location) {
+            if (!scheduledDate) {
                 alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Validate location for both Online and Offline
+            if (!location.trim()) {
+                const errorMsg = interviewType === 'Online' 
+                    ? 'Please enter a Google Meet link for online interview'
+                    : 'Please enter a location for offline interview';
+                alert(errorMsg);
                 return;
             }
             
@@ -403,7 +505,8 @@
                 const payload = {
                     joinRequestId: parseInt(requestId),
                     scheduledDate: new Date(scheduledDate).toISOString(),
-                    location: location.trim(),
+                    interviewType: interviewType,
+                    location: location.trim(), // Send location for both Online and Offline
                     notes: notes ? notes.trim() : null
                 };
                 
@@ -514,6 +617,213 @@
                 }
             });
         });
+
+        // CV Export functionality
+        let exportedData = null;
+
+        // Load unscheduled count on page load
+        async function loadUnscheduledCount() {
+            try {
+                const response = await fetch(`https://localhost:5001/api/cvexport/unscheduled-count/${clubId}`, {
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const countBadge = document.getElementById('unscheduledCount');
+                    if (data.count > 0) {
+                        countBadge.textContent = data.count;
+                        countBadge.style.display = 'inline-block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading unscheduled count:', error);
+            }
+        }
+
+        // Export CV button click
+        document.getElementById('exportCVBtn').addEventListener('click', async function() {
+            const modal = new bootstrap.Modal(document.getElementById('cvExportModal'));
+            modal.show();
+            
+            // Show progress
+            document.getElementById('exportProgress').style.display = 'block';
+            document.getElementById('exportResult').style.display = 'none';
+            document.getElementById('downloadExcelBtn').style.display = 'none';
+            
+            try {
+                const response = await fetch('https://localhost:5001/api/cvexport/extract', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ clubId: clubId })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API Error:', errorText);
+                    throw new Error(`Failed to extract CV data: ${response.status} ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('Extract result:', result);
+                console.log('Total:', result.totalRequests, 'Success:', result.successfullyParsed, 'Failed:', result.failedToParse);
+                console.log('Errors:', result.errors);
+                console.log('Extracted data:', result.extractedData);
+                exportedData = result;
+                
+                // Hide progress, show result
+                document.getElementById('exportProgress').style.display = 'none';
+                document.getElementById('exportResult').style.display = 'block';
+                
+                // Show summary
+                document.getElementById('resultSummary').textContent = 
+                    `Đã xử lý ${result.totalRequests} CV - Thành công: ${result.successfullyParsed}, Lỗi: ${result.failedToParse}`;
+                
+                // Show errors if any
+                if (result.errors && result.errors.length > 0) {
+                    const errorList = document.getElementById('errorList');
+                    const errorItems = document.getElementById('errorItems');
+                    errorItems.innerHTML = '';
+                    result.errors.forEach(error => {
+                        const li = document.createElement('li');
+                        li.textContent = error;
+                        errorItems.appendChild(li);
+                    });
+                    errorList.style.display = 'block';
+                }
+                
+                // Populate preview table
+                const tbody = document.getElementById('previewTableBody');
+                tbody.innerHTML = '';
+                
+                result.extractedData.forEach((item, index) => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${item.studentCode || '-'}</td>
+                        <td>${item.fullName || '-'}</td>
+                        <td>${item.email || '-'}</td>
+                        <td>${item.phoneNumber || '-'}</td>
+                        <td><small>${truncate(item.education, 50)}</small></td>
+                        <td><small>${truncate(item.experience, 50)}</small></td>
+                        <td><small>${truncate(item.skills, 50)}</small></td>
+                        <td><small>${truncate(item.otherInformation, 50)}</small></td>
+                    `;
+                });
+                
+                // Show download button
+                document.getElementById('downloadExcelBtn').style.display = 'inline-block';
+                lucide.createIcons();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('exportProgress').style.display = 'none';
+                alert('Có lỗi xảy ra khi xử lý CV: ' + error.message);
+                
+                // Close modal
+                const modalElement = document.getElementById('cvExportModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+        });
+
+        // Download Excel button click
+        document.getElementById('downloadExcelBtn').addEventListener('click', async function() {
+            if (!exportedData) {
+                alert('Không có dữ liệu để tải xuống');
+                return;
+            }
+            
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo file...';
+            
+            try {
+                const response = await fetch('https://localhost:5001/api/cvexport/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        clubId: clubId,
+                        data: exportedData
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to generate Excel file');
+                }
+                
+                // Download file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `CV_Extracted_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                this.disabled = false;
+                this.innerHTML = '<i data-lucide="download" style="width: 16px; height: 16px;"></i> Tải xuống Excel';
+                lucide.createIcons();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi tạo file Excel. Vui lòng thử lại.');
+                this.disabled = false;
+                this.innerHTML = '<i data-lucide="download" style="width: 16px; height: 16px;"></i> Tải xuống Excel';
+                lucide.createIcons();
+            }
+        });
+
+        // Setup interview type toggle handler
+        function setupInterviewTypeHandler() {
+            const typeRadios = document.querySelectorAll('input[name="interviewType"]');
+            typeRadios.forEach(radio => {
+                radio.addEventListener('change', toggleLocationField);
+            });
+            toggleLocationField(); // Initial state
+        }
+
+        function toggleLocationField() {
+            const isOnline = document.getElementById('typeOnline').checked;
+            const locationInput = document.getElementById('location');
+            const locationLabel = document.getElementById('locationLabel');
+            const locationHelp = document.getElementById('locationHelp');
+            
+            if (isOnline) {
+                // Online: Ask for Google Meet link
+                locationLabel.textContent = 'Google Meet Link *';
+                locationInput.placeholder = 'e.g. https://meet.google.com/abc-defg-hij';
+                locationHelp.textContent = 'Create a Google Meet link and paste it here';
+            } else {
+                // Offline: Ask for physical location
+                locationLabel.textContent = 'Location *';
+                locationInput.placeholder = 'e.g. Room 101, Building A';
+                locationHelp.textContent = 'Physical location for the interview';
+            }
+            lucide.createIcons();
+        }
+
+        // Initialize when modal is shown
+        document.getElementById('scheduleInterviewModal').addEventListener('shown.bs.modal', function () {
+            // Ensure Offline is checked by default
+            document.getElementById('typeOffline').checked = true;
+            setupInterviewTypeHandler();
+        });
+
+        // Helper function to truncate text
+        function truncate(text, maxLength) {
+            if (!text) return '-';
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+
+        // Load count on page load
+        loadUnscheduledCount();
     </script>
 }
 
