@@ -51,6 +51,25 @@
                             Getting GPS location...
                         </div>
 
+                        <!-- Attendance Status Banner -->
+                        @{
+                            var isAttendanceComplete = Model.AttendanceStatus.HasCheckedIn && Model.AttendanceStatus.HasCheckedOut;
+                        }
+                        @if (isAttendanceComplete)
+                        {
+                            <div class="alert alert-success mb-4">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <strong>Attendance Complete!</strong> You have successfully checked in and checked out. Your attendance has been recorded.
+                            </div>
+                        }
+                        else if (Model.AttendanceStatus.HasCheckedIn && !Model.AttendanceStatus.HasCheckedOut)
+                        {
+                            <div class="alert alert-warning mb-4">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Check-out Required!</strong> You must check-out before the activity ends to complete your attendance.
+                            </div>
+                        }
+
                         <!-- Check-in Section -->
                         <div class="row mb-4">
                             <div class="col-md-6">
@@ -144,6 +163,17 @@
 
         <!-- Side Info -->
         <div class="col-lg-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Important</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0 fw-bold text-danger">
+                        <i class="bi bi-info-circle me-1"></i>
+                        You must complete BOTH check-in AND check-out to have your attendance recorded successfully.
+                    </p>
+                </div>
+            </div>
             <div class="card shadow-sm">
                 <div class="card-header">
                     <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Instructions</h6>
@@ -151,9 +181,10 @@
                 <div class="card-body">
                     <ol class="mb-0">
                         <li class="mb-2">Allow browser to access GPS location</li>
-                        <li class="mb-2">Check-in within <strong>first 10 minutes</strong> after activity starts</li>
-                        <li class="mb-2">Check-out within <strong>last 10 minutes</strong> before activity ends</li>
-                        <li class="mb-0">Ensure you are within the allowed radius</li>
+                        <li class="mb-2"><strong>Check-in</strong> within the first @(Model.AttendanceStatus?.CheckInWindowEnd.Subtract(Model.AttendanceStatus?.CheckInWindowStart ?? DateTime.Now).TotalMinutes ?? 10) minutes after activity starts</li>
+                        <li class="mb-2"><strong>Check-out</strong> within the last @(Model.AttendanceStatus?.CheckOutWindowEnd.Subtract(Model.AttendanceStatus?.CheckOutWindowStart ?? DateTime.Now).TotalMinutes ?? 10) minutes before activity ends</li>
+                        <li class="mb-2">Ensure you are within the allowed radius (@Model.AttendanceStatus?.AllowedRadius m)</li>
+                        <li class="mb-0 text-danger"><strong>Both check-in and check-out are required!</strong></li>
                     </ol>
                 </div>
             </div>

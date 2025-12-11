@@ -154,21 +154,23 @@ public class GpsAttendanceService : IGpsAttendanceService
             };
         }
 
-        // Create or update attendance record with ParticipationScore = 5 (same as code check-in)
+        // Create or update attendance record
+        // GPS attendance requires BOTH check-in AND check-out to be considered successful
+        // IsPresent = false until check-out is completed
         if (existingAttendance == null)
         {
             existingAttendance = new ActivityAttendance
             {
                 ActivityId = request.ActivityId,
                 UserId = userId,
-                IsPresent = true,
+                IsPresent = false, // Not present until check-out completed
                 CheckedAt = now,
                 CheckInLatitude = request.Latitude,
                 CheckInLongitude = request.Longitude,
                 CheckInAccuracy = request.Accuracy,
                 DistanceFromActivity = distance,
                 CheckInMethod = "GPS",
-                ParticipationScore = 5, // Default score for self check-in
+                ParticipationScore = 5, // Score will only be awarded after check-out
                 CheckedById = null // Self check-in, no admin/manager
             };
             _context.ActivityAttendances.Add(existingAttendance);
@@ -182,16 +184,17 @@ public class GpsAttendanceService : IGpsAttendanceService
             existingAttendance.DistanceFromActivity = distance;
             existingAttendance.CheckInMethod = "GPS";
             existingAttendance.CheckedAt = now;
-            existingAttendance.IsPresent = true;
+            existingAttendance.IsPresent = false; // Not present until check-out completed
             existingAttendance.ParticipationScore = 5;
         }
 
         await _context.SaveChangesAsync();
 
-        // Note: ParticipationScore will be added to MovementRecordDetails when Activity is completed
-        // This ensures scores are only awarded after the activity ends
-        _logger.LogInformation("[GPS CHECK-IN] Attendance recorded for UserId={UserId}, ActivityId={ActivityId}, ParticipationScore={Score}. Score will be awarded when activity completes.", 
-            userId, request.ActivityId, existingAttendance.ParticipationScore);
+        // Note: GPS attendance requires BOTH check-in AND check-out
+        // IsPresent will be set to true only after successful check-out
+        // ParticipationScore will be added to MovementRecordDetails when Activity is completed
+        _logger.LogInformation("[GPS CHECK-IN] Check-in recorded for UserId={UserId}, ActivityId={ActivityId}. Attendance will be marked present after check-out.", 
+            userId, request.ActivityId);
 
         return new GpsCheckInResponseDto
         {
@@ -330,17 +333,22 @@ public class GpsAttendanceService : IGpsAttendanceService
         }
 
         // Update attendance record with check-out data
+        // GPS attendance is now complete - mark as present
         attendance.CheckOutLatitude = request.Latitude;
         attendance.CheckOutLongitude = request.Longitude;
         attendance.CheckOutAccuracy = request.Accuracy;
         attendance.CheckOutTime = now;
+        attendance.IsPresent = true; // Now mark as present after successful check-out
 
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation("[GPS CHECK-OUT] Attendance completed for UserId={UserId}, ActivityId={ActivityId}. IsPresent=true, ParticipationScore={Score}. Score will be awarded when activity completes.", 
+            userId, request.ActivityId, attendance.ParticipationScore);
 
         return new GpsCheckOutResponseDto
         {
             Success = true,
-            Message = "Check-out successful!",
+            Message = "Check-out successful! Attendance recorded.",
             DistanceMeters = distance,
             AllowedRadius = activity.GpsCheckInRadius,
             CheckedOutAt = now,
