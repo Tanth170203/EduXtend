@@ -52,10 +52,7 @@
                         </div>
 
                         <!-- Attendance Status Banner -->
-                        @{
-                            var isAttendanceComplete = Model.AttendanceStatus.HasCheckedIn && Model.AttendanceStatus.HasCheckedOut;
-                        }
-                        @if (isAttendanceComplete)
+                        @if (Model.AttendanceStatus.HasCheckedIn && Model.AttendanceStatus.HasCheckedOut)
                         {
                             <div class="alert alert-success mb-4">
                                 <i class="bi bi-check-circle-fill me-2"></i>

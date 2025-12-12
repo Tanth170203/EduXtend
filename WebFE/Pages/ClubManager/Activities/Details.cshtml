@@ -326,13 +326,12 @@
         <div class="content-card mb-4">
             <div class="content-card-header">
                 <h5 class="content-card-title">Quick Actions</h5>
-                <small class="text-muted">Status: @activity.Status | IsPublic: @activity.IsPublic</small>
             </div>
             <div class="content-card-body">
                 <div class="d-grid gap-2">
-                    @if (!Model.IsCollaboratedActivity && activity.Status != "Approved")
+                    @if (!Model.IsCollaboratedActivity && activity.Status != "Approved" && activity.Status != "Completed")
                     {
-                        @if (!isEnded && activity.Status != "Completed")
+                        @if (!isEnded)
                         {
                             <a href="/ClubManager/Activities/Edit/@activity.Id" class="btn btn-outline-primary">
                                 <i class="bi bi-pencil-square me-2"></i>Edit Activity
@@ -340,8 +339,8 @@
                         }
                         else
                         {
-                            <button class="btn btn-outline-secondary" disabled title="@(isEnded ? "Edit Activity (Started)" : "Edit Activity (Completed)")">
-                                <i class="bi bi-pencil-square me-2"></i>Edit Activity @(isEnded ? "(Started)" : "(Completed)")
+                            <button class="btn btn-outline-secondary" disabled title="Edit Activity (Started)">
+                                <i class="bi bi-pencil-square me-2"></i>Edit Activity (Started)
                             </button>
                         }
                     }
@@ -350,6 +349,13 @@
                     {
                         <a href="/ClubManager/Activities/Attendances/@activity.Id" class="btn btn-outline-success">
                             <i class="bi bi-clipboard-check me-2"></i>Manage Attendance
+                        </a>
+                    }
+                    @* View attendance for completed activities (read-only) *@
+                    @if (!Model.IsCollaboratedActivity && activity.Status == "Completed")
+                    {
+                        <a href="/ClubManager/Activities/Attendances/@activity.Id" class="btn btn-outline-secondary">
+                            <i class="bi bi-clipboard-check me-2"></i>View Attendance
                         </a>
                     }
                     @* Show feedback for all approved activities (both owner and collaborated) *@

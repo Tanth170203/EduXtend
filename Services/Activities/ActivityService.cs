@@ -1269,6 +1269,48 @@ namespace Services.Activities
 			return (markedCount, $"Marked {markedCount} registrant(s) as absent");
 		}
 
+		// ================= FIX PENDING FOR COMPLETED ACTIVITIES =================
+		public async Task<(int activitiesFixed, int totalMarked)> FixPendingForCompletedActivitiesAsync()
+		{
+			var allActivities = await _repo.GetAllAsync();
+			var completedActivities = allActivities.Where(a => a.Status == "Completed").ToList();
+			
+			int activitiesFixed = 0;
+			int totalMarked = 0;
+			
+			foreach (var activity in completedActivities)
+			{
+				try
+				{
+					var registrants = await _repo.GetRegistrantsWithAttendanceAsync(activity.Id);
+					var notMarked = registrants.Where(r => r.IsPresent != true && r.IsPresent != false).ToList();
+					
+					if (!notMarked.Any()) continue;
+					
+					foreach (var registrant in notMarked)
+					{
+						await _repo.SetAttendanceAsync(activity.Id, registrant.UserId, false, null, null);
+						totalMarked++;
+						_logger.LogInformation("[FIX PENDING] Marked user {UserId} as absent for completed activity {ActivityId}", 
+							registrant.UserId, activity.Id);
+					}
+					
+					activitiesFixed++;
+					_logger.LogInformation("[FIX PENDING] Fixed {Count} pending registrants for activity {ActivityId}", 
+						notMarked.Count, activity.Id);
+				}
+				catch (Exception ex)
+				{
+					_logger.LogError(ex, "[FIX PENDING] Failed to fix activity {ActivityId}", activity.Id);
+				}
+			}
+			
+			_logger.LogInformation("[FIX PENDING] Completed: {ActivitiesFixed} activities fixed, {TotalMarked} registrants marked as absent", 
+				activitiesFixed, totalMarked);
+			
+			return (activitiesFixed, totalMarked);
+		}
+
 		// ================= HELPER METHODS =================
 		public async Task<bool> IsUserManagerOfClubAsync(int userId, int clubId)
 		{
@@ -1517,6 +1559,30 @@ namespace Services.Activities
 					await _repo.UpdateActivityStatusAsync(activity.Id, "Completed");
 					count++;
 					_logger.LogInformation("[AUTO COMPLETE] Updated activity {ActivityId} to Completed", activity.Id);
+					
+					// Auto mark absent for all pending registrants when activity is completed
+					try
+					{
+						var registrants = await _repo.GetRegistrantsWithAttendanceAsync(activity.Id);
+						var notMarked = registrants.Where(r => r.IsPresent != true).ToList();
+						
+						foreach (var registrant in notMarked)
+						{
+							await _repo.SetAttendanceAsync(activity.Id, registrant.UserId, false, null, null);
+							_logger.LogInformation("[AUTO COMPLETE] Auto marked user {UserId} as absent for activity {ActivityId}", 
+								registrant.UserId, activity.Id);
+						}
+						
+						if (notMarked.Any())
+						{
+							_logger.LogInformation("[AUTO COMPLETE] Auto marked {Count} registrants as absent for activity {ActivityId}", 
+								notMarked.Count, activity.Id);
+						}
+					}
+					catch (Exception absentEx)
+					{
+						_logger.LogError(absentEx, "[AUTO COMPLETE] Failed to auto mark absent for activity {ActivityId}", activity.Id);
+					}
 				}
 				catch (Exception ex)
 				{
@@ -2255,6 +2321,30 @@ namespace Services.Activities
 				
 				_logger.LogInformation("[COMPLETE ACTIVITY] Activity {ActivityId} marked as Completed by User {UserId}. ClubId={ClubId}", 
 					activityId, userId, activity.ClubId);
+
+				// ========== AUTO MARK ABSENT FOR PENDING REGISTRANTS ==========
+				try
+				{
+					var registrants = await _repo.GetRegistrantsWithAttendanceAsync(activityId);
+					var notMarked = registrants.Where(r => r.IsPresent != true).ToList();
+					
+					foreach (var registrant in notMarked)
+					{
+						await _repo.SetAttendanceAsync(activityId, registrant.UserId, false, null, null);
+						_logger.LogInformation("[COMPLETE ACTIVITY] Auto marked user {UserId} as absent for activity {ActivityId}", 
+							registrant.UserId, activityId);
+					}
+					
+					if (notMarked.Any())
+					{
+						_logger.LogInformation("[COMPLETE ACTIVITY] Auto marked {Count} registrants as absent for activity {ActivityId}", 
+							notMarked.Count, activityId);
+					}
+				}
+				catch (Exception absentEx)
+				{
+					_logger.LogError(absentEx, "[COMPLETE ACTIVITY] Failed to auto mark absent for activity {ActivityId}", activityId);
+				}
 
 				// ========== AWARD STUDENT POINTS FROM ParticipationScore ==========
 				// Skip club internal activities - they don't give student movement points

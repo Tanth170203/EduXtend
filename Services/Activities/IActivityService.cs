@@ -49,6 +49,9 @@ namespace Services.Activities
         // Auto mark absent for non-attended registrants after activity ends
         Task<(int markedCount, string message)> AutoMarkAbsentAsync(int activityId, int? userId = null);
         
+        // Fix pending registrants for all completed activities (one-time migration)
+        Task<(int activitiesFixed, int totalMarked)> FixPendingForCompletedActivitiesAsync();
+        
         // Check if user is manager of club
         Task<bool> IsUserManagerOfClubAsync(int userId, int clubId);
         
