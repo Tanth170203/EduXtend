@@ -250,6 +250,16 @@ public class ProposalService : IProposalService
         return MapToProposalDTO(updated!, userId);
     }
 
+    public async Task<bool> IsUserClubManagerAsync(int userId, int clubId)
+    {
+        var student = await _studentRepository.GetByUserIdAsync(userId);
+        if (student == null)
+            return false;
+
+        var clubRole = await _proposalRepository.GetClubRoleAsync(clubId, student.Id);
+        return clubRole == "President" || clubRole == "VicePresident" || clubRole == "Manager";
+    }
+
     private ProposalDTO MapToProposalDTO(Proposal proposal, int currentUserId)
     {
         var currentUserVote = proposal.Votes.FirstOrDefault(v => v.UserId == currentUserId);

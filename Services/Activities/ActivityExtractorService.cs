@@ -33,6 +33,61 @@ namespace Services.Activities
             _logger = logger;
         }
 
+        public async Task<ExtractedActivityDto> ExtractActivityFromProposalAsync(
+            string proposalTitle, 
+            string? proposalDescription,
+            int proposalId,
+            int clubId)
+        {
+            _logger.LogInformation("Extracting activity from proposal {ProposalId}", proposalId);
+            
+            // Combine title and description into text for extraction
+            var combinedText = new StringBuilder();
+            combinedText.AppendLine($"Title: {proposalTitle}");
+            
+            if (!string.IsNullOrWhiteSpace(proposalDescription))
+            {
+                combinedText.AppendLine();
+                combinedText.AppendLine($"Description: {proposalDescription}");
+            }
+            
+            var textToExtract = combinedText.ToString();
+            
+            try
+            {
+                // Use existing ParseToActivityDtoAsync method
+                var result = await ParseToActivityDtoAsync(textToExtract);
+                
+                // If title wasn't extracted, use proposal title as fallback
+                if (string.IsNullOrEmpty(result.Title))
+                {
+                    result.Title = proposalTitle;
+                }
+                
+                // Add metadata
+                result.ProposalId = proposalId;
+                result.ClubId = clubId;
+                result.RawExtractedText = textToExtract;
+                
+                _logger.LogInformation("Successfully extracted activity from proposal {ProposalId}", proposalId);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extracting activity from proposal {ProposalId}, returning fallback data", proposalId);
+                
+                // Return fallback data with at least title and description
+                return new ExtractedActivityDto
+                {
+                    Title = proposalTitle,
+                    Description = proposalDescription,
+                    ProposalId = proposalId,
+                    ClubId = clubId,
+                    RawExtractedText = textToExtract
+                };
+            }
+        }
+
         public async Task<ExtractedActivityDto> ExtractActivityFromFileAsync(IFormFile file)
         {
             if (file == null || file.Length == 0)

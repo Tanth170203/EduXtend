@@ -11,6 +11,7 @@ namespace Services.Activities
         Task<ActivityDetailDto?> GetActivityByIdAsync(int id);
         Task<ActivityDetailDto?> GetActivityByIdAsync(int id, int? currentUserId);
         Task<List<ActivityListItemDto>> GetActivitiesByClubIdAsync(int clubId);
+        Task<BusinessObject.DTOs.Common.PaginatedResultDto<ActivityListItemDto>> GetActivitiesByClubIdPaginatedAsync(int clubId, int page, int pageSize);
         Task<ActivityDetailDto> AdminCreateAsync(int adminUserId, AdminCreateActivityDto dto);
         Task<ActivityDetailDto?> AdminUpdateAsync(int adminUserId, int id, AdminUpdateActivityDto dto);
         Task<bool> AdminDeleteAsync(int id);

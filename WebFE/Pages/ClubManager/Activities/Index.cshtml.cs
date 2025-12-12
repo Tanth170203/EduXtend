@@ -19,22 +19,42 @@ namespace WebFE.Pages.ClubManager.Activities
 
         public List<ActivityListItemDto> Activities { get; set; } = new();
         public string ApiBaseUrl { get; set; } = string.Empty;
+        
+        [BindProperty(SupportsGet = true)]
+        public int PageNumber { get; set; } = 1;
+        
+        [BindProperty(SupportsGet = true)]
+        public int? ClubIdParam { get; set; }
+        
+        public int TotalPages { get; set; } = 1;
+        public int TotalCount { get; set; } = 0;
+        public int PageSize { get; set; } = 10;
 
         public async Task<IActionResult> OnGetAsync()
         {
-            // Initialize club context from TempData
-            var result = await InitializeClubContextAsync();
-            if (result is RedirectResult)
+            // If clubId provided in query string, use it and save to TempData
+            if (ClubIdParam.HasValue)
             {
-                return result;
+                ClubId = ClubIdParam.Value;
+                TempData["SelectedClubId"] = ClubIdParam.Value;
+                TempData.Keep("SelectedClubId");
+            }
+            else
+            {
+                // Initialize club context from TempData
+                var result = await InitializeClubContextAsync();
+                if (result is RedirectResult)
+                {
+                    return result;
+                }
             }
 
             try
             {
                 var client = _httpClientFactory.CreateClient("ApiClient");
                 
-                // Get activities for the selected club only
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/activity/club/{ClubId}");
+                // Get activities for the selected club with pagination
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/activity/club/{ClubId}?page={PageNumber}&pageSize={PageSize}");
                 foreach (var cookie in Request.Cookies)
                 {
                     request.Headers.Add("Cookie", $"{cookie.Key}={cookie.Value}");
@@ -43,7 +63,13 @@ namespace WebFE.Pages.ClubManager.Activities
                 var response = await client.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
-                    Activities = await response.Content.ReadFromJsonAsync<List<ActivityListItemDto>>() ?? new();
+                    var paginatedResult = await response.Content.ReadFromJsonAsync<BusinessObject.DTOs.Common.PaginatedResultDto<ActivityListItemDto>>();
+                    if (paginatedResult != null)
+                    {
+                        Activities = paginatedResult.Items;
+                        TotalPages = paginatedResult.TotalPages;
+                        TotalCount = paginatedResult.TotalCount;
+                    }
                 }
 
                 ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "";

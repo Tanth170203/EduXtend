@@ -95,8 +95,16 @@ namespace WebAPI.Controllers
         // GET api/activity/club/{clubId}
         [HttpGet("club/{clubId:int}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetByClubId(int clubId)
+        public async Task<IActionResult> GetByClubId(int clubId, [FromQuery] int? page, [FromQuery] int? pageSize)
         {
+            // If pagination parameters provided, use paginated version
+            if (page.HasValue && pageSize.HasValue)
+            {
+                var paginatedResult = await _service.GetActivitiesByClubIdPaginatedAsync(clubId, page.Value, pageSize.Value);
+                return Ok(paginatedResult);
+            }
+            
+            // Otherwise return all activities (backward compatibility)
             var activities = await _service.GetActivitiesByClubIdAsync(clubId);
             return Ok(activities);
         }

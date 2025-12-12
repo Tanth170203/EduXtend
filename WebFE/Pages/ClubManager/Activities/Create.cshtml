@@ -1772,6 +1772,52 @@
                     alert('Search error. Please try again.');
                 });
         }
+
+        // ===== Load Extracted Schedules from Proposal =====
+        @if (!string.IsNullOrEmpty(Model.ExtractedSchedulesJson))
+        {
+            <text>
+            // Store schedules to be loaded (same pattern as file upload)
+            window.pendingSchedules = @Html.Raw(Model.ExtractedSchedulesJson);
+            console.log('Pending schedules from proposal:', window.pendingSchedules);
+            
+            // Load schedules after page is ready (same timing as file upload)
+            setTimeout(() => {
+                if (typeof addScheduleItem === 'function' && window.pendingSchedules) {
+                    const scheduleSection = document.getElementById('scheduleManagementSection');
+                    const scheduleList = document.getElementById('scheduleList');
+                    
+                    if (scheduleSection) {
+                        scheduleSection.style.display = 'block';
+                    }
+                    if (scheduleList) {
+                        scheduleList.innerHTML = '';
+                        scheduleIndex = 0;
+                    }
+                    
+                    window.pendingSchedules.forEach(schedule => {
+                        addScheduleItem();
+                        const lastSchedule = scheduleList.lastElementChild;
+                        if (lastSchedule) {
+                            const startTimeInput = lastSchedule.querySelector('.schedule-start-time');
+                            const endTimeInput = lastSchedule.querySelector('.schedule-end-time');
+                            const titleInput = lastSchedule.querySelector('.schedule-title');
+                            const descInput = lastSchedule.querySelector('.schedule-description');
+                            // Handle both camelCase and PascalCase from backend
+                            if (startTimeInput && (schedule.startTime || schedule.StartTime)) startTimeInput.value = schedule.startTime || schedule.StartTime;
+                            if (endTimeInput && (schedule.endTime || schedule.EndTime)) endTimeInput.value = schedule.endTime || schedule.EndTime;
+                            if (titleInput && (schedule.title || schedule.Title)) titleInput.value = schedule.title || schedule.Title;
+                            if (descInput && (schedule.description || schedule.Description)) descInput.value = schedule.description || schedule.Description;
+                        }
+                    });
+                    
+                    if (typeof updateNoSchedulesMessage === 'function') updateNoSchedulesMessage();
+                    console.log('Successfully loaded', window.pendingSchedules.length, 'schedule items from proposal');
+                    window.pendingSchedules = null;
+                }
+            }, 200);
+            </text>
+        }
     </script>
     
     <partial name="_ValidationScriptsPartial" />

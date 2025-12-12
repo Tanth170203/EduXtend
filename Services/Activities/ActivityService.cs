@@ -276,6 +276,30 @@ namespace Services.Activities
             return await MapToListDto(activities);
         }
 
+        public async Task<BusinessObject.DTOs.Common.PaginatedResultDto<ActivityListItemDto>> GetActivitiesByClubIdPaginatedAsync(int clubId, int page, int pageSize)
+        {
+            var activities = await _repo.GetActivitiesByClubIdAsync(clubId);
+            var totalCount = activities.Count();
+            
+            var paginatedActivities = activities
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+            
+            var items = await MapToListDto(paginatedActivities);
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            
+            return new BusinessObject.DTOs.Common.PaginatedResultDto<ActivityListItemDto>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
+        }
+
         public async Task<ActivityDetailDto> AdminCreateAsync(int adminUserId, AdminCreateActivityDto dto)
         {
             if (dto.StartTime >= dto.EndTime)
