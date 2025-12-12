@@ -16,6 +16,8 @@ namespace WebFE.Pages.Admin.Activities
         }
 
         public int ActivityId { get; set; }
+        public string ActivityStatus { get; set; } = string.Empty;
+        public bool IsCompleted => ActivityStatus == "Completed";
         public List<AdminActivityRegistrantDto> Registrants { get; private set; } = new();
         public string ApiBaseUrl { get; private set; } = string.Empty;
 
@@ -33,6 +35,20 @@ namespace WebFE.Pages.Admin.Activities
             {
                 Registrants = await res.Content.ReadFromJsonAsync<List<AdminActivityRegistrantDto>>() ?? new();
             }
+
+            // Get activity details for status
+            var detailReq = new HttpRequestMessage(HttpMethod.Get, $"api/activity/{id}");
+            if (Request.Headers.TryGetValue("Cookie", out var cookieHeader2))
+            {
+                detailReq.Headers.Add("Cookie", (IEnumerable<string>)cookieHeader2);
+            }
+            var detailRes = await client.SendAsync(detailReq);
+            if (detailRes.IsSuccessStatusCode)
+            {
+                var detail = await detailRes.Content.ReadFromJsonAsync<ActivityDetailDto>();
+                ActivityStatus = detail?.Status ?? string.Empty;
+            }
+
             ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? string.Empty;
         }
     }

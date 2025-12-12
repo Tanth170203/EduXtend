@@ -632,6 +632,30 @@ namespace WebAPI.Controllers
 		}
 	}
 
+	// ================= FIX PENDING FOR COMPLETED ACTIVITIES =================
+	// POST api/activity/fix-pending-completed
+	// One-time migration to fix pending registrants for already completed activities
+	[HttpPost("fix-pending-completed")]
+	[Authorize(Roles = "Admin")]
+	public async Task<IActionResult> FixPendingForCompletedActivities()
+	{
+		try
+		{
+			_logger.LogInformation("[FIX PENDING] Admin triggered fix for completed activities");
+			var (activitiesFixed, totalMarked) = await _service.FixPendingForCompletedActivitiesAsync();
+			return Ok(new { 
+				activitiesFixed, 
+				totalMarked, 
+				message = $"Fixed {activitiesFixed} activities, marked {totalMarked} registrants as absent" 
+			});
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "[FIX PENDING] Error fixing pending for completed activities");
+			return StatusCode(500, new { message = "Internal server error: " + ex.Message });
+		}
+	}
+
 	// ================= ACTIVITY EVALUATION =================
 	// POST api/activity/{activityId}/evaluation
 	// Authorization: Only ClubManager role can create evaluations (Requirement 6.1)

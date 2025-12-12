@@ -39,7 +39,7 @@ namespace WebFE
                     options.Events.OnRedirectToAccessDenied = context =>
                     {
                         // For AJAX requests, return status code instead of redirect
-                        if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        if (context.Request.Headers.XRequestedWith == "XMLHttpRequest")
                         {
                             context.Response.StatusCode = StatusCodes.Status403Forbidden;
                             return Task.CompletedTask;
@@ -51,7 +51,7 @@ namespace WebFE
                     options.Events.OnRedirectToLogin = context =>
                     {
                         // For AJAX requests, return status code instead of redirect
-                        if (context.Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        if (context.Request.Headers.XRequestedWith == "XMLHttpRequest")
                         {
                             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                             return Task.CompletedTask;
@@ -148,9 +148,9 @@ namespace WebFE
                     });
                     
                     // Forward cookies
-                    if (context.Request.Headers.ContainsKey("Cookie"))
+                    if (context.Request.Headers.Cookie.Count > 0)
                     {
-                        httpClient.DefaultRequestHeaders.Add("Cookie", context.Request.Headers["Cookie"].ToString());
+                        httpClient.DefaultRequestHeaders.Add("Cookie", context.Request.Headers.Cookie.ToString());
                     }
                     
                     var requestMessage = new HttpRequestMessage(new HttpMethod(context.Request.Method), targetUrl);

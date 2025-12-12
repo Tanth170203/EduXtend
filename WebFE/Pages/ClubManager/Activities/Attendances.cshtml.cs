@@ -17,6 +17,8 @@ namespace WebFE.Pages.ClubManager.Activities
 
         public int ActivityId { get; set; }
         public string ActivityTitle { get; set; } = string.Empty;
+        public string ActivityStatus { get; set; } = string.Empty;
+        public bool IsCompleted => ActivityStatus == "Completed";
         public List<AdminActivityRegistrantDto> Registrants { get; private set; } = new();
         public string ApiBaseUrl { get; private set; } = string.Empty;
 
@@ -35,7 +37,7 @@ namespace WebFE.Pages.ClubManager.Activities
                 Registrants = await res.Content.ReadFromJsonAsync<List<AdminActivityRegistrantDto>>() ?? new();
             }
 
-            // Get activity details for title
+            // Get activity details for title and status
             var detailReq = new HttpRequestMessage(HttpMethod.Get, $"api/activity/{id}");
             if (Request.Headers.TryGetValue("Cookie", out var cookieHeader2))
             {
@@ -46,6 +48,7 @@ namespace WebFE.Pages.ClubManager.Activities
             {
                 var detail = await detailRes.Content.ReadFromJsonAsync<ActivityDetailDto>();
                 ActivityTitle = detail?.Title ?? "Activity";
+                ActivityStatus = detail?.Status ?? string.Empty;
             }
 
             ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? string.Empty;

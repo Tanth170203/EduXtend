@@ -282,44 +282,59 @@
             </div>
 
             <!-- Quick Actions -->
-            @if (activity.Status == "Approved")
+            @if (activity.Status == "Approved" || activity.Status == "Completed")
             {
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-4">
                         <h5 class="fw-semibold mb-3">Quick Actions</h5>
                         <div class="d-grid gap-2">
-                            @if (canEdit)
+                            @if (activity.Status == "Approved")
                             {
-                                <a href="/Admin/Activities/Edit/@activity.Id" class="btn btn-outline-primary">
-                                    <i class="bi bi-pencil-square me-2"></i>Edit Activity
-                                </a>
+                                @if (canEdit)
+                                {
+                                    <a href="/Admin/Activities/Edit/@activity.Id" class="btn btn-outline-primary">
+                                        <i class="bi bi-pencil-square me-2"></i>Edit Activity
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-outline-secondary" disabled title="@(hasStarted ? "Cannot edit activity that has already started" : "Cannot edit completed activity")">
+                                        <i class="bi bi-pencil-square me-2"></i>Edit Activity @(hasStarted ? "(Started)" : "(Completed)")
+                                    </button>
+                                }
+                                @if (!activity.ClubId.HasValue)
+                                {
+                                    <a href="/Admin/Activities/Attendances/@activity.Id" class="btn btn-outline-success">
+                                        <i class="bi bi-clipboard-check me-2"></i>Manage Attendance
+                                    </a>
+                                }
                             }
-                            else
+                            @if (activity.Status == "Completed")
                             {
-                                <button class="btn btn-outline-secondary" disabled title="@(hasStarted ? "Cannot edit activity that has already started" : "Cannot edit completed activity")">
-                                    <i class="bi bi-pencil-square me-2"></i>Edit Activity @(hasStarted ? "(Started)" : "(Completed)")
-                                </button>
-                            }
-                            @if (!activity.ClubId.HasValue)
-                            {
-                                <a href="/Admin/Activities/Attendances/@activity.Id" class="btn btn-outline-success">
-                                    <i class="bi bi-clipboard-check me-2"></i>Attendances
-                                </a>
+                                @if (!activity.ClubId.HasValue)
+                                {
+                                    <a href="/Admin/Activities/Attendances/@activity.Id" class="btn btn-outline-secondary">
+                                        <i class="bi bi-clipboard-check me-2"></i>View Attendance
+                                    </a>
+                                }
                             }
                             <a href="/Admin/Activities/Feedbacks/@activity.Id" class="btn btn-outline-info">
                                 <i class="bi bi-chat-dots me-2"></i>View Feedback
                             </a>
-                            @if (canEdit)
+                            @if (activity.Status == "Approved")
                             {
-                                <button class="btn btn-outline-danger" onclick="confirmDelete(@activity.Id, '@activity.Title')">
-                                    <i class="bi bi-trash3 me-2"></i>Delete Activity
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-outline-secondary" disabled title="@(hasStarted ? "Cannot delete activity that has already started" : "Cannot delete completed activity")">
-                                    <i class="bi bi-trash3 me-2"></i>Delete Activity @(hasStarted ? "(Started)" : "(Completed)")
-                                </button>
+                                @if (canEdit)
+                                {
+                                    <button class="btn btn-outline-danger" onclick="confirmDelete(@activity.Id, '@activity.Title')">
+                                        <i class="bi bi-trash3 me-2"></i>Delete Activity
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-outline-secondary" disabled title="@(hasStarted ? "Cannot delete activity that has already started" : "Cannot delete completed activity")">
+                                        <i class="bi bi-trash3 me-2"></i>Delete Activity @(hasStarted ? "(Started)" : "(Completed)")
+                                    </button>
+                                }
                             }
                             <a href="/Admin/Activities" class="btn btn-outline-secondary">
                                 <i class="bi bi-list me-2"></i>Back to List
