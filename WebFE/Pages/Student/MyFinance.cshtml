@@ -1,0 +1,677 @@
+@page
+@model WebFE.Pages.Student.MyFinanceModel
+@{
+    ViewData["Title"] = "My Finance";
+}
+
+<style>
+    .finance-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .finance-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        color: white;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    .finance-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+    }
+
+    
+    .stat-label {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .tab {
+        padding: 1rem 2rem;
+        background: transparent;
+        border: none;
+        color: #6b7280;
+        font-weight: 600;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .tab.active {
+        color: #667eea;
+        border-bottom-color: #667eea;
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .filters {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .payment-table {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    
+    .badge-overdue {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .badge-due-soon {
+        background: #fed7aa;
+        color: #ea580c;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .badge-paid {
+        background: #d1fae5;
+        color: #059669;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+    }
+    
+    .pagination button {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e5e7eb;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    
+    .pagination button.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+</style>
+
+<div class="finance-page">
+    <div class="finance-header">
+        <h1>💰 My Finance</h1>
+        <p>Track your payments and financial activities across all clubs</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-row" id="statsCards">
+        <div class="stat-card">
+            <div class="stat-label">Total Pending</div>
+            <div class="stat-value" id="totalPending">Loading...</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Overdue Payments</div>
+            <div class="stat-value" id="overdueCount">Loading...</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Paid This Semester</div>
+            <div class="stat-value" id="paidThisSemester">Loading...</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Clubs with Pending</div>
+            <div class="stat-value" id="clubsWithPending">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('pending')">Pending Payments</button>
+        <button class="tab" onclick="switchTab('history')">Payment History</button>
+    </div>
+
+    <!-- Pending Payments Tab -->
+    <div id="pendingTab" class="tab-content active">
+        <div class="filters">
+            <div class="row">
+                <div class="col-md-4">
+                    <label>Filter by Club</label>
+                    <select id="pendingClubFilter" class="form-control" onchange="loadPendingPayments()">
+                        <option value="">All Clubs</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="payment-table">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Club</th>
+                        <th>Payment Title</th>
+                        <th>Amount</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="pendingPaymentsBody">
+                    <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="pendingPagination" class="pagination"></div>
+    </div>
+
+    <!-- Payment History Tab -->
+    <div id="historyTab" class="tab-content">
+        <div class="filters">
+            <div class="row">
+                <div class="col-md-3">
+                    <label>Filter by Club</label>
+                    <select id="historyClubFilter" class="form-control" onchange="loadPaymentHistory()">
+                        <option value="">All Clubs</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>Start Date</label>
+                    <input type="date" id="startDate" class="form-control" onchange="loadPaymentHistory()">
+                </div>
+                <div class="col-md-3">
+                    <label>End Date</label>
+                    <input type="date" id="endDate" class="form-control" onchange="loadPaymentHistory()">
+                </div>
+                <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary w-100" onclick="exportHistory()">Export CSV</button>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="payment-table">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Club</th>
+                        <th>Payment Title</th>
+                        <th>Amount</th>
+                        <th>Paid Date</th>
+                        <th>Method</th>
+                        <th>Confirmed By</th>
+                    </tr>
+                </thead>
+                <tbody id="historyPaymentsBody">
+                    <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="historyPagination" class="pagination"></div>
+        <div id="totalPaidDisplay" class="text-center mt-3" style="font-size: 1.2rem; font-weight: 600;"></div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = '/api/StudentFinance';
+    let currentPendingPage = 1;
+    let currentHistoryPage = 1;
+    const pendingPageSize = 10;
+    const historyPageSize = 15;
+    let allClubs = [];
+
+    // Load initial data
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStatistics();
+        loadPendingPayments();
+        loadClubsForFilters();
+    });
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        if (tab === 'pending') {
+            document.querySelector('.tab:nth-child(1)').classList.add('active');
+            document.getElementById('pendingTab').classList.add('active');
+        } else {
+            document.querySelector('.tab:nth-child(2)').classList.add('active');
+            document.getElementById('historyTab').classList.add('active');
+            loadPaymentHistory();
+        }
+    }
+
+
+    async function loadStatistics() {
+        try {
+            const response = await fetch(`${API_BASE}/statistics`, {
+                credentials: 'include'
+            });
+            const stats = await response.json();
+            
+            document.getElementById('totalPending').textContent = `${stats.totalPendingAmount.toLocaleString()} đ`;
+            document.getElementById('overdueCount').textContent = stats.overdueCount;
+            document.getElementById('paidThisSemester').textContent = `${stats.totalPaidThisSemester.toLocaleString()} đ`;
+            document.getElementById('clubsWithPending').textContent = stats.clubsWithPendingPayments;
+        } catch (error) {
+            console.error('Error loading statistics:', error);
+        }
+    }
+
+    async function loadPendingPayments(page = 1) {
+        currentPendingPage = page;
+        const clubId = document.getElementById('pendingClubFilter').value;
+        
+        try {
+            let url = `${API_BASE}/pending-payments?page=${page}&pageSize=${pendingPageSize}`;
+            if (clubId) url += `&clubId=${clubId}`;
+            
+            const response = await fetch(url, { credentials: 'include' });
+            const result = await response.json();
+            
+            renderPendingPayments(result.items);
+            renderPagination('pendingPagination', result, loadPendingPayments);
+        } catch (error) {
+            console.error('Error loading pending payments:', error);
+            document.getElementById('pendingPaymentsBody').innerHTML = 
+                '<tr><td colspan="6" class="text-center text-danger">Error loading payments</td></tr>';
+        }
+    }
+
+
+    async function loadPaymentHistory(page = 1) {
+        currentHistoryPage = page;
+        const clubId = document.getElementById('historyClubFilter').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        try {
+            let url = `${API_BASE}/payment-history?page=${page}&pageSize=${historyPageSize}`;
+            if (clubId) url += `&clubId=${clubId}`;
+            if (startDate) url += `&startDate=${startDate}`;
+            if (endDate) url += `&endDate=${endDate}`;
+            
+            const response = await fetch(url, { credentials: 'include' });
+            const result = await response.json();
+            
+            renderPaymentHistory(result.items);
+            renderPagination('historyPagination', result, loadPaymentHistory);
+            
+            // Calculate and display total
+            const total = result.items.reduce((sum, p) => sum + p.amount, 0);
+            document.getElementById('totalPaidDisplay').textContent = 
+                `Total on this page: ${total.toLocaleString()} đ`;
+        } catch (error) {
+            console.error('Error loading payment history:', error);
+            document.getElementById('historyPaymentsBody').innerHTML = 
+                '<tr><td colspan="6" class="text-center text-danger">Error loading history</td></tr>';
+        }
+    }
+
+    function renderPaymentHistory(payments) {
+        const tbody = document.getElementById('historyPaymentsBody');
+        
+        if (payments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No payment history</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = payments.map(p => `
+            <tr>
+                <td>
+                    ${p.clubLogoUrl ? `<img src="${p.clubLogoUrl}" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 8px;">` : ''}
+                    ${p.clubName}
+                </td>
+                <td>
+                    <strong>${p.paymentTitle}</strong>
+                    ${p.description ? `<br><small class="text-muted">${p.description}</small>` : ''}
+                    ${p.notes ? `<br><small class="text-info">Note: ${p.notes}</small>` : ''}
+                </td>
+                <td><strong>${p.amount.toLocaleString()} đ</strong></td>
+                <td>${new Date(p.paidAt).toLocaleDateString()}</td>
+                <td>${p.paymentMethod}</td>
+                <td>${p.confirmedByName || 'N/A'}</td>
+            </tr>
+        `).join('');
+    }
+
+
+    function renderPagination(elementId, result, loadFunction) {
+        const container = document.getElementById(elementId);
+        
+        if (result.totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+        
+        let html = '';
+        
+        // Previous button
+        if (result.hasPreviousPage) {
+            html += `<button onclick="${loadFunction.name}(${result.page - 1})">Previous</button>`;
+        }
+        
+        // Page numbers
+        for (let i = 1; i <= result.totalPages; i++) {
+            if (i === result.page) {
+                html += `<button class="active">${i}</button>`;
+            } else if (i === 1 || i === result.totalPages || Math.abs(i - result.page) <= 2) {
+                html += `<button onclick="${loadFunction.name}(${i})">${i}</button>`;
+            } else if (Math.abs(i - result.page) === 3) {
+                html += '<span>...</span>';
+            }
+        }
+        
+        // Next button
+        if (result.hasNextPage) {
+            html += `<button onclick="${loadFunction.name}(${result.page + 1})">Next</button>`;
+        }
+        
+        container.innerHTML = html;
+    }
+
+    async function loadClubsForFilters() {
+        try {
+            // Get unique clubs from pending payments
+            const response = await fetch(`${API_BASE}/pending-payments?page=1&pageSize=100`, {
+                credentials: 'include'
+            });
+            const result = await response.json();
+            
+            const clubs = [...new Map(result.items.map(p => [p.clubId, {id: p.clubId, name: p.clubName}])).values()];
+            
+            const pendingSelect = document.getElementById('pendingClubFilter');
+            const historySelect = document.getElementById('historyClubFilter');
+            
+            clubs.forEach(club => {
+                pendingSelect.innerHTML += `<option value="${club.id}">${club.name}</option>`;
+                historySelect.innerHTML += `<option value="${club.id}">${club.name}</option>`;
+            });
+        } catch (error) {
+            console.error('Error loading clubs:', error);
+        }
+    }
+
+
+    async function exportHistory() {
+        const clubId = document.getElementById('historyClubFilter').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        let url = `${API_BASE}/export-history?`;
+        if (clubId) url += `clubId=${clubId}&`;
+        if (startDate) url += `startDate=${startDate}&`;
+        if (endDate) url += `endDate=${endDate}&`;
+        
+        try {
+            window.location.href = url;
+            alert('Export started! Your download will begin shortly.');
+        } catch (error) {
+            console.error('Error exporting:', error);
+            alert('Error exporting payment history');
+        }
+    }
+</script>
+
+
+<!-- Pay Now Modal -->
+<div class="modal fade" id="payNowModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Complete Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="payNowForm">
+                <input type="hidden" id="paymentIdToPay">
+                <input type="hidden" id="paymentMethodAvailable">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Request</label>
+                        <input type="text" class="form-control" id="paymentRequestTitle" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Amount to Pay</label>
+                        <input type="text" class="form-control" id="paymentAmountToPay" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Due Date</label>
+                        <input type="text" class="form-control" id="paymentDueDate" readonly>
+                    </div>
+
+                    <div class="mb-3" id="paymentMethodSelection">
+                        <label for="selectedPaymentMethod" class="form-label">Payment Method <span class="text-danger">*</span></label>
+                        <select class="form-select" id="selectedPaymentMethod" required>
+                            <option value="">Select method...</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="VNPAY">VNPAY</option>
+                        </select>
+                        <div class="form-text">
+                            <strong>Cash:</strong> Submit request, manager will confirm after you pay<br>
+                            <strong>Bank Transfer:</strong> Upload receipt for verification<br>
+                            <strong>VNPAY:</strong> Pay online instantly via VNPAY gateway
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="paymentNotesMember" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="paymentNotesMember" rows="2" maxlength="500" placeholder="Add any notes..."></textarea>
+                    </div>
+
+
+                    <div class="alert alert-info small mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        <span id="paymentInfoText">Your payment will be recorded and pending confirmation.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        Submit Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let pendingPaymentsData = [];
+
+    // Update renderPendingPayments to store data and change button
+    function renderPendingPayments(payments) {
+        pendingPaymentsData = payments; // Store for modal access
+        const tbody = document.getElementById('pendingPaymentsBody');
+        
+        if (payments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No pending payments</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = payments.map(p => `
+            <tr>
+                <td>
+                    ${p.clubLogoUrl ? `<img src="${p.clubLogoUrl}" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 8px;">` : ''}
+                    ${p.clubName}
+                </td>
+                <td>
+                    <strong>${p.paymentTitle}</strong>
+                    ${p.description ? `<br><small class="text-muted">${p.description}</small>` : ''}
+                </td>
+                <td><strong>${p.amount.toLocaleString()} đ</strong></td>
+                <td>
+                    ${new Date(p.dueDate).toLocaleDateString()}
+                    <br><small>${p.daysUntilDue} days</small>
+                </td>
+                <td>
+                    ${p.isOverdue ? '<span class="badge-overdue">OVERDUE</span>' : 
+                      p.isDueSoon ? '<span class="badge-due-soon">DUE SOON</span>' : 
+                      '<span class="badge badge-secondary">Pending</span>'}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="payNow(${p.id})">Pay Now</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+
+    // Pay Now function
+    function payNow(paymentId) {
+        const payment = pendingPaymentsData.find(p => p.id === paymentId);
+        if (!payment) {
+            alert('Payment not found');
+            return;
+        }
+
+        // Populate modal
+        document.getElementById('paymentIdToPay').value = paymentId;
+        document.getElementById('paymentRequestTitle').value = payment.paymentTitle;
+        document.getElementById('paymentAmountToPay').value = `${payment.amount.toLocaleString()} đ`;
+        document.getElementById('paymentDueDate').value = new Date(payment.dueDate).toLocaleDateString();
+        document.getElementById('paymentMethodAvailable').value = 'All'; // Assuming all methods available
+        document.getElementById('paymentNotesMember').value = '';
+        document.getElementById('selectedPaymentMethod').value = '';
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('payNowModal'));
+        modal.show();
+    }
+
+    // Handle Pay Now Form Submission
+    document.getElementById('payNowForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const form = e.target;
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return;
+        }
+
+        const paymentId = document.getElementById('paymentIdToPay').value;
+        const selectedMethod = document.getElementById('selectedPaymentMethod').value;
+        const notes = document.getElementById('paymentNotesMember').value;
+
+        // Handle VNPAY payment separately
+        if (selectedMethod === 'VNPAY') {
+            try {
+                const response = await fetch('/api/Vnpay/create-payment-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        paymentId: parseInt(paymentId)
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    bootstrap.Modal.getInstance(document.getElementById('payNowModal')).hide();
+                    window.location.href = result.paymentUrl;
+                } else {
+                    const error = await response.json();
+                    alert(`Error: ${error.message || 'Failed to create VNPAY payment URL'}`);
+                }
+            } catch (error) {
+                console.error('Error creating VNPAY payment:', error);
+                alert('An error occurred. Please try again.');
+            }
+            return;
+        }
+
+
+        // Handle Cash and Bank Transfer payments
+        const dto = {
+            paymentMethod: selectedMethod,
+            notes: notes
+        };
+
+        try {
+            const response = await fetch(`/api/FundCollection/payment/${paymentId}/member-pay`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(dto)
+            });
+
+            if (response.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('payNowModal')).hide();
+                
+                if (selectedMethod === 'Cash') {
+                    alert('✅ Payment request submitted! Please pay to your club manager. They will confirm after receiving payment.');
+                } else {
+                    alert('✅ Payment submitted! Please complete the bank transfer. Your payment is pending verification.');
+                }
+                
+                // Reload data
+                await loadStatistics();
+                await loadPendingPayments();
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.message || error.title || 'Failed to submit payment'}`);
+            }
+        } catch (error) {
+            console.error('Error submitting payment:', error);
+            alert('An error occurred. Please try again.');
+        }
+    });
+</script>

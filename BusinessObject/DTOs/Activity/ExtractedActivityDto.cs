@@ -1,7 +1,7 @@
 namespace BusinessObject.DTOs.Activity
 {
     /// <summary>
-    /// DTO for activity data extracted from uploaded files using AI
+    /// DTO for activity data extracted from uploaded files or proposals using AI
     /// </summary>
     public class ExtractedActivityDto
     {
@@ -14,6 +14,10 @@ namespace BusinessObject.DTOs.Activity
         public string? SuggestedType { get; set; }
         public string? RawExtractedText { get; set; }
         public List<ExtractedScheduleDto>? Schedules { get; set; }
+        
+        // Metadata for proposal-to-activity conversion
+        public int? ProposalId { get; set; }
+        public int? ClubId { get; set; }
     }
 
     /// <summary>

@@ -26,6 +26,7 @@ namespace WebFE.Pages.ClubManager.Activities
         public CreateActivityDto Activity { get; set; } = new();
         public string? ErrorMessage { get; set; }
         public string ApiBaseUrl { get; set; } = string.Empty;
+        public string? ExtractedSchedulesJson { get; set; }
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -36,13 +37,77 @@ namespace WebFE.Pages.ClubManager.Activities
                 return result;
             }
 
-            // Set default values
-            Activity.StartTime = DateTime.Now.AddDays(7);
-            Activity.EndTime = DateTime.Now.AddDays(7).AddHours(2);
+            // Check if there's extracted data from proposal auto-fill
+            if (TempData["ExtractedActivityData"] is string extractedJson)
+            {
+                try
+                {
+                    var extractedData = JsonSerializer.Deserialize<ExtractedActivityDto>(extractedJson);
+                    if (extractedData != null)
+                    {
+                        // Pre-fill form fields from extracted data
+                        Activity.Title = extractedData.Title ?? string.Empty;
+                        Activity.Description = extractedData.Description;
+                        Activity.Location = extractedData.Location;
+                        
+                        if (extractedData.StartTime.HasValue)
+                        {
+                            Activity.StartTime = extractedData.StartTime.Value;
+                        }
+                        else
+                        {
+                            Activity.StartTime = DateTime.Now.AddDays(7);
+                        }
+                        
+                        if (extractedData.EndTime.HasValue)
+                        {
+                            Activity.EndTime = extractedData.EndTime.Value;
+                        }
+                        else
+                        {
+                            Activity.EndTime = Activity.StartTime.AddHours(2);
+                        }
+                        
+                        if (extractedData.MaxParticipants.HasValue)
+                        {
+                            Activity.MaxParticipants = extractedData.MaxParticipants.Value;
+                        }
+                        
+                        if (!string.IsNullOrEmpty(extractedData.SuggestedType))
+                        {
+                            Activity.Type = extractedData.SuggestedType;
+                        }
+                        else
+                        {
+                            Activity.Type = "ClubMeeting";
+                        }
+                        
+                        // Store schedules for JavaScript to pick up
+                        if (extractedData.Schedules != null && extractedData.Schedules.Any())
+                        {
+                            ExtractedSchedulesJson = JsonSerializer.Serialize(extractedData.Schedules);
+                        }
+                        
+                        _logger.LogInformation("Pre-filled activity form from proposal {ProposalId}", extractedData.ProposalId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error deserializing extracted activity data");
+                }
+            }
+            else
+            {
+                // Set default values if no extracted data
+                Activity.StartTime = DateTime.Now.AddDays(7);
+                Activity.EndTime = DateTime.Now.AddDays(7).AddHours(2);
+                Activity.Type = "ClubMeeting";
+            }
+
+            // Set common defaults
             Activity.IsPublic = false;
             Activity.RequiresApproval = true; // Always true for ClubManager
-            Activity.Type = "AcademicClub";
-            Activity.Location = "Da Nang, Vietnam"; // Default location text
+            Activity.Location = Activity.Location ?? "Da Nang, Vietnam"; // Default location text
             ApiBaseUrl = _config["ApiSettings:BaseUrl"] ?? "";
             
             return Page();

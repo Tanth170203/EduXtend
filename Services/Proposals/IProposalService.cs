@@ -14,5 +14,6 @@ public interface IProposalService
     Task<ProposalDTO> VoteProposalAsync(int proposalId, bool isAgree, int userId);
     Task<bool> RemoveVoteAsync(int proposalId, int userId);
     Task<ProposalDTO> CloseProposalAsync(int proposalId, int userId);
+    Task<bool> IsUserClubManagerAsync(int userId, int clubId);
 }
 

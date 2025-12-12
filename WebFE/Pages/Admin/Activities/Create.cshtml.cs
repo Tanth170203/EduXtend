@@ -79,7 +79,13 @@ namespace WebFE.Pages.Admin.Activities
                 MaxParticipants = Input.MaxParticipants,
                 MovementPoint = Input.MovementPoint,
                 ClubCollaborationId = Input.ClubCollaborationId,
-                CollaborationPoint = Input.CollaborationPoint
+                CollaborationPoint = Input.CollaborationPoint,
+                GpsLatitude = Input.GpsLatitude,
+                GpsLongitude = Input.GpsLongitude,
+                IsGpsCheckInEnabled = Input.IsGpsCheckInEnabled,
+                GpsCheckInRadius = Input.GpsCheckInRadius,
+                CheckInWindowMinutes = Input.CheckInWindowMinutes,
+                CheckOutWindowMinutes = Input.CheckOutWindowMinutes
             };
 
             var resp = await client.PostAsJsonAsync("/api/admin/activities", dto);
@@ -108,6 +114,14 @@ namespace WebFE.Pages.Admin.Activities
             [Range(0, 1000)] public double MovementPoint { get; set; } = 0;
             public int? ClubCollaborationId { get; set; }
             [Range(1, 3)] public int? CollaborationPoint { get; set; }
+            
+            // GPS Configuration
+            public double? GpsLatitude { get; set; }
+            public double? GpsLongitude { get; set; }
+            public bool IsGpsCheckInEnabled { get; set; } = true;
+            public int GpsCheckInRadius { get; set; } = 100;
+            public int CheckInWindowMinutes { get; set; } = 10;
+            public int CheckOutWindowMinutes { get; set; } = 10;
 
             public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
             {

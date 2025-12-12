@@ -339,6 +339,34 @@ public class ClubController : ControllerBase
         }
     }
 
+    // GET api/club/{clubId}/is-manager
+    [HttpGet("{clubId:int}/is-manager")]
+    [Authorize(Roles = "ClubManager")]
+    public async Task<IActionResult> IsUserClubManager(int clubId)
+    {
+        try
+        {
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user ID" });
+            }
+
+            // Get the club managed by this user
+            var managedClub = await _service.GetManagedClubByUserIdAsync(userId);
+            
+            // Check if the managed club matches the requested clubId
+            bool isManager = managedClub != null && managedClub.Id == clubId;
+            
+            return Ok(isManager);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking if user is manager of club {ClubId}", clubId);
+            return StatusCode(500, new { message = "Failed to check manager status" });
+        }
+    }
+
     private int? GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

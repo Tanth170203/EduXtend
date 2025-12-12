@@ -334,7 +334,59 @@ namespace Services.FundCollections
                 Console.WriteLine($"Failed to send notification: {ex.Message}");
             }
 
+            // Auto-complete fund collection if all members have paid
+            await CheckAndAutoCompleteRequestAsync(payment.FundCollectionRequestId, confirmedById);
+
             return MapPaymentToDto(updated);
+        }
+
+        private async Task CheckAndAutoCompleteRequestAsync(int requestId, int userId)
+        {
+            // Get request with all payments
+            var request = await _requestRepo.GetByIdWithDetailsAsync(requestId);
+            if (request == null || request.Status != "active")
+            {
+                return; // Only auto-complete active requests
+            }
+
+            // Check if all payments are paid
+            var totalPayments = request.Payments.Count;
+            var paidPayments = request.Payments.Count(p => p.Status == "paid");
+
+            // If 100% members have paid, auto-complete the request
+            if (totalPayments > 0 && paidPayments == totalPayments)
+            {
+                // Calculate total collected amount
+                var totalCollected = request.Payments.Sum(p => p.Amount);
+
+                // Create PaymentTransaction (Income)
+                var transaction = new PaymentTransaction
+                {
+                    ClubId = request.ClubId,
+                    Type = "Income",
+                    Amount = totalCollected,
+                    Title = $"Fund Collection: {request.Title}",
+                    Description = $"Auto-completed fund collection. Total collected from {paidPayments} members (100%).",
+                    Category = "member_fees",
+                    Method = "Multiple",
+                    Status = "completed",
+                    TransactionDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedById = userId
+                };
+
+                _context.PaymentTransactions.Add(transaction);
+
+                // Update fund collection status to completed
+                request.Status = "completed";
+                request.UpdatedAt = DateTime.UtcNow;
+                await _requestRepo.UpdateAsync(request);
+
+                // Save all changes
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"Auto-completed fund collection request {requestId} - 100% members paid ({paidPayments}/{totalPayments})");
+            }
         }
 
         public async Task<FundCollectionPaymentDto> RejectPaymentAsync(int paymentId, string reason, int userId)

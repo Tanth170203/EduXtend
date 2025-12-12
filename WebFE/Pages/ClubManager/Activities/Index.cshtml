@@ -255,6 +255,48 @@
                     </tbody>
                 </table>
             </div>
+
+            @* Pagination *@
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Activity pagination" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        @* Previous button *@
+                        <li class="page-item @(Model.PageNumber == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?clubId=@Model.ClubId&pageNumber=@(Model.PageNumber - 1)" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+
+                        @* Page numbers *@
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            if (i == 1 || i == Model.TotalPages || Math.Abs(i - Model.PageNumber) <= 2)
+                            {
+                                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="?clubId=@Model.ClubId&pageNumber=@i">@i</a>
+                                </li>
+                            }
+                            else if (Math.Abs(i - Model.PageNumber) == 3)
+                            {
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            }
+                        }
+
+                        @* Next button *@
+                        <li class="page-item @(Model.PageNumber == Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" href="?clubId=@Model.ClubId&pageNumber=@(Model.PageNumber + 1)" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="text-center text-muted">
+                        <small>Showing page @Model.PageNumber of @Model.TotalPages (Total: @Model.TotalCount activities)</small>
+                    </div>
+                </nav>
+            }
         }
     </div>
 </div>

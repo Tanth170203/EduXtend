@@ -181,6 +181,7 @@ namespace WebAPI
             builder.Services.AddScoped<Services.Emails.IEmailService, Services.Emails.EmailService>();
             builder.Services.AddScoped<Services.Chatbot.IGeminiAIService, Services.Chatbot.GeminiAIService>();
             builder.Services.AddScoped<Services.Chatbot.IChatbotService, Services.Chatbot.ChatbotService>();
+            builder.Services.AddScoped<Services.StudentFinance.IStudentFinanceService, Services.StudentFinance.StudentFinanceService>();
             
             // CV Export Services
             builder.Services.AddHttpClient(); // Add HttpClientFactory
