@@ -6,6 +6,7 @@ using Repositories.Interviews;
 using Repositories.Clubs;
 using Repositories.Students;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Services.CVExport
 {
@@ -14,7 +15,7 @@ namespace Services.CVExport
         private readonly IJoinRequestRepository _joinRequestRepo;
         private readonly IInterviewRepository _interviewRepo;
         private readonly IClubRepository _clubRepo;
-        private readonly IStudentRepository _studentRepo;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ICVDownloaderService _downloaderService;
         private readonly ICVParserService _parserService;
         private readonly IExcelGeneratorService _excelService;
@@ -24,7 +25,7 @@ namespace Services.CVExport
             IJoinRequestRepository joinRequestRepo,
             IInterviewRepository interviewRepo,
             IClubRepository clubRepo,
-            IStudentRepository studentRepo,
+            IServiceScopeFactory scopeFactory,
             ICVDownloaderService downloaderService,
             ICVParserService parserService,
             IExcelGeneratorService excelService,
@@ -33,7 +34,7 @@ namespace Services.CVExport
             _joinRequestRepo = joinRequestRepo;
             _interviewRepo = interviewRepo;
             _clubRepo = clubRepo;
-            _studentRepo = studentRepo;
+            _scopeFactory = scopeFactory;
             _downloaderService = downloaderService;
             _parserService = parserService;
             _excelService = excelService;
@@ -66,7 +67,12 @@ namespace Services.CVExport
                     await semaphore.WaitAsync();
                     try
                     {
-                        return await ProcessSingleCVAsync(jr);
+                        // Create a new scope for each parallel operation to get a fresh DbContext
+                        using (var scope = _scopeFactory.CreateScope())
+                        {
+                            var studentRepo = scope.ServiceProvider.GetRequiredService<IStudentRepository>();
+                            return await ProcessSingleCVAsync(jr, studentRepo);
+                        }
                     }
                     finally
                     {
@@ -158,7 +164,7 @@ namespace Services.CVExport
             }
         }
 
-        private async Task<ExtractedCVDataDto> ProcessSingleCVAsync(JoinRequest joinRequest)
+        private async Task<ExtractedCVDataDto> ProcessSingleCVAsync(JoinRequest joinRequest, IStudentRepository studentRepo)
         {
             var result = new ExtractedCVDataDto
             {
@@ -169,8 +175,8 @@ namespace Services.CVExport
 
             try
             {
-                // Get student code from database
-                var student = await _studentRepo.GetByUserIdAsync(joinRequest.UserId);
+                // Get student code from database using the scoped repository
+                var student = await studentRepo.GetByUserIdAsync(joinRequest.UserId);
                 if (student != null)
                 {
                     result.StudentCode = student.StudentCode;

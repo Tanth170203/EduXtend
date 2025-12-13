@@ -10,12 +10,12 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">Communication Plans</h1>
-        <p class="page-description">Quản lý kế hoạch truyền thông cho các hoạt động</p>
+        <p class="page-description">Manage communication plans for activities</p>
     </div>
     <div>
         <a href="/ClubManager/CommunicationPlans/Create" class="btn btn-primary">
             <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-            Tạo kế hoạch mới
+            Create New Plan
         </a>
     </div>
 </div>
@@ -41,23 +41,23 @@
     <div class="content-card-body">
         <form method="get" class="row g-3">
             <div class="col-md-4">
-                <label class="form-label">Tìm kiếm theo tên Activity</label>
-                <input type="text" name="SearchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Nhập tên activity..." />
+                <label class="form-label">Search by Activity Name</label>
+                <input type="text" name="SearchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Enter activity name..." />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Tháng</label>
+                <label class="form-label">Month</label>
                 <select name="FilterMonth" class="form-select">
-                    <option value="">-- Tất cả --</option>
+                    <option value="">-- All --</option>
                     @for (int i = 1; i <= 12; i++)
                     {
-                        <option value="@i" selected="@(Model.FilterMonth == i)">Tháng @i</option>
+                        <option value="@i" selected="@(Model.FilterMonth == i)">Month @i</option>
                     }
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Năm</label>
+                <label class="form-label">Year</label>
                 <select name="FilterYear" class="form-select">
-                    <option value="">-- Tất cả --</option>
+                    <option value="">-- All --</option>
                     @for (int year = DateTime.Now.Year; year >= DateTime.Now.Year - 3; year--)
                     {
                         <option value="@year" selected="@(Model.FilterYear == year)">@year</option>
@@ -67,7 +67,7 @@
             <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100">
                     <i data-lucide="search" style="width: 16px; height: 16px;"></i>
-                    Tìm kiếm
+                    Search
                 </button>
             </div>
         </form>
@@ -76,10 +76,10 @@
             <div class="mt-3">
                 <a href="/ClubManager/CommunicationPlans" class="btn btn-sm btn-outline-secondary">
                     <i data-lucide="x" style="width: 14px; height: 14px;"></i>
-                    Xóa bộ lọc
+                    Clear Filters
                 </a>
                 <span class="text-muted ms-2">
-                    Tìm thấy @Model.FilteredPlans.Count / @Model.Plans.Count kế hoạch
+                    Found @Model.FilteredPlans.Count / @Model.Plans.Count plans
                 </span>
             </div>
         }
@@ -100,8 +100,8 @@
                 }
                 else
                 {
-                    <h4>Không tìm thấy kết quả</h4>
-                    <p>Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm</p>
+                    <h4>No results found</h4>
+                    <p>Try changing the filters or search keywords</p>
                 }
             </div>
         }
