@@ -17,21 +17,19 @@
     @Html.AntiForgeryToken()
 </form>
 
-<!-- Page Header -->
 <div class="page-header">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
         <div>
-            <h1 class="page-title">Quản lý học kỳ</h1>
-            <p class="page-description">Quản lý các học kỳ trong hệ thống</p>
+            <h1 class="page-title">Semester Management</h1>
+            <p class="page-description">Manage all academic semesters in the system</p>
         </div>
         <a href="/Admin/Semesters/Add" class="btn btn-primary d-flex align-items-center gap-2">
             <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-            Thêm học kỳ mới
+            Add New Semester
         </a>
     </div>
 </div>
 
-<!-- Alert Messages -->
 @if (!string.IsNullOrEmpty(Model.SuccessMessage))
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -49,25 +47,24 @@
     </div>
 }
 
-<!-- Stats -->
 <div class="stats-grid mb-4">
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Tổng số học kỳ</p>
+                <p class="stat-card-title">Total Semesters</p>
             </div>
             <div class="stat-card-icon blue">
                 <i data-lucide="calendar" style="width: 24px; height: 24px;"></i>
             </div>
         </div>
         <div class="stat-card-value">@Model.Semesters.Count</div>
-        <p class="text-muted small mb-0">Tất cả học kỳ trong hệ thống</p>
+        <p class="text-muted small mb-0">All semesters in the system</p>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Đang hoạt động</p>
+                <p class="stat-card-title">Active</p>
             </div>
             <div class="stat-card-icon green">
                 <i data-lucide="play-circle" style="width: 24px; height: 24px;"></i>
@@ -80,7 +77,7 @@
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Sắp diễn ra</p>
+                <p class="stat-card-title">Upcoming</p>
             </div>
             <div class="stat-card-icon purple">
                 <i data-lucide="clock" style="width: 24px; height: 24px;"></i>
@@ -93,7 +90,7 @@
     <div class="stat-card">
         <div class="stat-card-header">
             <div>
-                <p class="stat-card-title">Đã kết thúc</p>
+                <p class="stat-card-title">Completed</p>
             </div>
             <div class="stat-card-icon orange">
                 <i data-lucide="pause-circle" style="width: 24px; height: 24px;"></i>
@@ -104,13 +101,12 @@
     </div>
 </div>
 
-<!-- Semesters Table -->
 <div class="content-card">
     <div class="content-card-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div>
-                <h5 class="content-card-title mb-1">Danh sách học kỳ</h5>
-                <p class="text-muted mb-0">Quản lý tất cả học kỳ trong hệ thống</p>
+                <h5 class="content-card-title mb-1">Semester List</h5>
+                <p class="text-muted mb-0">Manage all academic semesters in the system</p>
             </div>
             <div class="d-flex gap-2">
                 <div class="input-group" style="width: 300px;">
@@ -127,12 +123,12 @@
             <table class="table table-hover mb-0 semester-table">
                 <thead class="semester-table-header">
                     <tr>
-                        <th class="semester-th">Tên học kỳ</th>
-                        <th class="semester-th">Ngày bắt đầu</th>
-                        <th class="semester-th">Ngày kết thúc</th>
-                        <th class="semester-th">Thời lượng</th>
-                        <th class="semester-th">Trạng thái</th>
-                        <th class="semester-th text-end">Thao tác</th>
+                        <th class="semester-th">Semester Name</th>
+                        <th class="semester-th">Start Date</th>
+                        <th class="semester-th">End Date</th>
+                        <th class="semester-th">Duration</th>
+                        <th class="semester-th">Status</th>
+                        <th class="semester-th text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -156,17 +152,17 @@
                                 <td class="semester-td">
                                     <div class="date-info">
                                         <div class="date-value">@semester.StartDate.ToString("dd/MM/yyyy")</div>
-                                        <div class="date-day text-muted small">@semester.StartDate.ToString("dddd", new System.Globalization.CultureInfo("vi-VN"))</div>
+                                        <div class="date-day text-muted small">@semester.StartDate.ToString("dddd", new System.Globalization.CultureInfo("en-US"))</div>
                                     </div>
                                 </td>
                                 <td class="semester-td">
                                     <div class="date-info">
                                         <div class="date-value">@semester.EndDate.ToString("dd/MM/yyyy")</div>
-                                        <div class="date-day text-muted small">@semester.EndDate.ToString("dddd", new System.Globalization.CultureInfo("vi-VN"))</div>
+                                        <div class="date-day text-muted small">@semester.EndDate.ToString("dddd", new System.Globalization.CultureInfo("en-US"))</div>
                                     </div>
                                 </td>
                                 <td class="semester-td">
-                                    <span class="text-muted">@duration ngày</span>
+                                    <span class="text-muted">@duration days</span>
                                 </td>
                                 <td class="semester-td">
                                     <span class="semester-status-badge @semester.GetStatusBadgeClass()">
@@ -179,7 +175,7 @@
                                         <a href="/Admin/Semesters/Edit?id=@semester.Id" class="btn btn-sm btn-outline-primary me-2" title="Edit">
                                             <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
                                         </a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger semester-btn-delete" 
+                                        <button type="button" class="btn btn-sm btn-outline-danger semester-btn-delete"
                                                 data-bs-toggle="modal" data-bs-target="#deleteSemesterModal"
                                                 data-semester-id="@semester.Id"
                                                 data-semester-name="@semester.Name"
@@ -199,11 +195,11 @@
                                     <div class="empty-state-icon">
                                         <i data-lucide="calendar-x" style="width: 64px; height: 64px;"></i>
                                     </div>
-                                    <h4 class="empty-state-title">Chưa có học kỳ nào</h4>
-                                    <p class="empty-state-description">Bắt đầu bằng cách thêm học kỳ đầu tiên vào hệ thống</p>
+                                    <h4 class="empty-state-title">No Semesters Found</h4>
+                                    <p class="empty-state-description">Start by adding the first semester to the system</p>
                                     <button type="button" class="btn btn-primary" data-action="add-semester">
                                         <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-                                        Thêm học kỳ đầu tiên
+                                        Add First Semester
                                     </button>
                                 </div>
                             </td>
@@ -216,26 +212,25 @@
 </div>
 
 
-<!-- Delete Confirm Modal -->
 <div class="modal fade" id="deleteSemesterModal" tabindex="-1" aria-labelledby="deleteSemesterModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="deleteSemesterModalLabel">Xác nhận xóa học kỳ</h5>
+                <h5 class="modal-title" id="deleteSemesterModalLabel">Confirm Semester Deletion</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="text-center">
                     <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: #ef4444; margin-bottom: 1rem;"></i>
-                    <p>Bạn có chắc chắn muốn xóa học kỳ <strong class="semester-name-to-delete"></strong>?</p>
-                    <p class="text-muted small">Hành động này không thể hoàn tác.</p>
+                    <p>Are you sure you want to delete the semester <strong class="semester-name-to-delete"></strong>?</p>
+                    <p class="text-muted small">This action cannot be undone.</p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form method="post" asp-page-handler="DeleteSemester" style="display: inline;">
                     <input type="hidden" name="Id" id="deleteId">
-                    <button type="submit" class="btn btn-danger">Xóa học kỳ</button>
+                    <button type="submit" class="btn btn-danger">Delete Semester</button>
                 </form>
             </div>
         </div>
@@ -249,14 +244,14 @@
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
-            
+
             // Search functionality
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.addEventListener('input', function(e) {
                     const searchTerm = e.target.value.toLowerCase();
                     const rows = document.querySelectorAll('.semester-row');
-                    
+
                     rows.forEach(row => {
                         const name = row.querySelector('.semester-name')?.textContent.toLowerCase() || '';
                         const shouldShow = name.includes(searchTerm);
@@ -264,20 +259,24 @@
                     });
                 });
             }
-            
+
             // Delete button click - populate modal
             document.querySelectorAll('[data-semester-name]').forEach(btn => {
                 if (btn.dataset.semesterId) {
                     btn.addEventListener('click', function() {
                         const name = this.dataset.semesterName;
                         const id = this.dataset.semesterId;
-                        
+
                         document.querySelector('.semester-name-to-delete').textContent = name;
                         document.getElementById('deleteId').value = id;
                     });
                 }
             });
+
+            // Redirect to Add page on empty state button click
+            document.querySelector('[data-action="add-semester"]')?.addEventListener('click', function() {
+                window.location.href = '/Admin/Semesters/Add';
+            });
         });
     </script>
 }
-

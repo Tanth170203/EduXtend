@@ -54,10 +54,6 @@
                         <i data-lucide="calendar" style="width: 20px; height: 20px;"></i>
                         <span>Semesters</span>
                     </a>
-                    <a class="sidebar-link" href="/Admin/Majors">
-                        <i data-lucide="book-open" style="width: 20px; height: 20px;"></i>
-                        <span>Majors</span>
-                    </a>
                     <a class="sidebar-link" href="/Admin/SystemNews">
                         <i data-lucide="newspaper" style="width: 20px; height: 20px;"></i>
                         <span>System News</span>
@@ -89,10 +85,6 @@
                     <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Clubs") == true ? "active" : "")" href="/Admin/Clubs">
                         <i data-lucide="users-2" style="width: 20px; height: 20px;"></i>
                         <span>Club List</span>
-                    </a>
-                    <a class="sidebar-link" href="/Admin/ClubCategories">
-                        <i data-lucide="folder" style="width: 20px; height: 20px;"></i>
-                        <span>Club Categories</span>
                     </a>
                     <a class="sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString()?.Contains("/Admin/Activities") == true ? "active" : "")" href="/Admin/Activities">
                         <i data-lucide="calendar-check" style="width: 20px; height: 20px;"></i>

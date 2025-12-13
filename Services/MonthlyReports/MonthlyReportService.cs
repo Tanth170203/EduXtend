@@ -362,7 +362,7 @@ public class MonthlyReportService : IMonthlyReportService
             MainTitle = $"BÁO CÁO HOẠT ĐỘNG THÁNG {reportMonth}",
             SubTitle = $"VÀ KẾ HOẠCH THÁNG {nextMonth}",
             ClubName = club?.Name ?? "",
-            Location = "FPT University HCM", // Default location
+            Location = "FPT University Đà Nẵng", // Default location
             ReportDate = DateTime.Now,
             CreatorName = clubManager?.FullName ?? "",
             CreatorPosition = "Quản lý CLB"
