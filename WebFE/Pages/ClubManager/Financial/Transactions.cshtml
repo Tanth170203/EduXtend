@@ -539,7 +539,7 @@
                             <label for="editMethod" class="form-label">Payment Method <span class="text-danger">*</span></label>
                             <select class="form-select" id="editMethod" required>
                                 <option value="Cash">Cash</option>
-                                <option value="BankTransfer">Bank Transfer</option>
+                                <option value="VNPAY">VNPAY</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
@@ -594,8 +594,8 @@
             document.getElementById('incomeDate').valueAsDate = new Date();
             document.getElementById('expenseDate').valueAsDate = new Date();
             
-            // Load activities for expense form
-            await loadUpcomingActivities();
+            // Load activities for both income and expense forms (once, no need to reload on date change)
+            await loadActivitiesForForms();
             
             await loadTransactions();
             
@@ -662,42 +662,90 @@
             renderTransactions(allTransactions);
         }
 
-        // Load upcoming activities (StartTime >= now)
-        async function loadUpcomingActivities() {
+        // Upload receipt image to Cloudinary
+        async function uploadReceiptImage(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch(`${API_BASE}/PaymentTransaction/upload-receipt`, {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Upload failed');
+            }
+
+            const result = await response.json();
+            return result.url;
+        }
+
+        // Load activities (Approved or PendingApproval)
+        async function loadActivitiesForForms() {
             try {
-                const response = await fetch(`${API_BASE}/Activity/club/${CLUB_ID}`, {
+                console.log('🔍 Loading activities...');
+                
+                const response = await fetch(`${API_BASE}/PaymentTransaction/club/${CLUB_ID}/activities`, {
                     credentials: 'include'
                 });
                 
+                console.log('📡 Response status:', response.status);
+                
                 if (response.ok) {
                     const activities = await response.json();
-                    const now = new Date();
+                    console.log('📦 Received activities:', activities);
                     
-                    // Filter upcoming activities (StartTime >= now)
-                    const upcomingActivities = activities.filter(activity => {
-                        const startTime = new Date(activity.startTime);
-                        return startTime >= now && (activity.status === 'Approved' || activity.status === 'Ongoing');
-                    });
+                    // Clear and populate both income and expense activity dropdowns
+                    const incomeSelect = document.getElementById('incomeActivity');
+                    const expenseSelect = document.getElementById('expenseActivity');
                     
-                    const select = document.getElementById('expenseActivity');
+                    console.log('🎯 Income select found:', !!incomeSelect);
+                    console.log('🎯 Expense select found:', !!expenseSelect);
                     
-                    if (select) {
-                        // Sort by StartTime (earliest first)
-                        upcomingActivities.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+                    // Clear existing options (except the first "None" option)
+                    if (incomeSelect) {
+                        while (incomeSelect.options.length > 1) {
+                            incomeSelect.remove(1);
+                        }
+                    }
+                    if (expenseSelect) {
+                        while (expenseSelect.options.length > 1) {
+                            expenseSelect.remove(1);
+                        }
+                    }
+                    
+                    // Add new options
+                    activities.forEach(activity => {
+                        const startDate = new Date(activity.startTime).toLocaleDateString('vi-VN');
+                        const statusLabel = activity.status === 'PendingApproval' ? '[Pending]' : '[Approved]';
+                        const optionText = `${activity.title} (${startDate}) ${statusLabel}`;
                         
-                        upcomingActivities.forEach(activity => {
+                        // Add to income dropdown
+                        if (incomeSelect) {
                             const option = document.createElement('option');
                             option.value = activity.id;
-                            const startDate = new Date(activity.startTime).toLocaleDateString('vi-VN');
-                            option.textContent = `${activity.title} (${startDate})`;
-                            select.appendChild(option);
-                        });
+                            option.textContent = optionText;
+                            incomeSelect.appendChild(option);
+                        }
                         
-                        console.log(`✅ Loaded ${upcomingActivities.length} upcoming activities`);
-                    }
+                        // Add to expense dropdown
+                        if (expenseSelect) {
+                            const option = document.createElement('option');
+                            option.value = activity.id;
+                            option.textContent = optionText;
+                            expenseSelect.appendChild(option);
+                        }
+                    });
+                    
+                    console.log(`✅ Loaded ${activities.length} activities (Approved or PendingApproval)`);
+                } else {
+                    const errorText = await response.text();
+                    console.error('❌ Failed to load activities:', response.status, errorText);
                 }
             } catch (error) {
-                console.error('Error loading activities:', error);
+                console.error('❌ Error loading activities:', error);
             }
         }
 
@@ -717,6 +765,22 @@
         async function submitTransaction(type) {
             const prefix = type.toLowerCase();
             
+            // Upload receipt image if provided
+            const receiptFileInput = document.getElementById(`${prefix}ReceiptFile`);
+            let receiptUrl = null;
+            
+            if (receiptFileInput && receiptFileInput.files.length > 0) {
+                try {
+                    console.log('📎 Uploading receipt image:', receiptFileInput.files[0].name);
+                    receiptUrl = await uploadReceiptImage(receiptFileInput.files[0]);
+                    console.log('✅ Receipt uploaded:', receiptUrl);
+                } catch (error) {
+                    console.error('❌ Failed to upload receipt:', error);
+                    showToast('Failed to upload receipt image', 'danger');
+                    return; // Stop transaction creation if upload fails
+                }
+            }
+            
             const dto = {
                 title: document.getElementById(`${prefix}Title`).value,
                 type: type,
@@ -724,19 +788,16 @@
                 amount: parseFloat(document.getElementById(`${prefix}Amount`).value),
                 method: document.getElementById(`${prefix}Method`).value,
                 transactionDate: new Date(document.getElementById(`${prefix}Date`).value + 'T00:00:00').toISOString(),
-                receiptUrl: document.getElementById(`${prefix}ReceiptUrl`).value || null,
+                receiptUrl: receiptUrl,
                 description: document.getElementById(`${prefix}Description`).value || null,
                 notes: document.getElementById(`${prefix}Notes`).value || null,
-                activityId: null,
-                semesterId: null
+                activityId: null
             };
 
-            // Add ActivityId for Expense if selected
-            if (type === 'Expense') {
-                const activitySelect = document.getElementById('expenseActivity');
-                if (activitySelect && activitySelect.value) {
-                    dto.activityId = parseInt(activitySelect.value);
-                }
+            // Add ActivityId if selected (for both Income and Expense)
+            const activitySelect = document.getElementById(`${prefix}Activity`);
+            if (activitySelect && activitySelect.value) {
+                dto.activityId = parseInt(activitySelect.value);
             }
 
             console.log('📦 Submitting transaction:', dto);
@@ -766,10 +827,10 @@
                     const formId = type === 'Income' ? 'addIncomeForm' : 'addExpenseForm';
                     document.getElementById(formId).reset();
                     document.getElementById(`${prefix}Date`).valueAsDate = new Date();
-                    if (type === 'Expense') {
-                        const activitySelect = document.getElementById('expenseActivity');
-                        if (activitySelect) activitySelect.value = '';
-                    }
+                    
+                    // Reset activity dropdown
+                    const activitySelect = document.getElementById(`${prefix}Activity`);
+                    if (activitySelect) activitySelect.value = '';
                     
                     // Show success message
                     showToast(`${type} added successfully!`, 'success');

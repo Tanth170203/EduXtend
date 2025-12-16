@@ -589,17 +589,7 @@ namespace Services.FundCollections
             
             // Set status based on payment method
             // Cash: "unconfirmed" - requires manager confirmation
-            // Bank Transfer: "pending" - awaiting verification
-            if (dto.PaymentMethod == "Cash")
-            {
-                payment.Status = "unconfirmed";
-            }
-            else
-            {
-                payment.Status = "pending";
-                payment.PaidAt = DateTime.UtcNow; // Member claims payment completed
-            }
-
+            payment.Status = "unconfirmed";
             payment.UpdatedAt = DateTime.UtcNow;
 
             await _paymentRepo.UpdateAsync(payment);
@@ -619,26 +609,13 @@ namespace Services.FundCollections
                     var memberName = payment.ClubMember.Student.FullName;
                     var fundTitle = payment.FundCollectionRequest.Title;
 
-                    if (dto.PaymentMethod == "Cash")
-                    {
-                        await _notificationService.NotifyClubManagerAboutCashPaymentAsync(
-                            manager.Student.UserId,
-                            payment.FundCollectionRequest.ClubId,
-                            memberName,
-                            fundTitle,
-                            payment.Amount
-                        );
-                    }
-                    else if (dto.PaymentMethod == "Bank Transfer")
-                    {
-                        await _notificationService.NotifyClubManagerAboutBankTransferPaymentAsync(
-                            manager.Student.UserId,
-                            payment.FundCollectionRequest.ClubId,
-                            memberName,
-                            fundTitle,
-                            payment.Amount
-                        );
-                    }
+                    await _notificationService.NotifyClubManagerAboutCashPaymentAsync(
+                        manager.Student.UserId,
+                        payment.FundCollectionRequest.ClubId,
+                        memberName,
+                        fundTitle,
+                        payment.Amount
+                    );
                 }
             }
             catch (Exception ex)

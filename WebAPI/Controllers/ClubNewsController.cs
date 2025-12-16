@@ -1,3 +1,4 @@
+using BusinessObject.DTOs.Club;
 using BusinessObject.DTOs.News;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -57,6 +58,20 @@ public class ClubNewsController : ControllerBase
 	}
 
 	/// <summary>
+	/// Get all clubs managed by current user (Club Manager only)
+	/// </summary>
+	[HttpGet("managed-clubs")]
+	[Authorize(Roles = "ClubManager")]
+	public async Task<ActionResult<IEnumerable<ClubListItemDto>>> GetManagedClubs()
+	{
+		var userId = GetCurrentUserId();
+		if (userId == null) return Unauthorized();
+		
+		var clubs = await _clubService.GetAllManagedClubsByUserIdAsync(userId.Value);
+		return Ok(clubs);
+	}
+
+	/// <summary>
 	/// Get club news by ID
 	/// </summary>
 	[HttpGet("{id}")]
@@ -84,25 +99,28 @@ public class ClubNewsController : ControllerBase
 	/// </summary>
 	[HttpPost]
 	[Authorize(Roles = "ClubManager")]
-	public async Task<ActionResult<ClubNewsDetailDto>> Create([FromBody] CreateClubNewsRequest request)
+	public async Task<ActionResult<ClubNewsDetailDto>> Create([FromBody] CreateClubNewsRequest request, [FromQuery] int clubId)
 	{
 		if (!ModelState.IsValid) return BadRequest(ModelState);
 		
 		var userId = GetCurrentUserId();
 		if (userId == null) return Unauthorized();
 		
-		// Get the club managed by this user
-		var managedClub = await _clubService.GetManagedClubByUserIdAsync(userId.Value);
-		if (managedClub == null)
+		if (clubId <= 0)
+			return BadRequest(new { message = "Missing clubId" });
+		
+		// Verify user is manager of the specified club
+		var managedClubs = await _clubService.GetAllManagedClubsByUserIdAsync(userId.Value);
+		if (!managedClubs.Any(c => c.Id == clubId))
 		{
-			return Forbid("You are not managing any club");
+			return Forbid("You are not managing the specified club");
 		}
 		
 		try
 		{
-			var created = await _service.CreateAsync(userId.Value, managedClub.Id, request);
+			var created = await _service.CreateAsync(userId.Value, clubId, request);
 			_logger.LogInformation("Club Manager {UserId} created news {NewsId} for club {ClubId}", 
-				userId, created.Id, managedClub.Id);
+				userId, created.Id, clubId);
 			return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
 		}
 		catch (KeyNotFoundException ex)

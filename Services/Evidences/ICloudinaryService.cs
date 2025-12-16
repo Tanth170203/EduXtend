@@ -74,6 +74,16 @@ public interface ICloudinaryService
     Task<string> UploadClubImageAsync(IFormFile file);
 
     /// <summary>
+    /// Upload receipt/invoice image to Cloudinary.
+    /// Images are stored in receipts/ folder (root level).
+    /// Only accepts image files (.jpg, .png, .gif, .webp, .pdf).
+    /// Automatically applies optimization (q_auto, f_auto).
+    /// </summary>
+    /// <param name="file">The receipt image file to upload</param>
+    /// <returns>Cloudinary secure URL with auto-optimization</returns>
+    Task<string> UploadReceiptImageAsync(IFormFile file);
+
+    /// <summary>
     /// Delete file from Cloudinary by public ID or URL.
     /// 
     /// Automatically handles:

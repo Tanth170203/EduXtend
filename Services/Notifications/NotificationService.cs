@@ -215,23 +215,6 @@ public class NotificationService : INotificationService
         await _repo.CreateAsync(notification);
     }
 
-    public async Task NotifyClubManagerAboutBankTransferPaymentAsync(int clubManagerId, int clubId, string memberName, string fundCollectionTitle, decimal amount)
-    {
-        var notification = new Notification
-        {
-            Title = "New bank transfer payment submitted",
-            Message = $"{memberName} has submitted a bank transfer payment of {amount:N0} VND for \"{fundCollectionTitle}\". Please verify and confirm the payment.",
-            Scope = "User",
-            TargetUserId = clubManagerId,
-            TargetClubId = clubId,
-            CreatedById = 1, // System user ID
-            IsRead = false,
-            CreatedAt = DateTimeHelper.Now
-        };
-
-        await _repo.CreateAsync(notification);
-    }
-
     public async Task NotifyMemberAboutPaymentConfirmationAsync(int memberId, int clubId, string fundCollectionTitle, decimal amount, string paymentMethod)
     {
         // Get club name
