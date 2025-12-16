@@ -982,7 +982,6 @@ class NotificationManager {
             }
             // For club managers: go to Member Funds page
             else if (notification.title.includes('cash payment') || 
-                     notification.title.includes('bank transfer') ||
                      notification.title.includes('VNPAY payment')) {
                 targetUrl = '/ClubManager/Financial/MemberFunds';
             }

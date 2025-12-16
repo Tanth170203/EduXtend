@@ -204,7 +204,7 @@ namespace Repositories.Clubs
             return await _ctx.ClubDepartments
                 .AsNoTracking()
                 .Where(cd => cd.ClubId == clubId)
-                .Include(cd => cd.Members.Where(m => m.IsActive))
+                .Include(cd => cd.Members.Where(m => m.IsActive && m.ClubId == clubId))
                 .OrderBy(cd => cd.Name)
                 .ToListAsync();
         }

@@ -13,20 +13,6 @@
             <h1 class="fw-bold mb-1">Club Activity Scores</h1>
             <p class="text-muted mb-0">View summary and detailed scores by semester</p>
         </div>
-        @if (Model.MyClubs.Count > 1)
-        {
-            <!-- Club Selector Dropdown -->
-            <div class="d-flex align-items-center gap-2">
-                <label for="clubSelector" class="form-label mb-0 fw-medium">Select Club:</label>
-                <select id="clubSelector" class="form-select" style="width: auto; min-width: 200px;" 
-                        onchange="window.location.href='/ClubManager/ClubMovementScore?clubId=' + this.value">
-                    @foreach (var club in Model.MyClubs)
-                    {
-                        <option value="@club.Id" selected="@(club.Id == Model.SelectedClubId)">@club.Name</option>
-                    }
-                </select>
-            </div>
-        }
     </div>
 
     <!-- Alert -->
@@ -38,23 +24,7 @@
         </div>
     }
 
-    @if (!Model.MyClubs.Any())
-    {
-        <!-- No clubs message -->
-        <div class="alert alert-info shadow-sm">
-            <div class="d-flex align-items-center">
-                <i class="bi bi-info-circle me-3" style="font-size: 2rem;"></i>
-                <div>
-                    <h5 class="alert-heading mb-1">You are not a member of any club</h5>
-                    <p class="mb-2">Join a club to view club movement scores and track your club's performance.</p>
-                    <a href="/Clubs" class="btn btn-primary btn-sm">
-                        <i class="bi bi-search me-1"></i> Browse Clubs
-                    </a>
-                </div>
-            </div>
-        </div>
-    }
-    else if (Model.Summary != null)
+    @if (Model.Summary != null)
     {
         <!-- Quick Stats -->
         <div class="row g-3 mb-4">

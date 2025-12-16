@@ -31,8 +31,8 @@
                         <div class="col-md-6">
                             <label for="incomeMethod" class="form-label">Payment Method <span class="text-danger">*</span></label>
                             <select class="form-select" id="incomeMethod" required>
-                                <option value="BankTransfer">Bank Transfer</option>
                                 <option value="Cash">Cash</option>
+                                <option value="VNPAY">VNPAY</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
@@ -41,8 +41,17 @@
                             <input type="date" class="form-control" id="incomeDate" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="incomeReceiptUrl" class="form-label">Receipt URL</label>
-                            <input type="url" class="form-control" id="incomeReceiptUrl" placeholder="https://...">
+                            <label for="incomeReceiptUrl" class="form-label">Receipt Image</label>
+                            <input type="file" class="form-control" id="incomeReceiptFile" accept="image/*">
+                            <small class="text-muted">Upload receipt/invoice image</small>
+                        </div>
+                        <div class="col-12">
+                            <label for="incomeActivity" class="form-label">Related Activity</label>
+                            <select class="form-select" id="incomeActivity">
+                                <option value="">None (General Income)</option>
+                                <!-- Activities will be loaded dynamically -->
+                            </select>
+                            <small class="text-muted">Select an activity if this income is related to a specific event</small>
                         </div>
                         <div class="col-12">
                             <label for="incomeDescription" class="form-label">Description</label>
@@ -101,7 +110,7 @@
                             <label for="expenseMethod" class="form-label">Payment Method <span class="text-danger">*</span></label>
                             <select class="form-select" id="expenseMethod" required>
                                 <option value="Cash">Cash</option>
-                                <option value="BankTransfer">Bank Transfer</option>
+                                <option value="VNPAY">VNPAY</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
@@ -110,8 +119,9 @@
                             <input type="date" class="form-control" id="expenseDate" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="expenseReceiptUrl" class="form-label">Receipt URL</label>
-                            <input type="url" class="form-control" id="expenseReceiptUrl" placeholder="https://...">
+                            <label for="expenseReceiptUrl" class="form-label">Receipt Image</label>
+                            <input type="file" class="form-control" id="expenseReceiptFile" accept="image/*">
+                            <small class="text-muted">Upload receipt/invoice image</small>
                         </div>
                         <div class="col-12">
                             <label for="expenseActivity" class="form-label">Related Activity</label>

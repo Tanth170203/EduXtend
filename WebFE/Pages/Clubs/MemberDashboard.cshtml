@@ -411,10 +411,35 @@
                                                     {
                                                         <p class="small text-muted mb-2">@dept.Description</p>
                                                     }
-                                                    <span class="badge bg-primary">
+                                                    <button class="btn btn-sm btn-primary view-dept-members" 
+                                                            data-dept-name="@dept.Name" 
+                                                            data-member-count="@dept.MemberCount">
                                                         <i data-lucide="users" style="width: 14px; height: 14px;"></i>
                                                         @dept.MemberCount members
-                                                    </span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    @{
+                                        var membersWithoutDept = Model.Members.Count(m => m.IsActive && string.IsNullOrEmpty(m.DepartmentName));
+                                    }
+                                    @if (membersWithoutDept > 0)
+                                    {
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card border h-100 border-secondary">
+                                                <div class="card-body">
+                                                    <h6 class="fw-bold text-muted">
+                                                        <i data-lucide="users" style="width: 18px; height: 18px;"></i>
+                                                        No Department
+                                                    </h6>
+                                                    <p class="small text-muted mb-2">Members not assigned to any department</p>
+                                                    <button class="btn btn-sm btn-outline-secondary view-dept-members" 
+                                                            data-dept-name="" 
+                                                            data-member-count="@membersWithoutDept">
+                                                        <i data-lucide="users" style="width: 14px; height: 14px;"></i>
+                                                        @membersWithoutDept members
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -1560,12 +1585,10 @@
                             <select class="form-select" id="selectedPaymentMethod" required>
                                 <option value="">Select method...</option>
                                 <option value="Cash">Cash</option>
-                                <option value="Bank Transfer">Bank Transfer</option>
                                 <option value="VNPAY">VNPAY</option>
                             </select>
                             <div class="form-text">
                                 <strong>Cash:</strong> Submit request, manager will confirm after you pay<br>
-                                <strong>Bank Transfer:</strong> Upload receipt for verification<br>
                                 <strong>VNPAY:</strong> Pay online instantly via VNPAY gateway
                             </div>
                         </div>
@@ -2058,8 +2081,6 @@
                 
                 if (availableMethods === 'Cash') {
                     document.getElementById('paymentInfoText').textContent = 'Payment method: Cash. Submit this request and pay to your club manager. They will confirm after receiving payment.';
-                } else if (availableMethods === 'Bank Transfer') {
-                    document.getElementById('paymentInfoText').textContent = 'Payment method: Bank Transfer. Transfer money and submit this request. Upload receipt for faster verification.';
                 } else if (availableMethods === 'VNPAY') {
                     document.getElementById('paymentInfoText').textContent = 'Payment method: VNPAY. You will be redirected to VNPAY gateway to complete your payment online.';
                 }
@@ -2114,15 +2135,12 @@
                 return;
             }
 
-            // Handle Cash and Bank Transfer payments
-            // Determine transaction status based on payment method
-            const status = selectedMethod === 'Cash' ? 'unconfirmed' : 'pending';
-
+            // Handle Cash payment
             const dto = {
                 paymentId: parseInt(paymentId),
                 paymentMethod: selectedMethod,
                 notes: notes,
-                status: status
+                status: 'unconfirmed'
             };
 
             try {
@@ -2135,12 +2153,7 @@
 
                 if (response.ok) {
                     bootstrap.Modal.getInstance(document.getElementById('payNowModal')).hide();
-                    
-                    if (selectedMethod === 'Cash') {
-                        alert('✅ Payment request submitted! Please pay to your club manager. They will confirm after receiving payment.');
-                    } else {
-                        alert('✅ Payment submitted! Please complete the bank transfer. Your payment is pending verification.');
-                    }
+                    alert('✅ Payment request submitted! Please pay to your club manager. They will confirm after receiving payment.');
                     
                     // Reload payments
                     await loadMyPayments();
@@ -2611,11 +2624,153 @@
         
         // Initialize icons immediately
         initLucide();
+
+        // Setup event delegation for department member buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.view-dept-members')) {
+                const btn = e.target.closest('.view-dept-members');
+                const deptName = btn.getAttribute('data-dept-name');
+                const memberCount = parseInt(btn.getAttribute('data-member-count'));
+                viewDepartmentMembers(deptName, memberCount);
+            }
+        });
+
+        // View Department Members
+        async function viewDepartmentMembers(deptName, memberCount) {
+            if (memberCount === 0) {
+                showToast('This department has no members yet', 'info');
+                return;
+            }
+
+            try {
+                // Get all club members
+                const response = await fetch(`${API_BASE}/club/${CLUB_ID}/members`, {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    console.error('API Error:', response.status, response.statusText);
+                    throw new Error(`Failed to load members: ${response.status}`);
+                }
+
+                const allMembers = await response.json();
+                console.log('All members:', allMembers);
+                
+                // Filter members by department name
+                let deptMembers;
+                if (deptName === '') {
+                    // Show members without department
+                    deptMembers = allMembers.filter(m => !m.departmentName);
+                } else {
+                    // Show members of specific department
+                    deptMembers = allMembers.filter(m => 
+                        m.departmentName && m.departmentName.toLowerCase() === deptName.toLowerCase()
+                    );
+                }
+                console.log('Department members:', deptMembers);
+
+                // Build modal content
+                let membersHtml = '';
+                if (deptMembers.length > 0) {
+                    membersHtml = deptMembers.map(member => `
+                        <div class="d-flex align-items-center p-3 border-bottom">
+                            <div class="flex-shrink-0">
+                                <div class="avatar-circle bg-primary text-white">
+                                    ${member.studentName?.charAt(0) || 'M'}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-0">${member.studentName || 'N/A'}</h6>
+                                <small class="text-muted">${member.roleInClub || 'Member'}</small>
+                            </div>
+                            <div>
+                                <span class="badge ${member.isActive ? 'bg-success' : 'bg-secondary'}">
+                                    ${member.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    membersHtml = '<div class="text-center py-4 text-muted">No members found in this department</div>';
+                }
+
+                // Show modal
+                const displayName = deptName === '' ? 'No Department' : deptName;
+                const modalHtml = `
+                    <div class="modal fade" id="deptMembersModal" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                                        ${displayName} - Members (${deptMembers.length})
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body p-0">
+                                    ${membersHtml}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Remove existing modal if any
+                const existingModal = document.getElementById('deptMembersModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+
+                // Add modal to body
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                
+                // Show modal
+                const modalElement = document.getElementById('deptMembersModal');
+                if (!modalElement) {
+                    throw new Error('Modal element not found');
+                }
+                
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+
+                // Reinitialize icons (wrapped in try-catch to prevent errors)
+                try {
+                    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                        lucide.createIcons();
+                    }
+                } catch (iconError) {
+                    console.warn('Failed to initialize Lucide icons:', iconError);
+                }
+
+                // Clean up modal after hide
+                modalElement.addEventListener('hidden.bs.modal', function() {
+                    this.remove();
+                });
+
+            } catch (error) {
+                console.error('Error loading department members:', error);
+                showToast('Failed to load department members', 'danger');
+            }
+        }
     </script>
 
     <style>
         .bg-gradient-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
         }
     </style>
 </body>

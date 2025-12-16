@@ -1,15 +1,12 @@
 using BusinessObject.DTOs.ClubMovementRecord;
-using BusinessObject.DTOs.Club;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Net;
 using System.Text.Json;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace WebFE.Pages.ClubManager.ClubMovementScore
 {
-    public class IndexModel : PageModel
+    public class IndexModel : ClubManagerPageModel
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<IndexModel> _logger;
@@ -23,12 +20,6 @@ namespace WebFE.Pages.ClubManager.ClubMovementScore
         public ClubMovementSummaryDto? Summary { get; set; }
         public List<SemesterSummary> SemesterSummaries { get; set; } = new();
         public int? CurrentSemesterId { get; set; }
-        public int ClubId { get; set; }
-        public string ClubName { get; set; } = string.Empty;
-
-        // NEW Properties for multi-club support
-        public List<ClubListItemDto> MyClubs { get; set; } = new();
-        public int SelectedClubId { get; set; }
 
         [TempData]
         public string? ErrorMessage { get; set; }
@@ -66,33 +57,17 @@ namespace WebFE.Pages.ClubManager.ClubMovementScore
             return client;
         }
 
-        public async Task<IActionResult> OnGetAsync(int? clubId)
+        public async Task<IActionResult> OnGetAsync()
         {
+            // Initialize club context from TempData
+            var result = await InitializeClubContextAsync();
+            if (result is RedirectResult)
+            {
+                return result;
+            }
+
             try
             {
-                // Get list of clubs the user is a member of
-                MyClubs = await GetUserClubsAsync();
-                
-                if (!MyClubs.Any())
-                {
-                    _logger.LogWarning("❌ User is not a member of any club.");
-                    ErrorMessage = "You are not a member of any club. Please join a club to view club movement scores.";
-                    return Page();
-                }
-
-                // If clubId is provided, use it; otherwise use first club from list
-                if (clubId.HasValue && MyClubs.Any(c => c.Id == clubId.Value))
-                {
-                    ClubId = clubId.Value;
-                }
-                else
-                {
-                    ClubId = MyClubs.First().Id;
-                }
-                
-                SelectedClubId = ClubId;
-                ClubName = MyClubs.FirstOrDefault(c => c.Id == ClubId)?.Name ?? string.Empty;
-
                 _logger.LogInformation("Loading club movement records for ClubId: {ClubId}", ClubId);
                 
                 using var httpClient = CreateHttpClient();
@@ -192,60 +167,6 @@ namespace WebFE.Pages.ClubManager.ClubMovementScore
             }
 
             return Page();
-        }
-
-        /// <summary>
-        /// Gets the list of clubs the user is a member of
-        /// </summary>
-        private async Task<List<ClubListItemDto>> GetUserClubsAsync()
-        {
-            try
-            {
-                using var httpClient = CreateHttpClient();
-                var response = await httpClient.GetAsync("/api/club/my-clubs");
-                
-                _logger.LogInformation("🔷 GetUserClubsAsync - Response Status: {StatusCode}", response.StatusCode);
-                
-                var content = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation("🔷 GetUserClubsAsync - Response Content: {Content}", content);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    var clubs = JsonSerializer.Deserialize<List<ClubListItemDto>>(content, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-                    
-                    if (clubs != null && clubs.Any())
-                    {
-                        _logger.LogInformation("✅ Found {Count} clubs for user", clubs.Count);
-                        return clubs;
-                    }
-                    else
-                    {
-                        _logger.LogWarning("⚠️ No clubs found for user");
-                    }
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-                {
-                    _logger.LogWarning("⚠️ API returned NotFound - User may not be a member of any club");
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    _logger.LogWarning("⚠️ API returned Unauthorized - User authentication issue");
-                }
-                else
-                {
-                    _logger.LogWarning("⚠️ API returned error: {StatusCode} - {Content}", response.StatusCode, content);
-                }
-                
-                return new List<ClubListItemDto>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error getting user clubs");
-                return new List<ClubListItemDto>();
-            }
         }
     }
 }

@@ -106,7 +106,7 @@
             <div class="col-md-3">
                 <select class="form-select" id="filterRequestStatus">
                     <option value="">All Status</option>
-                    <option value="active">Active</option>
+                    <option value="active" selected>Active</option>
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
@@ -228,7 +228,6 @@
                             <option value="">Select payment method...</option>
                             <option value="All">All (Member can choose)</option>
                             <option value="Cash">Cash</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
                             <option value="VNPAY">VNPAY</option>
                         </select>
                         <div class="form-text">Select "All" to allow members to choose their preferred payment method</div>
@@ -395,8 +394,8 @@
                 if (response.ok) {
                     const requests = await response.json();
                     allRequests = [...requests]; // Store for filtering
-                    renderRequests(requests);
                     setupRequestSearchAndFilter(); // Setup search after loading
+                    filterRequests(); // Apply default filter (active)
                 } else {
                     console.error('Requests load failed:', response.status, response.statusText);
                     document.getElementById('requestsList').innerHTML = `

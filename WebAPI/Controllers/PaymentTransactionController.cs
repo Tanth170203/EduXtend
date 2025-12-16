@@ -17,17 +17,20 @@ public class PaymentTransactionController : ControllerBase
     private readonly IPaymentTransactionRepository _transactionRepo;
     private readonly IClubRepository _clubRepo;
     private readonly EduXtendContext _context;
+    private readonly Services.Evidences.ICloudinaryService _cloudinaryService;
     private readonly ILogger<PaymentTransactionController> _logger;
 
     public PaymentTransactionController(
         IPaymentTransactionRepository transactionRepo,
         IClubRepository clubRepo,
         EduXtendContext context,
+        Services.Evidences.ICloudinaryService cloudinaryService,
         ILogger<PaymentTransactionController> logger)
     {
         _transactionRepo = transactionRepo;
         _clubRepo = clubRepo;
         _context = context;
+        _cloudinaryService = cloudinaryService;
         _logger = logger;
     }
 
@@ -89,13 +92,11 @@ public class PaymentTransactionController : ControllerBase
                 return Unauthorized(new { message = "User not authenticated" });
             }
 
-            // Get or use active semester
-            int? semesterId = dto.SemesterId;
-            if (!semesterId.HasValue)
-            {
-                var activeSemester = await _context.Semesters.FirstOrDefaultAsync(s => s.IsActive);
-                semesterId = activeSemester?.Id;
-            }
+            // Auto-determine semester based on transaction date
+            var transactionDate = dto.TransactionDate ?? DateTime.UtcNow;
+            var semester = await _context.Semesters
+                .FirstOrDefaultAsync(s => s.StartDate <= transactionDate && s.EndDate >= transactionDate);
+            int? semesterId = semester?.Id;
 
             var transaction = new PaymentTransaction
             {
@@ -183,6 +184,59 @@ public class PaymentTransactionController : ControllerBase
         {
             _logger.LogError(ex, "Error deleting transaction {Id}", id);
             return StatusCode(500, new { message = "An error occurred while deleting transaction", error = ex.Message });
+        }
+    }
+
+    // GET: api/PaymentTransaction/club/{clubId}/activities
+    [HttpGet("club/{clubId}/activities")]
+    public async Task<IActionResult> GetActivitiesForTransaction(int clubId)
+    {
+        try
+        {
+            // Get all activities that are Approved or PendingApproval
+            var validStatuses = new[] { "Approved", "PendingApproval" };
+            
+            var activities = await _context.Activities
+                .Where(a => a.ClubId == clubId && validStatuses.Contains(a.Status))
+                .OrderByDescending(a => a.StartTime)
+                .Select(a => new
+                {
+                    id = a.Id,
+                    title = a.Title,
+                    status = a.Status,
+                    startTime = a.StartTime
+                })
+                .ToListAsync();
+
+            return Ok(activities);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting activities for club {ClubId}", clubId);
+            return StatusCode(500, new { message = "An error occurred while fetching activities", error = ex.Message });
+        }
+    }
+
+    // POST: api/PaymentTransaction/upload-receipt
+    [HttpPost("upload-receipt")]
+    public async Task<IActionResult> UploadReceipt(IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "No file provided" });
+            }
+
+            var url = await _cloudinaryService.UploadReceiptImageAsync(file);
+            _logger.LogInformation("Uploaded receipt image to Cloudinary: {Url}", url);
+
+            return Ok(new { url });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error uploading receipt image");
+            return StatusCode(500, new { message = "An error occurred while uploading receipt", error = ex.Message });
         }
     }
 

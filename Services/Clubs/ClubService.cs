@@ -228,7 +228,7 @@ namespace Services.Clubs
                 Id = d.Id,
                 Name = d.Name,
                 Description = d.Description,
-                MemberCount = d.Members.Count(m => m.IsActive)
+                MemberCount = d.Members.Count(m => m.IsActive && m.DepartmentId == d.Id)
             }).ToList();
         }
 

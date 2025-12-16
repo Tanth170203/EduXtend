@@ -502,12 +502,10 @@
                         <select class="form-select" id="selectedPaymentMethod" required>
                             <option value="">Select method...</option>
                             <option value="Cash">Cash</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
                             <option value="VNPAY">VNPAY</option>
                         </select>
                         <div class="form-text">
                             <strong>Cash:</strong> Submit request, manager will confirm after you pay<br>
-                            <strong>Bank Transfer:</strong> Upload receipt for verification<br>
                             <strong>VNPAY:</strong> Pay online instantly via VNPAY gateway
                         </div>
                     </div>
@@ -639,7 +637,7 @@
         }
 
 
-        // Handle Cash and Bank Transfer payments
+        // Handle Cash payment
         const dto = {
             paymentMethod: selectedMethod,
             notes: notes
@@ -655,12 +653,7 @@
 
             if (response.ok) {
                 bootstrap.Modal.getInstance(document.getElementById('payNowModal')).hide();
-                
-                if (selectedMethod === 'Cash') {
-                    alert('✅ Payment request submitted! Please pay to your club manager. They will confirm after receiving payment.');
-                } else {
-                    alert('✅ Payment submitted! Please complete the bank transfer. Your payment is pending verification.');
-                }
+                alert('✅ Payment request submitted! Please pay to your club manager. They will confirm after receiving payment.');
                 
                 // Reload data
                 await loadStatistics();

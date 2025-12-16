@@ -45,7 +45,6 @@ public interface INotificationService
     // Fund collection notifications
     Task NotifyMembersAboutNewFundCollectionAsync(int clubId, string fundCollectionTitle, decimal amount, DateTime dueDate, int createdById);
     Task NotifyClubManagerAboutCashPaymentAsync(int clubManagerId, int clubId, string memberName, string fundCollectionTitle, decimal amount);
-    Task NotifyClubManagerAboutBankTransferPaymentAsync(int clubManagerId, int clubId, string memberName, string fundCollectionTitle, decimal amount);
     Task NotifyMemberAboutPaymentConfirmationAsync(int memberId, int clubId, string fundCollectionTitle, decimal amount, string paymentMethod);
     Task NotifyMemberAboutPaymentReminderAsync(int memberId, int clubId, string fundCollectionTitle, decimal amount, DateTime dueDate, int daysUntilDue);
     
