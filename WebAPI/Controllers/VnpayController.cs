@@ -69,20 +69,12 @@ public class VnpayController : ControllerBase
 
             if (existingTransaction != null)
             {
-                _logger.LogInformation("Found existing pending transaction for PaymentId: {PaymentId}, reusing it", payment.Id);
+                _logger.LogInformation("Found existing pending transaction for PaymentId: {PaymentId}, deleting old transaction and creating new one", 
+                    payment.Id);
                 
-                // Reuse existing transaction - just return the payment URL again
-                var existingPaymentUrl = _vnpayClient.CreatePaymentUrl(
-                    money: (double)payment.Amount,
-                    description: RemoveVietnameseDiacritics($"Thanh toan {payment.FundCollectionRequest.Title} - {payment.ClubMember.Student.User.FullName}"),
-                    bankCode: BankCode.ANY
-                );
-
-                return Ok(new VnpayPaymentResponse
-                {
-                    PaymentUrl = existingPaymentUrl.Url,
-                    TransactionId = existingPaymentUrl.PaymentId
-                });
+                // Delete the old pending transaction to avoid duplicates
+                _context.VnpayTransactionDetails.Remove(existingTransaction);
+                await _context.SaveChangesAsync();
             }
 
             // Remove Vietnamese diacritics from description (VNPAY requirement)
@@ -333,7 +325,11 @@ public class VnpayController : ControllerBase
                         .ThenInclude(cm => cm.Student)
                 .FirstOrDefaultAsync(v => v.VnpayTransactionId == paymentResult.PaymentId);
 
-            if (transaction != null && transaction.TransactionStatus == "pending")
+            if (transaction == null)
+            {
+                _logger.LogWarning("Transaction not found in callback for VnpayTransactionId: {TransactionId}", paymentResult.PaymentId);
+            }
+            else if (transaction.TransactionStatus == "pending")
             {
                 // Update transaction with all available info
                 transaction.ResponseCode = "00";
@@ -358,6 +354,14 @@ public class VnpayController : ControllerBase
                     "Payment updated via callback - PaymentId: {PaymentId}, Status: unconfirmed, BankCode: {BankCode}",
                     payment.Id,
                     transaction.BankCode
+                );
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Transaction already processed - VnpayTransactionId: {TransactionId}, Status: {Status}",
+                    transaction.VnpayTransactionId,
+                    transaction.TransactionStatus
                 );
             }
 
